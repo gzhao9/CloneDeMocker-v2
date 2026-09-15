@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CloneDeMocker: Automated Mock Clone Refactoring</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand-section">
+        <div class="eyebrow-wrapper">
+          <span class="eyebrow" data-i18n="header_eyebrow">MOCK CLONE REFACTORING AGENT</span>
+          <span class="research-badge" data-i18n="header_badge">FSE '26 Research Prototype</span>
+        </div>
+        <h1>CloneDeMocker</h1>
+        <p class="header-desc" data-i18n="header_desc">
+          Detect and eliminate recurring Mockito setup duplicates across Java test suites with LLM-driven encapsulation & integration.
+        </p>
+      </div>
+      <div class="header-controls">
+        <button class="btn-env-check" id="btn-open-env" type="button" title="Check Windows encoding, JDK, Maven & workspace safety">
+          <span>🛡️</span>
+          <span data-i18n="btn_env_check">Env & Safety Check</span>
+        </button>
+        <div class="lang-switcher" aria-label="Language selection">
+          <button class="lang-btn active" id="lang-en" type="button">English</button>
+          <button class="lang-btn" id="lang-zh" type="button">中文</button>
+        </div>
+        <div class="status-pill" id="global-status-container">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="global-status">Ready</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <nav class="steps" aria-label="Workflow Steps">
+      <button class="step active" data-step="1" type="button">
+        <span class="step-number">1</span>
+        <div class="step-content">
+          <span class="step-label" data-i18n="step1_title">Detection Scope</span>
+          <span class="step-sub" data-i18n="step1_sub">Project & Files</span>
+        </div>
+      </button>
+      <button class="step" data-step="2" type="button">
+        <span class="step-number">2</span>
+        <div class="step-content">
+          <span class="step-label" data-i18n="step2_title">Mock Objects</span>
+          <span class="step-sub" data-i18n="step2_sub">Candidate Pool</span>
+        </div>
+      </button>
+      <button class="step" data-step="3" type="button">
+        <span class="step-number">3</span>
+        <div class="step-content">
+          <span class="step-label" data-i18n="step3_title">Clone Instances</span>
+          <span class="step-sub" data-i18n="step3_sub">MCI Clustering</span>
+        </div>
+      </button>
+      <button class="step" data-step="4" type="button">
+        <span class="step-number">4</span>
+        <div class="step-content">
+          <span class="step-label" data-i18n="step4_title">Refactoring Studio</span>
+          <span class="step-sub" data-i18n="step4_sub">Diff & Decision</span>
+        </div>
+      </button>
+    </nav>
+
+    <!-- Step 1: Scope -->
+    <section class="panel" id="scope-panel">
+      <div class="panel-title">
+        <div class="title-group">
+          <span class="panel-badge">01</span>
+          <div>
+            <h2 data-i18n="panel1_title">Establish Detection Scope</h2>
+            <p class="panel-desc" data-i18n="panel1_desc">Select target project directories, specific packages, or individual Java test suites.</p>
+          </div>
+        </div>
+      </div>
+      <div class="project-row">
+        <label>
+          <span data-i18n="proj_root_label">Java Project Root</span>
+          <small data-i18n="proj_root_sub">Absolute path without Chinese characters recommended</small>
+          <input id="project-root" data-i18n-ph="proj_root_ph" placeholder="C:\projects\my-java-project">
+        </label>
+        <button class="primary" id="load-tree" type="button">
+          <span data-i18n="btn_load_tree">Load File Tree</span>
+        </button>
+      </div>
+      <!-- Real-time Path Warning Box for Windows Encoding Safety -->
+      <div class="path-warning hidden" id="path-warning-box">
+        <span>⚠️</span>
+        <div>
+          <strong data-i18n="warning_path_title">Windows Path Encoding Warning:</strong>
+          <span id="path-warning-msg" data-i18n="warning_path_desc">
+            Non-ASCII characters or spaces detected. On Windows, native javac/Maven encoding mismatches may cause silent compilation failures. We strongly recommend placing the target project in a pure ASCII path (e.g., C:\projects\dubbo).
+          </span>
+        </div>
+      </div>
+
+      <div class="scope-grid">
+        <div class="tree-card">
+          <div class="card-toolbar">
+            <strong data-i18n="tree_title">Java Source Tree</strong>
+            <div>
+              <button class="text-button" id="select-all-files" type="button" data-i18n="btn_select_all">Select All</button>
+              <button class="text-button" id="clear-files" type="button" data-i18n="btn_clear_all">Clear</button>
+            </div>
+          </div>
+          <div id="source-tree" class="tree empty" data-i18n="tree_empty_hint">Enter project path above and click 'Load File Tree'</div>
+        </div>
+        <div class="scope-options">
+          <label>
+            <span data-i18n="package_filter_label">Package Prefixes</span>
+            <small data-i18n="package_filter_sub">One per line; leave blank for all</small>
+            <textarea id="packages" rows="5" placeholder="org.apache.dubbo.rpc"></textarea>
+          </label>
+          <label>
+            <span data-i18n="exclude_paths_label">Exclude Patterns</span>
+            <small data-i18n="exclude_paths_sub">Relative paths or folders to skip</small>
+            <textarea id="excludes" rows="5" placeholder="module/src/test/java/generated"></textarea>
+          </label>
+          <label class="toggle">
+            <input type="checkbox" id="resolve-dependencies">
+            <span data-i18n="toggle_deps">Resolve Maven/Gradle Dependencies</span>
+          </label>
+          <p class="hint" data-i18n="hint_deps">When enabled, resolves external classpath via temporary files without modifying your build files.</p>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="primary large" id="scan-mocks" type="button">
+          <span data-i18n="btn_scan_mocks">Scan Mock Objects →</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Step 2: Objects -->
+    <section class="panel hidden" id="objects-panel">
+      <div class="panel-title">
+        <div class="title-group">
+          <span class="panel-badge">02</span>
+          <div>
+            <h2 data-i18n="panel2_title">Select Mock Objects Pool</h2>
+            <p class="panel-desc" data-i18n="panel2_desc">Filter and exclude objects you do not wish to participate in Frequent Stub Set Mining.</p>
+          </div>
+        </div>
+        <div class="metric">
+          <strong id="object-count">0</strong>
+          <span data-i18n="metric_selected_mocks">Selected / Available</span>
+        </div>
+      </div>
+      <div class="card-toolbar">
+        <div class="search-wrapper">
+          <input class="search" id="mock-search" data-i18n-ph="mock_search_ph" placeholder="Filter by type, variable, file, or method...">
+        </div>
+        <div>
+          <button class="text-button" id="select-visible" type="button" data-i18n="btn_select_visible">Select Visible</button>
+          <button class="text-button" id="clear-visible" type="button" data-i18n="btn_clear_visible">Deselect Visible</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;"></th>
+              <th data-i18n="th_variable">Variable</th>
+              <th data-i18n="th_mocked_class">Mocked Class</th>
+              <th data-i18n="th_test_file">Test Suite / File</th>
+              <th data-i18n="th_test_cases">Test Cases</th>
+              <th data-i18n="th_statements">Stmts</th>
+            </tr>
+          </thead>
+          <tbody id="mock-table"></tbody>
+        </table>
+      </div>
+      <div class="action-row">
+        <button class="secondary" id="back-scope" type="button" data-i18n="btn_back_scope">← Back to Scope</button>
+        <button class="primary large" id="detect-clones" type="button" data-i18n="btn_detect_clones">Detect Clones in Selected →</button>
+      </div>
+    </section>
+
+    <!-- Step 3: Clones -->
+    <section class="panel hidden" id="clones-panel">
+      <div class="panel-title">
+        <div class="title-group">
+          <span class="panel-badge">03</span>
+          <div>
+            <h2 data-i18n="panel3_title">Mock Clone Instances (MCIs)</h2>
+            <p class="panel-desc" data-i18n="panel3_desc">Discovered recurring mock setup clusters. Choose instances to submit to the Refactoring Agent.</p>
+          </div>
+        </div>
+        <div class="metric">
+          <strong id="mci-count">0</strong>
+          <span data-i18n="metric_mcis_found">MCIs Discovered</span>
+        </div>
+      </div>
+      <div id="mci-list" class="mci-list"></div>
+      <div class="action-row">
+        <button class="secondary" id="back-objects" type="button" data-i18n="btn_back_objects">← Back to Object Pool</button>
+        <button class="primary large" id="prepare-refactor" type="button" data-i18n="btn_prepare_refactor">Prepare Refactoring Agent →</button>
+      </div>
+    </section>
+
+    <!-- Step 4: Agent & IDE Refactoring Studio -->
+    <section class="panel hidden" id="agent-panel">
+      <div class="panel-title">
+        <div class="title-group">
+          <span class="panel-badge">04</span>
+          <div>
+            <h2 data-i18n="panel4_title">Automated Refactoring Studio</h2>
+            <p class="panel-desc" data-i18n="panel4_desc">Modular pipeline: Encapsulation → Integration → Multi-tier Harness Validation with Diff Review & Decision</p>
+          </div>
+        </div>
+      </div>
+      <div class="agent-config">
+        <label>
+          <span data-i18n="model_label">LLM Model</span>
+          <small data-i18n="model_sub">Default: gpt-5.6-terra</small>
+          <input id="model" value="gpt-5.6-terra">
+        </label>
+        <label>
+          <span data-i18n="profile_label">API Key Profile</span>
+          <small data-i18n="profile_sub">Profile in CLONEDEMOCKER_OPENAI_KEYS or default</small>
+          <input id="api-profile" value="default">
+        </label>
+      </div>
+      <label class="agent-instruction">
+        <span data-i18n="instruction_label">Custom Instructions</span>
+        <small data-i18n="instruction_sub">Optional / e.g., 'Extract helper method into private scope within the same test class'</small>
+        <textarea id="agent-instruction" rows="3"></textarea>
+      </label>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
+        <label class="toggle">
+          <input type="checkbox" id="run-pit">
+          <span data-i18n="toggle_pit">Run PIT Mutation Testing (Higher runtime overhead)</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="use-mock">
+          <span data-i18n="toggle_mock">Debug Mode: Dry-run without LLM API token consumption</span>
+        </label>
+      </div>
+      <div class="notice">
+        <strong data-i18n="notice_title">Isolated Safety Guarantee</strong>
+        <p data-i18n="notice_body">The agent executes on an isolated workspace replica. Original project files will never be directly overwritten during candidate proposal generation.</p>
+      </div>
+
+      <!-- Result Container (IDE-grade Workbench) -->
+      <div id="agent-result" class="agent-result hidden">
+        <div id="result-summary-box"></div>
+        <div id="result-metrics-box"></div>
+        <div id="result-diagnostics-box"></div>
+        
+        <!-- IDE Diff Review Workbench -->
+        <div class="diff-workbench" id="diff-workbench">
+          <div class="diff-toolbar">
+            <div class="diff-toolbar-left">
+              <span style="font-weight: 700; font-size: 13px;" data-i18n="diff_files_title">Changed Files:</span>
+              <div class="file-tabs" id="diff-file-tabs"></div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="diff-view-modes">
+                <button class="view-mode-btn active" id="btn-view-unified" type="button" data-i18n="view_unified">Unified Diff</button>
+                <button class="view-mode-btn" id="btn-view-sbs" type="button" data-i18n="view_sbs">Side-by-Side</button>
+              </div>
+              <button class="text-button" id="btn-copy-diff" type="button" data-i18n="btn_copy_diff">📋 Copy Diff</button>
+            </div>
+          </div>
+          <div class="diff-content-wrapper" id="diff-content-area"></div>
+        </div>
+
+        <!-- Decision & Action Bar -->
+        <div class="decision-bar" id="decision-bar">
+          <div class="decision-status">
+            <span data-i18n="decision_status_label">Proposal Status:</span>
+            <span class="decision-badge badge-pending" id="decision-badge" data-i18n="status_awaiting_review">Awaiting Review</span>
+          </div>
+          <div class="decision-actions">
+            <button class="danger-btn" id="btn-discard-proposal" type="button">
+              <span>✗</span>
+              <span data-i18n="btn_discard">Discard Proposal</span>
+            </button>
+            <button class="primary large" id="btn-accept-proposal" type="button">
+              <span>✓</span>
+              <span data-i18n="btn_accept">Accept & Apply Refactoring</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row" id="agent-action-row">
+        <button class="secondary" id="back-clones" type="button" data-i18n="btn_back_clones">← Back to MCIs</button>
+        <button class="primary large" id="run-agent" type="button" data-i18n="btn_run_agent">Generate Refactoring Proposal</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Environment & Safety Diagnostics Modal Dialog -->
+  <div class="modal-backdrop" id="env-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 data-i18n="modal_env_title">🛡️ Environment & Safety Diagnostics</h3>
+        <button class="text-button" id="btn-close-env" type="button" style="font-size: 16px;">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-top: 0; color: var(--text-muted); font-size: 13px;" data-i18n="modal_env_desc">
+          Verification of operating system encodings, toolchains, and file isolation policies to prevent Windows-specific compilation and formatting issues.
+        </p>
+        <div class="env-grid" id="env-grid-content">
+          <div style="text-align: center; color: var(--text-muted);" data-i18n="loading_env">Inspecting environment...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" role="status"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
