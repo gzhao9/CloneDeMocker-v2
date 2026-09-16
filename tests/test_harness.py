@@ -99,6 +99,23 @@ class HarnessTest(unittest.TestCase):
             self.assertEqual(0.5, summary["mutationScore"])
             self.assertEqual({"KILLED": 1, "SURVIVED": 1}, summary["counts"])
 
+    def test_collect_mutation_summary_finds_reports_with_no_intermediate_subdirectory(self):
+        """PIT actually writes to <module>/target/pit-reports/mutations.xml directly --
+        no timestamped subdirectory between pit-reports and mutations.xml, unlike the
+        fixture above. A prior version of this method globbed for exactly one such
+        subdirectory and silently found nothing on every real run as a result."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            report_dir = root / "some-module" / "target" / "pit-reports"
+            report_dir.mkdir(parents=True)
+            (report_dir / "mutations.xml").write_text(mutations_xml([
+                ("KILLED", "demo.Foo", "bar", "10", "VoidMethodCallMutator"),
+            ]), encoding="utf-8")
+
+            summary = ProjectHarness._collect_mutation_summary(root, time.time() - 3600)
+            self.assertIsNotNone(summary)
+            self.assertEqual(1, summary["total"])
+
     def test_mutation_regressed_true_when_a_previously_killed_mutant_survives(self):
         baseline = {"mutants": {"demo.Foo|bar|10|M": "KILLED", "demo.Foo|bar|12|M": "SURVIVED"}}
         candidate_ok = {"mutants": {"demo.Foo|bar|10|M": "KILLED", "demo.Foo|bar|12|M": "KILLED"}}
