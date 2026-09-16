@@ -140,9 +140,19 @@ def analyze_goal_shortfalls(report: dict[str, Any], mci_lookup: dict[str, Any],
             continue
         by_file = split_diff_by_file(diff_path.read_text(encoding="utf-8"))
 
+        # shareableMockLines is bucketed by physical location (Attribute/@Before/@After/
+        # Helper Method), not by mock-relatedness, so it can include lines with nothing to
+        # do with mocking (see app/refactoring_agent.py::_goal_check for the full
+        # rationale and the same fix). Cross-reference rawStatementInfo and keep only
+        # isMockRelated lines, or a line that recurs for reasons unrelated to mock
+        # cloning gets misreported here as "still duplicated".
         shared_lines: set[str] = set()
         for sequence in instance.get("sequences", []):
-            for value in (sequence.get("shareableMockLines") or {}).values():
+            raw_statement_info = sequence.get("rawStatementInfo") or {}
+            for line_key, value in (sequence.get("shareableMockLines") or {}).items():
+                info = raw_statement_info.get(line_key)
+                if not isinstance(info, dict) or not info.get("isMockRelated"):
+                    continue
                 normalized = normalize(str(value))
                 if normalized:
                     shared_lines.add(normalized)

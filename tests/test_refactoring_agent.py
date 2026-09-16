@@ -303,7 +303,10 @@ class RefactoringAgentTest(unittest.TestCase):
 
     def test_goal_check_detects_unreduced_duplication(self):
         instances = [{
-            "sequences": [{"shareableMockLines": {"5": "Mockito.mock(Dependency.class);"}}]
+            "sequences": [{
+                "shareableMockLines": {"5": "Mockito.mock(Dependency.class);"},
+                "rawStatementInfo": {"5": {"isMockRelated": True}},
+            }]
         }]
         original = (
             "class Test {\n"
@@ -327,6 +330,29 @@ class RefactoringAgentTest(unittest.TestCase):
 
         self.assertFalse(RefactoringAgent._goal_check(instances, files, unreduced))
         self.assertTrue(RefactoringAgent._goal_check(instances, files, reduced))
+
+    def test_goal_check_ignores_non_mock_related_shareable_lines(self):
+        instances = [{
+            "sequences": [{
+                "shareableMockLines": {"5": "list.add(item1);"},
+                "rawStatementInfo": {"5": {"isMockRelated": False}},
+            }]
+        }]
+        original = (
+            "class Test {\n"
+            "  void setup() {\n"
+            "    list.add(item1);\n"
+            "  }\n"
+            "  void testFoo() {\n"
+            "    list.clear();\n"
+            "    list.add(item1);\n"
+            "  }\n"
+            "}\n"
+        )
+        files = {Path("src/Test.java"): original}
+        unchanged = {Path("src/Test.java"): original}
+
+        self.assertTrue(RefactoringAgent._goal_check(instances, files, unchanged))
 
 
 if __name__ == "__main__":

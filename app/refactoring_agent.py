@@ -427,6 +427,21 @@ class RefactoringAgent:
         than before — rather than trusting the model's own summary. Lines are compared
         exactly after whitespace normalization, to tolerate incidental
         indentation/spacing reflow from the model.
+
+        shareableMockLines 是按物理位置分类的（Attribute/@Before/@After/Helper Method），
+        不是按是否 mock 相关分类的——同一个 mock 的 sequence 里可能混进跟 mock 毫无关系的
+        语句（比如把这个 mock 塞进某个普通 List 的那一行）。这类语句即使在文件别处因为完
+        全无关的原因（例如另一个测试方法自己 clear() 之后重新构造同名变量）而重复出现，也
+        不代表模型没有完成"消除 mock 克隆"这个目标，所以这里必须交叉引用同一 sequence 的
+        rawStatementInfo，只保留 isMockRelated 为真的行，再做前后出现次数的比较。
+        shareableMockLines is bucketed by physical location (Attribute/@Before/@After/
+        Helper Method), not by mock-relatedness — a mock's sequence can include lines with
+        nothing to do with mocking (e.g. the line that adds this mock into a plain List).
+        Such a line can recur elsewhere in the file for reasons entirely unrelated to mock
+        cloning (e.g. a different test method rebuilding a same-named local variable after
+        its own clear()), and that recurrence says nothing about whether the model actually
+        eliminated the mock clone. So this cross-references each sequence's rawStatementInfo
+        and keeps only lines where isMockRelated is true before comparing occurrence counts.
         """
 
         def normalize(line: str) -> str:
@@ -435,7 +450,11 @@ class RefactoringAgent:
         for instance in instances:
             shared_lines: set[str] = set()
             for sequence in instance.get("sequences", []):
-                for value in (sequence.get("shareableMockLines") or {}).values():
+                raw_statement_info = sequence.get("rawStatementInfo") or {}
+                for line_key, value in (sequence.get("shareableMockLines") or {}).items():
+                    info = raw_statement_info.get(line_key)
+                    if not isinstance(info, dict) or not info.get("isMockRelated"):
+                        continue
                     normalized = normalize(str(value))
                     if normalized:
                         shared_lines.add(normalized)
