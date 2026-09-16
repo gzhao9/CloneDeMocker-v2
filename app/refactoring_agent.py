@@ -103,14 +103,44 @@ class RefactoringAgent:
         if not proposal.get("canRefactor", False):
             return self._failure(proposal_id, proposal.get("reason", "Model declined the refactoring"), result)
 
-        replacements = self._validate_replacements(run.project_root, files, proposal.get("files", []))
-        if not replacements:
-            return self._failure(proposal_id, "Model returned no valid file replacements / 模型没有返回有效文件修改", result)
+        replacements, edit_errors = self._apply_edits(
+            run.project_root, files, proposal.get("edits", []), proposal.get("newFiles", []))
+        # 编辑本身有歧义（oldString 不唯一/没匹配上）时立刻重试，不占用下面专门为 harness
+        # 失败保留的两轮修复预算——这时候 harness 还没跑过，重试成本很低。
+        # When the edits themselves are ambiguous (oldString not unique / not found), retry right
+        # away, without spending the two rounds reserved for harness failures below — this failure
+        # happens before the harness ever runs, so retrying here is cheap.
+        for _ in range(2):
+            if not edit_errors and replacements:
+                break
+            repair_input = json.dumps({
+                "originalRequest": json.loads(request),
+                "currentProposal": proposal,
+                "editErrors": edit_errors or ["canRefactor was true but no edits or newFiles were provided"],
+            }, ensure_ascii=False)
+            result = provider.generate(
+                self._instructions() + "\nFix the previous proposal's edits/newFiles using the errors below.",
+                repair_input, model)
+            model_results.append(result)
+            proposal = self._parse_json(result.text)
+            if not proposal.get("canRefactor", False):
+                break
+            replacements, edit_errors = self._apply_edits(
+                run.project_root, files, proposal.get("edits", []), proposal.get("newFiles", []))
+
+        if not proposal.get("canRefactor", False):
+            return self._failure(proposal_id, proposal.get("reason", "Model declined the refactoring"), result)
+        if not replacements or edit_errors:
+            return self._failure(
+                proposal_id,
+                "Model's edits could not be applied / 模型给出的编辑无法应用: " + "; ".join(edit_errors),
+                result,
+            )
 
         candidate_files = proposal_root / "candidate-files"
         diff_parts: list[str] = []
         for relative, new_content in replacements.items():
-            original = (run.project_root / relative).read_text(encoding="utf-8")
+            original = files.get(relative, "")
             target = candidate_files / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             # newline="\n"：Windows 上 write_text 默认会把 \n 转成 os.linesep（\r\n），
@@ -155,8 +185,9 @@ class RefactoringAgent:
             if not repaired.get("canRefactor", False):
                 proposal = repaired
                 break
-            repaired_files = self._validate_replacements(run.project_root, files, repaired.get("files", []))
-            if not repaired_files:
+            repaired_files, repaired_errors = self._apply_edits(
+                run.project_root, files, repaired.get("edits", []), repaired.get("newFiles", []))
+            if not repaired_files or repaired_errors:
                 break
             proposal, replacements = repaired, repaired_files
             for relative, original_content in files.items():
@@ -169,7 +200,7 @@ class RefactoringAgent:
         # Rebuild candidate files and diff so the UI shows the final repair attempt.
         diff_parts = []
         for relative, new_content in replacements.items():
-            original = files[relative]
+            original = files.get(relative, "")
             target = candidate_files / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(new_content, encoding="utf-8", newline="\n")
@@ -218,14 +249,22 @@ class RefactoringAgent:
                 "mutationRegressed": pit_regressed,
             },
             "validationReason": self._validation_reason(candidate_evidence, goal_achieved, pit_regressed),
+            "caveat": proposal.get("caveat", ""),
             "usage": usage,
             "modelCalls": len(model_results),
             "model": result.model,
             "responseId": result.response_id,
         }
         (proposal_root / "proposal.json").write_text(json.dumps(response, ensure_ascii=False, indent=2), encoding="utf-8")
-        manifest = {path.as_posix(): hashlib.sha256(content.encode("utf-8")).hexdigest()
-                    for path, content in files.items() if path in replacements}
+        # 新建文件在 files 里没有原始内容，用 None 当哈希占位——apply() 据此判断"这个路径
+        # 这次必须还不存在"，而不是去比对一份根本不存在的原始内容的哈希。
+        # New files have no original content in `files`; None marks that as a hash
+        # placeholder — apply() uses it to require "this path must not exist yet" instead
+        # of comparing against a hash of content that was never there.
+        manifest = {
+            path.as_posix(): (hashlib.sha256(files[path].encode("utf-8")).hexdigest() if path in files else None)
+            for path in replacements
+        }
         (proposal_root / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         return response
 
@@ -252,13 +291,21 @@ class RefactoringAgent:
                 target.relative_to(run.project_root)
             except ValueError as error:
                 raise DetectionError("Proposal path escaped the project / 候选路径超出项目") from error
-            current = target.read_text(encoding="utf-8")
-            if hashlib.sha256(current.encode("utf-8")).hexdigest() != expected_hash:
-                raise DetectionError(f"Source changed after proposal; regenerate it / 源码在生成补丁后已变化: {relative_text}")
+            if expected_hash is None:
+                if target.exists():
+                    raise DetectionError(
+                        f"Proposal wanted to create a new file but it already exists; regenerate it / "
+                        f"候选想新建的文件已经存在，请重新生成: {relative_text}"
+                    )
+            else:
+                current = target.read_text(encoding="utf-8")
+                if hashlib.sha256(current.encode("utf-8")).hexdigest() != expected_hash:
+                    raise DetectionError(f"Source changed after proposal; regenerate it / 源码在生成补丁后已变化: {relative_text}")
             candidate = (proposal_root / "candidate-files" / relative).read_text(encoding="utf-8")
             pending.append((target, candidate))
 
         for target, candidate in pending:
+            target.parent.mkdir(parents=True, exist_ok=True)
             temporary = target.with_name(target.name + ".clonedemocker.tmp")
             temporary.write_text(candidate, encoding="utf-8", newline="\n")
             os.replace(temporary, target)
@@ -410,10 +457,24 @@ class RefactoringAgent:
     @staticmethod
     def _instructions() -> str:
         return """You refactor Java test mock clones using the paper's two steps: Encapsulation and Integration.
-Preserve behavior. Change only supplied files. Return JSON only with this shape:
-{"canRefactor":true,"reason":"...","summary":"...","files":[{"path":"relative/path.java","newContent":"complete file"}]}.
-If safe refactoring is impossible, return canRefactor=false, explain the concrete reason, and return an empty files array.
-Do not use markdown fences. Keep complete source text in newContent."""
+Preserve behavior. You may edit any supplied file and/or create a new file (e.g. a shared test
+helper/fixture used by more than one test class) when that is the safest way to do the refactor;
+new files must live under the same source roots as the supplied files.
+Return JSON only with this shape:
+{"canRefactor":true,"reason":"...","summary":"...","caveat":"",
+ "edits":[{"path":"relative/Existing.java","oldString":"exact original text","newString":"replacement text","replaceAll":false}],
+ "newFiles":[{"path":"relative/New.java","content":"complete new file"}]}.
+Each edit's oldString must match exactly one location in that file's current text; if the text you
+want to change is duplicated elsewhere, either include more surrounding context in oldString to make
+it unique, or set replaceAll=true to change every matching occurrence (use replaceAll when the goal
+is turning N copies of a shared statement into N calls to a newly extracted helper).
+Even when you have reservations — a mock's link to the code under test looks unclear, two instances
+seem configured differently, or you cannot fully verify safety from the supplied source alone — still
+produce your best, safest attempt and record the concern in "caveat"; the result is compiled, tested,
+and mutation-tested before being accepted, so an honest attempt beats an outright refusal. Only set
+canRefactor=false when literally no edit could apply (the described mock clone is not present in the
+supplied files), and explain the concrete reason.
+Do not use markdown fences."""
 
     @staticmethod
     def _parse_json(text: str) -> dict[str, Any]:
@@ -424,25 +485,102 @@ Do not use markdown fences. Keep complete source text in newContent."""
             raise DetectionError(f"Model returned invalid JSON / 模型返回了无效 JSON: {error}") from error
 
     @staticmethod
-    def _validate_replacements(root: Path, allowed: dict[Path, str], values: list[dict[str, Any]]) -> dict[Path, str]:
-        replacements: dict[Path, str] = {}
-        for value in values:
-            relative = Path(value.get("path", ""))
-            content = value.get("newContent")
-            original = allowed.get(relative)
-            # original is None 表示这个路径不在允许列表里；content == original 表示模型
-            # 原样返回了源码——两种都不算有效改动，避免"没有实际改动也被判为成功"。
-            # original is None means the path isn't in the allowed set; content == original
-            # means the model echoed the source back unchanged — neither counts as a real
-            # edit, which would otherwise let "no actual change" be judged a success.
-            if (
-                original is not None
-                and isinstance(content, str)
-                and content != original
-                and (root / relative).resolve().is_relative_to(root)
-            ):
-                replacements[relative] = content
-        return replacements
+    def _apply_edits(root: Path, allowed: dict[Path, str], edits: list[dict[str, Any]],
+                      new_files: list[dict[str, Any]]) -> tuple[dict[Path, str], list[str]]:
+        """
+        把模型返回的"搜索替换"编辑 + 新建文件应用到 `allowed`（选中 MCI 涉及的原始文件）
+        上，重建出完整的改动后内容——跟业界主流 coding agent（Claude Code 自带的 Edit
+        工具、Aider 的 SEARCH/REPLACE block）同一套纪律：oldString 必须在当前内容里唯一
+        匹配，除非显式传 replaceAll=true；不唯一/找不到都直接报错，不去猜是哪一处，也不
+        悄悄应用一部分——要么整份提案全部生效，要么带着具体错误原因整体失败，交给上层
+        （首次生成后的即时重试、或者 harness 失败后的修复循环）用这些错误反过来喂给模型
+        重试。返回 (改动后文件内容, 错误列表)；错误列表非空时第一项永远是空字典。
+        Applies the model's search/replace edits and new-file creations onto `allowed` (the
+        selected MCI's original files), reconstructing full post-change content — the same
+        discipline mainstream coding agents use (Claude Code's own Edit tool, Aider's
+        SEARCH/REPLACE blocks): oldString must match exactly once in the current content
+        unless replaceAll=true is set explicitly; not-unique or not-found is a hard error,
+        never a silent guess or partial application — either the whole proposal takes effect
+        or it fails as a whole with concrete reasons the caller (an immediate retry right
+        after generation, or the harness-failure repair loop) can feed back to the model.
+        Returns (post-edit file contents, errors); the first return is always an empty dict
+        when errors is non-empty.
+        """
+        working: dict[Path, str] = dict(allowed)
+        touched: set[Path] = set()
+        errors: list[str] = []
+
+        def resolve_relative(path_text: Any) -> Path | None:
+            if not isinstance(path_text, str) or not path_text:
+                return None
+            relative = Path(path_text)
+            try:
+                (root / relative).resolve().relative_to(root.resolve())
+            except ValueError:
+                return None
+            return relative
+
+        for entry in new_files:
+            path_text = entry.get("path", "")
+            content = entry.get("content")
+            relative = resolve_relative(path_text)
+            if relative is None:
+                errors.append(f"newFiles path is missing or escapes the project root: {path_text!r}")
+                continue
+            if not isinstance(content, str) or not content:
+                errors.append(f"newFiles entry for {path_text!r} has no content")
+                continue
+            if relative in allowed or relative in touched or (root / relative).exists():
+                errors.append(f"newFiles path already exists; edit it instead of creating it: {path_text!r}")
+                continue
+            working[relative] = content
+            touched.add(relative)
+
+        for entry in edits:
+            path_text = entry.get("path", "")
+            old_string = entry.get("oldString")
+            new_string = entry.get("newString")
+            replace_all = bool(entry.get("replaceAll", False))
+            relative = resolve_relative(path_text)
+            if relative is None:
+                errors.append(f"edits path is missing or escapes the project root: {path_text!r}")
+                continue
+            if relative not in working:
+                errors.append(f"edits path is not one of the supplied (or newly created) files: {path_text!r}")
+                continue
+            if not isinstance(old_string, str) or not old_string:
+                errors.append(f"edits entry for {path_text!r} is missing a non-empty oldString")
+                continue
+            if not isinstance(new_string, str):
+                errors.append(f"edits entry for {path_text!r} is missing newString")
+                continue
+            content = working[relative]
+            count = content.count(old_string)
+            if count == 0:
+                errors.append(f"oldString not found in {path_text!r} (it may have shifted after an earlier edit)")
+                continue
+            if count > 1 and not replace_all:
+                errors.append(
+                    f"oldString matches {count} locations in {path_text!r}; add more surrounding context "
+                    f"to make it unique, or set replaceAll=true"
+                )
+                continue
+            working[relative] = content.replace(old_string, new_string) if replace_all \
+                else content.replace(old_string, new_string, 1)
+            touched.add(relative)
+
+        if errors:
+            return {}, errors
+
+        # 没有实际改动的路径不算数（模型原样返回、或者编辑最终等于没变），避免"没有
+        # 实际改动也被判为成功"。
+        # Paths with no real change don't count (the model echoed content back unchanged,
+        # or the edits net out to a no-op) — otherwise "no actual change" could pass as success.
+        replacements = {
+            path: content for path, content in working.items()
+            if path in touched and content != allowed.get(path, "")
+        }
+        return replacements, []
 
     @staticmethod
     def _copy_project(source: Path, destination: Path) -> None:

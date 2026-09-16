@@ -161,12 +161,15 @@ def build_instructions(direct_llm_baseline: bool) -> str:
     return (
         "You refactor Java test code to eliminate duplicated Mockito mock setup logic that "
         "recurs across test methods in the supplied files, while preserving each test's "
-        "behavior and intent. Change only the supplied files. Return JSON only with this "
-        'shape: {"canRefactor":true,"reason":"...","summary":"...",'
-        '"files":[{"path":"relative/path.java","newContent":"complete file"}]}. '
-        "If safe refactoring is impossible, return canRefactor=false, explain the concrete "
-        "reason, and return an empty files array. Do not use markdown fences. Keep complete "
-        "source text in newContent."
+        "behavior and intent. You may edit any supplied file and/or create a new shared "
+        "helper/fixture file when that is the safest way to do the refactor. Return JSON "
+        'only with this shape: {"canRefactor":true,"reason":"...","summary":"...","caveat":"",'
+        '"edits":[{"path":"relative/Existing.java","oldString":"exact text","newString":"replacement","replaceAll":false}],'
+        '"newFiles":[{"path":"relative/New.java","content":"complete new file"}]}. '
+        "Each edit's oldString must match exactly one location unless replaceAll is true. Even "
+        "with reservations, still attempt your best, safest refactor and record the concern in "
+        '"caveat" rather than refusing outright — only set canRefactor=false when no edit could '
+        "possibly apply. Do not use markdown fences."
     )
 
 
@@ -245,16 +248,48 @@ def generate_proposal(run, raw: dict, mci_id: str, provider, model: str, direct_
 
     request = build_request(run.project_root, selected, files, direct_llm_baseline)
     result = provider.generate(instructions, request, model)
-    attempt = {"attempt": 1, "responseId": result.response_id, "usage": result.usage}
+    attempts = [{"attempt": 1, "responseId": result.response_id, "usage": result.usage}]
     proposal = RefactoringAgent._parse_json(result.text)
     if not proposal.get("canRefactor", False):
-        return {"ok": False, "reason": proposal.get("reason", "Model declined / 模型拒绝重构"), "attempts": [attempt]}
-    replacements = RefactoringAgent._validate_replacements(run.project_root, files, proposal.get("files", []))
-    if not replacements:
-        return {"ok": False, "reason": "No valid file replacements / 模型没有返回有效文件修改", "attempts": [attempt]}
+        return {"ok": False, "reason": proposal.get("reason", "Model declined / 模型拒绝重构"), "attempts": attempts}
+    replacements, edit_errors = RefactoringAgent._apply_edits(
+        run.project_root, files, proposal.get("edits", []), proposal.get("newFiles", []))
+    # 编辑本身有歧义（oldString 不唯一/没匹配上）时立刻重试，这时候 harness 还没跑过，
+    # 重试成本很低，跟 app/refactoring_agent.py 的 run() 用的是同一套逻辑。
+    # Retry immediately when the edits themselves are ambiguous (oldString not unique /
+    # not found) — the harness hasn't run yet so retrying here is cheap, mirroring the
+    # same logic in app/refactoring_agent.py's run().
+    for _ in range(2):
+        if not edit_errors and replacements:
+            break
+        repair_input = json.dumps({
+            "originalRequest": json.loads(request),
+            "currentProposal": proposal,
+            "editErrors": edit_errors or ["canRefactor was true but no edits or newFiles were provided"],
+        }, ensure_ascii=False)
+        result = provider.generate(
+            instructions + "\nFix the previous proposal's edits/newFiles using the errors below.",
+            repair_input, model,
+        )
+        attempts.append({"attempt": len(attempts) + 1, "responseId": result.response_id, "usage": result.usage})
+        proposal = RefactoringAgent._parse_json(result.text)
+        if not proposal.get("canRefactor", False):
+            break
+        replacements, edit_errors = RefactoringAgent._apply_edits(
+            run.project_root, files, proposal.get("edits", []), proposal.get("newFiles", []))
+
+    if not proposal.get("canRefactor", False):
+        return {"ok": False, "reason": proposal.get("reason", "Model declined / 模型拒绝重构"), "attempts": attempts}
+    if not replacements or edit_errors:
+        return {
+            "ok": False,
+            "reason": "Model's edits could not be applied / 模型给出的编辑无法应用: " + "; ".join(edit_errors),
+            "attempts": attempts,
+        }
     return {
         "ok": True, "selected": selected, "files": files, "replacements": replacements,
-        "instructions": instructions, "request": request, "proposal": proposal, "attempts": [attempt],
+        "instructions": instructions, "request": request, "proposal": proposal, "attempts": attempts,
+        "caveat": proposal.get("caveat", ""),
     }
 
 
@@ -262,7 +297,11 @@ def write_diff(proposal_root: Path, files: dict, replacements: dict) -> None:
     proposal_root.mkdir(parents=True, exist_ok=True)
     diff_parts: list[str] = []
     for relative, new_content in replacements.items():
-        original = files[relative]
+        # files.get(..., "")：新建文件在 files 里没有原始内容，用空串当"改动前"，
+        # difflib 会正确地把整份新内容渲染成一堆新增行。
+        # files.get(..., ""): a brand-new file has no original content in `files`; an
+        # empty "before" makes difflib correctly render the whole new content as added lines.
+        original = files.get(relative, "")
         diff_parts.extend(difflib.unified_diff(
             original.splitlines(keepends=True), new_content.splitlines(keepends=True),
             fromfile=f"a/{relative.as_posix()}", tofile=f"b/{relative.as_posix()}",
@@ -311,6 +350,13 @@ def main() -> None:
                               "regardless of --repair, since repairing itself requires a model call; MCIs that "
                               "were MODEL_DECLINED before, or whose changes.diff is missing, are carried over "
                               "as MODEL_DECLINED rather than guessed at")
+    parser.add_argument("--only", default=None,
+                         help="只跑这些 MCI id（逗号分隔），忽略 --limit——用于针对性重跑某几个失败"
+                              "案例（比如改完 prompt/协议之后只想验证之前被拒绝/失败的那几个），不用把"
+                              "整批重新跑一遍 / only run these MCI ids (comma-separated), ignoring "
+                              "--limit — for targeted reruns of specific failed cases (e.g. after "
+                              "changing the prompt/edit protocol, only re-verify the ones that were "
+                              "previously declined/failed) without processing the whole batch")
     parser.add_argument("--workspace", default=None,
                          help="复用一个已存在的隔离副本（比如上一次跑完打印出来的 sharedWorkspace），"
                               "跳过复制项目和一次性冷编译，调试时省时间；配合 reset_workspace.py 手动还原 / "
@@ -345,7 +391,14 @@ def main() -> None:
     instances = detect["mockCloneInstances"]
     print(f"  MCIs={len(instances)}")
 
-    pilot = instances[: args.limit]
+    if args.only:
+        wanted = {mci_id.strip() for mci_id in args.only.split(",") if mci_id.strip()}
+        pilot = [instance for instance in instances if instance["id"] in wanted]
+        missing = wanted - {instance["id"] for instance in pilot}
+        if missing:
+            print(f"  WARNING: --only requested MCI ids not found in this scan: {sorted(missing)}")
+    else:
+        pilot = instances[: args.limit]
     print(f"[3/3] piloting {len(pilot)} MCI(s), use_mock={args.use_mock}, "
           f"direct_llm_baseline={args.direct_llm_baseline}, repair={args.repair}")
 
@@ -457,9 +510,18 @@ def main() -> None:
         pit_runs += 1
         before_state = mci_harness.validate(workspace, args.run_pit).as_dict()
 
-        pre_image = {relative: (workspace / relative).read_text(encoding="utf-8") for relative in replacements}
+        # None 表示这个路径在改动前根本不存在（模型新建的文件）——恢复原状时要删掉它，
+        # 不是写回空字符串。
+        # None means the path didn't exist before this change at all (a file the model
+        # created) — restoring means deleting it, not writing back an empty string.
+        pre_image = {
+            relative: ((workspace / relative).read_text(encoding="utf-8") if (workspace / relative).is_file() else None)
+            for relative in replacements
+        }
         for relative, new_content in replacements.items():
-            (workspace / relative).write_text(new_content, encoding="utf-8", newline="\n")
+            target = workspace / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(new_content, encoding="utf-8", newline="\n")
 
         proposal_id = uuid.uuid4().hex
         proposal_root = run.run_directory / "refactoring" / proposal_id
@@ -499,16 +561,25 @@ def main() -> None:
             repaired = RefactoringAgent._parse_json(result.text)
             if not repaired.get("canRefactor", False):
                 break
-            repaired_replacements = RefactoringAgent._validate_replacements(run.project_root, files, repaired.get("files", []))
-            if not repaired_replacements:
+            repaired_replacements, repaired_errors = RefactoringAgent._apply_edits(
+                run.project_root, files, repaired.get("edits", []), repaired.get("newFiles", []))
+            if not repaired_replacements or repaired_errors:
                 break
             for relative, original_content in pre_image.items():
-                (workspace / relative).write_text(original_content, encoding="utf-8", newline="\n")
+                if original_content is None:
+                    (workspace / relative).unlink(missing_ok=True)
+                else:
+                    (workspace / relative).write_text(original_content, encoding="utf-8", newline="\n")
             replacements = repaired_replacements
             proposal["proposal"] = repaired
-            pre_image = {relative: (workspace / relative).read_text(encoding="utf-8") for relative in replacements}
+            pre_image = {
+                relative: ((workspace / relative).read_text(encoding="utf-8") if (workspace / relative).is_file() else None)
+                for relative in replacements
+            }
             for relative, new_content in replacements.items():
-                (workspace / relative).write_text(new_content, encoding="utf-8", newline="\n")
+                target = workspace / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(new_content, encoding="utf-8", newline="\n")
             write_diff(proposal_root, files, replacements)
             pit_runs += 1
             after_state = mci_harness.validate(workspace, args.run_pit).as_dict()
@@ -522,7 +593,10 @@ def main() -> None:
         # MCI always starts from the same unmodified baseline and results stay independent
         # of each other.
         for relative, original_content in pre_image.items():
-            (workspace / relative).write_text(original_content, encoding="utf-8", newline="\n")
+            if original_content is None:
+                (workspace / relative).unlink(missing_ok=True)
+            else:
+                (workspace / relative).write_text(original_content, encoding="utf-8", newline="\n")
 
         report["results"].append({
             "mciId": mci_id,
@@ -535,6 +609,7 @@ def main() -> None:
             "proposalId": proposal_id,
             "promptHash": prompt_hash,
             "replayedFromProposalId": proposal.get("replayedFromProposalId"),
+            "modelCaveat": proposal.get("caveat", ""),
             "attempts": [{"attempt": a["attempt"], "responseId": a["responseId"], "usage": usage_as_dict(a["usage"])}
                          for a in attempts],
             "usage": combined_usage(attempts),

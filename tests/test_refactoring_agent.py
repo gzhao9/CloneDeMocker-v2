@@ -15,7 +15,8 @@ class FakeProvider:
 
     def generate(self, instructions: str, input_text: str, model: str) -> ModelResult:
         response = {"canRefactor": True, "reason": "safe", "summary": "helper extracted",
-                    "files": [{"path": "src/Test.java", "newContent": self.replacement}]}
+                    "edits": [{"path": "src/Test.java", "oldString": "int oldValue = 1;",
+                               "newString": "int newValue = 2;"}]}
         return ModelResult(json.dumps(response), "fake-response", model, ModelUsage(10, 0, 5, 0, 15), None)
 
 
@@ -27,7 +28,8 @@ class RepairingProvider:
         self.calls += 1
         value = 2 if self.calls == 1 else 3
         response = {"canRefactor": True, "reason": "repaired", "summary": "helper extracted",
-                    "files": [{"path": "src/Test.java", "newContent": f"class Test {{ int value = {value}; }}\n"}]}
+                    "edits": [{"path": "src/Test.java", "oldString": "int value = 1;",
+                               "newString": f"int value = {value};", "replaceAll": True}]}
         return ModelResult(json.dumps(response), f"fake-{self.calls}", model, ModelUsage(10, 0, 5, 0, 15), None)
 
 
@@ -39,7 +41,8 @@ class RecordingProvider:
     def generate(self, instructions: str, input_text: str, model: str) -> ModelResult:
         self.captured_input = input_text
         response = {"canRefactor": True, "reason": "safe", "summary": "helper extracted",
-                    "files": [{"path": "src/Test.java", "newContent": self.replacement}]}
+                    "edits": [{"path": "src/Test.java", "oldString": "int value = 1;",
+                               "newString": self.replacement, "replaceAll": True}]}
         return ModelResult(json.dumps(response), "fake-response", model, ModelUsage(10, 0, 5, 0, 15), None)
 
 
@@ -192,18 +195,111 @@ class RefactoringAgentTest(unittest.TestCase):
         self.assertIn("testMethodRawCode", instances[0]["sequences"][0])
         self.assertIn("methodRawCode", instances[0]["sequences"][0]["rawStatementInfo"]["5"]["locationContext"])
 
-    def test_validate_replacements_rejects_unchanged_content(self):
+    def test_apply_edits_applies_a_unique_search_replace(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            allowed = {Path("src/Test.java"): "class Test { int x = 1; }\n"}
+            edits = [{"path": "src/Test.java", "oldString": "int x = 1;", "newString": "int x = 2;"}]
+
+            replacements, errors = RefactoringAgent._apply_edits(root, allowed, edits, [])
+
+            self.assertEqual([], errors)
+            self.assertEqual({Path("src/Test.java"): "class Test { int x = 2; }\n"}, replacements)
+
+    def test_apply_edits_rejects_a_no_op_edit(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             allowed = {Path("src/Test.java"): "class Test {}\n"}
-            unchanged = [{"path": "src/Test.java", "newContent": "class Test {}\n"}]
-            changed = [{"path": "src/Test.java", "newContent": "class Test { int x; }\n"}]
+            edits = [{"path": "src/Test.java", "oldString": "class Test {}", "newString": "class Test {}"}]
 
-            self.assertEqual({}, RefactoringAgent._validate_replacements(root, allowed, unchanged))
-            self.assertEqual(
-                {Path("src/Test.java"): "class Test { int x; }\n"},
-                RefactoringAgent._validate_replacements(root, allowed, changed),
-            )
+            replacements, errors = RefactoringAgent._apply_edits(root, allowed, edits, [])
+
+            self.assertEqual([], errors)
+            self.assertEqual({}, replacements)
+
+    def test_apply_edits_rejects_an_ambiguous_old_string_without_replace_all(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            allowed = {Path("src/Test.java"): "mock(A.class);\nmock(A.class);\n"}
+            edits = [{"path": "src/Test.java", "oldString": "mock(A.class);", "newString": "helper();"}]
+
+            replacements, errors = RefactoringAgent._apply_edits(root, allowed, edits, [])
+
+            self.assertEqual({}, replacements)
+            self.assertTrue(any("2 locations" in error for error in errors))
+
+    def test_apply_edits_replace_all_changes_every_occurrence(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            allowed = {Path("src/Test.java"): "mock(A.class);\nmock(A.class);\n"}
+            edits = [{"path": "src/Test.java", "oldString": "mock(A.class);", "newString": "helper();", "replaceAll": True}]
+
+            replacements, errors = RefactoringAgent._apply_edits(root, allowed, edits, [])
+
+            self.assertEqual([], errors)
+            self.assertEqual({Path("src/Test.java"): "helper();\nhelper();\n"}, replacements)
+
+    def test_apply_edits_rejects_old_string_not_found(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            allowed = {Path("src/Test.java"): "class Test {}\n"}
+            edits = [{"path": "src/Test.java", "oldString": "does not exist", "newString": "x"}]
+
+            replacements, errors = RefactoringAgent._apply_edits(root, allowed, edits, [])
+
+            self.assertEqual({}, replacements)
+            self.assertTrue(any("not found" in error for error in errors))
+
+    def test_apply_edits_creates_a_new_file(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            allowed = {Path("src/Test.java"): "class Test {}\n"}
+            new_files = [{"path": "src/Helper.java", "content": "class Helper {}\n"}]
+
+            replacements, errors = RefactoringAgent._apply_edits(root, allowed, [], new_files)
+
+            self.assertEqual([], errors)
+            self.assertEqual({Path("src/Helper.java"): "class Helper {}\n"}, replacements)
+
+    def test_apply_edits_rejects_a_new_file_that_already_exists(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            allowed = {Path("src/Test.java"): "class Test {}\n"}
+            new_files = [{"path": "src/Test.java", "content": "class Test { int x; }\n"}]
+
+            replacements, errors = RefactoringAgent._apply_edits(root, allowed, [], new_files)
+
+            self.assertEqual({}, replacements)
+            self.assertTrue(any("already exists" in error for error in errors))
+
+    def test_apply_edits_rejects_a_path_that_escapes_the_project_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            allowed = {Path("src/Test.java"): "class Test {}\n"}
+            edits = [{"path": "../outside/Test.java", "oldString": "class Test {}", "newString": "x"}]
+            new_files = [{"path": "../outside/New.java", "content": "class New {}\n"}]
+
+            edit_replacements, edit_errors = RefactoringAgent._apply_edits(root, allowed, edits, [])
+            new_file_replacements, new_file_errors = RefactoringAgent._apply_edits(root, allowed, [], new_files)
+
+            self.assertEqual({}, edit_replacements)
+            self.assertTrue(edit_errors)
+            self.assertEqual({}, new_file_replacements)
+            self.assertTrue(new_file_errors)
+
+    def test_apply_edits_is_all_or_nothing_across_multiple_edits(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            allowed = {Path("src/Test.java"): "class Test { int a = 1; int b = 1; }\n"}
+            edits = [
+                {"path": "src/Test.java", "oldString": "int a = 1;", "newString": "int a = 2;"},
+                {"path": "src/Test.java", "oldString": "does not exist", "newString": "x"},
+            ]
+
+            replacements, errors = RefactoringAgent._apply_edits(root, allowed, edits, [])
+
+            self.assertEqual({}, replacements)
+            self.assertTrue(errors)
 
     def test_goal_check_detects_unreduced_duplication(self):
         instances = [{

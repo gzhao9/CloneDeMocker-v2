@@ -1,13 +1,55 @@
-# Dubbo 3.3.6 全量跑批：14 个非 SUCCESS 案例逐一分析
+# Dubbo 3.3.6 全量跑批：非 SUCCESS 案例逐一分析
 
-数据来源：`validation/results/pilot-eaffe40a-20260915-032515.json`（109 个 MCI 的全量重构跑批）。
-这份报告里 `MODEL_DECLINED` / `FAILED_REFACTORING_GOAL` / `FAILED_SYNTACTIC_VALIDITY` 三类判定
-**不受 PIT bug 影响**（PIT 的问题只污染了 SUCCESS 里"变异分数是否保持"这一层的验证，跟这三类的
-判定逻辑无关），所以这 14 个案例现在就能作为最终数据使用，不用等第三轮 PIT 重放跑批完成。
+数据来源：`validation/results/pilot-eaffe40a-20260915-032515.json`（109 个 MCI 的全量重构跑批，
+下称"eaffe40a"）。这份报告里 `MODEL_DECLINED` / `FAILED_REFACTORING_GOAL` / `FAILED_SYNTACTIC_VALIDITY`
+三类判定**不受 PIT bug 影响**（PIT 的问题只污染了 SUCCESS 里"变异分数是否保持"这一层的验证，跟这
+三类的判定逻辑无关），所以类别 A-G（14 例）现在就能作为最终数据使用。
 
 每个案例的代码片段直接取自检测器保存的原始数据（`rawStatementInfo`/`testMethodRawCode`），
 不是重新手写摘抄的；分类标签来自 `validation/analyze_results.py::categorize_declined_reasons`
 的关键词规则（可多标签），可复现。
+
+## 跑批进度更新（2026-09-15）
+
+第三轮 PIT 重放跑批（runId `bc44c192...`，复用 eaffe40a 的 diff、只对已知失败案例重新调 API，
+其余重放旧方案）仍在后台运行。截至最近一次检查：**79/109（约 72%）**，分布：
+
+| 分类 | 数量 |
+|---|---|
+| SUCCESS | 35 |
+| FAILED_FUNCTIONAL_INTEGRITY | 34 |
+| MODEL_DECLINED | 9（eaffe40a 里 11 个里的 9 个已复现，文本逐字一致） |
+| FAILED_REFACTORING_GOAL | 1（`Invoker::3`，即下面案例 12，复现一致） |
+
+`FAILED_FUNCTIONAL_INTEGRITY`（PIT 判定：编译测试都过，但有变异体从"被杀死"变成"存活"）是**这次
+跑批第一次拿到真实数据的类别**——eaffe40a 那批因为 PIT 的 JUnit5/Spotless bug，全部 95 个 SUCCESS
+背后的 PIT 验证从来没真的跑过，所以这 34 例现在还没有对应的历史案例分析，需要等这轮跑完、报告写盘
+后才能拿到每个案例具体是哪个变异体回归（`harness.before/after.mutants` 只在最终 JSON 里才有，跑批
+过程中的日志不打印这一层细节）。
+
+**逐个查看前值得先看一眼的信号——FAILED_FUNCTIONAL_INTEGRITY 明显按测试类聚集，不是均匀分布**：
+
+| 测试类 | 命中的 FFI 案例数 |
+|---|---|
+| `MigrationInvokerTest` | 8 |
+| `ForeignHostPermitHandlerTest` | 5 |
+| `NacosRegistryTest` | 3 |
+| `RegistryProtocolTest` | 3 |
+| `ServiceCheckUtilsTest` | 3 |
+| 其余 9 个测试类 | 各 1-2 |
+
+34 例里有 22 例（65%）集中在这 5 个测试类上。这个集中度比"每个 MCI 各自独立地被重构破坏了变异
+覆盖"这个假设看起来更像"这几个测试类本身的 PIT 结果不稳定/时序敏感"——比如 `MigrationInvokerTest`
+和 `ForeignHostPermitHandlerTest` 从名字上就带有重试、网络、定时器相关的语义，这类测试的变异体
+存活情况本来就更容易受线程调度/超时影响，同一份未改动代码跑两次 PIT 都可能得到不同的变异体存活
+结果（PIT 本身没有"这个测试是否 flaky"的判断能力,`mutation_regressed()` 只会老实地把两次的差异
+报告出来)。
+
+**建议逐个查看的顺序**：先各挑一个代表案例核实这 5 个聚集的测试类，确认是"真回归"还是"baseline
+本身跑两次就不稳定"，再决定其余 29 例是否需要逐一细看，比 34 个全部平铺开来看更省时间。等跑批
+完成、拿到 `harness.before/after.mutants` 之后我可以先跑一遍"哪些案例的具体回归变异体在同一个
+测试类里高度雷同"这个检查，把这个猜测坐实或者证伪，而不是我们主观先下结论。这一步还没做,以下类别
+A-G 仍然是唯一有完整根因分析的部分。
 
 ## 总览
 
@@ -364,3 +406,8 @@ Spotless 规则不一致。这跟本轮修复的 pom.xml 注入触发 Spotless �
 也就是说，14 个失败案例里，**7 个是模型正确识别出"不该重构"**（死 mock / 故意的语义分化），
 **1 个已经在本轮修复**，剩下 **6 个是有具体、可执行的后续优化空间**的（2 个新建文件限制、
 2 个 repair 循环覆盖面、2 个大文件协议限制）。
+
+**以上是 A-G 类（eaffe40a 的 14 例）的完整分析，不包含本轮新出现的 FAILED_FUNCTIONAL_INTEGRITY
+（目前 34 例，见开头"跑批进度更新"）**——这一类要等跑批完成、report 写盘后才能拿到
+`harness.before/after.mutants` 逐个核实具体哪个变异体回归，现在只能先看测试类聚集这个初步信号。
+跑完之后会在这里补一个"类别 H"，同样逐案例过一遍。
