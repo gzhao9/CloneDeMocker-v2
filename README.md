@@ -1,7 +1,7 @@
 # CloneDeMocker (v2): Automated Detection and LLM-Based Refactoring of Mock-Clone Instances in Unit Tests
 
 <div align="right">
-  <b>Language:</b> <b>English</b> | <a href="README_zh.md"><b>简体中文</b></a>
+  <b>Language:</b> <b>English</b> | <a href="/daynell/CloneDeMocker-v2/src/branch/main/README_zh.md"><b>简体中文</b></a>
 </div>
 
 [![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://adoptium.net/)
@@ -13,7 +13,7 @@
 <summary><b>🇨🇳 点击展开查看中文快速摘要 (Click to view Chinese Summary)</b></summary>
 <p>
 
-**CloneDeMocker (v2)** 是一套面向 Java 单元测试的 **Mock 逻辑克隆（Mock-Clone Instances, MCIs）检测与神经符号约束重构系统**。本工具通过 JavaParser 与 Apriori 频繁项集算法自动提取测试代码中泛滥的重复 Mockito 打桩逻辑，由 LLM 生成最小统一补丁（Unified Diff），并在独立的隔离沙箱中执行三层质量门禁（编译检查 ➜ 测试行为等价性 ➜ PIT 变异测试分数不降）。完整中文文档请参阅 [README_zh.md](README_zh.md)。
+**CloneDeMocker (v2)** 是一套面向 Java 单元测试的 **Mock 逻辑克隆（Mock-Clone Instances, MCIs）检测与神经符号约束重构系统**。本工具通过 JavaParser 与 Apriori 频繁项集算法自动提取测试代码中泛滥的重复 Mockito 打桩逻辑，由 LLM 生成最小统一补丁（Unified Diff），并在独立的隔离沙箱中执行三层质量门禁（编译检查 ➜ 测试行为等价性 ➜ PIT 变异测试分数不降）。完整中文文档请参阅 [README_zh.md](/daynell/CloneDeMocker-v2/src/branch/main/README_zh.md)。
 
 </p>
 </details>

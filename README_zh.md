@@ -1,7 +1,7 @@
 # CloneDeMocker (v2) - 自动化单元测试 Mock 代码克隆检测与重构系统
 
 <div align="right">
-  <b>语言 / Language:</b> <a href="README.md"><b>English</b></a> | <b>简体中文</b>
+  <b>语言 / Language:</b> <a href="/daynell/CloneDeMocker-v2"><b>English</b></a> | <b>简体中文</b>
 </div>
 
 [![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://adoptium.net/)
