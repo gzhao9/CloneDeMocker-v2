@@ -1,0 +1,29 @@
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java
+@@ -512,13 +512,8 @@
+         given(invocation.getObjectAttachments()).willReturn(new HashMap<>());
+         given(invocation.getInvoker()).willReturn(firstInvoker);
+ 
+-        given(firstInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "first"));
+-        given(firstInvoker.getInterface()).willReturn(MenuService.class);
+-        given(firstInvoker.invoke(invocation)).willReturn(new AppResponse());
+-
+-        given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+-        given(secondInvoker.getInterface()).willReturn(MenuService.class);
+-        given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
++        stubInvoker(firstInvoker, "first");
++        stubInvoker(secondInvoker, "second");
+ 
+         given(directory.list(invocation)).willReturn(new ArrayList() {
+ 
+@@ -538,4 +533,10 @@
+         assertFalse(firstInvoker.isAvailable());
+         assertFalse(secondInvoker.isAvailable());
+     }
++
++    private void stubInvoker(Invoker invoker, String group) {
++        given(invoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, group));
++        given(invoker.getInterface()).willReturn(MenuService.class);
++        given(invoker.invoke(invocation)).willReturn(new AppResponse());
++    }
+ }

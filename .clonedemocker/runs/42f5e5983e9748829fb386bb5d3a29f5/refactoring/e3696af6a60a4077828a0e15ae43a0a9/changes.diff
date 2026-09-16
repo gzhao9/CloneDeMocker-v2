@@ -1,0 +1,66 @@
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeErrorTypeAwareLoggerTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeErrorTypeAwareLoggerTest.java
+@@ -30,7 +30,6 @@
+ import static org.mockito.Mockito.doThrow;
+ import static org.mockito.Mockito.mock;
+ import static org.mockito.Mockito.verify;
+-import static org.mockito.Mockito.when;
+ 
+ /**
+  * Tests for FailsafeErrorTypeAwareLogger to test whether it 'ignores' exceptions thrown by logger or not.
+@@ -65,8 +64,7 @@
+     @Test
+     void testSuccessLogger() {
+         Logger successLogger = mock(Logger.class);
+-        when(successLogger.isErrorEnabled()).thenReturn(true);
+-        when(successLogger.isWarnEnabled()).thenReturn(true);
++        LoggerTestUtils.enableErrorAndWarnLogging(successLogger);
+         FailsafeErrorTypeAwareLogger failsafeLogger = new FailsafeErrorTypeAwareLogger(successLogger);
+ 
+         failsafeLogger.error(REGISTRY_ADDRESS_INVALID, "Registry center", "May be it's offline.", "error");
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeLoggerTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeLoggerTest.java
+@@ -20,13 +20,13 @@
+ 
+ import org.junit.jupiter.api.Assertions;
+ import org.junit.jupiter.api.Test;
+-import org.mockito.Mockito;
+ 
+ import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.ArgumentMatchers.anyString;
+ import static org.mockito.Mockito.doThrow;
+ import static org.mockito.Mockito.mock;
+ import static org.mockito.Mockito.verify;
++import static org.mockito.Mockito.when;
+ 
+ class FailsafeLoggerTest {
+     @Test
+@@ -68,11 +68,10 @@
+     @Test
+     void testSuccessLogger() {
+         Logger successLogger = mock(Logger.class);
+-        Mockito.when(successLogger.isErrorEnabled()).thenReturn(true);
+-        Mockito.when(successLogger.isWarnEnabled()).thenReturn(true);
+-        Mockito.when(successLogger.isInfoEnabled()).thenReturn(true);
+-        Mockito.when(successLogger.isDebugEnabled()).thenReturn(true);
+-        Mockito.when(successLogger.isTraceEnabled()).thenReturn(true);
++        LoggerTestUtils.enableErrorAndWarnLogging(successLogger);
++        when(successLogger.isInfoEnabled()).thenReturn(true);
++        when(successLogger.isDebugEnabled()).thenReturn(true);
++        when(successLogger.isTraceEnabled()).thenReturn(true);
+ 
+         FailsafeLogger failsafeLogger = new FailsafeLogger(successLogger);
+         failsafeLogger.error("error");
+@@ -111,3 +110,12 @@
+         });
+     }
+ }
++
++final class LoggerTestUtils {
++    private LoggerTestUtils() {}
++
++    static void enableErrorAndWarnLogging(Logger logger) {
++        when(logger.isErrorEnabled()).thenReturn(true);
++        when(logger.isWarnEnabled()).thenReturn(true);
++    }
++}

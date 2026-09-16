@@ -1,0 +1,78 @@
+--- a/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/HelpTelnetHandlerTest.java
++++ b/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/HelpTelnetHandlerTest.java
+@@ -28,8 +28,7 @@
+ class HelpTelnetHandlerTest {
+     @Test
+     void test() {
+-        Channel channel = Mockito.mock(Channel.class);
+-        Mockito.when(channel.getUrl()).thenReturn(URL.valueOf("dubbo://127.0.0.1:12345"));
++        Channel channel = TelnetTestSupport.createChannel(URL.valueOf("dubbo://127.0.0.1:12345"));
+ 
+         HelpTelnetHandler helpTelnetHandler = new HelpTelnetHandler(FrameworkModel.defaultModel());
+         // default output
+@@ -45,3 +44,17 @@
+         Assertions.assertEquals(helpTelnetHandler.telnet(channel, "help"), demoOutput);
+     }
+ }
++
++final class TelnetTestSupport {
++    private TelnetTestSupport() {}
++
++    static Channel createChannel(URL url) {
++        Channel channel = Mockito.mock(Channel.class);
++        stubUrl(channel, url);
++        return channel;
++    }
++
++    static void stubUrl(Channel channel, URL url) {
++        Mockito.when(channel.getUrl()).thenReturn(url);
++    }
++}
+--- a/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/StatusTelnetHandlerTest.java
++++ b/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/StatusTelnetHandlerTest.java
+@@ -22,13 +22,11 @@
+ 
+ import org.junit.jupiter.api.Assertions;
+ import org.junit.jupiter.api.Test;
+-import org.mockito.Mockito;
+ 
+ class StatusTelnetHandlerTest {
+     @Test
+     void test() {
+-        Channel channel = Mockito.mock(Channel.class);
+-        Mockito.when(channel.getUrl()).thenReturn(URL.valueOf("dubbo://127.0.0.1:12345"));
++        Channel channel = TelnetTestSupport.createChannel(URL.valueOf("dubbo://127.0.0.1:12345"));
+ 
+         StatusTelnetHandler statusTelnetHandler = new StatusTelnetHandler();
+         Assertions.assertNotNull(statusTelnetHandler.telnet(channel, ""));
+@@ -37,7 +35,7 @@
+         String errorPrompt = "Unsupported parameter ";
+         Assertions.assertTrue(statusTelnetHandler.telnet(channel, "other").contains(errorPrompt));
+ 
+-        Mockito.when(channel.getUrl()).thenReturn(URL.valueOf("dubbo://127.0.0.1:12345?status=load,memory"));
++        TelnetTestSupport.stubUrl(channel, URL.valueOf("dubbo://127.0.0.1:12345?status=load,memory"));
+         Assertions.assertNotNull(statusTelnetHandler.telnet(channel, ""));
+         Assertions.assertNotNull(statusTelnetHandler.telnet(channel, "-l"));
+     }
+--- a/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/TelnetHandlerAdapterTest.java
++++ b/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/TelnetHandlerAdapterTest.java
+@@ -27,18 +27,16 @@
+ 
+ import org.junit.jupiter.api.Assertions;
+ import org.junit.jupiter.api.Test;
+-import org.mockito.Mockito;
+ 
+ class TelnetHandlerAdapterTest {
+ 
+     @Test
+     void testTelnet() throws RemotingException {
+ 
+-        Channel channel = Mockito.mock(Channel.class);
+         Map<String, String> param = new HashMap<>();
+         param.put("telnet", "status");
+         URL url = new URL("p1", "127.0.0.1", 12345, "path1", param);
+-        Mockito.when(channel.getUrl()).thenReturn(url);
++        Channel channel = TelnetTestSupport.createChannel(url);
+         TelnetHandlerAdapter telnetHandlerAdapter = new TelnetHandlerAdapter(FrameworkModel.defaultModel());
+ 
+         String message = "--no-prompt status ";
