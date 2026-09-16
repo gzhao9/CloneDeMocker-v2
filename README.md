@@ -1,59 +1,185 @@
-# CloneDeMocker v2
+# CloneDeMocker (v2): Automated Detection and LLM-Based Refactoring of Mock-Clone Instances in Unit Tests
 
-本分支把论文中的检测和重构流程实现为一个本地 Agent UI。它先建立 **Detection Scope**，再执行 **Mock Logic Extraction → Frequent Stub Set Mining → Mock Clone Instance Formation**。用户可以按目录、Java 文件和 package 建立检测池，并在扫描后逐个取消不希望参与检测的 Mock Object。
+<div align="right">
+  <b>Language:</b> <b>English</b> | <a href="README_zh.md"><b>简体中文</b></a>
+</div>
 
-This branch exposes the paper workflow as a local agent UI. Users define a **Detection Scope**, inspect and filter extracted Mock Objects, form MCIs only from the selected objects, and generate an isolated refactoring proposal with a unified diff.
+[![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://adoptium.net/)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://python.org/)
+[![Conference Artifact](https://img.shields.io/badge/FSE_Artifact-Reproducible-brightgreen.svg)](https://conf.researchr.org/)
+[![License](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 
-## 启动 / Run
+<details>
+<summary><b>🇨🇳 点击展开查看中文快速摘要 (Click to view Chinese Summary)</b></summary>
+<p>
 
-环境要求：Java 17、Maven、Python 3.11+ 和 `uv`。Windows 用 PowerShell：
+**CloneDeMocker (v2)** 是一套面向 Java 单元测试的 **Mock 逻辑克隆（Mock-Clone Instances, MCIs）检测与神经符号约束重构系统**。本工具通过 JavaParser 与 Apriori 频繁项集算法自动提取测试代码中泛滥的重复 Mockito 打桩逻辑，由 LLM 生成最小统一补丁（Unified Diff），并在独立的隔离沙箱中执行三层质量门禁（编译检查 ➜ 测试行为等价性 ➜ PIT 变异测试分数不降）。完整中文文档请参阅 [README_zh.md](README_zh.md)。
 
+</p>
+</details>
+
+---
+
+## Table of Contents
+- [1. Overview & Problem Definition](#1-overview--problem-definition)
+- [2. System Architecture](#2-system-architecture)
+- [3. Paper Terminology to Code Mapping](#3-paper-terminology-to-code-mapping)
+- [4. Environment Prerequisites](#4-environment-prerequisites)
+- [5. Quick Start: Web UI Refactoring Studio](#5-quick-start-web-ui-refactoring-studio)
+- [6. Headless Experimentation & Paper Evaluation](#6-headless-experimentation--paper-evaluation)
+- [7. Defensive Engineering & Platform Compatibility](#7-defensive-engineering--platform-compatibility)
+- [8. Repository Layout](#8-repository-layout)
+- [9. Citation & License](#9-citation--license)
+
+---
+
+## 1. Overview & Problem Definition
+
+In unit testing for microservice architectures (e.g., Apache Dubbo), developers frequently set up external RPC dependencies using mock frameworks like Mockito. However, duplicated mock setup logic across unit tests leads to **Mock-Clone Instances (MCIs)**. When underlying interface contracts evolve, these scattered clones cause significant test maintenance overhead and high cognitive burden.
+
+**CloneDeMocker** addresses this challenge via a bounded **Neuro-Symbolic** paradigm:
+1. **Symbolic Static Mining**: Uses JavaParser AST analysis and the Apriori algorithm to discover frequent stubbing patterns and aggregate them into MCIs.
+2. **Bounded Neural Refactoring**: Prompts an LLM with minimal context to encapsulate duplicated mocks into reusable test helper methods and inline callers, emitting isolated unified patches.
+3. **Deterministic Multi-Tier Verification**: Validates candidate patches against compilation, test regression, and mutation testing (PIT) before committing changes back to the target project.
+
+---
+
+## 2. System Architecture
+
+```
+[Target Java Codebase]
+        │
+        ▼ (Stage 1: Symbolic Detection Pipeline - JavaParser + Apriori)
+  Detection Scope ──► Mock Logic Extraction ──► Frequent Stub Mining ──► MCI Formation
+                                                                               │
+        ┌──────────────────────────────────────────────────────────────────────┘
+        ▼ (Stage 2: Bounded Neural Refactoring - LLM Agent)
+  Scoped Prompting ──► Encapsulation & Integration ──► Minimal Unified Patch
+                                                              │
+        ┌─────────────────────────────────────────────────────┘
+        ▼ (Stage 3: Multi-Tier Verification Pipeline - Deterministic Gates)
+  [Gate 1] Patch Policy Check ──► [Gate 2] Isolated Compile ──► [Gate 3] Test Equivalence ──► [Gate 4] PIT Mutation
+```
+
+- **Minimal Patch Gateway**: The model generates strictly scoped `Unified Diff` replacements rather than whole-file rewrites, preserving unrelated test cases and minimizing token usage.
+- **Closed-Loop Self-Repair**: If compilation or test regressions are detected in Gate 2 or Gate 3, targeted diagnostic summaries feed back into the repair controller for up to 2 automated repair rounds.
+- **Local Mock Debug Mode**: Supports offline trial runs without calling external LLM APIs, enabling rapid workflow verification without incurring API fees.
+
+---
+
+## 3. Paper Terminology to Code Mapping
+
+To aid Artifact Evaluation (AEC) and research reproducibility, the following table maps the theoretical concepts defined in the paper directly to their software implementation:
+
+| Paper Term | Conceptual Role | Implementation Class / Method |
+|---|---|---|
+| **Detection Scope** | Project subtrees, packages, and mock object filtering | `DetectionScope`, `DetectionService.scan` |
+| **Mock Logic Extraction** | AST extraction of `Mockito.when(...).thenReturn(...)` | `MockInfoExporter`, `MockAnalyzer` |
+| **Frequent Stub Set Mining** | Co-occurrence pattern mining via the Apriori algorithm | `AprioriMiner`, `MockCloneMiner.FrequentStubSet` |
+| **Mock Clone Instance (MCI)** | Aggregated clone unit comprising multiple test sequences | `MockCloneMiner.formMockCloneInstances` |
+| **Encapsulation & Integration** | Extraction of helper methods and inline replacement | `RefactoringAgent._model_input()`, System Prompt |
+| **Harness Validation** | Sandboxed multi-tier validation gates | `ProjectHarness`, `ScopedProjectHarness`, `HarnessEvidence` |
+
+---
+
+## 4. Environment Prerequisites
+
+- **Java Development Kit (JDK)**: OpenJDK 17 or higher (Eclipse Adoptium Temurin 17 recommended). Ensure `JAVA_HOME` is set.
+- **Build Tool**: Apache Maven 3.9+ or Gradle.
+- **Python**: Python 3.11+ with the modern `uv` package manager.
+- **Supported Operating Systems**: Windows 10/11, macOS, and Linux (native multi-platform paths and scripts included).
+
+---
+
+## 5. Quick Start: Web UI Refactoring Studio
+
+CloneDeMocker v2 includes an IDE-grade visual Refactoring Studio for interactive human-in-the-loop review.
+
+### 5.1 Launching the Studio
+
+**On Windows (PowerShell)**:
 ```powershell
 .\start-ui.ps1
 ```
 
-macOS/Linux 用 bash：
-
+**On macOS / Linux (Bash)**:
 ```bash
 ./start-ui.sh
 ```
 
-两个脚本做的事完全一样（设置 `UV_CACHE_DIR`、`uv run python -m app.server`），检测、重构、验证这几个模块本身（`app/`、`DETECTION/`、`validation/`）已经按操作系统分支处理了 `mvn`/`mvn.cmd`、`java`/`java.exe`、`gradlew`/`gradlew.bat`，不需要额外适配就能跨平台跑。
+Open your browser and navigate to: 👉 **`http://127.0.0.1:8765`**
 
-然后访问 `http://127.0.0.1:8765`。第一次扫描会在需要时构建 `DETECTION` 的可执行 JAR。默认不解析外部依赖，工具仍会读取 Java 源码并用受限语法降级识别 Mockito；勾选“解析项目依赖”后，Maven/Gradle classpath 会通过临时文件读取，不会修改被检测项目的构建文件。
+### 5.2 Key Studio Features
+- **Dual-Mode Diff Inspector**: Seamlessly toggle between **Unified** and **Side-by-Side** views with line-number tracking and multi-file tabs.
+- **Explicit Decision Pipeline**: Review patches with one-click **`[✓ Accept & Apply]`** to write back changes, or **`[✗ Discard]`** to purge candidate proposals and retain a pristine workspace.
+- **Safety & Encoding Guard**: Real-time path inspection alerts for non-ASCII/space characters, plus an interactive **`[🛡️ Env & Safety Check]`** modal displaying active JDK, Python encodings, and platform status.
+- **Bilingual Interface**: Full English / Chinese i18n support toggleable via the header button with local storage persistence.
 
-自动重构默认使用 `gpt-5.6-terra`。单 key 可设置 `OPENAI_API_KEY`；多 key 可设置 JSON 映射并在 UI 输入 profile 名：
+### 5.3 Model Provider Configuration (Optional)
+- **Debug Mode (Zero-Token Local Mode)**: Check the **"Debug Mode"** checkbox in the UI (or pass `useMock: true` in API calls). The agent uses the deterministic mock provider to run through the entire diff and harness pipeline without consuming tokens.
+- **Real LLM Inference**: Set your OpenAI API key in the environment:
+  ```powershell
+  $env:OPENAI_API_KEY = "sk-..."
+  ```
+  Or configure multiple keys via JSON profile mapping:
+  ```powershell
+  $env:CLONEDEMOCKER_OPENAI_KEYS = '{"default":"sk-...","research":"sk-..."}'
+  ```
+
+---
+
+## 6. Headless Experimentation & Paper Evaluation
+
+For automated batch evaluation and replication of the paper's Research Questions (RQ1–RQ4), run the headless pilot driver in `validation/`:
 
 ```powershell
-uv pip install -r app/requirements.txt
-$env:CLONEDEMOCKER_OPENAI_KEYS='{"default":"sk-...","research":"sk-..."}'
+# Run pilot evaluation on benchmark project (e.g., Apache Dubbo)
+uv run python -m validation.run_pilot \
+  --project-dir "D:\Java_projects\Apache\dubbo-3.3.6" \
+  --limit-mcis 5 \
+  --use-mock
 ```
 
-Agent 按 **Encapsulation → Integration → Harness Validation** 执行。候选源码、`changes.diff`、模型 token 用量和机器验证证据写入 `.clonedemocker/runs/<run-id>/refactoring/`。它在隔离副本中执行 compile、test 和可选 PIT；编译或测试失败时，会将诊断交回模型，最多自动修复两次。生成阶段不会覆盖原项目源码。
+- **Scoped Module Acceleration**: `scoped_harness.py` dynamically resolves the minimal affected Maven module (`-pl <module> -am`), avoiding full 100+ module reactor builds.
+- **PIT Mutation Testing**: Executes scoped mutation coverage (`mutationCoverage`) to verify that the refactored test cases preserve original fault-detection sensitivity.
+- **Atomic Failure Rollback**: Any patch that fails compilation, test consistency, or mutation integrity is rolled back atomically, ensuring evaluation stability.
 
-调试链路时可勾选“调试模式”（API 传 `useMock: true`），此时不会调用真实模型、不消耗 token，只原样回填源码走完 diff/harness 全流程，方便反复验证 UI 和链路而不产生费用。
+---
 
-一个 MCI 内部也可以只挑子集 sequence 重构（例如 9 条只选 7 条），在对应 MCI 卡片展开“sequence”列表取消勾选即可；API 对应 `sequenceSelection: { "<mciId>": [mockObjectId, ...] }`，未列出的 MCI 视为全选。注意：被排除的 sequence 所在文件如果和被选中的 sequence 共享同一个源文件，模型仍会看到整份文件内容（用于保持上下文连贯），因此不能保证该文件里被排除部分完全不受影响，只是不会作为重构目标出现在 prompt 的 `selectedMockCloneInstances` 里。
+## 7. Defensive Engineering & Platform Compatibility
 
-## 论文术语与代码 / Paper terminology mapping
+1. **Strict LF Line Endings**: All programmatic writes enforce `newline="\n"`. On Windows hosts, this eliminates spurious CRLF conversions that violate Spotless linter rules in open-source targets.
+2. **ASCII Path Isolation**: In accordance with Windows `sun.jnu.encoding=GBK` constraints, compilation workspaces are dynamically allocated alongside the target project in pure ASCII directories, preventing silent `javac` compilation failures.
+3. **Windows Long Paths**: File operations transparently handle deep directory hierarchies exceeding the 260-character `MAX_PATH` boundary.
 
-| 论文术语 / Paper term | v2 代码 |
-|---|---|
-| Detection Scope | `DetectionScope`, `DetectionService.scan` |
-| Mock Logic Extraction | `MockInfoExporter`, `MockAnalyzer` |
-| Frequent Stub Set Mining | `AprioriMiner`, `MockCloneMiner.FrequentStubSet` |
-| Mock Clone Instance Formation | `MockCloneMiner.formMockCloneInstances` |
-| Encapsulation / Integration | `RefactoringAgent` prompt and state |
-| Harness Validation | `ProjectHarness`, `HarnessEvidence` |
+---
 
-重要实现处同时保留中文和英文注释，便于维护和论文复核。
+## 8. Repository Layout
 
-## 旧版本 artifact / Legacy artifact
+```text
+CloneDeMocker-v2/
+├── app/                        # Python application backend & Refactoring Agent
+│   ├── detection_service.py    # Java detection CLI invocation & caching
+│   ├── harness.py              # Compilation, test, and PIT execution sandbox
+│   ├── model_provider.py       # LLM client abstractions (OpenAI & Mock)
+│   ├── refactoring_agent.py    # Neuro-Symbolic Agent core & prompt synthesis
+│   ├── server.py               # REST API web service (Starlette/Uvicorn)
+│   └── web/                    # Modern bilingual UI (HTML/CSS/JS)
+├── DETECTION/                  # Java/Maven static detection engine
+│   ├── pom.xml                 # Maven build specification
+│   └── src/                    # JavaParser AST extraction & Apriori miner
+├── validation/                 # Headless batch evaluation & paper benchmark harness
+│   ├── run_pilot.py            # Orchestrator for empirical evaluation
+│   ├── scoped_harness.py       # Module-scoped Maven/PIT execution driver
+│   └── reset_workspace.py      # Pristine baseline restoration utility
+├── tests/                      # Automated Python regression test suite
+├── start-ui.ps1                # Windows one-click startup script
+├── start-ui.sh                 # macOS/Linux one-click startup script
+└── pyproject.toml              # Python package & uv configuration
+```
 
-v2 是从原始 CloneDeMocker 仓库复制并重写的，`REFACTORING/`、`DATA/`（旧的手工 prompt 流水线、论文原始实验数据、消融实验 prompt 模板等）不在这个分支里保留副本——它们原样存在于同级的 `../CloneDeMocker` 目录（v2 复制自那里，内容未改动），需要查旧数据或旧 prompt 模板时去那边找。
+---
 
-v2 was copied and rewritten from the original CloneDeMocker repository; `REFACTORING/` and `DATA/` (the old manual prompt pipeline, the paper's original experiment data, the ablation prompt templates, etc.) are not duplicated in this branch — they live unmodified in the sibling `../CloneDeMocker` directory that v2 was copied from.
+## 9. Citation & License
 
-## 重构通过率验证 / Refactoring pass-rate validation
-
-`validation/` 是独立于 `app/` 的验证模块，用真实项目按论文 RQ2.1 的三层标准（编译通过 / 测试结果一致 / PIT 分数不降）跑重构通过率，细节见 `validation/README.md`。
+This project is licensed under the [Apache License 2.0](LICENSE). If you use CloneDeMocker in academic research, please cite our corresponding publication.
