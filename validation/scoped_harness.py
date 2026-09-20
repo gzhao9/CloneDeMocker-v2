@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.harness import ProjectHarness  # noqa: E402
+from studio.harness import ProjectHarness  # noqa: E402
 
 
 class ScopedProjectHarness(ProjectHarness):
@@ -35,6 +35,10 @@ class ScopedProjectHarness(ProjectHarness):
         self.test_classes = sorted(set(test_classes))
         self.modules = sorted(set(modules)) if modules else []
 
+    def expected_test_classes(self) -> list[str]:
+        """Classes that this scoped invocation must prove it actually executed."""
+        return self.test_classes
+
     def _build_commands(self, root: Path) -> tuple[list[str], list[str], list[str] | None] | None:
         base = super()._build_commands(root)
         if base is None:
@@ -53,11 +57,11 @@ class ScopedProjectHarness(ProjectHarness):
             # -Dmaven.repo.local must be re-added to each of the three here, or it gets
             # dropped and silently falls back to the default shared repository.
             repo_args = self._maven_repo_args()
-            # 见 app.harness.ProjectHarness._style_check_skip_args 的说明：论文的
+            # 见 studio.harness.ProjectHarness._style_check_skip_args 的说明：论文的
             # "Syntactic Validity" 指编译器意义上能不能编译，不是某个项目自选的格式检查
             # 插件；而且我们往 pom.xml 注入 PIT 配置会重新序列化整份文件，格式检查会把
             # 这个（语义无关的）差异当成违规。
-            # See app.harness.ProjectHarness._style_check_skip_args: the paper's "Syntactic
+            # See studio.harness.ProjectHarness._style_check_skip_args: the paper's "Syntactic
             # Validity" means compiler-level compilability, not an opt-in style linter's
             # opinion — and injecting PIT config into pom.xml re-serializes the whole file,
             # which a style check would flag as a (semantically irrelevant) violation.

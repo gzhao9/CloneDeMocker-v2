@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -32,28 +33,78 @@ class ModelProvider(Protocol):
         ...
 
 
+_STUB_MARKER = "// CloneDeMocker debug stub / 本地调试桩产生的改动，不是真实重构"
+
+
+def _package_edit(path: str, content: str) -> dict[str, Any] | None:
+    """在 `package x.y;` 行后插一条注释：Java 里合法，且该行在文件内天然唯一。
+    Appends a comment after the `package x.y;` line: legal Java, and that line is
+    naturally unique within a file, so it satisfies the edit protocol."""
+    match = re.search(r"(?m)^\s*package\s+[\w.]+\s*;", content or "")
+    if match is None:
+        return None
+    old = match.group(0)
+    return {"path": path, "oldString": old, "newString": f"{old}\n{_STUB_MARKER}", "replaceAll": False}
+
+
 class MockModelProvider:
     """本地调试用桩实现，不消耗 token，也不发起网络请求。
     Debug stub that never calls out to a real model or spends tokens.
 
-    对每个源文件原样返回（可选前缀一行标记注释），用于在不消耗
-    真实 API 配额的情况下练习 Encapsulation/Integration/Harness 全链路。
-    Echoes each source file back unchanged (optionally with a marker
-    comment), so the full pipeline (diff, harness, repair loop wiring)
-    can be exercised without spending real API quota.
+    产出**真实可应用**的最小编辑（在 package 行后加一行注释，或给某条 mock 语句
+    加行尾注释），而不是原样回显源码——回显出来的内容与原文件逐字节相同，会被
+    `_apply_edits` 的"拒绝未改动内容"判定挡掉，等于这条调试路径从设计上就跑不通。
+    改动本身是合法 Java，所以 harness 的编译/测试环节也能真的走一遍。
+    Produces a **genuinely applicable** minimal edit (a comment after the package
+    line, or a trailing comment on a mock statement) instead of echoing the source
+    back — an echo is byte-identical to the original and is rejected by
+    `_apply_edits`'s reject-unchanged rule, which made this debug path structurally
+    incapable of succeeding. The edit is legal Java, so the harness's compile/test
+    stages exercise a real build too.
     """
 
     def generate(self, instructions: str, input_text: str, model: str) -> ModelResult:
         request = json.loads(input_text)
-        files = [
-            {"path": entry["path"], "newContent": entry["content"]}
-            for entry in request.get("sourceFiles", [])
-        ]
+        stage = request.get("stage", "")
+        verbatim = request.get("verbatim") or {}
+        facts = request.get("facts") or {}
+        edits: list[dict[str, Any]] = []
+        extra: dict[str, Any] = {}
+
+        if stage == "INTEGRATION":
+            # 只拿到单个测试方法，没有整份文件。整段方法在文件里天然唯一，拿它当
+            # oldString 就不必去猜哪一行能唯一定位。
+            # Only one test method is supplied, not the whole file. A whole method is
+            # naturally unique there, so using it as the oldString avoids guessing which
+            # single line can be addressed uniquely.
+            method = verbatim.get("testMethod") or {}
+            text = str(method.get("text", ""))
+            if text.strip():
+                marked = text.rstrip("\n") + f"  {_STUB_MARKER}\n"
+                edits.append({"path": method.get("path", ""), "oldString": text,
+                              "newString": marked, "replaceAll": False})
+        elif stage == "ENCAPSULATION":
+            target = verbatim.get("targetFile") or {}
+            edit = _package_edit(str(target.get("path", "")), str(target.get("content", "")))
+            if edit is not None:
+                edits.append(edit)
+            extra = {"reusableCode": _STUB_MARKER, "newFieldName": str(facts.get("variableName", ""))}
+        else:
+            # 修复轮次：原样退回收到的提案，让上层的重试预算照常走完。
+            # A repair round: hand back the proposal as received so the caller's retry
+            # budget still plays out normally.
+            current = request.get("currentProposal") or {}
+            edits = list(current.get("edits") or [])
+
         response = {
-            "canRefactor": True,
-            "reason": "mock provider / 本地调试桩，未调用真实模型",
-            "summary": "mock provider returned files unchanged / 桩实现原样返回源码",
-            "files": files,
+            "canRefactor": bool(edits),
+            "reason": ("mock provider / 本地调试桩，未调用真实模型" if edits else
+                       "debug stub found nothing it could address uniquely / 调试桩未找到可唯一定位的改动点"),
+            "summary": "debug stub inserted a marker comment / 调试桩插入了一行标记注释",
+            "caveat": "Not a real refactoring / 这不是真实重构结果",
+            "edits": edits,
+            "newFiles": [],
+            **extra,
         }
         return ModelResult(
             text=json.dumps(response, ensure_ascii=False),
@@ -71,7 +122,10 @@ class OpenAIModelProvider:
         try:
             from openai import OpenAI
         except ImportError as error:
-            raise RuntimeError("Install the openai package / 请安装 openai 包") from error
+            raise RuntimeError(
+                "OpenAI SDK is missing. Restart the UI with start-ui.ps1 so uv can sync project dependencies; "
+                "or run `uv sync`. / 缺少 OpenAI SDK：请用 start-ui.ps1 重启 UI 以同步依赖，或执行 `uv sync`。"
+            ) from error
         self.client = OpenAI(api_key=api_key, base_url=base_url)
 
     def generate(self, instructions: str, input_text: str, model: str) -> ModelResult:

@@ -31,4 +31,14 @@ class DetectionScopeTest {
         assertTrue(scope.includesPackage("demo.feature.service"));
         assertFalse(scope.includesPackage("demo.features"));
     }
+
+    @Test
+    void projectRootSelectionIncludesEveryProjectFile() throws Exception {
+        Path source = Files.createDirectories(root.resolve("module/src/test/java/demo"));
+        Path test = Files.writeString(source.resolve("RootSelectedTest.java"), "package demo;");
+        DetectionScope scope = new DetectionScope();
+        scope.includePaths = List.of(".");
+
+        assertTrue(scope.includesFile(root, test));
+    }
 }

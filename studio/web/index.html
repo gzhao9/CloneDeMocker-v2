@@ -41,29 +41,29 @@
       <button class="step active" data-step="1" type="button">
         <span class="step-number">1</span>
         <div class="step-content">
-          <span class="step-label" data-i18n="step1_title">Detection Scope</span>
-          <span class="step-sub" data-i18n="step1_sub">Project & Files</span>
+          <span class="step-label">Project & environment</span>
+          <span class="step-sub">Choose a verified runner</span>
         </div>
       </button>
       <button class="step" data-step="2" type="button">
         <span class="step-number">2</span>
         <div class="step-content">
-          <span class="step-label" data-i18n="step2_title">Mock Objects</span>
-          <span class="step-sub" data-i18n="step2_sub">Candidate Pool</span>
+          <span class="step-label">Discovery</span>
+          <span class="step-sub">Advanced Mock pool</span>
         </div>
       </button>
       <button class="step" data-step="3" type="button">
         <span class="step-number">3</span>
         <div class="step-content">
-          <span class="step-label" data-i18n="step3_title">Clone Instances</span>
-          <span class="step-sub" data-i18n="step3_sub">MCI Clustering</span>
+          <span class="step-label">Candidates</span>
+          <span class="step-sub">Review one or batch selected clones</span>
         </div>
       </button>
       <button class="step" data-step="4" type="button">
         <span class="step-number">4</span>
         <div class="step-content">
-          <span class="step-label" data-i18n="step4_title">Refactoring Studio</span>
-          <span class="step-sub" data-i18n="step4_sub">Diff & Decision</span>
+          <span class="step-label">Execute & review</span>
+          <span class="step-sub">Full-project regression gate</span>
         </div>
       </button>
     </nav>
@@ -74,21 +74,36 @@
         <div class="title-group">
           <span class="panel-badge">01</span>
           <div>
-            <h2 data-i18n="panel1_title">Establish Detection Scope</h2>
-            <p class="panel-desc" data-i18n="panel1_desc">Select target project directories, specific packages, or individual Java test suites.</p>
+            <h2>Project and execution environment</h2>
+            <p class="panel-desc">Choose the project first. Each refactoring verifies an isolated baseline before any model call, scoped to the modules that MCI actually touches.</p>
           </div>
         </div>
       </div>
+      <section class="readiness-card hidden" id="readiness-card" aria-label="Verification readiness">
+        <div>
+          <span class="eyebrow-local">EXECUTION RUNNER</span>
+          <h3>Choose where verification runs</h3>
+          <p id="runner-description">Local runner uses an isolated workspace beside the project. SAG integration is not connected yet.</p>
+        </div>
+        <div class="runner-actions">
+          <label><span>Runner</span><select id="execution-runner"><option value="local">Local (available)</option><option value="sag" disabled>SAG container (not connected)</option></select></label>
+        </div>
+        <div class="baseline-status" id="baseline-status">Choose a project root to continue.</div>
+      </section>
       <div class="project-row">
         <label>
           <span data-i18n="proj_root_label">Java Project Root</span>
           <small data-i18n="proj_root_sub">Absolute path without Chinese characters recommended</small>
           <input id="project-root" data-i18n-ph="proj_root_ph" placeholder="C:\projects\my-java-project">
         </label>
+        <button class="secondary" id="browse-root" type="button">
+          <span data-i18n="btn_browse">📁 Browse…</span>
+        </button>
         <button class="primary" id="load-tree" type="button">
           <span data-i18n="btn_load_tree">Load File Tree</span>
         </button>
       </div>
+      <script>/* readiness card is revealed by app.js only after a project is chosen */</script>
       <!-- Real-time Path Warning Box for Windows Encoding Safety -->
       <div class="path-warning hidden" id="path-warning-box">
         <span>⚠️</span>
@@ -99,12 +114,28 @@
           </span>
         </div>
       </div>
+      <!-- Preflight verdict: decided the moment a project root is chosen, before any
+           scan, MCI selection or model call, so a bad environment costs nothing. -->
+      <div class="path-warning hidden" id="preflight-box">
+        <span id="preflight-icon">⚠️</span>
+        <div class="preflight-body">
+          <strong id="preflight-title"></strong>
+          <div id="preflight-findings"></div>
+          <div id="preflight-actions"></div>
+          <details class="preflight-probe hidden" id="preflight-probe">
+            <summary data-i18n="preflight_probe_toggle">Build probe output</summary>
+            <pre class="diagnostics" id="preflight-probe-output"></pre>
+          </details>
+        </div>
+      </div>
 
       <div class="scope-grid">
         <div class="tree-card">
           <div class="card-toolbar">
             <strong data-i18n="tree_title">Java Source Tree</strong>
             <div>
+              <button class="text-button" id="expand-all-tree" type="button" data-i18n="btn_expand_all">Expand All</button>
+              <button class="text-button" id="collapse-all-tree" type="button" data-i18n="btn_collapse_all">Collapse All</button>
               <button class="text-button" id="select-all-files" type="button" data-i18n="btn_select_all">Select All</button>
               <button class="text-button" id="clear-files" type="button" data-i18n="btn_clear_all">Clear</button>
             </div>
@@ -124,9 +155,9 @@
           </label>
           <label class="toggle">
             <input type="checkbox" id="resolve-dependencies">
-            <span data-i18n="toggle_deps">Resolve Maven/Gradle Dependencies</span>
+            <span data-i18n="toggle_deps">Enhanced Maven/Gradle Type Resolution (Optional)</span>
           </label>
-          <p class="hint" data-i18n="hint_deps">When enabled, resolves external classpath via temporary files without modifying your build files.</p>
+          <p class="hint" data-i18n="hint_deps">Does not compile the project. It only reads the test classpath for more precise type names; mock detection always falls back to source-only analysis if this step is skipped or fails.</p>
         </div>
       </div>
       <div class="action-row">
@@ -142,8 +173,8 @@
         <div class="title-group">
           <span class="panel-badge">02</span>
           <div>
-            <h2 data-i18n="panel2_title">Select Mock Objects Pool</h2>
-            <p class="panel-desc" data-i18n="panel2_desc">Filter and exclude objects you do not wish to participate in Frequent Stub Set Mining.</p>
+            <h2>Discovery diagnostics</h2>
+            <p class="panel-desc">This is an advanced pool for narrowing analysis. The primary review unit is the Mock Clone Instance in the next step.</p>
           </div>
         </div>
         <div class="metric">
@@ -151,11 +182,33 @@
           <span data-i18n="metric_selected_mocks">Selected / Available</span>
         </div>
       </div>
+      <div class="scan-warning hidden" id="scan-zero-warning">
+        <span>⚠️</span>
+        <span data-i18n="warning_zero_mocks">No mock objects were found in the selected scope. Expand the scan log below to see why (e.g. files skipped due to parse/resolution errors, or no Mockito imports in scope).</span>
+      </div>
+      <details class="scan-diagnostics hidden" id="scan-diagnostics">
+        <summary data-i18n="scan_log_toggle">Scan Log / Diagnostics</summary>
+        <pre class="diagnostics" id="scan-diagnostics-content"></pre>
+      </details>
       <div class="card-toolbar">
-        <div class="search-wrapper">
+        <div class="mock-filters">
+          <div class="search-wrapper">
           <input class="search" id="mock-search" data-i18n-ph="mock_search_ph" placeholder="Filter by type, variable, file, or method...">
+          </div>
+          <select id="mock-role-filter" aria-label="Mock role filter">
+            <option value="all" data-i18n="filter_all_roles">All roles</option>
+            <option value="mock" data-i18n="filter_mocks">Mocks only</option>
+            <option value="spy" data-i18n="filter_spies">Spies only</option>
+          </select>
+          <select id="mock-location-filter" aria-label="Test location filter">
+            <option value="all" data-i18n="filter_all_locations">All locations</option>
+            <option value="test" data-i18n="filter_test_locations">Used in test cases</option>
+            <option value="other" data-i18n="filter_other_locations">Other locations</option>
+          </select>
         </div>
         <div>
+          <button class="text-button" id="select-all-mocks" type="button" data-i18n="btn_select_all_mocks">Select All</button>
+          <button class="text-button" id="clear-all-mocks" type="button" data-i18n="btn_clear_all_mocks">Deselect All</button>
           <button class="text-button" id="select-visible" type="button" data-i18n="btn_select_visible">Select Visible</button>
           <button class="text-button" id="clear-visible" type="button" data-i18n="btn_clear_visible">Deselect Visible</button>
         </div>
@@ -187,8 +240,8 @@
         <div class="title-group">
           <span class="panel-badge">03</span>
           <div>
-            <h2 data-i18n="panel3_title">Mock Clone Instances (MCIs)</h2>
-            <p class="panel-desc" data-i18n="panel3_desc">Discovered recurring mock setup clusters. Choose instances to submit to the Refactoring Agent.</p>
+            <h2>Refactoring candidates</h2>
+            <p class="panel-desc">Inspect source evidence, then either review one MCI or generate one verified proposal for all selected candidates.</p>
           </div>
         </div>
         <div class="metric">
@@ -196,10 +249,29 @@
           <span data-i18n="metric_mcis_found">MCIs Discovered</span>
         </div>
       </div>
+      <div class="mci-filters">
+        <input class="search" id="mci-search" placeholder="Filter by class, file, or shared stub">
+        <label>Mode <select id="mci-execution-mode"><option value="batch">Batch selected MCIs</option><option value="single">Review one MCI</option></select></label>
+        <label>Min test cases <input type="number" id="mci-min-sequences" min="2" value="2"></label>
+        <label>Min shared stubs <input type="number" id="mci-min-stubs" min="0" value="0"></label>
+        <button class="text-button" id="select-visible-mcis" type="button">Add all filtered</button>
+      </div>
+      <p class="selection-note" id="mci-pool-note">Candidates matching the filter. Adding one moves it to the run list below.</p>
       <div id="mci-list" class="mci-list"></div>
+
+      <div class="run-list" id="mci-run-list-panel">
+        <div class="run-list-head">
+          <button class="run-list-toggle" id="mci-run-list-toggle" type="button" aria-expanded="false">
+            <span class="run-list-caret" aria-hidden="true">▸</span>
+            <strong id="mci-selection-note">Nothing selected yet</strong>
+          </button>
+          <button class="text-button" id="clear-visible-mcis" type="button">Clear all</button>
+        </div>
+        <div id="mci-run-list" class="run-list-items collapsed"></div>
+      </div>
       <div class="action-row">
         <button class="secondary" id="back-objects" type="button" data-i18n="btn_back_objects">← Back to Object Pool</button>
-        <button class="primary large" id="prepare-refactor" type="button" data-i18n="btn_prepare_refactor">Prepare Refactoring Agent →</button>
+        <button class="primary large" id="prepare-refactor" type="button" disabled>Prepare selected candidates →</button>
       </div>
     </section>
 
@@ -226,6 +298,21 @@
           <input id="api-profile" value="default">
         </label>
       </div>
+      <section class="execution-plan" id="execution-plan">
+        <div><strong>Execution plan</strong><span id="cache-status">Cache: checking selected MCI fingerprint…</span></div>
+        <label>Maximum repair attempts <input id="max-retries" type="number" min="0" max="5" value="2"></label>
+        <small>0 means one API proposal only; no edit or harness repair calls. Cached proposals are revalidated before they can be applied.</small>
+        <fieldset class="cache-choice hidden" id="cache-choice">
+          <legend>A matching verified proposal is available</legend>
+          <label><input type="radio" name="cache-policy" value="use" checked> Load and revalidate cache (saves tokens)</label>
+          <label><input type="radio" name="cache-policy" value="fresh"> Generate a new proposal</label>
+        </fieldset>
+      </section>
+      <section class="validation-plan">
+        <strong>Verification plan</strong>
+        <span>Baseline and candidate both run compilation plus the whole-project regression suite.</span>
+        <span>Selected test classes must appear in test reports. PIT may drop by at most 5 percentage points.</span>
+      </section>
       <label class="agent-instruction">
         <span data-i18n="instruction_label">Custom Instructions</span>
         <small data-i18n="instruction_sub">Optional / e.g., 'Extract helper method into private scope within the same test class'</small>
@@ -233,7 +320,7 @@
       </label>
       <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
         <label class="toggle">
-          <input type="checkbox" id="run-pit">
+          <input type="checkbox" id="run-pit" checked>
           <span data-i18n="toggle_pit">Run PIT Mutation Testing (Higher runtime overhead)</span>
         </label>
         <label class="toggle">
@@ -248,6 +335,7 @@
 
       <!-- Result Container (IDE-grade Workbench) -->
       <div id="agent-result" class="agent-result hidden">
+        <nav class="proposal-queue hidden" id="proposal-queue" aria-label="MCI proposal results"></nav>
         <div id="result-summary-box"></div>
         <div id="result-metrics-box"></div>
         <div id="result-diagnostics-box"></div>
@@ -277,6 +365,10 @@
             <span class="decision-badge badge-pending" id="decision-badge" data-i18n="status_awaiting_review">Awaiting Review</span>
           </div>
           <div class="decision-actions">
+            <button class="secondary" id="btn-export-data" type="button" title="Merge this batch into data/ for the paper">
+              <span>💾</span>
+              <span data-i18n="btn_export_data">Save report to data/</span>
+            </button>
             <button class="danger-btn" id="btn-discard-proposal" type="button">
               <span>✗</span>
               <span data-i18n="btn_discard">Discard Proposal</span>
@@ -314,7 +406,39 @@
     </div>
   </div>
 
+  <dialog id="cache-prompt">
+    <h3 id="cache-prompt-title">Existing refactoring proposals found</h3>
+    <p id="cache-prompt-body"></p>
+    <div class="cache-prompt-actions">
+      <button type="button" id="cache-prompt-reuse" class="primary">Use cache</button>
+      <button type="button" id="cache-prompt-fresh">Clear cache and regenerate</button>
+      <button type="button" id="cache-prompt-cancel" class="ghost">Cancel</button>
+    </div>
+  </dialog>
   <div id="toast" role="status"></div>
+  <div id="progress-overlay" class="progress-overlay hidden" role="status" aria-live="polite" aria-busy="true">
+      <div class="progress-card">
+      <div class="progress-spinner" aria-hidden="true"></div>
+      <div>
+        <strong id="progress-title">Working…</strong>
+        <p id="progress-detail">This can take several minutes for a large project.</p>
+        <span id="progress-elapsed">Elapsed: 0s</span>
+        <div class="progress-tally" id="progress-tally" hidden>
+          <span class="tally ok"><strong id="tally-succeeded">0</strong><small>succeeded</small></span>
+          <span class="tally bad"><strong id="tally-failed">0</strong><small>failed</small></span>
+        </div>
+        <div class="progress-meter">
+          <span class="progress-meter-label"><span id="progress-current-label">Progress</span><span class="meter-right"><b id="progress-current-position"></b><em id="progress-current-percent">0%</em></span></span>
+          <div class="progress-track"><div class="progress-bar" id="progress-bar"></div></div>
+        </div>
+        <div class="progress-meter" id="progress-overall-meter" hidden>
+          <span class="progress-meter-label">Overall<span class="meter-right"><b id="progress-overall-position"></b><em id="progress-percent">0%</em></span></span>
+          <div class="progress-track"><div class="progress-bar overall" id="progress-bar-overall"></div></div>
+        </div>
+        <div class="progress-log" id="progress-log" aria-label="Run log"></div>
+      </div>
+    </div>
+  </div>
   <script src="/app.js"></script>
 </body>
 </html>

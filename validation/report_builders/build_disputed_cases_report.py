@@ -11,7 +11,11 @@ Pygments, rendered to PNG, and embedded as images (fpdf2 has no native
 syntax-highlighting text mode). Experimental plumbing (run IDs, PIT
 internals, batch progress) is intentionally left out -- this is a case-study
 explainer, not a lab notebook.
+
+用法 / Usage:
+    uv run --with pygments --with fpdf2 --with Pillow python validation/report_builders/build_disputed_cases_report.py
 """
+import tempfile
 from pathlib import Path
 from pygments import highlight
 from pygments.lexers import JavaLexer
@@ -19,8 +23,9 @@ from pygments.formatters import ImageFormatter
 from PIL import Image
 from fpdf import FPDF
 
-OUT_PATH = Path(r"D:\CloneDeMocker-v2-transfer-20260914\CloneDeMocker-v2\validation\results\disputed-and-failed-cases-20260917.pdf")
-IMG_DIR = Path(r"C:\Users\ITGXUser\AppData\Local\Temp\claude\d--CloneDeMocker-v2-transfer-20260914\bf7419b6-3a32-4b6a-9188-46e8427b9bcc\scratchpad\code_imgs")
+REPO_ROOT = Path(__file__).resolve().parents[2]
+OUT_PATH = REPO_ROOT / "reports" / "disputed-and-failed-cases-20260917.pdf"
+IMG_DIR = Path(tempfile.mkdtemp(prefix="clonedemocker_report_imgs_"))
 IMG_DIR.mkdir(parents=True, exist_ok=True)
 
 NAVY = (30, 41, 59)
@@ -837,5 +842,6 @@ case_block(
     ok=False, failure=True,
 )
 
+OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 pdf.output(str(OUT_PATH))
 print(f"wrote {OUT_PATH}")

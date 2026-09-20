@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Builds the Dubbo 3.3.6 validation report PDF (chart + tables + planned ablation)."""
+"""Builds the Dubbo 3.3.6 validation report PDF (chart + tables + planned ablation).
+
+Superseded by build_final_report.py (Part 1 covers the same comparison, plus case
+studies and the ablation plan) -- kept here only as a reference for how the original
+chart/table numbers were produced, not part of the regular report workflow.
+
+用法 / Usage:
+    uv run --with matplotlib --with numpy --with fpdf2 python validation/report_builders/legacy/build_report.py
+"""
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -7,7 +15,8 @@ import numpy as np
 from fpdf import FPDF
 from pathlib import Path
 
-OUT_DIR = Path(r"D:\CloneDeMocker-v2-transfer-20260914\CloneDeMocker-v2\validation\results")
+REPO_ROOT = Path(__file__).resolve().parents[3]
+OUT_DIR = REPO_ROOT / "validation" / "results"
 CHART_PATH = OUT_DIR / "success_rate_chart.png"
 PDF_PATH = OUT_DIR / "dubbo-3.3.6-validation-report-20260916.pdf"
 

@@ -68,6 +68,12 @@ public class DetectionScope {
             while (candidate.endsWith("/")) {
                 candidate = candidate.substring(0, candidate.length() - 1);
             }
+            // The UI represents the project-root checkbox as ".".  Treat it as the
+            // whole project rather than trying to match source paths such as
+            // "module/src/test/..." against "./".
+            if (candidate.equals(".")) {
+                return true;
+            }
             if (relativePath.equals(candidate) || relativePath.startsWith(candidate + "/")) {
                 return true;
             }

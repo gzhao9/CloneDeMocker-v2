@@ -62,9 +62,23 @@ public class EnhancedProjectResolver {
     private static List<Path> resolveMavenClasspath(Path root) throws IOException, InterruptedException {
         Path output = Files.createTempFile("clonedemocker-maven-classpath-", ".txt");
         try {
-            String executable = isWindows() ? "mvn.cmd" : "mvn";
-            run(List.of(executable, "dependency:build-classpath", "-DincludeScope=test",
-                    "-Dmdep.outputFile=" + output.toAbsolutePath()), root);
+            Path wrapper = root.resolve(isWindows() ? "mvnw.cmd" : "mvnw");
+            String executable = Files.isRegularFile(wrapper) ? wrapper.toString() : (isWindows() ? "mvn.cmd" : "mvn");
+            List<String> command = new ArrayList<>();
+            command.add(executable);
+            String localRepository = System.getenv("CLONEDEMOCKER_MAVEN_REPO");
+            if (localRepository == null || localRepository.isBlank()) {
+                String userProfile = System.getenv("USERPROFILE");
+                if (userProfile != null && !userProfile.isBlank()) {
+                    localRepository = Path.of(userProfile, ".m2", "repository").toString();
+                }
+            }
+            if (localRepository != null && !localRepository.isBlank()) {
+                command.add("-Dmaven.repo.local=" + localRepository);
+            }
+            command.addAll(List.of("dependency:build-classpath", "-DincludeScope=test",
+                    "-Dmdep.outputFile=" + output.toAbsolutePath()));
+            run(command, root);
             String classpath = Files.exists(output) ? Files.readString(output, StandardCharsets.UTF_8).trim() : "";
             if (classpath.isEmpty()) return List.of();
             return Arrays.stream(classpath.split(java.util.regex.Pattern.quote(File.pathSeparator)))
@@ -123,7 +137,8 @@ public class EnhancedProjectResolver {
         String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         int exitCode = process.waitFor();
         if (exitCode != 0) {
-            System.err.println("[WARN] Classpath command failed / 依赖解析命令失败 (" + exitCode + ")\n" + output);
+            System.err.println("[WARN] Classpath command failed; continuing with source-only type resolution / "
+                    + "依赖解析命令失败，已继续使用纯源码类型解析 (" + exitCode + ")\n" + output);
         }
         return output;
     }

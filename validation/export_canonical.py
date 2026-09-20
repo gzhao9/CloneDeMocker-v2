@@ -37,8 +37,13 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
-def safe_mci_filename(mci_id: str) -> str:
-    return re.sub(r"[^A-Za-z0-9_.-]", "_", mci_id) + ".diff"
+# 合并规则只保留一份实现：UI 的导出接口与这个脚本共用 studio.canonical_store，
+# 否则两条路各写一套，迟早在"哪些 MCI 被保留、哪些被覆盖"上悄悄分叉。
+# One implementation of the merge rules: the UI export endpoint and this script share
+# studio.canonical_store, or the two paths would each grow their own and drift on which MCIs
+# are kept and which are overwritten.
+sys.path.insert(0, str(REPO_ROOT))
+from studio.canonical_store import safe_mci_filename  # noqa: E402
 
 
 def find_diff(proposal_id: str) -> Path | None:

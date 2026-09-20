@@ -16,16 +16,26 @@ transfer package.
 
 - `DETECTION/`: Maven/Java detector. Flow: mock-logic extraction -> frequent
   stub-set mining -> MCI formation. Its CLI/export JSON feeds the Python app.
-- `app/`: Python API/UI backend and the operational pipeline.
-  `detection_service.py` invokes detection; `refactoring_agent.py` chooses an
-  MCI, prepares the model payload, applies the edit; `harness.py` compiles and
-  tests the target project; `model_provider.py` has real and mock providers.
-- `app/web/`: browser UI. Start with `start-ui.ps1` on Windows or
+- `studio/`: Python API/UI backend and the operational pipeline (formerly
+  `app/`, renamed 2026-09-18 for clarity -- it's the interactive product, not
+  a generic "app"). `detection_service.py` invokes detection;
+  `refactoring_agent.py` chooses an MCI and drives the staged pipeline;
+  `harness.py` compiles and tests the target project; `model_provider.py` has
+  real and mock providers. Three modules support the staged pipeline:
+  `prompts/` (the five stage prompts plus the shared edit protocol),
+  `payloads.py` (whitelist payload construction and the pre-send verbatim
+  assertion) and `source_map.py` (maps the detector's normalized text back to
+  real source offsets); `mechanical.py` performs the model-free branch.
+- `studio/web/`: browser UI. Start with `start-ui.ps1` on Windows or
   `start-ui.sh` on Unix-like systems.
-- `validation/`: separate pilot/real-project validation tooling. Do not merge
-  it into `app/`. `run_pilot.py` orchestrates, `scoped_harness.py` limits
-  Maven/PIT to the relevant module, and `reset_workspace.py` restores a shared
-  validation copy.
+- `validation/`: separate pilot/real-project validation tooling, organized by
+  pipeline stage (collection / analysis / `report_builders/` / `notes/`), not
+  by paper RQ number -- RQ boundaries may shift, directory structure shouldn't
+  have to follow. Do not merge it into `studio/`. `run_pilot.py` orchestrates,
+  `scoped_harness.py` limits Maven/PIT to the relevant module, and
+  `reset_workspace.py` restores a shared validation copy. Every script here
+  must run standalone from the command line -- nothing in this project's
+  workflow may depend on an AI coding assistant session being present.
 - `tests/`: Python tests. Run: `uv run --with pytest python -m pytest tests/ -q`.
 
 ## Current state that must be preserved
@@ -38,7 +48,7 @@ transfer package.
   subprocess `cwd`, LF source writes (to satisfy Spotless), and a one-hour
   harness timeout.
 - For real Java projects, isolated workspaces must be placed beside the target
-  project (for example `C:\\Java_projects\\Apache\\.clonedemocker-workspaces`),
+  project (for example `D:\\Java_projects\\Apache\\.clonedemocker-workspaces`),
   not beneath a tool path containing Chinese characters: Maven/JDK native path
   encoding otherwise can cause silent compilation failures on Windows.
 - A real non-mock validation succeeded for Dubbo 3.3.6, MCI
@@ -53,7 +63,7 @@ produced), these are done and covered by `tests/test_refactoring_agent.py`
 and `tests/test_harness.py` (11 tests, all passing via
 `uv run --with pytest python -m pytest tests/ -q`):
 
-- `app/refactoring_agent.py::_model_input()` no longer sends the same
+- `studio/refactoring_agent.py::_model_input()` no longer sends the same
   test-method source three times; `_strip_duplicate_source()` removes the
   sequence-level `testMethodRawCode` and the nested
   `rawStatementInfo[*].locationContext.methodRawCode` copies before building
@@ -61,7 +71,7 @@ and `tests/test_harness.py` (11 tests, all passing via
 - `_validate_replacements()` rejects a "replacement" whose content is
   byte-identical to the original file, so a model echoing the source back no
   longer counts as a successful edit.
-- `app/harness.py` parses PIT's `mutations.xml` (now requested via
+- `studio/harness.py` parses PIT's `mutations.xml` (now requested via
   `-DoutputFormats=XML`) into per-status counts, a mutation score, and a
   mutant-identity -> status map; `mutation_regressed()` fails a candidate if
   any mutant killed in the baseline is not killed in the candidate (stronger
@@ -90,9 +100,71 @@ still each implement their own (structurally similar) repair loop. This was
 judged lower priority than the credibility fixes above given the two-week
 FSE timeline; revisit after the Dubbo validation run if there's time.
 
-This sandbox has no Java/Maven on `PATH`, so none of the above could be
-exercised end-to-end against a real Maven project here — only unit-tested.
-Run `validation/run_pilot.py` for real once Dubbo 3.3.6 is available.
+## Staged refactoring pipeline (2026-09-20)
+
+`RefactoringAgent` no longer sends one model call per MCI. It now runs the
+paper's two steps as actual execution structure: one encapsulation call per
+MCI, then one integration call per sequence, routed across the five prompts in
+`studio/prompts/`. The "no shared stubbing" branch runs in `mechanical.py`
+without any model call (94/94 of Dubbo's cases, reproducibly). Measured on
+Dubbo 3.3.6: 471 calls instead of 123, but total input grows only 19% and the
+largest single payload halves, because each call sees one test method rather
+than every source file of the MCI.
+
+Two things this replaced, both worth not reintroducing:
+
+- The detector's `testMethodRawCode` / `testMockLines` are a **normalized
+  view**, not source text: class-level indentation stripped, CRLF instead of
+  the files' LF, wrapped statements joined with the whitespace deleted, and a
+  trailing comment sometimes moved in front of its statement. None of Dubbo's
+  94 test methods can be found byte-for-byte in their own file. Anything that
+  becomes an `oldString` must therefore come from `source_map.py`, never from
+  the detector. The old single-call path avoided this only because
+  `_strip_duplicate_source()` happened to drop the method text.
+- Payload construction is a **whitelist** (`payloads.py`), not a blacklist.
+  The old filter removed two known-harmful fields and let everything else
+  through, so 631 of 1587 code strings (40%) in a payload were not verbatim.
+  `verbatim_failures()` now asserts before every send that each code string
+  occurs in the file it names, and refuses to send otherwise.
+
+Java 17 and Maven 3.9.9 are on `PATH` here, and Dubbo 3.3.6, cloudstack,
+druid and dubbo-3.2.0 are checked out under `D:\\Java_projects\\Apache\\`. The
+staged pipeline has been verified against all 123 MCIs of the real detector
+output for payload construction, location and the model-free branch, but has
+not yet been run end-to-end against a live model or a full Maven build.
+
+## Scoped verification and the shared workspace (2026-09-20)
+
+Verification no longer builds the whole reactor for a change that touches one
+or two test files. `ProjectHarness.validate()` takes a `BuildScope`, and
+`RefactoringAgent` computes it from the selected MCI before the baseline runs,
+so compile, test and PIT all carry `-pl <modules> -am`. The scope is recorded
+on the evidence (`HarnessEvidence.scope`) and shown in the UI, because once
+narrowed "tests passed" no longer means the whole project passed.
+
+Three things that had to change together, and should not be undone singly:
+
+- **The pre-flight baseline is gone.** It ran from its own `/api/baseline/*`
+  endpoints before the user had selected an MCI, so it could not know which
+  modules were involved and always compiled all 124 Dubbo modules. Scoping is
+  only possible once the MCI is known, which is why the baseline now lives
+  inside `run()` and nowhere else.
+- **A batch shares one workspace** (`workspace_id`). `_copy_project` excludes
+  `target/`, so a copy per MCI meant a cold compile per MCI — N MCIs, N cold
+  compiles. Only the first now pays it.
+- **Each MCI restores the files it touched**, in a `finally` around `_run()`.
+  Without this the shared workspace would hand the next MCI the previous one's
+  edits as its baseline, and the MCIs would stop being independent.
+
+`-pl X -am` builds what X depends on, not what depends on X. That is a blind
+spot when X publishes a test-jar, which three Dubbo modules consume
+(`dubbo-rest-jaxrs`, `dubbo-rest-spring`, `dubbo-rpc-triple`), so
+`_has_test_jar_consumer()` adds `-amd` for those cases.
+
+PIT remains opt-in (`run_pit`, default off; the UI's `#run-pit` checkbox), and
+`classify_transition()` treats `NOT_RUN` as neither pass nor fail, so skipping
+it for a large batch leaves that tier honestly unverified rather than silently
+green.
 
 ## Configuration and safety
 
@@ -109,3 +181,36 @@ Run `validation/run_pilot.py` for real once Dubbo 3.3.6 is available.
 
 Start with `README.md`; then read `validation/README.md` for validation work.
 `项目接力.md` in the transfer package is the longer Chinese session record.
+
+## Resumable runs and the canonical dataset (2026-09-20)
+
+Two things make a long batch survivable, and they work together.
+
+`studio/canonical_store.py` merges a run into `data/<project>/` **by mciId**, keeping every
+MCI this run did not touch. A 99-MCI batch therefore need not finish in one sitting: stop at
+the 60th, run the remaining 39 later, and the two splice into one dataset. The UI exposes this
+as "Save report to data/" (`/api/refactoring/export`); `validation/export_canonical.py` shares
+the same module so the CLI and the UI cannot drift on which entries are kept or replaced.
+Until this existed, UI results lived only in the server process and a restart lost them.
+
+`studio/verification_ledger.py` records verifications that passed, keyed on source fingerprint
+plus scope plus PIT setting plus pipeline generation. The baseline is the big win: MCIs in one
+module verify over byte-identical sources, so 40 MCIs in one module previously meant 40
+identical baseline runs. Candidate entries additionally key on the patch fingerprint.
+
+Three properties of the ledger are deliberate and should not be relaxed:
+
+- **Only passing verifications are recorded.** A failure is usually environmental (an
+  unresolved dependency, a busy port), and recording it would make one transient fault
+  permanent.
+- **Every reused tier is stamped** into the result as `verificationReused: {baseline, candidate}`
+  with the timestamp it came from. When the paper says something passed verification, the
+  report must be able to separate what this run measured from what it replayed — the
+  environment may have moved and a recorded "compilation passed" cannot detect that.
+- **`reuse_verification=False` forces a full re-verification**, so a clean measurement is always
+  available.
+
+Per-phase timings feed RQ3: `HarnessEvidence.durations` carries compile/test/pit seconds and
+`RefactoringAgent.run` returns `timings` with generation, baseline, candidate and total. PIT is
+its own entry rather than folded into refactoring time, since it often outlasts compile and
+test combined.

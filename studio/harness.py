@@ -8,7 +8,7 @@ import re
 import subprocess
 import time
 import xml.etree.ElementTree as ET
-from typing import Any
+from typing import Any, Callable
 
 
 def _strip_long_path_prefix(path: Path) -> Path:
@@ -60,6 +60,21 @@ class HarnessEvidence:
     mutation_score: float | None = None
     mutation_counts: dict[str, int] = field(default_factory=dict)
     mutants: dict[str, str] = field(default_factory=dict)
+    # 这次验证实际覆盖了什么范围。裁剪到相关模块之后，"测试通过"不再等于"整个项目通过"，
+    # 报告里必须能看出区别，否则读的人会把一个窄得多的结论当成全量回归。
+    # What this validation actually covered. Once narrowed to the relevant modules, "tests
+    # passed" no longer means "the whole project passed"; the report has to show the
+    # difference, or a much narrower result gets read as a full regression.
+    scope: str = "the whole project"
+    # 每个阶段各花了多少秒。论文 RQ3 需要这个数字，而它补不回来——跑的时候没记，事后
+    # 没有任何办法还原。OPTIMIZATION_LOG 里"目前只能手工处理"说的就是这件事。
+    # PIT 单独成项而不是并进"重构耗时"，因为它常常比编译加测试本身还久，混在一起会让
+    # 那个数字失去意义。
+    # Seconds spent in each phase. RQ3 needs these and they cannot be reconstructed later —
+    # unrecorded at run time, they are simply gone, which is what OPTIMIZATION_LOG means by
+    # "has to be handled by hand". PIT is its own entry rather than folded into refactoring
+    # time, because it often outlasts compile and test combined and would drown that number.
+    durations: dict[str, float] = field(default_factory=dict)
 
     def as_dict(self) -> dict:
         return {
@@ -73,7 +88,60 @@ class HarnessEvidence:
             "mutationScore": self.mutation_score,
             "mutationCounts": self.mutation_counts,
             "mutants": self.mutants,
+            "scope": self.scope,
+            "durations": self.durations,
         }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "HarnessEvidence":
+        return cls(
+            compile_status=HarnessStatus(str(value.get("compileStatus", "NOT_RUN"))),
+            test_status=HarnessStatus(str(value.get("testStatus", "NOT_RUN"))),
+            pit_status=HarnessStatus(str(value.get("pitStatus", "NOT_RUN"))),
+            commands=[list(command) for command in value.get("commands", [])],
+            diagnostics=[str(item) for item in value.get("diagnostics", [])],
+            test_results={str(key): str(status) for key, status in (value.get("testResults") or {}).items()},
+            mutation_total=int(value.get("mutationTotal", 0) or 0),
+            mutation_score=value.get("mutationScore"),
+            mutation_counts={str(key): int(count) for key, count in (value.get("mutationCounts") or {}).items()},
+            mutants={str(key): str(status) for key, status in (value.get("mutants") or {}).items()},
+            scope=str(value.get("scope", "the whole project")),
+            durations={str(k): float(v) for k, v in (value.get("durations") or {}).items()},
+        )
+
+
+def verification_failure_reason(evidence: HarnessEvidence | dict[str, Any], run_pit: bool,
+                                expected_test_classes: list[str] | None = None) -> str | None:
+    """Return why an execution cannot serve as before/after verification evidence.
+
+    Exit status alone is insufficient: a build can exit zero while selecting no tests,
+    while every selected test is skipped, or while PIT emits no usable report. Both the
+    interactive and batch paths use this gate so they cannot silently accept different
+    evidence standards.
+    """
+    values = evidence.as_dict() if isinstance(evidence, HarnessEvidence) else evidence
+    if str(values.get("compileStatus")) != HarnessStatus.PASSED:
+        return "Compilation did not pass / 编译未通过"
+    if str(values.get("testStatus")) != HarnessStatus.PASSED:
+        return "Test execution did not pass / 测试执行未通过"
+
+    results = values.get("testResults") or {}
+    executed_classes = {
+        key.partition("#")[0] for key, status in results.items()
+        if status != "SKIPPED" and "#" in key
+    }
+    if not executed_classes:
+        return "No non-skipped test result was produced / 没有产生实际执行的测试结果"
+    missing = sorted(set(expected_test_classes or []) - executed_classes)
+    if missing:
+        return "Selected test classes produced no non-skipped result: " + ", ".join(missing)
+
+    if run_pit:
+        if str(values.get("pitStatus")) != HarnessStatus.PASSED:
+            return "PIT did not pass / PIT 未通过"
+        if not values.get("mutants") or values.get("mutationScore") is None:
+            return "PIT produced no usable mutation evidence / PIT 未产生可用的变异证据"
+    return None
 
 
 def mutation_regressed(baseline: dict[str, Any], candidate: dict[str, Any]) -> bool:
@@ -198,6 +266,21 @@ def ensure_pit_junit5_support(root: Path, maven_repo_local: str | None = None) -
     return True
 
 
+@dataclass(frozen=True)
+class BuildScope:
+    """这次验证要覆盖的模块与测试类。两个都为空表示不裁剪，走全 reactor。
+    The modules and test classes this validation covers. Both empty means no scoping and a
+    full-reactor run."""
+
+    modules: tuple[str, ...] = ()
+    test_classes: tuple[str, ...] = ()
+
+    def describe(self) -> str:
+        if not self.modules:
+            return "the whole project"
+        return f"{len(self.modules)} module(s): " + ", ".join(sorted(self.modules))
+
+
 class ProjectHarness:
     """运行论文中的编译与测试检验 / Runs the paper's compile and test checks."""
 
@@ -213,9 +296,178 @@ class ProjectHarness:
         isolated directory here, to avoid concurrent writes corrupting a shared repository.
         """
         self.maven_repo_local = str(Path(maven_repo_local).resolve()) if maven_repo_local else None
+        self._test_jar_artifacts: dict[str, set[str]] = {}
 
     def _maven_repo_args(self) -> list[str]:
         return [f"-Dmaven.repo.local={self.maven_repo_local}"] if self.maven_repo_local else []
+
+    def _scope_args(self, root: Path, scope: BuildScope | None) -> list[str]:
+        """
+        把构建限定到这次改动真正涉及的模块。
+
+        不加 `-pl`，Maven 会把整个 reactor 的生命周期走一遍——Dubbo 有 124 个模块，哪怕
+        `-Dtest` 已经限定了只执行哪个测试类，每个模块仍要各自跑一遍 enforcer/checkstyle/
+        spotless 和编译。一次测试代码的改动只碰一两个文件，为它冷编译 124 个模块是纯粹的
+        浪费。
+
+        `-pl X -am` 构建 X 和它**依赖**的模块，但不构建**依赖 X 的**模块。通常没问题，因为
+        别的模块不会用到 X 的测试产物——除非 X 发布了 test-jar。Dubbo 里确实有 3 个模块这么
+        做，所以这里会去查：只要目标模块的 test-jar 被别人依赖，就补上 `-amd`，把下游也带进来。
+        Limits the build to the modules this change actually touches.
+
+        Without `-pl`, Maven walks the whole reactor's lifecycle — Dubbo has 124 modules, and
+        every one of them still runs its own enforcer/checkstyle/spotless and compile even
+        when `-Dtest` already narrows which test class executes. Cold-compiling 124 modules
+        for a one- or two-file test change is pure waste.
+
+        `-pl X -am` builds X and the modules it **depends on**, not the modules that **depend
+        on** X. That is normally fine, since nothing consumes another module's test output —
+        unless X publishes a test-jar. Three Dubbo modules do exactly that, so this checks:
+        when the target module's test-jar is consumed elsewhere, `-amd` is added to pull those
+        downstream modules back in.
+        """
+        if scope is None or not scope.modules:
+            return []
+        modules = sorted({value.replace("\\", "/").strip("/") for value in scope.modules if value})
+        if not modules:
+            return []
+        args = ["-pl", ",".join(modules), "-am"]
+        if self._has_test_jar_consumer(root, modules):
+            args.append("-amd")
+        return args
+
+    def _has_test_jar_consumer(self, root: Path, modules: list[str]) -> bool:
+        """这些模块里，有没有哪个的 test-jar 被别的模块依赖。结果按项目缓存，只扫一次。
+        Whether any of these modules has its test-jar consumed by another module. Cached per
+        project, so the scan happens once."""
+        key = str(root)
+        consumed = self._test_jar_artifacts.get(key)
+        if consumed is None:
+            consumed = set()
+            for pom in root.rglob("pom.xml"):
+                if "target" in pom.parts:
+                    continue
+                try:
+                    text = pom.read_text(encoding="utf-8", errors="ignore")
+                except OSError:
+                    continue
+                if "test-jar" not in text:
+                    continue
+                for match in re.finditer(
+                        r"<artifactId>\s*([\w.\-]+)\s*</artifactId>(?:(?!</dependency>).)*?<type>\s*test-jar\s*</type>",
+                        text, re.DOTALL):
+                    consumed.add(match.group(1))
+            self._test_jar_artifacts[key] = consumed
+        if not consumed:
+            return False
+        return any(Path(module).name in consumed for module in modules)
+
+    @staticmethod
+    def _test_filter_args(scope: BuildScope | None) -> list[str]:
+        """
+        `-am` 会把依赖模块也拉进 reactor，而 Maven 对 reactor 里每个模块套用同一个 `-Dtest`
+        过滤。`-DfailIfNoTests=false` 只管"这个模块压根没有测试"，管不住"有测试但没有匹配
+        `-Dtest` 的那个类"——后者要靠 surefire 自己的 `failIfNoSpecifiedTests`。两个都得加，
+        否则第一个不相关的依赖模块就会把整个 reactor 中止掉。
+        `-am` pulls dependency modules into the reactor, and Maven applies the same `-Dtest`
+        filter to each of them. `-DfailIfNoTests=false` only covers "this module has no tests
+        at all", not "it has tests, just none matching this `-Dtest` class" — that needs
+        surefire's own `failIfNoSpecifiedTests`. Both are required, or the first unrelated
+        dependency module aborts the whole reactor.
+        """
+        if scope is None or not scope.test_classes:
+            return []
+        return [f"-Dtest={','.join(sorted(scope.test_classes))}", "-DfailIfNoTests=false",
+                "-Dsurefire.failIfNoSpecifiedTests=false"]
+
+    def expected_test_classes(self) -> list[str]:
+        """The full-project harness has no narrower expected class set."""
+        return []
+
+    def validate_targets(self, project_root: Path, test_classes: list[str],
+                         modules: list[str] | None = None) -> HarnessEvidence:
+        """Run the selected test classes after a reactor-wide test stopped early.
+
+        This is deliberately a second receipt, not a replacement for the full-project
+        gate.  A Maven reactor can stop in an upstream module before it reaches the MCI's
+        module; comparing two equally-truncated report sets would otherwise be a false
+        success.
+        """
+        root = _strip_long_path_prefix(project_root)
+        evidence = HarnessEvidence(compile_status=HarnessStatus.PASSED)
+        classes = sorted({value.strip() for value in test_classes if value and value.strip()})
+        if not classes:
+            evidence.test_status = HarnessStatus.UNAVAILABLE
+            evidence.diagnostics.append("No target test classes could be resolved / 无法解析目标测试类")
+            return evidence
+
+        module_list = sorted({value.replace("\\", "/").strip("/") for value in (modules or []) if value})
+        if (root / "pom.xml").is_file() or (root / "mvnw").is_file() or (root / "mvnw.cmd").is_file():
+            executable = str(root / "mvnw.cmd") if os.name == "nt" and (root / "mvnw.cmd").is_file() else (
+                str(root / "mvnw") if (root / "mvnw").is_file() else ("mvn.cmd" if os.name == "nt" else "mvn")
+            )
+            command = [executable, *self._maven_repo_args(), *self._english_output_args(),
+                       *self._style_check_skip_args()]
+            if module_list:
+                command.extend(["-pl", ",".join(module_list), "-am"])
+            command.extend([
+                "test", f"-Dtest={','.join(classes)}", "-DfailIfNoTests=false",
+                "-Dsurefire.failIfNoSpecifiedTests=false",
+            ])
+        elif any((root / name).is_file() for name in ("gradlew", "gradlew.bat", "build.gradle", "build.gradle.kts")):
+            executable = str(root / "gradlew.bat") if os.name == "nt" and (root / "gradlew.bat").is_file() else (
+                str(root / "gradlew") if (root / "gradlew").is_file() else ("gradle.bat" if os.name == "nt" else "gradle")
+            )
+            command = [executable, "test"]
+            for test_class in classes:
+                command.extend(["--tests", test_class])
+        else:
+            evidence.test_status = HarnessStatus.UNAVAILABLE
+            evidence.diagnostics.append("No supported Maven or Gradle build was found / 未找到 Maven 或 Gradle 构建")
+            return evidence
+
+        self._clear_test_reports(root)
+        started_at = time.time() - 1
+        evidence.test_status = self._execute(command, root, evidence)
+        evidence.test_results = self._collect_test_identities(root, started_at)
+        observed = {key.split("#", 1)[0] for key in evidence.test_results}
+        missing = [name for name in classes if name not in observed and name.rsplit(".", 1)[-1] not in observed]
+        if missing:
+            evidence.test_status = HarnessStatus.FAILED
+            evidence.diagnostics.append(
+                "Target tests produced no fresh receipt: " + ", ".join(missing)
+                + " / 目标测试未产生新的执行凭据"
+            )
+        return evidence
+
+    @staticmethod
+    def _english_output_args() -> list[str]:
+        """
+        强制 javac/Maven 用英文输出诊断。
+
+        中文 Windows 上 javac 发的是 GBK 编码的本地化消息，而我们按 UTF-8 加 errors=replace
+        去解——GBK 字节遇上 UTF-8 解码器会被整段换成 U+FFFD，不可逆。实测一次编译失败，模型
+        收到的是：
+
+            ����:   ���� createMockServiceDiscovery(MetadataInfo)
+            λ��: �� MockServiceDiscovery
+
+        方法名和类名是 ASCII 所以活了下来，而中文——也就是"错在哪"这个信息本身——全没了。
+        模型分不清这是"找不到符号"还是"类型不匹配"，两轮修复因此全部白烧。诊断回灌的循环
+        一直是对的，它只是从第一天起就在消费垃圾。
+
+        改成英文既根除了编码问题，也给了模型它最擅长解析的格式。
+        Forces javac/Maven to emit diagnostics in English. On a Chinese Windows, javac emits
+        GBK-encoded localized messages while we decode as UTF-8 with errors=replace, so those
+        bytes become an irrecoverable run of U+FFFD. Measured on a real compile failure, the
+        model received `����:   ���� createMockServiceDiscovery(MetadataInfo)`: the method and
+        class names survived because they are ASCII, while the Chinese — the part saying what
+        actually went wrong — did not. Unable to tell "cannot find symbol" from "incompatible
+        types", both repair rounds were wasted. The feedback loop was always correct; it had
+        been consuming garbage from the start. English removes the encoding problem outright
+        and gives the model the format it parses best.
+        """
+        return ["-Duser.language=en", "-Duser.country=US"]
 
     @staticmethod
     def _style_check_skip_args() -> list[str]:
@@ -246,10 +498,17 @@ class ProjectHarness:
         """
         return ["-Dspotless.check.skip=true", "-Dspotless.apply.skip=true"]
 
-    def validate(self, project_root: Path, run_pit: bool = False) -> HarnessEvidence:
+    def validate(self, project_root: Path, run_pit: bool = False,
+                 progress_callback: Callable[[str, int, str], None] | None = None,
+                 scope: BuildScope | None = None) -> HarnessEvidence:
+        def progress(phase: str, percent: int, detail: str) -> None:
+            if progress_callback:
+                progress_callback(phase, percent, detail)
+
         project_root = _strip_long_path_prefix(project_root)
         evidence = HarnessEvidence()
-        build = self._build_commands(project_root)
+        progress("DISCOVERING_BUILD", 5, "Detecting Maven or Gradle build")
+        build = self._build_commands(project_root, scope)
         if build is None:
             evidence.compile_status = HarnessStatus.UNAVAILABLE
             evidence.test_status = HarnessStatus.UNAVAILABLE
@@ -257,19 +516,37 @@ class ProjectHarness:
             evidence.diagnostics.append("No supported Maven or Gradle build was found / 未找到 Maven 或 Gradle 构建")
             return evidence
 
+        # 范围要如实写进证据里。裁剪之后"测试通过"的含义变窄了——它说的是这些模块的这些
+        # 测试类通过，不是整个项目通过。不记下来，后面看报告的人会把两者当成一回事。
+        # The scope goes into the evidence. Once narrowed, "tests passed" means something
+        # smaller — these test classes in these modules passed, not the whole project. Without
+        # recording it, whoever reads the report later will mistake one for the other.
+        described = scope.describe() if scope is not None else "the whole project"
+        evidence.scope = described
         compile_command, test_command, pit_command = build
+        progress("COMPILING", 12, f"Compiling test sources for {described}")
+        phase_started = time.time()
         evidence.compile_status = self._execute(compile_command, project_root, evidence)
+        evidence.durations["compile"] = round(time.time() - phase_started, 2)
         if evidence.compile_status == HarnessStatus.PASSED:
+            progress("TESTING", 45, f"Running the regression suite for {described}")
+            self._clear_test_reports(project_root)
+            test_started_at = time.time() - 1
+            phase_started = time.time()
             evidence.test_status = self._execute(test_command, project_root, evidence)
-            evidence.test_results = self._collect_test_identities(project_root)
+            evidence.durations["test"] = round(time.time() - phase_started, 2)
+            evidence.test_results = self._collect_test_identities(project_root, test_started_at)
         else:
             evidence.test_status = HarnessStatus.NOT_RUN
         if run_pit and evidence.test_status == HarnessStatus.PASSED and pit_command:
+            progress("MUTATION_TESTING", 78, "Running PIT mutation testing")
             # 减去一点余量，避免文件系统 mtime 精度和时钟误差把本次刚生成的报告漏掉。
             # Subtract a small buffer so filesystem mtime resolution or clock skew
             # doesn't cause the report just generated by this run to be missed.
             pit_started_at = time.time() - 1
+            phase_started = time.time()
             evidence.pit_status = self._execute(pit_command, project_root, evidence)
+            evidence.durations["pit"] = round(time.time() - phase_started, 2)
             mutation = self._collect_mutation_summary(project_root, pit_started_at)
             if mutation is not None:
                 evidence.mutation_total = mutation["total"]
@@ -278,13 +555,30 @@ class ProjectHarness:
                 evidence.mutants = mutation["mutants"]
         else:
             evidence.pit_status = HarnessStatus.NOT_RUN
+        progress("COLLECTING_EVIDENCE", 96, "Collecting fresh test and mutation reports")
         return evidence
 
     @staticmethod
-    def _collect_test_identities(root: Path) -> dict[str, str]:
+    def _clear_test_reports(root: Path) -> None:
+        """Remove prior XML receipts so a later invocation cannot reuse them as evidence."""
+        reports = list(root.rglob("surefire-reports/TEST-*.xml")) + list(root.rglob("test-results/test/TEST-*.xml"))
+        for report in reports:
+            try:
+                report.unlink()
+            except OSError:
+                continue
+
+    @staticmethod
+    def _collect_test_identities(root: Path, since: float | None = None) -> dict[str, str]:
         identities: dict[str, str] = {}
         reports = list(root.rglob("surefire-reports/TEST-*.xml")) + list(root.rglob("test-results/test/TEST-*.xml"))
         for report in reports:
+            if since is not None:
+                try:
+                    if report.stat().st_mtime < since:
+                        continue
+                except OSError:
+                    continue
             try:
                 suite = ET.parse(report).getroot()
             except (OSError, ET.ParseError):
@@ -368,7 +662,8 @@ class ProjectHarness:
             "mutants": mutants,
         }
 
-    def _build_commands(self, root: Path) -> tuple[list[str], list[str], list[str] | None] | None:
+    def _build_commands(self, root: Path,
+                        scope: BuildScope | None = None) -> tuple[list[str], list[str], list[str] | None] | None:
         if (root / "mvnw.cmd").is_file() or (root / "mvnw").is_file() or (root / "pom.xml").is_file():
             executable = str(root / "mvnw.cmd") if os.name == "nt" and (root / "mvnw.cmd").is_file() else (
                 str(root / "mvnw") if (root / "mvnw").is_file() else ("mvn.cmd" if os.name == "nt" else "mvn")
@@ -380,11 +675,17 @@ class ProjectHarness:
             # silently falls back to the default shared repository.
             repo_args = self._maven_repo_args()
             style_check_skip_args = self._style_check_skip_args()
+            prefix = [executable, *repo_args, *self._english_output_args(), *style_check_skip_args,
+                      *self._scope_args(root, scope)]
+            test_filter = self._test_filter_args(scope)
+            pit_command = [*prefix, "org.pitest:pitest-maven:mutationCoverage", "-DoutputFormats=XML"]
+            if scope is not None and scope.test_classes:
+                pattern = ",".join(sorted(scope.test_classes))
+                pit_command.extend([f"-DtargetTests={pattern}", "-DfailWhenNoMutations=false"])
             return (
-                [executable, *repo_args, *style_check_skip_args, "-DskipTests", "test-compile"],
-                [executable, *repo_args, *style_check_skip_args, "test"],
-                [executable, *repo_args, *style_check_skip_args,
-                 "org.pitest:pitest-maven:mutationCoverage", "-DoutputFormats=XML"],
+                [*prefix, "-DskipTests", "test-compile"],
+                [*prefix, "test", *test_filter],
+                pit_command,
             )
         if any((root / name).is_file() for name in ("gradlew", "gradlew.bat", "build.gradle", "build.gradle.kts")):
             executable = str(root / "gradlew.bat") if os.name == "nt" and (root / "gradlew.bat").is_file() else (

@@ -4,7 +4,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from app.harness import ProjectHarness, ensure_pit_junit5_support, mutation_regressed
+from studio.harness import (BuildScope, HarnessEvidence, HarnessStatus, ProjectHarness,
+                             ensure_pit_junit5_support, mutation_regressed,
+                             verification_failure_reason)
 
 MINIMAL_POM = """<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
@@ -64,6 +66,33 @@ def mutations_xml(entries: list[tuple[str, str, str, str, str]]) -> str:
 
 
 class HarnessTest(unittest.TestCase):
+    def test_verification_requires_an_executed_test_result(self):
+        evidence = HarnessEvidence(HarnessStatus.PASSED, HarnessStatus.PASSED)
+
+        reason = verification_failure_reason(evidence, run_pit=False)
+
+        self.assertIn("No non-skipped test result", reason)
+
+    def test_verification_requires_every_scoped_test_class(self):
+        evidence = HarnessEvidence(
+            HarnessStatus.PASSED, HarnessStatus.PASSED,
+            test_results={"demo.FirstTest#testA": "PASSED"},
+        )
+
+        reason = verification_failure_reason(evidence, False, ["demo.FirstTest", "demo.SecondTest"])
+
+        self.assertIn("demo.SecondTest", reason)
+
+    def test_verification_requires_a_real_pit_report_when_requested(self):
+        evidence = HarnessEvidence(
+            HarnessStatus.PASSED, HarnessStatus.PASSED, HarnessStatus.PASSED,
+            test_results={"demo.FooTest#testA": "PASSED"},
+        )
+
+        reason = verification_failure_reason(evidence, run_pit=True)
+
+        self.assertIn("no usable mutation evidence", reason)
+
     def test_collect_test_identities_reads_status_per_test(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -78,6 +107,17 @@ class HarnessTest(unittest.TestCase):
                 "demo.FooTest#testB": "FAILED",
                 "demo.FooTest#testC": "SKIPPED",
             }, identities)
+
+    def test_clear_test_reports_prevents_reusing_an_older_receipt(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            report = root / "target" / "surefire-reports" / "TEST-demo.FooTest.xml"
+            report.parent.mkdir(parents=True)
+            report.write_text(SUREFIRE_REPORT, encoding="utf-8")
+
+            ProjectHarness._clear_test_reports(root)
+
+            self.assertFalse(report.exists())
 
     def test_collect_mutation_summary_ignores_reports_older_than_since(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -172,6 +212,33 @@ class HarnessTest(unittest.TestCase):
                 self.assertIn("-Dspotless.check.skip=true", command)
                 self.assertIn("-Dspotless.apply.skip=true", command)
 
+    def test_validate_targets_scopes_maven_and_requires_fresh_target_receipt(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "pom.xml").write_text("<project/>", encoding="utf-8")
+
+            def execute(command, cwd, evidence):
+                evidence.commands.append(command)
+                report = cwd / "module-a" / "target" / "surefire-reports" / "TEST-demo.FooTest.xml"
+                report.parent.mkdir(parents=True, exist_ok=True)
+                report.write_text(SUREFIRE_REPORT, encoding="utf-8")
+                return HarnessStatus.PASSED
+
+            with patch.object(ProjectHarness, "_execute", side_effect=execute):
+                evidence = ProjectHarness().validate_targets(root, ["demo.FooTest"], ["module-a"])
+
+            self.assertEqual(HarnessStatus.PASSED, evidence.test_status)
+            self.assertIn("-pl", evidence.commands[0])
+            self.assertIn("module-a", evidence.commands[0])
+            self.assertIn("-Dtest=demo.FooTest", evidence.commands[0])
+            self.assertIn("demo.FooTest#testA", evidence.test_results)
+
+    def test_harness_evidence_round_trip_preserves_statuses(self):
+        original = HarnessEvidence(HarnessStatus.PASSED, HarnessStatus.FAILED,
+                                   test_results={"demo.Foo#x": "FAILED"}, mutation_total=3)
+        restored = HarnessEvidence.from_dict(original.as_dict())
+        self.assertEqual(original.as_dict(), restored.as_dict())
+
 
 class EnsurePitJunit5SupportTest(unittest.TestCase):
     """回归测试：全量 109 个 MCI 的批次里，直接命令行调用 PIT 时它完全不知道要用
@@ -191,7 +258,7 @@ class EnsurePitJunit5SupportTest(unittest.TestCase):
             root = Path(temporary)
             (root / "pom.xml").write_text(MINIMAL_POM, encoding="utf-8")
 
-            with patch("app.harness._detect_junit_platform_engine_version", return_value="1.13.1"):
+            with patch("studio.harness._detect_junit_platform_engine_version", return_value="1.13.1"):
                 changed = ensure_pit_junit5_support(root)
 
             self.assertTrue(changed)
@@ -206,7 +273,7 @@ class EnsurePitJunit5SupportTest(unittest.TestCase):
             root = Path(temporary)
             (root / "pom.xml").write_text(POM_WITH_PITEST_ALREADY_CONFIGURED, encoding="utf-8")
 
-            with patch("app.harness._detect_junit_platform_engine_version") as detect:
+            with patch("studio.harness._detect_junit_platform_engine_version") as detect:
                 changed = ensure_pit_junit5_support(root)
 
             detect.assert_not_called()
@@ -218,7 +285,7 @@ class EnsurePitJunit5SupportTest(unittest.TestCase):
             root = Path(temporary)
             (root / "pom.xml").write_text(MINIMAL_POM, encoding="utf-8")
 
-            with patch("app.harness._detect_junit_platform_engine_version", return_value=None):
+            with patch("studio.harness._detect_junit_platform_engine_version", return_value=None):
                 changed = ensure_pit_junit5_support(root)
 
             self.assertFalse(changed)
@@ -229,10 +296,82 @@ class EnsurePitJunit5SupportTest(unittest.TestCase):
             root = Path(temporary)
             (root / "pom.xml").write_text(MINIMAL_POM, encoding="utf-8")
 
-            with patch("app.harness._detect_junit_platform_engine_version", return_value="1.13.1"):
+            with patch("studio.harness._detect_junit_platform_engine_version", return_value="1.13.1"):
                 self.assertTrue(ensure_pit_junit5_support(root))
                 self.assertFalse(ensure_pit_junit5_support(root))
 
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BuildScopeTest(unittest.TestCase):
+    """裁剪的动机是速度：不加 -pl，Maven 会为一次只碰一两个测试文件的改动，把整个
+    reactor（Dubbo 124 个模块）的生命周期走一遍。
+    Scoping exists for speed: without -pl, Maven walks the whole reactor's lifecycle
+    (124 Dubbo modules) for a change that touches one or two test files."""
+
+    def _commands(self, root: Path, scope):
+        return ProjectHarness()._build_commands(root, scope)
+
+    def _project(self, temporary: str) -> Path:
+        root = Path(temporary)
+        (root / "pom.xml").write_text(MINIMAL_POM, encoding="utf-8")
+        return root
+
+    def test_without_a_scope_the_whole_reactor_is_built(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            compile_command, test_command, _ = self._commands(self._project(temporary), None)
+            self.assertNotIn("-pl", compile_command)
+            self.assertNotIn("-pl", test_command)
+            self.assertNotIn("-Dtest", " ".join(test_command))
+
+    def test_a_scope_narrows_compile_test_and_pit_alike(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            scope = BuildScope(modules=("mod-a",), test_classes=("demo.ATest",))
+            compile_command, test_command, pit_command = self._commands(self._project(temporary), scope)
+            for command in (compile_command, test_command, pit_command):
+                self.assertIn("-pl", command)
+                self.assertIn("mod-a", command)
+                self.assertIn("-am", command)
+            self.assertIn("-Dtest=demo.ATest", test_command)
+            self.assertIn("-DtargetTests=demo.ATest", pit_command)
+
+    def test_scoped_tests_carry_both_no_test_tolerances(self):
+        """-am 把依赖模块拉进 reactor，Maven 对每个模块套用同一个 -Dtest 过滤。
+        -DfailIfNoTests 只管"没有测试"，管不住"有测试但没有匹配的类"。
+        -am pulls dependency modules in and the same -Dtest filter applies to each;
+        -DfailIfNoTests covers "no tests", not "tests but none matching"."""
+        with tempfile.TemporaryDirectory() as temporary:
+            _, test_command, _ = self._commands(
+                self._project(temporary), BuildScope(modules=("mod-a",), test_classes=("demo.ATest",)))
+            self.assertIn("-DfailIfNoTests=false", test_command)
+            self.assertIn("-Dsurefire.failIfNoSpecifiedTests=false", test_command)
+
+    def test_a_consumed_test_jar_pulls_downstream_modules_back_in(self):
+        """-pl X -am 不构建依赖 X 的模块。X 发布 test-jar 时这是个盲区，要用 -amd 补回来。
+        -pl X -am omits modules that depend on X; when X publishes a test-jar that is a
+        blind spot, and -amd closes it."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = self._project(temporary)
+            consumer = root / "mod-b"
+            consumer.mkdir()
+            (consumer / "pom.xml").write_text(
+                "<project><dependencies><dependency>"
+                "<artifactId>mod-a</artifactId><type>test-jar</type>"
+                "</dependency></dependencies></project>", encoding="utf-8")
+            with_consumer, _, _ = self._commands(root, BuildScope(modules=("mod-a",)))
+            self.assertIn("-amd", with_consumer)
+
+    def test_an_unconsumed_module_does_not_pull_downstream_modules(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            command, _, _ = self._commands(self._project(temporary), BuildScope(modules=("mod-z",)))
+            self.assertNotIn("-amd", command)
+
+    def test_evidence_records_what_was_actually_covered(self):
+        """裁剪之后"测试通过"不再等于"整个项目通过"，证据里必须能看出区别。
+        Once narrowed, "tests passed" no longer means the whole project passed; the
+        evidence has to show the difference."""
+        self.assertEqual("the whole project", BuildScope().describe())
+        self.assertIn("mod-a", BuildScope(modules=("mod-a",)).describe())
+        self.assertEqual("the whole project", HarnessEvidence().as_dict()["scope"])

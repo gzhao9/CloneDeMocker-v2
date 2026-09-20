@@ -7,6 +7,8 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AssignExpr;
+import com.github.javaparser.ast.expr.CastExpr;
+import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -242,12 +244,13 @@ public class MockAnalyzer {
                     }
                 });
 
-                // 新增：捕获从未绑定到变量/字段的内联 mock、spy 创建，
-                // 例如 service.setDependency(mock(Dependency.class))。
-                // New: capture mock/spy creations that are never bound to a variable or
-                // field, e.g. service.setDependency(mock(Dependency.class)). These were
-                // previously invisible because the scan above only recognizes creation via
-                // a VariableDeclarationExpr or AssignExpr.
+                // 捕获未绑定到变量/字段的 mock、spy 创建。但直接作为另一个方法参数传入的
+                // mock 不进入检测池：它没有可替换的名字/生命周期，提取它通常只会把
+                // mock(...) 包成一个 helper，反而降低测试可读性。
+                // Capture unbound mock/spy creations, except calls passed directly as an
+                // argument to another method. The latter have no replaceable name or
+                // lifecycle; extracting them normally just wraps mock(...) in a helper and
+                // makes the test less readable.
                 int[] inlineCounter = {0};
                 body.findAll(MethodCallExpr.class).forEach(call -> {
                     boolean isMock = CreationAnalyzer.isMockCreation(call);
@@ -258,6 +261,9 @@ public class MockAnalyzer {
                     Node parent = call.getParentNode().orElse(null);
                     if (parent instanceof VariableDeclarator || parent instanceof AssignExpr) {
                         return; // 已经被声明/赋值分支处理过，避免重复计数
+                    }
+                    if (isDirectMethodArgument(call)) {
+                        return;
                     }
 
                     inlineCounter[0]++;
@@ -299,6 +305,23 @@ public class MockAnalyzer {
             }
 
         });
+    }
+
+    private boolean isDirectMethodArgument(MethodCallExpr call) {
+        Node current = call;
+        while (current.getParentNode().isPresent()) {
+            Node parent = current.getParentNode().get();
+            if (parent instanceof MethodCallExpr) {
+                return ((MethodCallExpr) parent).getArguments().contains(current);
+            }
+            // Parentheses and casts do not give the inline mock an independent lifecycle.
+            if (parent instanceof EnclosedExpr || parent instanceof CastExpr) {
+                current = parent;
+                continue;
+            }
+            return false;
+        }
+        return false;
     }
 
     /**

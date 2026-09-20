@@ -1,8 +1,8 @@
 # 重构通过率验证 / Refactoring Pass-Rate Validation
 
-这个文件夹和 `app/` 是分开的：`app/` 是产品化的检测 + 重构 Agent 工具，这里是拿真实项目跑一遍
-论文 RQ2 的验证方法，衡量“重构到底成不成功”。不复用 `app/` 里任何写死全量测试的逻辑，只在
-`app/refactoring_agent.py` 里加了一个可选的 `harness` 注入参数，让这里可以传入范围受限的 Harness。
+这个文件夹和 `studio/` 是分开的：`studio/` 是产品化的检测 + 重构 Agent 工具，这里是拿真实项目跑一遍
+论文 RQ2 的验证方法，衡量“重构到底成不成功”。两条路径共享 `ProjectHarness` 的全项目回归门禁：候选补丁
+必须在完整 reactor 的 before/after 测试中通过，且 MCI 涉及的测试类必须实际出现在该次报告中。
 
 ## 判定标准（原样抄自论文 RQ2.1）
 
@@ -27,13 +27,11 @@ Apache Dubbo 目前真正的最新 tag（没有更新的 3.3.x 或 3.4.x）。
 
 ## 每个 MCI 的验证流程
 
-1. **Before**：在隔离副本上，只针对这个 MCI 涉及的测试类（不是全量 `mvn test`）跑一次
-   `mvn test -Dtest=<涉及的测试类>` + 一次 PIT `mutationCoverage`（`-DtargetTests=` 同样限定
-   到这些测试类）——PIT 的粒度是"这些测试类组成的 suite 跑一次"，不是每个测试方法单独跑一次。
-2. **执行重构**：调用 `RefactoringAgent.run(..., harness=ScopedProjectHarness(...))`，真实调用
-   模型生成候选 diff。
-3. **After**：同样只对这些测试类重新跑一次 test + PIT，对比 before/after 的
-   compile/test 结果与 PIT 分数。
+1. **Before**：在隔离副本上运行完整项目的 compile、test，以及启用时的 PIT；同时检查 MCI 涉及
+   的每个测试类都在本次完整测试报告中留下非跳过结果。
+2. **执行重构**：真实调用模型生成候选 diff。
+3. **After**：对完整项目再次运行相同的 compile、test 和 PIT，对比 before/after 的完整测试结果
+   与 PIT 分数。PIT 分数最多允许下降五个百分点。
 4. 按论文三条标准判定这次重构成功与否，失败的按上面三种已知模式（或新模式）分类记录。
 
 ## 用量控制
@@ -43,6 +41,26 @@ Apache Dubbo 目前真正的最新 tag（没有更新的 3.3.x 或 3.4.x）。
 
 ## 文件
 
-- `scoped_harness.py`：`ProjectHarness` 的子类，把 compile 之外的 test/PIT 命令范围收窄到指定测试类。
-- `run_pilot.py`：驱动脚本，跑 scan → detect → 对每个选中的 MCI 做 before/refactor/after 验证，输出汇总报告。
-- `results/`：每次跑的 JSON 报告落在这里（gitignore，不提交）。
+按处理阶段分（不是按论文 RQ 编号分——RQ 的具体划分以后可能调整，目录结构不跟着绑定）：
+
+**数据采集**（跑真实/mock 模型，产出原始结果，全部是纯命令行脚本，不依赖任何 AI 编程助手会话）：
+- `run_pilot.py`：驱动脚本，跑 scan → detect → 对每个选中的 MCI 做 before/refactor/after 验证，输出汇总报告到 `results/`。
+- `scoped_harness.py`：保留用于局部诊断和开发测试；它不再作为论文结果或产品验收门禁。
+- `reset_workspace.py`：把复用的隔离副本还原成干净基线。
+- `export_canonical.py`：把一次 `run_pilot.py` 的原始结果蒸馏成 `data/<project>/` 下可提交进 git 的精简数据集。
+
+**分析**（吃 `run_pilot.py` 的原始 JSON，算论文要的指标）：
+- `analyze_results.py`：算检测规模 / 重构成功率 / 成本等表格数据，可用 `--rq 1|2|3|all` 只导出某一部分。
+- `cctr_analysis.py`：测试可读性指标（CCTR）。
+- `rq1_1_validator.py`：检测准确率（对照人工标注的 ground truth）。
+- `diff_utils.py`：上面几个脚本共用的 diff 解析/应用工具函数。
+
+**报告生成**（把分析结果排版成给人看的 PDF/HTML，输出到仓库根目录的 `reports/`）：
+- `report_builders/build_final_report.py`：当前在用的主报告（双语 HTML，含图表、案例、消融计划）。
+- `report_builders/build_disputed_cases_report.py`：有争议/失败案例的详细案例分析 PDF。
+- `report_builders/legacy/build_report.py`：已被 `build_final_report.py` 取代的旧版本，留作参考。
+
+**其他**：
+- `notes/`：会话交接记录、失败案例调查笔记、优化日志——人读的背景资料，不是代码。
+- `paper_reference_data.json` / `case_full_cache.json`：分析/报告脚本用的参考数据与缓存，随仓库提交。
+- `results/`：每次跑的原始 JSON/分析报告落在这里（gitignore，不提交）。

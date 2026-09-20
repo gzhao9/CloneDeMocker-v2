@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from app.detection_service import DetectionService
+from studio.detection_service import DetectionService
 from validation.run_pilot import classify_transition, generate_proposal
 
 
@@ -39,6 +39,27 @@ class ClassifyTransitionTest(unittest.TestCase):
         classification = classify_transition(before, after, goal_achieved=True, pit_regressed=False)
 
         self.assertEqual("SUCCESS", classification)
+
+    def test_rejects_matching_but_empty_test_results_when_commands_claim_success(self):
+        before = {"compileStatus": "PASSED", "testStatus": "PASSED", "testResults": {}, "pitStatus": "NOT_RUN"}
+        after = {"compileStatus": "PASSED", "testStatus": "PASSED", "testResults": {}, "pitStatus": "NOT_RUN"}
+
+        classification = classify_transition(before, after, goal_achieved=True, pit_regressed=False)
+
+        self.assertEqual("FAILED_BEHAVIORAL_EQUIVALENCE", classification)
+
+    def test_rejects_a_scope_that_did_not_run_its_selected_class(self):
+        before = {
+            "compileStatus": "PASSED", "testStatus": "PASSED", "pitStatus": "NOT_RUN",
+            "testResults": {"demo.OtherTest#testA": "PASSED"},
+        }
+
+        classification = classify_transition(
+            before, before, goal_achieved=True, pit_regressed=False,
+            expected_test_classes=["demo.TargetTest"],
+        )
+
+        self.assertEqual("FAILED_BEHAVIORAL_EQUIVALENCE", classification)
 
     def test_compile_failure_takes_priority(self):
         before = {"compileStatus": "PASSED", "testStatus": "PASSED", "testResults": {}}

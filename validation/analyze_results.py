@@ -10,6 +10,14 @@ pass.
 用法 / Usage:
     uv run python validation/analyze_results.py --report validation/results/pilot-XXXX.json
     (--out 不传时，默认写到同名的 validation/results/analysis-XXXX.md 和 .json)
+    加 --rq 1|2|3|all 只输出某一个 RQ 的表格（默认 all）。RQ4（消融）不在这个脚本里算——
+    它是跑三次 run_pilot.py（baseline / --no-repair / --direct-llm-baseline）后手工对比，
+    见 build_final_report.py 里的 Part 3。
+
+    Pass --rq 1|2|3|all to emit only one RQ's tables (default all). RQ4 (ablation) is not
+    computed here -- it comes from three separate run_pilot.py runs (baseline /
+    --no-repair / --direct-llm-baseline) compared by hand; see Part 3 of
+    build_final_report.py.
 """
 from __future__ import annotations
 
@@ -142,7 +150,7 @@ def analyze_goal_shortfalls(report: dict[str, Any], mci_lookup: dict[str, Any],
 
         # shareableMockLines is bucketed by physical location (Attribute/@Before/@After/
         # Helper Method), not by mock-relatedness, so it can include lines with nothing to
-        # do with mocking (see app/refactoring_agent.py::_goal_check for the full
+        # do with mocking (see studio/refactoring_agent.py::_goal_check for the full
         # rationale and the same fix). Cross-reference rawStatementInfo and keep only
         # isMockRelated lines, or a line that recurs for reasons unrelated to mock
         # cloning gets misreported here as "still duplicated".
@@ -320,10 +328,10 @@ def failure_breakdown(report: dict[str, Any]) -> dict[str, Any]:
 def rq3_cost(report: dict[str, Any], pricing: dict[str, Any]) -> dict[str, Any]:
     """token/成本统计，first-pass（只算第一次调用）和含修复轮次的总成本分开算，
     PIT 的耗时不计入这里（PIT 没有 token 成本，只是 wall-clock 时间，且当前 harness
-    还没记录逐阶段耗时，参考 OPTIMIZATION_LOG.md 里的说明）。
+    还没记录逐阶段耗时，参考 notes/OPTIMIZATION_LOG.md 里的说明）。
     Token/cost accounting, with first-pass-only and total-including-repairs kept
     separate; PIT's wall-clock time is not part of this (it has no token cost, and the
-    harness doesn't record per-phase timing yet — see OPTIMIZATION_LOG.md)."""
+    harness doesn't record per-phase timing yet — see notes/OPTIMIZATION_LOG.md)."""
     input_per_m = pricing["inputPerMillionUsd"]
     output_per_m = pricing["outputPerMillionUsd"]
 
@@ -356,10 +364,19 @@ def rq3_cost(report: dict[str, Any], pricing: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+RQ_CHOICES = ("1", "2", "3", "all")
+
+
 def render_markdown(report: dict[str, Any], rq1: dict[str, Any], rq2: dict[str, Any],
                      failures: dict[str, Any], rq3: dict[str, Any], reference: dict[str, Any],
                      declined_categories: dict[str, Any] | None = None,
-                     goal_shortfalls: list[dict[str, Any]] | None = None) -> str:
+                     goal_shortfalls: list[dict[str, Any]] | None = None,
+                     rq_filter: str = "all") -> str:
+    """rq_filter 取 RQ_CHOICES 之一；失败原因细分挂在 RQ2 小节下（它是重构成功率的
+    支撑证据），跟着 "2" 一起输出。RQ4（消融）不在这个函数里，见本文件顶部 docstring。
+    rq_filter is one of RQ_CHOICES; the failure/decline/goal-shortfall breakdowns are
+    supporting evidence for RQ2 (refactoring success), so they're gated with "2"."""
+    want = {"1", "2", "3"} if rq_filter == "all" else {rq_filter}
     dubbo_old = reference["table5_study_subjects"]["dubbo_corrected"]
     table6_old = reference["table6_scope_vs_reduction"]["dubbo"]
     table7_old = reference["table7_refactoring_success_rates"]["dubbo"]
@@ -368,88 +385,97 @@ def render_markdown(report: dict[str, Any], rq1: dict[str, Any], rq2: dict[str, 
         f"# {report.get('projectRoot', '?')} — 新旧数据对比 / new vs. old",
         f"generated from `{report.get('runId', '?')}`, model `{report.get('model', '?')}`, "
         f"repair={report.get('repairEnabled')}, directLlmBaseline={report.get('directLlmBaseline')}",
-        "",
-        "## RQ1 检测规模 / detection scale (Table 5 & 6)",
-        "",
-        "| | 旧 Dubbo 3.2 (78/592 修正版) | 新 Dubbo 3.3.6 |",
-        "|---|---|---|",
-        f"| Mock Objects | {dubbo_old['mockObjects']} | {rq1['mockObjects']} |",
-        f"| Mock Clone Instances | {dubbo_old['mockCloneInstances']} | {rq1['mockCloneInstances']} |",
-        f"| Class-Level 影响占比 | {table6_old['classLevelPct']}% ({table6_old['classLevelFrac']}) | "
-        f"{rq1['classLevelPct']}% ({rq1['classLevelFrac']}) |",
-        f"| Case-Level 涉及测试用例数 | {table6_old['caseLevelFrac'].split('/')[0]} | {rq1['caseLevelInvolvedCount']} |",
-        f"| Clone-Involved MO 削减 | {table6_old['cloneInvolvedMoPct']}% | {rq1['cloneInvolvedMoPct']}% |",
-        f"| Clone-Involved LOC 削减 | {table6_old['cloneInvolvedLocPct']}% | {rq1['cloneInvolvedLocPct']}% |",
-        f"| Whole-Project MO 削减 | {table6_old['wholeProjectMoPct']}% | {rq1['wholeProjectMoPct']}% |",
-        f"| Whole-Project LOC 削减 | {table6_old['wholeProjectLocPct']}% | {rq1['wholeProjectLocPct']}% |",
-        "",
-        "## RQ2 重构成功率 / refactoring success rate (Table 7)",
-        "",
-        "| | 旧 Dubbo 3.2 | 新 Dubbo 3.3.6（一次生成 first-pass） | 新 Dubbo 3.3.6（含修复 final） |",
-        "|---|---|---|---|",
-        f"| MCI 级 | {table7_old['mciLevelPct']}% | {rq2['mciSuccessFirstPassPct']}% "
-        f"({rq2['mciSuccessFirstPass']}/{rq2['attemptedMcis']}) | {rq2['mciSuccessPct']}% "
-        f"({rq2['mciSuccess']}/{rq2['attemptedMcis']}) |",
-        f"| 测试级 | {table7_old['testLevelPct']}% | {rq2['testSuccessFirstPassPct']}% "
-        f"({rq2['testSuccessFirstPass']}/{rq2['totalImpactedTestCases']}) | {rq2['testSuccessPct']}% "
-        f"({rq2['testSuccess']}/{rq2['totalImpactedTestCases']}) |",
-        "",
-        "## 失败原因统计（查日志自动得出，不是人工过一遍）/ failure breakdown (from logs, not manual)",
-        "",
-        "| 分类 | 数量 | 示例 MCI |",
-        "|---|---|---|",
     ]
-    for classification, count in sorted(failures["counts"].items(), key=lambda kv: (-kv[1], kv[0])):
-        examples = ", ".join(failures["exampleMciIds"].get(classification, []))
-        lines.append(f"| {classification} | {count} | {examples} |")
 
-    if declined_categories and declined_categories.get("counts"):
+    if "1" in want:
         lines += [
             "",
-            "### MODEL_DECLINED 细分（关键词规则自动打标，可多标签）/ breakdown "
-            "(auto-tagged by keyword rules, multi-label)",
+            "## RQ1 检测规模 / detection scale (Table 5 & 6)",
             "",
-            "| 类别 | 数量 | MCI |",
+            "| | 旧 Dubbo 3.2 (78/592 修正版) | 新 Dubbo 3.3.6 |",
+            "|---|---|---|",
+            f"| Mock Objects | {dubbo_old['mockObjects']} | {rq1['mockObjects']} |",
+            f"| Mock Clone Instances | {dubbo_old['mockCloneInstances']} | {rq1['mockCloneInstances']} |",
+            f"| Class-Level 影响占比 | {table6_old['classLevelPct']}% ({table6_old['classLevelFrac']}) | "
+            f"{rq1['classLevelPct']}% ({rq1['classLevelFrac']}) |",
+            f"| Case-Level 涉及测试用例数 | {table6_old['caseLevelFrac'].split('/')[0]} | {rq1['caseLevelInvolvedCount']} |",
+            f"| Clone-Involved MO 削减 | {table6_old['cloneInvolvedMoPct']}% | {rq1['cloneInvolvedMoPct']}% |",
+            f"| Clone-Involved LOC 削减 | {table6_old['cloneInvolvedLocPct']}% | {rq1['cloneInvolvedLocPct']}% |",
+            f"| Whole-Project MO 削减 | {table6_old['wholeProjectMoPct']}% | {rq1['wholeProjectMoPct']}% |",
+            f"| Whole-Project LOC 削减 | {table6_old['wholeProjectLocPct']}% | {rq1['wholeProjectLocPct']}% |",
+        ]
+
+    if "2" in want:
+        lines += [
+            "",
+            "## RQ2 重构成功率 / refactoring success rate (Table 7)",
+            "",
+            "| | 旧 Dubbo 3.2 | 新 Dubbo 3.3.6（一次生成 first-pass） | 新 Dubbo 3.3.6（含修复 final） |",
+            "|---|---|---|---|",
+            f"| MCI 级 | {table7_old['mciLevelPct']}% | {rq2['mciSuccessFirstPassPct']}% "
+            f"({rq2['mciSuccessFirstPass']}/{rq2['attemptedMcis']}) | {rq2['mciSuccessPct']}% "
+            f"({rq2['mciSuccess']}/{rq2['attemptedMcis']}) |",
+            f"| 测试级 | {table7_old['testLevelPct']}% | {rq2['testSuccessFirstPassPct']}% "
+            f"({rq2['testSuccessFirstPass']}/{rq2['totalImpactedTestCases']}) | {rq2['testSuccessPct']}% "
+            f"({rq2['testSuccess']}/{rq2['totalImpactedTestCases']}) |",
+            "",
+            "## 失败原因统计（查日志自动得出，不是人工过一遍）/ failure breakdown (from logs, not manual)",
+            "",
+            "| 分类 | 数量 | 示例 MCI |",
             "|---|---|---|",
         ]
-        for name, count in sorted(declined_categories["counts"].items(), key=lambda kv: -kv[1]):
-            ids = ", ".join(e["mciId"] for e in declined_categories["byCategory"][name])
-            lines.append(f"| {name} | {count} | {ids} |")
-        if declined_categories.get("uncategorizedCount"):
-            ids = ", ".join(e["mciId"] for e in declined_categories["uncategorized"])
-            lines.append(f"| uncategorized | {declined_categories['uncategorizedCount']} | {ids} |")
+        for classification, count in sorted(failures["counts"].items(), key=lambda kv: (-kv[1], kv[0])):
+            examples = ", ".join(failures["exampleMciIds"].get(classification, []))
+            lines.append(f"| {classification} | {count} | {examples} |")
 
-    if goal_shortfalls:
+        if declined_categories and declined_categories.get("counts"):
+            lines += [
+                "",
+                "### MODEL_DECLINED 细分（关键词规则自动打标，可多标签）/ breakdown "
+                "(auto-tagged by keyword rules, multi-label)",
+                "",
+                "| 类别 | 数量 | MCI |",
+                "|---|---|---|",
+            ]
+            for name, count in sorted(declined_categories["counts"].items(), key=lambda kv: -kv[1]):
+                ids = ", ".join(e["mciId"] for e in declined_categories["byCategory"][name])
+                lines.append(f"| {name} | {count} | {ids} |")
+            if declined_categories.get("uncategorizedCount"):
+                ids = ", ".join(e["mciId"] for e in declined_categories["uncategorized"])
+                lines.append(f"| uncategorized | {declined_categories['uncategorizedCount']} | {ids} |")
+
+        if goal_shortfalls:
+            lines += [
+                "",
+                "### FAILED_REFACTORING_GOAL 明细：改动后仍然重复的行 / lines still "
+                "duplicated after the change",
+                "",
+            ]
+            for entry in goal_shortfalls:
+                lines.append(f"- **{entry['mciId']}**:")
+                for dup in entry["stillDuplicatedLines"]:
+                    lines.append(f"  - `{dup['line']}` (before={dup['before']}, after={dup['after']})")
+
+    if "3" in want:
         lines += [
             "",
-            "### FAILED_REFACTORING_GOAL 明细：改动后仍然重复的行 / lines still "
-            "duplicated after the change",
+            "## RQ3 成本 / cost",
             "",
+            f"model: `{rq3['model']}` — {rq3['pricingAssumption']}",
+            "",
+            "| | 一次生成 first-pass | 含修复 total |",
+            "|---|---|---|",
+            f"| API 调用次数 | — | {rq3['totalApiCalls']} |",
+            f"| Input tokens | {rq3['firstPassInputTokens']} | {rq3['totalInputTokens']} |",
+            f"| Output tokens | {rq3['firstPassOutputTokens']} | {rq3['totalOutputTokens']} |",
+            f"| 估算成本 (USD) | ${rq3['firstPassCostUsd']} | ${rq3['totalCostUsd']} |",
+            "",
+            "旧论文单独的 Dubbo RQ3 数字没有留存（只有六项目总计 153 分钟 / $14.41 / "
+            "730万 token，以及单项目 $0.29-$5.96 的区间），所以这里没法逐项对比，只能列新数据。",
+            "",
+            "PIT 的墙钟耗时没有计入上面的时间/成本（PIT 不消耗 token，且 harness 目前还没有"
+            "记录逐阶段耗时，细节见 `notes/OPTIMIZATION_LOG.md`）。",
         ]
-        for entry in goal_shortfalls:
-            lines.append(f"- **{entry['mciId']}**:")
-            for dup in entry["stillDuplicatedLines"]:
-                lines.append(f"  - `{dup['line']}` (before={dup['before']}, after={dup['after']})")
-
-    lines += [
-        "",
-        "## RQ3 成本 / cost",
-        "",
-        f"model: `{rq3['model']}` — {rq3['pricingAssumption']}",
-        "",
-        "| | 一次生成 first-pass | 含修复 total |",
-        "|---|---|---|",
-        f"| API 调用次数 | — | {rq3['totalApiCalls']} |",
-        f"| Input tokens | {rq3['firstPassInputTokens']} | {rq3['totalInputTokens']} |",
-        f"| Output tokens | {rq3['firstPassOutputTokens']} | {rq3['totalOutputTokens']} |",
-        f"| 估算成本 (USD) | ${rq3['firstPassCostUsd']} | ${rq3['totalCostUsd']} |",
-        "",
-        "旧论文单独的 Dubbo RQ3 数字没有留存（只有六项目总计 153 分钟 / $14.41 / "
-        "730万 token，以及单项目 $0.29-$5.96 的区间），所以这里没法逐项对比，只能列新数据。",
-        "",
-        "PIT 的墙钟耗时没有计入上面的时间/成本（PIT 不消耗 token，且 harness 目前还没有"
-        "记录逐阶段耗时，细节见 `OPTIMIZATION_LOG.md`）。",
-    ]
     return "\n".join(lines)
 
 
@@ -457,6 +483,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", required=True, help="run_pilot.py 生成的 pilot-*.json")
     parser.add_argument("--out", default=None, help="输出文件前缀（不含扩展名），默认和 report 同名")
+    parser.add_argument("--rq", default="all", choices=RQ_CHOICES,
+                         help="只输出某一个 RQ 的表格；RQ4 消融不在这个脚本里，见顶部 docstring / "
+                              "emit only one RQ's tables; RQ4 ablation is not computed here")
     args = parser.parse_args()
 
     report_path = Path(args.report)
@@ -479,9 +508,12 @@ def main() -> None:
         "declinedCategories": declined_categories, "goalShortfalls": goal_shortfalls,
     }
     out_prefix = Path(args.out) if args.out else report_path.with_name(f"analysis-{report_path.stem}")
+    if args.rq != "all":
+        out_prefix = out_prefix.with_name(f"{out_prefix.name}-rq{args.rq}")
     out_prefix.with_suffix(".json").write_text(json.dumps(analysis, ensure_ascii=False, indent=2), encoding="utf-8")
     out_prefix.with_suffix(".md").write_text(
-        render_markdown(report, rq1, rq2, failures, rq3, reference, declined_categories, goal_shortfalls),
+        render_markdown(report, rq1, rq2, failures, rq3, reference, declined_categories, goal_shortfalls,
+                         rq_filter=args.rq),
         encoding="utf-8",
     )
     print(f"wrote {out_prefix.with_suffix('.json')}")

@@ -41,7 +41,7 @@ class DetectionEdgeCasesTest {
     }
 
     @Test
-    void detectsMocksInsideNestedBlocksAndInlineArguments() throws Exception {
+    void excludesMocksPassedDirectlyAsMethodArguments() throws Exception {
         Path src = Files.createDirectories(directory.resolve("src/test/java/demo"));
         Files.writeString(src.resolve("NestedAndInlineTest.java"), """
                 package demo;
@@ -62,21 +62,22 @@ class DetectionEdgeCasesTest {
                     void testInlineMock() {
                         Service service = mock(Service.class);
                         service.setDependency(mock(Dependency.class));
+                        service.setDependency((Dependency) mock(Dependency.class));
+                        service.setDependency((mock(Dependency.class)));
                     }
                 }
                 """);
 
         List<MockInfo> mocks = MockInfoExporter.analyzeProject(directory, false);
 
-        // 3 个 Mock Object：if 块内的 dependency、testInlineMock 里声明的 service、
-        // 以及从未绑定变量、直接作为参数传入的内联 mock(Dependency.class)。
-        // 3 mock objects: the nested `dependency` inside the if-block, the declared
-        // `service`, and the inline mock(Dependency.class) passed straight as an argument.
-        assertEquals(3, mocks.size());
+        // 仅检测有可替换名称的 mock：if 块内的 dependency 和局部变量 service。
+        // 直接传给 setDependency 的 mock(Dependency.class) 不应成为重构候选。
+        // Only mocks with a replaceable name are collected: nested `dependency` and
+        // local `service`. mock(Dependency.class) passed to setDependency is excluded.
+        assertEquals(2, mocks.size());
         assertTrue(mocks.stream().anyMatch(mock -> "dependency".equals(mock.variableName)
                 && mock.statements.stream().anyMatch(stmt -> "STUBBING".equals(stmt.type))));
         assertTrue(mocks.stream().anyMatch(mock -> "service".equals(mock.variableName)));
-        assertTrue(mocks.stream().anyMatch(mock -> mock.variableName != null && mock.variableName.startsWith("$inline")
-                && "Dependency".equals(mock.mockedClass)));
+        assertFalse(mocks.stream().anyMatch(mock -> mock.variableName != null && mock.variableName.startsWith("$inline")));
     }
 }

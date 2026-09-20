@@ -85,7 +85,10 @@ public class MockInfoExporter {
                     .forEach(javaFiles::add);
         }
 
-        for (Path javaFile : javaFiles) {
+        int totalFiles = javaFiles.size();
+        System.out.println("[PROGRESS] SCAN 0/" + totalFiles);
+        for (int fileIndex = 0; fileIndex < totalFiles; fileIndex++) {
+            Path javaFile = javaFiles.get(fileIndex);
             try {
                 ParseResult<CompilationUnit> parseResult = parser.parse(javaFile);
 
@@ -114,6 +117,17 @@ public class MockInfoExporter {
                 }
             } catch (Exception e) {
                 System.err.println("[WARN] Skipping file due to exception: " + javaFile + " - " + e.getMessage());
+            }
+            // 带上当前文件名。只报 "312/4871" 时，一次扫描在界面上就是一条无声移动的进度条；
+            // 卡住时既看不出卡在哪个文件，也分不清是真卡住还是某个文件特别大。名字是这里唯一
+            // 能提供、而调用方无法自己推断的信息。
+            // Carries the current file name. Reporting only "312/4871" leaves a scan as a bar
+            // moving in silence: when it stalls, neither which file it stalled on nor whether it
+            // stalled at all is visible. The name is the one thing only this loop can supply and
+            // the caller cannot infer.
+            if ((fileIndex + 1) % 10 == 0 || fileIndex + 1 == totalFiles) {
+                System.out.println("[PROGRESS] SCAN " + (fileIndex + 1) + "/" + totalFiles
+                        + " " + javaFile.getFileName());
             }
         }
 

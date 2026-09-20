@@ -3,24 +3,17 @@ Validates the refactoring pass rate on a real project against the paper's RQ2.1 
 
 一批 MCI 共享同一个隔离副本，按顺序依次叠加应用，不用每个 MCI 都单独复制一次项目、
 各自冷编译一次——项目只复制、只冷编译一次，后续都是在同一份副本上增量编译。
-每个 MCI 自己的 PIT/test 范围只限定到它自己涉及的测试类（不是整批 MCI 的并集），
-所以还是 before/after 两次 PIT（最多 2N 次，加上修复轮次会更多），但因为范围窄、
-又是增量编译，实测比"范围铺开到整批但只有 N+1 次"更快，把项目当中不相关的部分
-排除在了变异测试之外。为了保证每个 MCI 的实验结果互相独立（不受前一个 MCI 是否
-成功影响），无论这个 MCI 最终成功还是失败，测完都会把它自己动过的文件恢复原状，
-下一个 MCI 总是从同一份未改动的基线开始——牺牲一点点"复用已改动文件"的速度，
-换实验数据的可信度。
+每个 MCI 的 before/after 都运行完整项目回归；被选中的测试类还必须出现在完整测试
+报告中，防止全量命令成功却没有实际覆盖改动所在测试。为了保证每个 MCI 的实验结果
+互相独立（不受前一个 MCI 是否成功影响），无论这个 MCI 最终成功还是失败，测完都会
+把它自己动过的文件恢复原状，下一个 MCI 总是从同一份未改动的基线开始。
 A batch of MCIs shares one isolated copy applied cumulatively in order, instead of every MCI
 getting its own fresh copy and its own cold compile — the project is copied and cold-compiled
 exactly once; everything after that is an incremental compile on the same copy. Each MCI's own
-PIT/test scope is limited to just its own affected test classes (not the whole batch's union),
-so it is still a before/after pair of PIT runs (up to 2N total, more with repair rounds) — but
-because each run's scope is narrow and compiles are incremental, this is faster in practice than
-a batch-wide but N+1 scope, and it keeps mutation testing away from parts of the project the MCI
-has nothing to do with. To keep every MCI's result independent of whatever happened to the MCIs
-before it, whichever files this MCI touched are restored after it is done regardless of whether
-it succeeded or failed, so the next MCI always starts from the same unmodified baseline — trading
-a little "reuse already-changed files" speed for experiment trustworthiness.
+Every MCI runs a complete-project regression before and after the candidate. Its selected test
+classes must also appear in the full test report, preventing a green reactor from accepting a
+candidate whose affected tests never executed. To keep every MCI independent, its touched files
+are restored after either success or failure, so the next MCI starts from the same baseline.
 
 用法 / Usage:
     uv run python validation/run_pilot.py --project-root "D:\\Java_projects\\Apache\\dubbo-3.3.6" --limit 2 --use-mock
@@ -47,12 +40,12 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from app.detection_service import DetectionService  # noqa: E402
-from app.harness import ensure_pit_junit5_support, mutation_regressed  # noqa: E402
-from app.model_provider import MockModelProvider  # noqa: E402
-from app.refactoring_agent import RefactoringAgent, _workspace_root  # noqa: E402
+from studio.detection_service import DetectionService  # noqa: E402
+from studio.harness import (ProjectHarness, ensure_pit_junit5_support, mutation_regressed,
+                             verification_failure_reason)  # noqa: E402
+from studio.model_provider import MockModelProvider  # noqa: E402
+from studio.refactoring_agent import RefactoringAgent, _workspace_root  # noqa: E402
 from validation.diff_utils import replay_replacements  # noqa: E402
-from validation.scoped_harness import ScopedProjectHarness  # noqa: E402
 
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
 USAGE_FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_tokens", "total_tokens")
@@ -113,7 +106,8 @@ def affected_modules(instance: dict, project_root: Path) -> list[str]:
     return sorted(modules)
 
 
-def classify_transition(previous: dict, current: dict, goal_achieved: bool, pit_regressed: bool) -> str:
+def classify_transition(previous: dict, current: dict, goal_achieved: bool, pit_regressed: bool,
+                        run_pit: bool = False, expected_test_classes: list[str] | None = None) -> str:
     """按论文 RQ2.1 三层标准，比较相邻两次 harness 结果，再叠加变异体回归与重构目标
     达成检查 / Compares two consecutive harness results per the paper's RQ2.1 three-tier
     criteria, then layers on the mutant-regression and refactoring-goal checks."""
@@ -127,6 +121,10 @@ def classify_transition(previous: dict, current: dict, goal_achieved: bool, pit_
     # testResults is an empty dict on both sides, and comparing dicts alone would misread that
     # as "the same result" — both runs must have actually completed their tests first.
     if previous.get("testStatus") != "PASSED" or current.get("testStatus") != "PASSED":
+        return "FAILED_BEHAVIORAL_EQUIVALENCE"
+    if verification_failure_reason(previous, False, expected_test_classes) is not None:
+        return "FAILED_BEHAVIORAL_EQUIVALENCE"
+    if verification_failure_reason(current, False, expected_test_classes) is not None:
         return "FAILED_BEHAVIORAL_EQUIVALENCE"
     if previous.get("testResults") != current.get("testResults"):
         return "FAILED_BEHAVIORAL_EQUIVALENCE"
@@ -143,6 +141,11 @@ def classify_transition(previous: dict, current: dict, goal_achieved: bool, pit_
     # not a single one had a real mutation-testing run behind it — this wasn't checked before.
     if previous.get("pitStatus") not in ("PASSED", "NOT_RUN") or current.get("pitStatus") not in ("PASSED", "NOT_RUN"):
         return "FAILED_FUNCTIONAL_INTEGRITY"
+    if run_pit and (
+        verification_failure_reason(previous, True, expected_test_classes) is not None
+        or verification_failure_reason(current, True, expected_test_classes) is not None
+    ):
+        return "FAILED_FUNCTIONAL_INTEGRITY"
     if pit_regressed:
         return "FAILED_FUNCTIONAL_INTEGRITY"
     if not goal_achieved:
@@ -152,7 +155,17 @@ def classify_transition(previous: dict, current: dict, goal_achieved: bool, pit_
 
 def build_instructions(direct_llm_baseline: bool) -> str:
     if not direct_llm_baseline:
-        return RefactoringAgent._instructions()
+        # 分阶段路径没有单一 prompt，每一步各用各的。这里把它们串起来只为算 promptHash：
+        # 任何一份阶段 prompt 改动都会让哈希变化，跑批之间的可比性因此仍然成立。
+        # The staged path has no single prompt; each step uses its own. Concatenating them
+        # here only serves promptHash, so that editing any stage prompt changes the hash and
+        # runs stay comparable.
+        return "\n\n".join(
+            RefactoringAgent._prompt(stage, variant)
+            for stage, variant in (("ENCAPSULATION", "helper"), ("ENCAPSULATION", "attribute"),
+                                   ("INTEGRATION", "before"), ("INTEGRATION", "local"),
+                                   ("INTEGRATION", "attribute"))
+        )
     # 不告诉模型哪些行是检测器认定的公共 stub，只给源码和一句通用目标——用来衡量
     # "结构化 MCI 上下文"这一项本身值多少。
     # Does not tell the model which lines the detector marked as the shared stub; only
@@ -175,7 +188,18 @@ def build_instructions(direct_llm_baseline: bool) -> str:
 
 def build_request(project_root: Path, selected: list[dict], files: dict[Path, str], direct_llm_baseline: bool) -> str:
     if not direct_llm_baseline:
-        return RefactoringAgent._model_input(project_root, selected, files, "")
+        # 分阶段路径每一步有自己的 payload；这份紧凑描述只用于修复轮次的 originalRequest。
+        # Each staged step builds its own payload; this compact description only feeds the
+        # repair rounds' originalRequest.
+        return json.dumps({
+            "selectedMockCloneInstances": [
+                {"mockedClass": instance.get("mockedClass", ""),
+                 "sequenceCount": instance.get("sequenceCount", 0),
+                 "sharedStatementLineCount": instance.get("sharedStatementLineCount", 0)}
+                for instance in selected
+            ],
+            "files": [path.as_posix() for path in files],
+        }, ensure_ascii=False)
     payload = {
         "projectRootName": project_root.name,
         "userInstruction": "",
@@ -247,18 +271,31 @@ def generate_proposal(run, raw: dict, mci_id: str, provider, model: str, direct_
         }
 
     request = build_request(run.project_root, selected, files, direct_llm_baseline)
-    result = provider.generate(instructions, request, model)
-    attempts = [{"attempt": 1, "responseId": result.response_id, "usage": result.usage}]
-    proposal = RefactoringAgent._parse_json(result.text)
+    stage_log: list[dict] = []
+    if direct_llm_baseline:
+        result = provider.generate(instructions, request, model)
+        attempts = [{"attempt": 1, "responseId": result.response_id, "usage": result.usage}]
+        proposal = RefactoringAgent._parse_json(result.text)
+    else:
+        # 每个 MCI 一次封装 + 每条 sequence 一次集成；"没有共享 stub"那条分支由代码直接做，
+        # 不调模型。跟产品路径 RefactoringAgent.run() 共用同一个生成器，两边不会走偏。
+        # One encapsulation per MCI plus one integration per sequence; the "no shared
+        # stubbing" branch is done in code without a model call. Shares the one generator
+        # with the product path's RefactoringAgent.run(), so the two cannot drift.
+        proposal, results, stage_log = RefactoringAgent._generate_staged(
+            provider, model, run.project_root, selected, files)
+        attempts = [{"attempt": index + 1, "responseId": item.response_id, "usage": item.usage}
+                    for index, item in enumerate(results)]
     if not proposal.get("canRefactor", False):
-        return {"ok": False, "reason": proposal.get("reason", "Model declined / 模型拒绝重构"), "attempts": attempts}
+        return {"ok": False, "reason": proposal.get("reason", "Model declined / 模型拒绝重构"),
+                "attempts": attempts, "stageLog": stage_log}
     replacements, edit_errors = RefactoringAgent._apply_edits(
         run.project_root, files, proposal.get("edits", []), proposal.get("newFiles", []))
     # 编辑本身有歧义（oldString 不唯一/没匹配上）时立刻重试，这时候 harness 还没跑过，
-    # 重试成本很低，跟 app/refactoring_agent.py 的 run() 用的是同一套逻辑。
+    # 重试成本很低，跟 studio/refactoring_agent.py 的 run() 用的是同一套逻辑。
     # Retry immediately when the edits themselves are ambiguous (oldString not unique /
     # not found) — the harness hasn't run yet so retrying here is cheap, mirroring the
-    # same logic in app/refactoring_agent.py's run().
+    # same logic in studio/refactoring_agent.py's run().
     for _ in range(2):
         if not edit_errors and replacements:
             break
@@ -267,8 +304,14 @@ def generate_proposal(run, raw: dict, mci_id: str, provider, model: str, direct_
             "currentProposal": proposal,
             "editErrors": edit_errors or ["canRefactor was true but no edits or newFiles were provided"],
         }, ensure_ascii=False)
+        # 修复面对的是一份完整提案加错误列表，跟分阶段生成"只看一个测试方法"的任务形状
+        # 不同，所以用专门的修复指令，不是把阶段 prompt 拼起来再发一遍。
+        # Repair works on a complete proposal plus an error list — a different shape from
+        # staged generation's "one test method at a time" — so it uses the dedicated repair
+        # instructions rather than re-sending the concatenated stage prompts.
         result = provider.generate(
-            instructions + "\nFix the previous proposal's edits/newFiles using the errors below.",
+            RefactoringAgent._repair_instructions()
+            + "\nFix the previous proposal's edits/newFiles using the errors below.",
             repair_input, model,
         )
         attempts.append({"attempt": len(attempts) + 1, "responseId": result.response_id, "usage": result.usage})
@@ -289,7 +332,7 @@ def generate_proposal(run, raw: dict, mci_id: str, provider, model: str, direct_
     return {
         "ok": True, "selected": selected, "files": files, "replacements": replacements,
         "instructions": instructions, "request": request, "proposal": proposal, "attempts": attempts,
-        "caveat": proposal.get("caveat", ""),
+        "caveat": proposal.get("caveat", ""), "stageLog": stage_log,
     }
 
 
@@ -453,14 +496,15 @@ def main() -> None:
             print("  ensuring PIT can run against JUnit 5 (pitest-junit5-plugin + matching junit-platform-launcher) ...")
             ensure_pit_junit5_support(workspace, args.maven_repo_local)
 
-        print("  [sanity check] compile unmodified copy once (no PIT) ..."
+        print("  [sanity check] full-project compile + test on unmodified copy (no PIT) ..."
               + (f" repoLocal={args.maven_repo_local}" if args.maven_repo_local else ""))
-        sanity = ScopedProjectHarness(
-            runnable[0][1], runnable[0][2], args.maven_repo_local,
-        ).validate(workspace, run_pit=False).as_dict()
-        if sanity.get("compileStatus") != "PASSED":
-            print("  ABORT: unmodified project does not compile in the shared workspace / 未修改的项目在共享副本里编译不过")
+        sanity = ProjectHarness(args.maven_repo_local).validate(workspace, run_pit=False).as_dict()
+        sanity_failure = verification_failure_reason(sanity, run_pit=False)
+        if sanity_failure is not None:
+            print("  ABORT: unmodified project cannot complete full-project regression in the shared workspace / "
+                  "未修改的项目无法在共享副本中完成全项目回归")
             report["initialSanityCheck"] = sanity
+            report["initialSanityFailure"] = sanity_failure
             report["sharedWorkspace"] = str(workspace)
             for mci_id, test_classes, _ in runnable:
                 report["results"].append({
@@ -479,6 +523,26 @@ def main() -> None:
     pit_runs = 0
     for mci_id, test_classes, modules in runnable:
         print(f"  - {mci_id}: {len(test_classes)} test class(es) -> {test_classes}")
+        # Full-project regression is the acceptance gate. The selected classes remain an
+        # explicit evidence requirement, so a green reactor cannot hide skipped targets.
+        mci_harness = ProjectHarness(args.maven_repo_local)
+        print(f"    [baseline] full-project compile + test" + (" + PIT" if args.run_pit else "") + " ...")
+        pit_runs += 1
+        before_state = mci_harness.validate(workspace, args.run_pit).as_dict()
+        baseline_failure = verification_failure_reason(before_state, args.run_pit, test_classes)
+        if baseline_failure is not None:
+            report["results"].append({
+                "mciId": mci_id,
+                "testClasses": test_classes,
+                "classification": "SKIPPED_BASELINE_FAILED",
+                "reason": baseline_failure,
+                "attempts": [],
+                "usage": {field: 0 for field in USAGE_FIELDS},
+                "harness": {"before": before_state, "after": None},
+            })
+            print(f"    -> SKIPPED_BASELINE_FAILED ({baseline_failure})")
+            continue
+
         proposal = generate_proposal(run, raw, mci_id, provider, args.model, args.direct_llm_baseline, replay)
         if not proposal["ok"]:
             report["results"].append({
@@ -491,24 +555,11 @@ def main() -> None:
             print(f"    -> MODEL_DECLINED ({proposal['reason']})")
             continue
 
-        # 只测这个 MCI 自己涉及的测试类和模块，不是整批的并集 —— 变异测试不去碰这个
-        # MCI 根本没碰过的代码，Maven 也不用把整个 reactor 走一遍（-pl -am）。用的还是
-        # 同一个共享 workspace，编译已经是增量的了。
-        # Scoped to just this MCI's own test classes and modules, not the whole batch's
-        # union — mutation testing never touches code this MCI has nothing to do with, and
-        # Maven doesn't have to walk the whole reactor (-pl -am). Still the same shared
-        # workspace, compiles are just incremental by this point.
-        mci_harness = ScopedProjectHarness(test_classes, modules, args.maven_repo_local)
-
         selected = proposal["selected"]
         files = proposal["files"]
         replacements = proposal["replacements"]
         attempts = list(proposal["attempts"])
         prompt_hash = hashlib.sha256(proposal["instructions"].encode("utf-8")).hexdigest()[:16]
-
-        print(f"    [before] compile + test" + (" + PIT" if args.run_pit else "") + " scoped to this MCI's own tests ...")
-        pit_runs += 1
-        before_state = mci_harness.validate(workspace, args.run_pit).as_dict()
 
         # None 表示这个路径在改动前根本不存在（模型新建的文件）——恢复原状时要删掉它，
         # 不是写回空字符串。
@@ -527,12 +578,15 @@ def main() -> None:
         proposal_root = run.run_directory / "refactoring" / proposal_id
         write_diff(proposal_root, files, replacements)
 
-        print(f"    [after] compile + test" + (" + PIT" if args.run_pit else "") + " scoped to this MCI's own tests ...")
+        print(f"    [after] full-project compile + test" + (" + PIT" if args.run_pit else "") + " ...")
         pit_runs += 1
         after_state = mci_harness.validate(workspace, args.run_pit).as_dict()
         goal_achieved = RefactoringAgent._goal_check(selected, files, replacements)
         pit_regressed = args.run_pit and mutation_regressed(before_state, after_state)
-        classification = classify_transition(before_state, after_state, goal_achieved, pit_regressed)
+        classification = classify_transition(
+            before_state, after_state, goal_achieved, pit_regressed,
+            args.run_pit, test_classes,
+        )
         first_pass_classification = classification
 
         # Harness 失败（编译不过或测试行为变了）时把机器诊断交回模型，最多修复两次；
@@ -554,7 +608,8 @@ def main() -> None:
                 "harnessDiagnostics": after_state.get("diagnostics", []),
             }, ensure_ascii=False)
             result = provider.generate(
-                proposal["instructions"] + "\nRepair the previous proposal using the harness diagnostics.",
+                RefactoringAgent._repair_instructions()
+                + "\nRepair the previous proposal using the harness diagnostics.",
                 repair_input, args.model,
             )
             attempts.append({"attempt": len(attempts) + 1, "responseId": result.response_id, "usage": result.usage})
@@ -585,7 +640,10 @@ def main() -> None:
             after_state = mci_harness.validate(workspace, args.run_pit).as_dict()
             goal_achieved = RefactoringAgent._goal_check(selected, files, replacements)
             pit_regressed = args.run_pit and mutation_regressed(before_state, after_state)
-            classification = classify_transition(before_state, after_state, goal_achieved, pit_regressed)
+            classification = classify_transition(
+                before_state, after_state, goal_achieved, pit_regressed,
+                args.run_pit, test_classes,
+            )
 
         # 无论最终成功还是失败，都把这个 MCI 动过的文件恢复原状，下一个 MCI 从同一份
         # 未改动基线开始，实验之间互相独立。

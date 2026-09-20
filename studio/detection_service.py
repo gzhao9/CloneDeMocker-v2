@@ -7,7 +7,7 @@ import subprocess
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 
 IGNORED_DIRECTORIES = {".git", ".gradle", ".idea", "build", "target", "node_modules"}
@@ -75,6 +75,7 @@ class DetectionService:
         exclude_paths: list[str],
         package_prefixes: list[str],
         resolve_dependencies: bool,
+        progress_callback: Callable[[int, int, str], None] | None = None,
     ) -> dict[str, Any]:
         root = self._project_root(project_root)
         run_id = uuid.uuid4().hex
@@ -95,6 +96,9 @@ class DetectionService:
 
         command = [
             self._java(),
+            "-Dfile.encoding=UTF-8",
+            "-Dsun.stdout.encoding=UTF-8",
+            "-Dsun.stderr.encoding=UTF-8",
             "-jar",
             str(self._detector_jar()),
             "scan",
@@ -105,7 +109,7 @@ class DetectionService:
         ]
         if not resolve_dependencies:
             command.append("--skip")
-        output = self._run(command, root)
+        output = self._run(command, root, progress_callback)
 
         mock_objects = json.loads((run_directory / "mock-objects.json").read_text(encoding="utf-8"))
         return {
@@ -148,6 +152,35 @@ class DetectionService:
             "rawResult": result,
             "diagnostics": output[-12000:],
         }
+
+    def mock_preview(self, run_id: str, mock_id: int) -> dict[str, Any]:
+        run = self._load_run(run_id)
+        objects = json.loads((run.run_directory / "mock-objects.json").read_text(encoding="utf-8"))
+        item = next((value for value in objects if value.get("rawMockObjectId") == mock_id), None)
+        if item is None:
+            raise DetectionError("Mock object not found / 未找到 Mock 对象")
+        statements = item.get("statements") or []
+        return {"variableName": item.get("variableName"), "mockedClass": item.get("mockedClass"),
+                "filePath": self._summarize_mock(run.project_root, item)["filePath"],
+                "snippets": [{"code": statement.get("locationContext", {}).get("methodRawCode") or statement.get("code", ""),
+                              "methodName": statement.get("locationContext", {}).get("methodName", ""),
+                              "line": statement.get("line"), "target": statement.get("code", "")}
+                             for statement in statements if statement.get("isMockRelated")]}
+
+    def mci_preview(self, run_id: str, mci_id: str) -> dict[str, Any]:
+        _, raw = self.load_raw_detection(run_id)
+        for mocked_class, instances in raw.get("detectedMockClones", {}).items():
+            for index, instance in enumerate(instances, start=1):
+                if f"{mocked_class}::{index}" != mci_id:
+                    continue
+                sequences = instance.get("sequences") or []
+                return {"id": mci_id, "sharedStatements": instance.get("sharedStatements") or [],
+                        "occurrences": [{"filePath": sequence.get("filePath"), "methodName": sequence.get("testMethodName"),
+                                         "variableName": sequence.get("variableName"),
+                                         "code": sequence.get("testMethodRawCode", ""),
+                                         "sharedLines": list((sequence.get("shareableMockLines") or {}).values())}
+                                        for sequence in sequences]}
+        raise DetectionError("MCI not found / 未找到 MCI")
 
     def load_raw_detection(self, run_id: str) -> tuple[DetectionRun, dict[str, Any]]:
         run = self._load_run(run_id)
@@ -209,7 +242,14 @@ class DetectionService:
         built_from_current_source = stamp.is_file() and stamp.read_text(encoding="ascii").strip() == fingerprint
         if not matches or not built_from_current_source:
             executable = "mvn.cmd" if os.name == "nt" else "mvn"
-            self._run([executable, "-DskipTests", "package"], self.detector_root)
+            command = [executable]
+            maven_repository = os.environ.get("CLONEDEMOCKER_MAVEN_REPO", "").strip()
+            if not maven_repository and os.environ.get("USERPROFILE"):
+                maven_repository = str(Path(os.environ["USERPROFILE"]) / ".m2" / "repository")
+            if maven_repository:
+                command.append(f"-Dmaven.repo.local={maven_repository}")
+            command.extend(["-DskipTests", "package"])
+            self._run(command, self.detector_root)
             matches = sorted((self.detector_root / "target").glob("*-jar-with-dependencies.jar"))
             stamp.write_text(fingerprint, encoding="ascii")
         if not matches:
@@ -228,19 +268,30 @@ class DetectionService:
         return "java.exe" if os.name == "nt" else "java"
 
     @staticmethod
-    def _run(command: list[str], cwd: Path) -> str:
-        completed = subprocess.run(
-            command,
-            cwd=cwd,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            check=False,
-        )
-        if completed.returncode != 0:
+    def _run(command: list[str], cwd: Path, progress_callback: Callable[[int, int, str], None] | None = None) -> str:
+        process = subprocess.Popen(command, cwd=cwd, text=True, encoding="utf-8", errors="replace",
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+        lines: list[str] = []
+        assert process.stdout is not None
+        for line in process.stdout:
+            lines.append(line)
+            if progress_callback and line.startswith("[PROGRESS] SCAN "):
+                # 格式是 "[PROGRESS] SCAN done/total [文件名]"。文件名是后加的，所以按可选处理，
+                # 旧 jar 产出的两段式输出仍然能解析——否则换一个 jar 进度就整条断掉。
+                # The format is "[PROGRESS] SCAN done/total [file]". The name was added later and
+                # stays optional so an older jar's two-field output still parses; otherwise
+                # swapping the jar would break progress entirely.
+                try:
+                    fields = line.split(maxsplit=3)
+                    done, total = fields[2].split("/")
+                    current_file = fields[3].strip() if len(fields) > 3 else ""
+                    progress_callback(int(done), int(total), current_file)
+                except (ValueError, IndexError):
+                    pass
+        returncode = process.wait()
+        output = "".join(lines)
+        if returncode != 0:
             raise DetectionError(
-                f"Command failed ({completed.returncode}) / 命令执行失败\n{completed.stdout[-12000:]}"
+                f"Command failed ({returncode}) / 命令执行失败\n{output[-12000:]}"
             )
-        return completed.stdout
+        return output

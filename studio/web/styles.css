@@ -67,6 +67,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+body.is-busy {
+  cursor: progress;
+}
+
+body.is-busy button,
+body.is-busy input,
+body.is-busy textarea,
+body.is-busy select {
+  pointer-events: none;
+}
+
 /* ================= Top Header ================= */
 header {
   background: linear-gradient(135deg, var(--primary-950) 0%, var(--primary-900) 60%, var(--primary-800) 100%);
@@ -389,6 +400,48 @@ h2 {
   font-size: 13px;
 }
 
+/* Project readiness is a first-class gate, not a warning hidden in diagnostics. */
+.readiness-card {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(300px, auto);
+  gap: 18px;
+  align-items: center;
+  margin: 18px 0 24px;
+  padding: 18px;
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid var(--primary-600);
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, #f0fdf4, #fff);
+}
+
+.readiness-card h3 { margin: 3px 0; font-size: 16px; }
+.readiness-card p { margin: 0; color: var(--text-muted); font-size: 12px; }
+.eyebrow-local { font-size: 10px; font-weight: 800; letter-spacing: .08em; color: var(--primary-700); }
+.runner-actions { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
+.runner-actions label { min-width: 150px; }
+.runner-actions select { padding: 9px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.baseline-status { grid-column: 1 / -1; padding: 10px 12px; border-radius: var(--radius-sm); background: #fff; border: 1px solid var(--border); color: var(--text-muted); font-size: 12px; }
+.baseline-status.verified { color: #166534; border-color: #86efac; background: #f0fdf4; }
+.baseline-status.failed { color: #991b1b; border-color: #fecaca; background: #fef2f2; }
+
+.validation-plan {
+  display: grid;
+  gap: 5px;
+  margin: 18px 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 12.5px;
+}
+.execution-plan { display:grid; grid-template-columns:1fr auto; gap:10px; margin:16px 0; padding:14px 16px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface-subtle); }
+.execution-plan strong,.execution-plan span { display:block; }
+.execution-plan span,.execution-plan small { color:var(--text-muted); font-size:12px; }
+.execution-plan small { grid-column:1/-1; }
+.execution-plan input { width:72px; padding:7px; }
+.validation-plan strong { font-size: 13px; }
+
 /* Metric Display in Header */
 .metric {
   display: flex;
@@ -454,7 +507,7 @@ textarea:focus {
 
 .project-row {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
   gap: 14px;
   align-items: flex-end;
 }
@@ -477,6 +530,51 @@ textarea:focus {
 
 .path-warning strong {
   color: #b45309;
+}
+
+/* 阻断级预检结果：这个项目在本机当前配置下根本走不下去，跟"可以继续但要注意"
+   必须一眼能分辨，所以换成红色而不是同一套琥珀色。
+   A blocking preflight verdict: this project cannot proceed on this host as
+   configured, which must be distinguishable at a glance from "you may continue
+   but take note" — hence red rather than the same amber. */
+.path-warning.blocker {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.path-warning.blocker strong {
+  color: #b91c1c;
+}
+
+.preflight-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.preflight-finding {
+  margin-top: 4px;
+}
+
+#preflight-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+#preflight-actions:empty {
+  display: none;
+}
+
+.preflight-probe {
+  margin-top: 10px;
+}
+
+.preflight-probe summary {
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.8;
 }
 
 /* Modern Buttons */
@@ -613,6 +711,13 @@ button {
   padding-left: 0;
 }
 
+.tree .node-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
 .tree label {
   display: flex;
   flex-direction: row;
@@ -623,6 +728,8 @@ button {
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: background 0.15s;
+  flex: 1;
+  min-width: 0;
 }
 
 .tree label:hover {
@@ -632,11 +739,47 @@ button {
 .tree input[type="checkbox"] {
   width: auto;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-.tree .directory > label {
+.tree .directory > .node-row > label {
   font-weight: 650;
   color: var(--primary-900);
+}
+
+.tree-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 10px;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.tree-toggle:hover {
+  background: var(--surface-subtle);
+  color: var(--text-main);
+}
+
+.tree-toggle.collapsed {
+  transform: rotate(-90deg);
+}
+
+.tree-toggle-spacer {
+  display: inline-block;
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.tree li.directory.collapsed > ul {
+  display: none;
 }
 
 .scope-options {
@@ -677,11 +820,70 @@ button {
   border-top: 1px solid var(--border);
 }
 
+/* ================= Scan Diagnostics ================= */
+.scan-warning {
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 12.5px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.45;
+}
+
+.scan-diagnostics {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+.scan-diagnostics summary {
+  cursor: pointer;
+  padding: 10px 16px;
+  font-weight: 650;
+  font-size: 12.5px;
+  color: var(--text-main);
+  background: var(--surface-subtle);
+  user-select: none;
+}
+
+.scan-diagnostics .diagnostics {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  border-top: 1px solid var(--border);
+}
+
 /* ================= Mock Objects Table ================= */
 .search-wrapper {
   position: relative;
   max-width: 440px;
   flex: 1;
+}
+
+.mock-filters {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mock-filters select {
+  min-width: 140px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--text-main);
+  font: inherit;
+  font-size: 12.5px;
 }
 
 .table-wrap {
@@ -737,6 +939,51 @@ td code {
   font-size: 12px;
 }
 
+.source-preview-row td, .mci-source-evidence {
+  background: #f8fafc;
+  padding: 14px 18px;
+}
+
+.source-preview-row details, .mci-source-evidence details {
+  margin-top: 10px;
+}
+
+.java-preview {
+  max-height: 340px;
+  overflow: auto;
+  margin: 8px 0 0;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: #0f172a;
+  color: #e2e8f0;
+  font: 12px/1.55 var(--font-mono);
+  white-space: pre;
+}
+
+.code-target {
+  padding: 1px 2px;
+  border-radius: 3px;
+  background: #fef08a;
+  color: #422006;
+}
+
+.code-keyword { color: #93c5fd; font-weight: 700; }
+
+.mci-filters {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+}
+
+.mci-filters > input { flex: 1; }
+.mci-filters label { font-size: 11px; }
+.mci-filters input[type="number"] { width: 76px; padding: 7px; }
+
 /* ================= MCI Cluster Cards ================= */
 .mci-list {
   display: flex;
@@ -763,6 +1010,14 @@ td code {
   border-left-color: var(--primary-600);
 }
 
+.mci.selected {
+  border-color: #22c55e;
+  background: #f0fdf4;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.14);
+}
+
+.mci > div { min-width: 0; }
+
 .mci input[type="checkbox"] {
   width: 18px;
   height: 18px;
@@ -782,6 +1037,7 @@ td code {
   margin: 4px 0 8px;
   color: var(--text-muted);
   font-size: 12.5px;
+  overflow-wrap: anywhere;
 }
 
 .chips {
@@ -811,6 +1067,13 @@ td code {
   font-size: 26px;
   font-weight: 800;
   color: var(--primary-800);
+}
+
+.selection-note {
+  min-height: 20px;
+  margin: -6px 0 12px;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .mci-sequences {
@@ -892,7 +1155,12 @@ td code {
 
 .result-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* auto-fit 而不是固定 4 列：这一排的格子数会变（加入基线和模型调用次数之后是 6 个），
+     写死列数会在换行时留下很难看的空档。
+     auto-fit rather than a fixed 4 columns: the number of cells here varies (six once the
+     baseline and model-call counts are included), and a hard-coded column count leaves an
+     awkward gap when it wraps. */
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
   margin-bottom: 24px;
 }
@@ -1298,6 +1566,80 @@ td code {
   background: #1e293b;
 }
 
+/* ================= Full-page Progress Feedback ================= */
+.progress-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(6, 36, 26, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.progress-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: min(520px, 100%);
+  padding: 24px;
+  border: 1px solid rgba(190, 242, 100, 0.35);
+  border-radius: var(--radius-lg);
+  background: var(--primary-950);
+  color: #ffffff;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+}
+
+.progress-card strong {
+  display: block;
+  font-size: 18px;
+}
+
+.progress-card p {
+  margin: 4px 0;
+  color: #d1fae5;
+  font-size: 13px;
+}
+
+.progress-card span {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.progress-track { height: 8px; margin-top: 12px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.18); }
+.progress-bar { width: 0; height: 100%; border-radius: inherit; background: var(--accent); transition: width .35s ease; }
+
+#progress-percent { display: block; margin: 8px 0 5px; color: var(--accent); font-size: 12px; }
+.cache-choice { grid-column: 1 / -1; display: flex; gap: 18px; padding: 10px 12px; border: 1px solid #86efac; border-radius: var(--radius-sm); background: #f0fdf4; }
+.cache-choice legend { padding: 0 6px; font-weight: 700; color: #166534; }
+.cache-choice label { display: inline-flex; align-items: center; gap: 6px; }
+.proposal-queue { display: flex; gap: 8px; overflow-x: auto; padding: 10px; margin-bottom: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-subtle, #f8fafc); }
+.proposal-queue-item { flex: 0 0 auto; padding: 7px 10px; border: 1px solid var(--border); border-radius: 999px; background: #fff; color: var(--text-muted); cursor: pointer; }
+.proposal-queue-item.active { color: #fff; border-color: var(--accent); background: var(--accent); }
+.repair-history { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.repair-history summary { cursor: pointer; font-weight: 700; }
+.repair-history strong { display: block; margin-top: 12px; }
+.repair-history pre { max-height: 360px; overflow: auto; padding: 10px; white-space: pre-wrap; background: #0f172a; color: #e2e8f0; border-radius: var(--radius-sm); font-size: 11px; }
+.progress-stages li.completed { color: #166534; }
+.progress-stages li.failed { color: #991b1b; }
+.progress-stages { display:flex; gap:14px; margin:10px 0 0; padding:0; list-style:none; font-size:11px; color:#cbd5e1; }
+.progress-stages li.active { color:var(--accent); font-weight:700; }
+
+.progress-spinner {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 4px solid rgba(190, 242, 100, 0.24);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.85s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ================= Responsive Breakpoints ================= */
 @media (max-width: 960px) {
   .steps {
@@ -1334,4 +1676,394 @@ td code {
   .env-item {
     grid-template-columns: 1fr;
   }
+  .mock-filters {
+    flex-wrap: wrap;
+  }
+  .mock-filters .search-wrapper {
+    flex-basis: 100%;
+  }
+}
+
+/* 缓存确认框：缓存命中不花 token，所以没有任何迹象提示你拿到的是旧答案——
+   必须在跑之前明确问一次，而不是默默复用。
+   Cache confirmation: a cache hit spends no tokens, so nothing signals that the
+   answer is an old one — this has to be asked before the run, not assumed. */
+#cache-prompt {
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 24px 28px;
+  max-width: 520px;
+  background: var(--surface-100, #ffffff);
+  color: inherit;
+  box-shadow: var(--shadow-lg);
+}
+
+#cache-prompt::backdrop {
+  background: rgba(15, 23, 42, 0.55);
+}
+
+#cache-prompt h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+#cache-prompt p {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary, #475569);
+}
+
+.cache-prompt-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.cache-prompt-actions button {
+  padding: 9px 16px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border-200, #cbd5e1);
+  background: transparent;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cache-prompt-actions button.primary {
+  background: var(--primary-600, #15803d);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.cache-prompt-actions button.ghost {
+  border-color: transparent;
+  color: var(--text-secondary, #475569);
+}
+
+/* 候选池 / 运行列表：筛选和选择是两件事。原来它们共用一个列表，筛选只是隐藏条目，
+   被隐藏的仍然处于选中状态并会被提交——实测一次把 3 个 MCI 的意图变成了 99 个的运行。
+   拆成两个列表之后，"要跑什么"是下面这份看得见、数得清的清单，筛选再也碰不到它。
+   Candidate pool vs run list: filtering and selecting are different things. They shared one
+   list before, where filtering merely hid entries that stayed selected and were still
+   submitted — one run turned an intent of 3 MCIs into 99. Split in two, what will run is the
+   visible, countable list below, and filtering can no longer touch it. */
+.run-list {
+  margin-top: 16px;
+  border: 1px solid var(--border-200, #cbd5e1);
+  border-radius: var(--radius-md, 10px);
+  overflow: hidden;
+}
+
+.run-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface-200, #f1f5f9);
+}
+
+.run-list-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.run-list-caret {
+  display: inline-block;
+  transition: transform 0.15s ease;
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.run-list-toggle[aria-expanded="true"] .run-list-caret {
+  transform: rotate(90deg);
+}
+
+/* 折叠时只露几行，展开后给一个固定高度的滚动区——选了几十个也不会把页面撑爆。
+   Collapsed shows a few rows; expanded becomes a fixed-height scroller, so dozens of
+   selections never stretch the page. */
+.run-list-items {
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 8px 14px 12px;
+}
+
+.run-list-items.collapsed {
+  max-height: 132px;
+  overflow: hidden;
+  position: relative;
+}
+
+.run-list-items.collapsed::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 42px;
+  background: linear-gradient(transparent, var(--surface-100, #ffffff));
+  pointer-events: none;
+}
+
+.run-list-items:empty::before {
+  content: attr(data-empty);
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+.run-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border-100, #e2e8f0);
+}
+
+.run-item:last-child {
+  border-bottom: none;
+}
+
+.run-item-id {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-item-meta {
+  opacity: 0.6;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.run-item-remove {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  opacity: 0.55;
+  padding: 2px 6px;
+}
+
+.run-item-remove:hover {
+  opacity: 1;
+  color: var(--status-error, #dc2626);
+}
+
+/* 进度卡片：一条进度条要同时表达"这个 MCI 跑到哪了"和"整批跑到哪了"，
+   只能靠一行文字去区分，看一眼分不出来。拆成两条，各自带标签。
+   Progress card: one bar had to convey both "how far this MCI is" and "how far the batch
+   is", distinguished only by a line of text that a glance cannot separate. Two bars, each
+   labelled. */
+.progress-tally {
+  display: flex;
+  gap: 18px;
+  margin: 12px 0 2px;
+}
+
+.progress-tally .tally {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.progress-tally .tally strong {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.progress-tally .tally small {
+  font-size: 11px;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.progress-tally .tally.ok strong { color: var(--accent); }
+.progress-tally .tally.bad strong { color: #f87171; }
+
+.progress-meter {
+  margin-top: 10px;
+}
+
+.progress-meter-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 4px;
+}
+
+.progress-meter-label em {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 12px;
+  opacity: 1;
+}
+
+.progress-bar.overall { background: #7dd3fc; }
+
+/* 条目多了就换成可滚动的一列。原来是横向排布，3 个还能看，几十个会把卡片撑到看不清
+   当前跑到哪一个。
+   Many entries become a scrollable column. The row layout reads fine at three and stretches
+   the card past legibility at dozens, hiding which one is actually running. */
+.progress-stages {
+  display: block;
+  max-height: 148px;
+  overflow-y: auto;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.progress-stages li {
+  padding: 3px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progress-stages li.completed { color: #86efac; }
+.progress-stages li.failed { color: #fca5a5; }
+.progress-stages li.queued { opacity: 0.45; }
+
+/* 卡片是 flex 容器，里面装文字的那个 div 是 flex item，而 flex item 默认
+   `min-width: auto` —— 它不肯收缩到小于内容宽度。MCI 的全限定名很长，于是这个 div
+   被内容撑开，把 `width: min(520px, 100%)` 的卡片一起挤破，文字跑到卡片外面。
+   加了 `min-width: 0` 才允许它收缩，下面那些 ellipsis 和滚动条也才真正生效——
+   在此之前它们不会触发，因为容器宽度本来就是由内容决定的。
+   The card is a flex container and the div holding its text is a flex item, whose default
+   `min-width: auto` refuses to shrink below its content. A fully qualified MCI name is long,
+   so that div is pushed wide and takes the `width: min(520px, 100%)` card with it, spilling
+   text outside. `min-width: 0` is what lets it shrink, and only then do the ellipsis and
+   scrolling below do anything — until it is set they never trigger, because the container's
+   width is defined by its content in the first place. */
+/* 必须排除 spinner：它也是 .progress-card 的直接子 div，而 `.progress-card > div`
+   的特异性（0,1,1）高于 `.progress-spinner`（0,1,0），不排除就会把它的
+   `flex: 0 0 auto` 覆盖掉，转圈图标被拉伸变形。
+   The spinner has to be excluded: it is also a direct div child, and `.progress-card > div`
+   (0,1,1) outranks `.progress-spinner` (0,1,0), so without this it would override the
+   spinner's `flex: 0 0 auto` and stretch the indicator out of shape. */
+.progress-card > div:not(.progress-spinner) {
+  min-width: 0;
+  flex: 1;
+}
+
+.progress-card #progress-detail {
+  overflow-wrap: anywhere;
+}
+
+/* 运行日志：只在某一项结束时追加一行，不是每次轮询重铺一遍全部状态。
+   "此刻每项处于什么状态"标题、两条进度条和三个计数已经说完了；日志回答的是卡片答不了的
+   问题——哪个失败了、为什么、按什么顺序。一批跑几小时，这是中途唯一能看到的历史。
+   A run log appended one line per finished item, not the whole state re-laid every poll. What
+   each item is doing right now is already covered by the title, the two bars and the tally;
+   the log answers what they cannot — which one failed, why, and in what order. Over a batch
+   running for hours, this is the only history visible while it runs. */
+.progress-log {
+  margin-top: 12px;
+  padding: 8px 10px;
+  height: 104px;
+  overflow-y: auto;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: Consolas, Menlo, Monaco, "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.55;
+  color: #cbd5e1;
+}
+
+.progress-log:empty::before {
+  content: "Waiting for the first result…";
+  opacity: 0.45;
+}
+
+.progress-log div {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.progress-log .ok { color: #86efac; }
+.progress-log .bad { color: #fca5a5; }
+.progress-log .dim { opacity: 0.55; }
+
+/* 诊断框原本写死了红色配色，不管这次跑成没跑成。于是一份以 BUILD SUCCESS 结尾的
+   Maven 日志也整块泛红，看一眼像是出了事——而这个框在成功时恰恰是最该让人安心的证据。
+   颜色改由结果决定：成功走中性灰，失败才是红的。
+   The diagnostics box hard-coded an error palette regardless of outcome, so a Maven log
+   ending in BUILD SUCCESS still glowed red and read like a failure — when on success this box
+   is precisely the reassuring evidence. The colour now follows the result: neutral when it
+   passed, red only when it did not. */
+.diagnostics.passed {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+/* `body.is-busy button { pointer-events: none }` 会把页面上每个按钮都关掉，包括模态
+   对话框自己的。于是任务一开始跑，缓存确认框的"使用缓存 / 清除 / 取消"三个按钮全成了
+   摆设——框还在，点哪儿都没反应，只能刷新页面。
+   模态框是用来打断当前任务的，它必须凌驾于"忙碌"状态之上。
+   `body.is-busy button { pointer-events: none }` disables every button on the page, the
+   modal's own included. Once a task started, the cache dialog's three buttons became
+   ornaments — the box stayed up, nothing responded, and only a reload got out of it.
+   A modal exists to interrupt the running task, so it has to outrank the busy state. */
+body.is-busy #cache-prompt button {
+  pointer-events: auto;
+}
+
+/* `hidden` 属性是靠浏览器默认样式表里的 `[hidden] { display: none }` 生效的，特异性只有
+   0,1,0。任何一条同级的类选择器只要写了 display，因为在它之后定义就会赢——于是元素明明
+   设了 hidden 却照样显示。扫描阶段的「0 成功 / 0 失败 / 0 剩余」就是这么冒出来的：JS 确实
+   设了 hidden，`.progress-tally { display: flex }` 把它压了回去。
+   属性选择器把特异性提到 0,2,0，让 hidden 重新说了算。
+   The `hidden` attribute works through the UA stylesheet's `[hidden] { display: none }`, whose
+   specificity is only 0,1,0. Any same-weight class selector that sets display wins simply by
+   coming later, so an element marked hidden stays visible. That is where the scan stage's
+   "0 succeeded / 0 failed / 0 remaining" came from: the JS did set hidden and
+   `.progress-tally { display: flex }` overrode it. The attribute selector raises this to
+   0,2,0 and gives `hidden` the last word. */
+.progress-tally[hidden],
+.progress-meter[hidden],
+.progress-log[hidden] {
+  display: none;
+}
+
+/* 进度条标签的右半边：位置在前、百分比在后。位置（14 / 212 MCI、step 3 / 12）是可以直接
+   读出"走到哪了"的数，百分比只是它的换算——一个 MCI 有二十几条 sequence 时百分比被压在
+   很窄的区间里几乎不动，分数却在明显推进。
+   The right half of a meter label: position first, percentage second. A position — 14 / 212
+   MCI, step 3 / 12 — states where things are, while the percentage only restates it; with two
+   dozen sequences in one MCI the percentage barely moves inside its narrow band while the
+   fraction visibly advances. */
+.meter-right {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.meter-right b {
+  font-weight: 600;
+  font-size: 11px;
+  opacity: 0.8;
+  letter-spacing: 0.03em;
+}
+
+.meter-right b:empty {
+  display: none;
 }

@@ -3,47 +3,148 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from app.detection_service import DetectionError, DetectionService
-from app.model_provider import ModelResult, ModelUsage
-from app.refactoring_agent import RefactoringAgent
-from app.harness import HarnessEvidence, HarnessStatus
+from studio.detection_service import DetectionError, DetectionService
+from studio.model_provider import ModelResult, ModelUsage
+from studio.refactoring_agent import RefactoringAgent, _test_regression_reason
+from studio.harness import HarnessEvidence, HarnessStatus
+
+HELPER = "    private static Dependency createDependency() {\n        return Mockito.mock(Dependency.class);\n    }\n"
 
 
-class FakeProvider:
-    def __init__(self, replacement: str):
-        self.replacement = replacement
+def java_source(method_names: list[str]) -> str:
+    """一份结构真实的测试类：有包声明、有 @Test 方法、mock 语句带着文件自己的缩进。
+    分阶段流水线要靠 source_map 把检测器的规范化文本定位回这里，fixture 太单薄就走不通。
+    A structurally realistic test class: a package declaration, @Test methods, and mock
+    statements carrying the file's own indentation. The staged pipeline relies on
+    source_map locating the detector's normalized text back into this, which a thin
+    fixture cannot exercise."""
+    body = "".join(
+        f"    @Test\n"
+        f"    void {name}() {{\n"
+        f"        Dependency value = Mockito.mock(Dependency.class);\n"
+        f"        subject.accept(value, \"{name}\");\n"
+        f"    }}\n\n"
+        for name in method_names
+    )
+    return f"package demo;\n\nclass Test {{\n\n{body}}}\n"
 
-    def generate(self, instructions: str, input_text: str, model: str) -> ModelResult:
-        response = {"canRefactor": True, "reason": "safe", "summary": "helper extracted",
-                    "edits": [{"path": "src/Test.java", "oldString": "int oldValue = 1;",
-                               "newString": "int newValue = 2;"}]}
-        return ModelResult(json.dumps(response), "fake-response", model, ModelUsage(10, 0, 5, 0, 15), None)
+
+def detector_metadata(source_path: Path, source: str, method_names: list[str],
+                      shared_statements: list[str] | None = None) -> dict:
+    """按真实检测器的字段形状构造 MCI：行号指向 mock 语句，代码文本是检测器那份去缩进的
+    规范化视图（而不是文件原文），这样测试才会真的走一遍 source_map 的映射。
+    Builds an MCI in the real detector's field shape: line numbers point at the mock
+    statement and the code text is the detector's de-indented normalized view rather than
+    the file's own, so the test genuinely exercises source_map's mapping."""
+    lines = source.splitlines()
+    sequences = []
+    for index, name in enumerate(method_names):
+        signature = f"    void {name}() {{"
+        method_line = lines.index(signature) + 1
+        sequences.append({
+            "mockObjectId": index,
+            "filePath": str(source_path),
+            "testMethodName": name,
+            "className": "Test",
+            "packageName": "demo",
+            "variableName": "value",
+            "mockRole": "mock",
+            # 去掉缩进：检测器就是这么给的
+            "testMockLines": {str(method_line + 1): "Dependency value = Mockito.mock(Dependency.class);"},
+            "shareableMockLines": {},
+        })
+    return {"detectedMockClones": {"demo.Dependency": [{
+        "mockedClass": "demo.Dependency",
+        "packageName": "demo",
+        "testCaseCount": len(method_names),
+        "sequenceCount": len(method_names),
+        "sharedStatements": shared_statements if shared_statements is not None else
+        ["when(demo.Dependency.get()).thenReturn(java.lang.String)"],
+        "sharedStatementLineCount": 1 if shared_statements is None else len(shared_statements),
+        "sequences": sequences,
+    }]}}
 
 
-class RepairingProvider:
-    def __init__(self):
+class StagedProvider:
+    """读 payload 再作答的假模型：封装阶段插入 helper，集成阶段把测试方法整体换掉。
+
+    故意不返回写死的编辑——`oldString` 必须来自 payload 的 `verbatim` 区才能应用成功，
+    所以这个假实现顺带把 payload 契约本身也测到了：契约一旦破了，这里就会失败。
+    A fake model that answers by reading the payload: encapsulation inserts the helper,
+    integration replaces the whole test method. Deliberately not a canned edit — an
+    `oldString` only applies when it comes from the payload's `verbatim` region, so this
+    fake also exercises the payload contract itself and fails if that contract breaks.
+    """
+
+    def __init__(self, value: str = "createDependency()"):
+        self.value = value
         self.calls = 0
+        self.stages: list[str] = []
+        self.payloads: list[dict] = []
+
+    def _encapsulation(self, payload: dict) -> dict:
+        target = payload["verbatim"]["targetFile"]
+        closing = target["content"].rstrip()[-1]
+        return {"canRefactor": True, "reason": "extracted", "summary": "helper extracted",
+                "reusableCode": HELPER, "newFieldName": "value",
+                "edits": [{"path": target["path"], "oldString": f"\n{closing}\n",
+                           "newString": f"\n{HELPER}{closing}\n", "replaceAll": False}]}
+
+    def _integration(self, payload: dict) -> dict:
+        method = payload["verbatim"]["testMethod"]
+        rewritten = method["text"].replace("Mockito.mock(Dependency.class)", self.value)
+        return {"canRefactor": True, "reason": "integrated", "summary": "call site updated",
+                "edits": [{"path": method["path"], "oldString": method["text"],
+                           "newString": rewritten, "replaceAll": False}]}
 
     def generate(self, instructions: str, input_text: str, model: str) -> ModelResult:
         self.calls += 1
-        value = 2 if self.calls == 1 else 3
-        response = {"canRefactor": True, "reason": "repaired", "summary": "helper extracted",
-                    "edits": [{"path": "src/Test.java", "oldString": "int value = 1;",
-                               "newString": f"int value = {value};", "replaceAll": True}]}
-        return ModelResult(json.dumps(response), f"fake-{self.calls}", model, ModelUsage(10, 0, 5, 0, 15), None)
+        if "independent Java test-refactoring reviewer" in instructions:
+            self.stages.append("AUDIT")
+            body = {"risk": "LOW", "reason": "deterministic evidence is consistent"}
+        else:
+            payload = json.loads(input_text)
+            self.payloads.append(payload)
+            stage = payload.get("stage", "REPAIR")
+            self.stages.append(stage)
+            if stage == "ENCAPSULATION":
+                body = self._encapsulation(payload)
+            elif stage == "INTEGRATION":
+                body = self._integration(payload)
+            else:
+                body = dict(payload.get("currentProposal") or {})
+        return ModelResult(json.dumps(body), f"fake-{self.calls}", model, ModelUsage(10, 0, 5, 0, 15), None)
 
 
-class RecordingProvider:
-    def __init__(self, replacement: str):
-        self.replacement = replacement
-        self.captured_input: str | None = None
+class RepairingProvider(StagedProvider):
+    """集成阶段第一次给出无法应用的编辑，修复轮次再给正确的。
+    Integration first returns an edit that cannot apply; the repair round returns a good one."""
+
+    def __init__(self):
+        super().__init__()
+        self.integration_calls = 0
+        self.last_good: dict | None = None
+
+    def _integration(self, payload: dict) -> dict:
+        self.integration_calls += 1
+        good = super()._integration(payload)
+        self.last_good = good
+        if self.integration_calls == 1:
+            broken = json.loads(json.dumps(good))
+            broken["edits"][0]["oldString"] = "text that is not in the file"
+            return broken
+        return good
 
     def generate(self, instructions: str, input_text: str, model: str) -> ModelResult:
-        self.captured_input = input_text
-        response = {"canRefactor": True, "reason": "safe", "summary": "helper extracted",
-                    "edits": [{"path": "src/Test.java", "oldString": "int value = 1;",
-                               "newString": self.replacement, "replaceAll": True}]}
-        return ModelResult(json.dumps(response), "fake-response", model, ModelUsage(10, 0, 5, 0, 15), None)
+        payload = json.loads(input_text) if input_text.startswith("{") else {}
+        if payload.get("editErrors") and self.last_good is not None:
+            self.calls += 1
+            self.stages.append("REPAIR")
+            merged = dict(payload.get("currentProposal") or {})
+            merged["edits"] = self.last_good["edits"]
+            merged["canRefactor"] = True
+            return ModelResult(json.dumps(merged), f"fake-{self.calls}", model, ModelUsage(), None)
+        return super().generate(instructions, input_text, model)
 
 
 class SequencedHarness:
@@ -53,147 +154,211 @@ class SequencedHarness:
     def validate(self, project_root: Path, run_pit: bool = False) -> HarnessEvidence:
         self.calls += 1
         status = HarnessStatus.FAILED if self.calls == 2 else HarnessStatus.PASSED
-        return HarnessEvidence(status, status, HarnessStatus.NOT_RUN, diagnostics=["compile error"] if status == HarnessStatus.FAILED else [])
+        return HarnessEvidence(
+            status, status, HarnessStatus.NOT_RUN,
+            diagnostics=["compile error"] if status == HarnessStatus.FAILED else [],
+            test_results={"demo.Test#testA": "PASSED"},
+        )
+
+
+class PassingHarness:
+    def validate(self, project_root: Path, run_pit: bool = False) -> HarnessEvidence:
+        return HarnessEvidence(
+            HarnessStatus.PASSED, HarnessStatus.PASSED, HarnessStatus.NOT_RUN,
+            test_results={"demo.Test#testA": "PASSED"},
+        )
 
 
 class RefactoringAgentTest(unittest.TestCase):
+    def test_known_baseline_failure_allows_only_the_same_failure_set(self):
+        baseline = HarnessEvidence(HarnessStatus.PASSED, HarnessStatus.FAILED,
+                                   test_results={"demo.Test#stable": "PASSED", "demo.Net#dns": "FAILED"})
+        unchanged = HarnessEvidence(HarnessStatus.PASSED, HarnessStatus.FAILED,
+                                    test_results={"demo.Test#stable": "PASSED", "demo.Net#dns": "FAILED"})
+        regressed = HarnessEvidence(HarnessStatus.PASSED, HarnessStatus.FAILED,
+                                    test_results={"demo.Test#stable": "FAILED", "demo.Net#dns": "FAILED"})
+        self.assertIsNone(_test_regression_reason(baseline, unchanged))
+        self.assertIn("previously passing", _test_regression_reason(baseline, regressed))
+
+    @staticmethod
+    def _fixture(temporary: str, run_id: str = "e" * 32, methods: list[str] | None = None,
+                 shared_statements: list[str] | None = None):
+        methods = methods or ["testFirst"]
+        repository = Path(temporary) / "tool"
+        project = Path(temporary) / "subject"
+        source = project / "src" / "Test.java"
+        source.parent.mkdir(parents=True)
+        content = java_source(methods)
+        source.write_text(content, encoding="utf-8")
+        service = DetectionService(repository)
+        run_dir = service.runs_root / run_id
+        run_dir.mkdir(parents=True)
+        (run_dir / "run.json").write_text(json.dumps({"projectRoot": str(project)}), encoding="utf-8")
+        (run_dir / "mock-clone-instances.json").write_text(
+            json.dumps(detector_metadata(source, content, methods, shared_statements)), encoding="utf-8")
+        return service, source, run_id, run_dir
+
     def test_writes_isolated_candidate_and_keeps_original_unchanged(self):
         with tempfile.TemporaryDirectory() as temporary:
-            repository = Path(temporary) / "tool"
-            project = Path(temporary) / "subject"
-            source = project / "src" / "Test.java"
-            source.parent.mkdir(parents=True)
-            source.write_text("class Test { int oldValue = 1; }\n", encoding="utf-8")
-            service = DetectionService(repository)
-            run_id = "a" * 32
-            run_dir = service.runs_root / run_id
-            run_dir.mkdir(parents=True)
-            (run_dir / "run.json").write_text(json.dumps({"projectRoot": str(project)}), encoding="utf-8")
-            raw = {"detectedMockClones": {"demo.Dependency": [{"sequences": [{"filePath": str(source)}]}]}}
-            (run_dir / "mock-clone-instances.json").write_text(json.dumps(raw), encoding="utf-8")
+            service, source, run_id, run_dir = self._fixture(temporary, "a" * 32)
+            original = source.read_text(encoding="utf-8")
+            provider = StagedProvider()
+            agent = RefactoringAgent(service, provider, PassingHarness())
 
-            replacement = "class Test { int newValue = 2; }\n"
-            agent = RefactoringAgent(service, FakeProvider(replacement))
             result = agent.run(run_id, ["demo.Dependency::1"], "gpt-5.6-terra")
 
             self.assertEqual("COMPLETED", result["stage"])
-            self.assertIn("-class Test { int oldValue = 1; }", result["diff"])
-            self.assertEqual("class Test { int oldValue = 1; }\n", source.read_text(encoding="utf-8"))
+            self.assertIn("-        Dependency value = Mockito.mock(Dependency.class);", result["diff"])
+            self.assertIn("+        Dependency value = createDependency();", result["diff"])
+            self.assertEqual(original, source.read_text(encoding="utf-8"))
             candidate = run_dir / "refactoring" / result["proposalId"] / "candidate-files" / "src" / "Test.java"
-            self.assertEqual(replacement, candidate.read_text(encoding="utf-8"))
-            applied = agent.apply(run_id, result["proposalId"])
+            patched = candidate.read_text(encoding="utf-8")
+            self.assertIn("private static Dependency createDependency()", patched)
+            applied = agent.apply(run_id, result["proposalId"], force=True)
             self.assertTrue(applied["applied"])
-            self.assertEqual(replacement, source.read_text(encoding="utf-8"))
+            self.assertEqual(patched, source.read_text(encoding="utf-8"))
+
+    def test_runs_one_encapsulation_then_one_integration_per_sequence(self):
+        """论文的两步走必须体现在调用结构上，而不只是 prompt 里的一句话。
+        The paper's two steps must show up in the call structure, not merely in prose."""
+        with tempfile.TemporaryDirectory() as temporary:
+            service, _, run_id, _ = self._fixture(temporary, "e" * 32,
+                                                  methods=["testFirst", "testSecond", "testThird"])
+            provider = StagedProvider()
+            agent = RefactoringAgent(service, provider, PassingHarness())
+
+            result = agent.run(run_id, ["demo.Dependency::1"], "gpt-test")
+
+            self.assertEqual("COMPLETED", result["stage"])
+            self.assertEqual(["ENCAPSULATION", "INTEGRATION", "INTEGRATION", "INTEGRATION", "AUDIT"],
+                             provider.stages)
+
+    def test_integration_payload_carries_only_one_test_method(self):
+        """每次集成只看一个测试方法——大文件整体交给模型正是之前放弃重构的原因。
+        Each integration sees one test method; handing over a whole large file is exactly
+        what made the model give up before."""
+        with tempfile.TemporaryDirectory() as temporary:
+            service, _, run_id, _ = self._fixture(temporary, "e" * 32,
+                                                  methods=["testFirst", "testSecond"])
+            provider = StagedProvider()
+            agent = RefactoringAgent(service, provider, PassingHarness())
+            agent.run(run_id, ["demo.Dependency::1"], "gpt-test")
+
+            integration = [p for p in provider.payloads if p.get("stage") == "INTEGRATION"]
+            self.assertEqual(2, len(integration))
+            for payload in integration:
+                text = payload["verbatim"]["testMethod"]["text"]
+                self.assertEqual(1, text.count("@Test"))
+                self.assertNotIn("sourceFiles", payload)
+
+    def test_payload_never_ships_detector_normalized_text_as_verbatim(self):
+        """检测器给的语句是去缩进的规范化视图；它若进了 verbatim 区，模型照抄就会得到
+        一个永远匹配不上的 oldString。
+        The detector's statements are a de-indented normalized view; if one reached the
+        verbatim region, copying it would yield an `oldString` that can never match."""
+        with tempfile.TemporaryDirectory() as temporary:
+            service, source, run_id, _ = self._fixture(temporary, "e" * 32)
+            provider = StagedProvider()
+            agent = RefactoringAgent(service, provider, PassingHarness())
+            agent.run(run_id, ["demo.Dependency::1"], "gpt-test")
+
+            content = source.read_text(encoding="utf-8")
+            for payload in provider.payloads:
+                for entry in payload["verbatim"].get("mockStatements", []):
+                    self.assertIn(entry["text"], content)
+                method = payload["verbatim"].get("testMethod")
+                if method:
+                    self.assertIn(method["text"], content)
 
     def test_retries_after_harness_failure_and_keeps_final_diff(self):
         with tempfile.TemporaryDirectory() as temporary:
-            repository = Path(temporary) / "tool"
-            project = Path(temporary) / "subject"
-            source = project / "src" / "Test.java"
-            source.parent.mkdir(parents=True)
-            source.write_text("class Test { int value = 1; }\n", encoding="utf-8")
-            service = DetectionService(repository)
-            run_id = "b" * 32
-            run_dir = service.runs_root / run_id
-            run_dir.mkdir(parents=True)
-            (run_dir / "run.json").write_text(json.dumps({"projectRoot": str(project)}), encoding="utf-8")
-            (run_dir / "mock-clone-instances.json").write_text(json.dumps({
-                "detectedMockClones": {"demo.Dependency": [{"sequences": [{"filePath": str(source)}]}]}
-            }), encoding="utf-8")
-            provider = RepairingProvider()
-            agent = RefactoringAgent(service, provider)
-            agent.harness = SequencedHarness()
+            service, _, run_id, _ = self._fixture(temporary, "b" * 32)
+            provider = StagedProvider()
+            agent = RefactoringAgent(service, provider, SequencedHarness())
 
             result = agent.run(run_id, ["demo.Dependency::1"], "gpt-5.6-terra")
 
-            self.assertEqual(2, result["modelCalls"])
-            self.assertEqual(2, provider.calls)
-            self.assertIn("+class Test { int value = 3; }", result["diff"])
+            self.assertIn("REPAIR", provider.stages)
+            self.assertIn("+        Dependency value = createDependency();", result["diff"])
+
+    def test_failed_edits_are_retried_inside_their_own_stage(self):
+        """编辑应用不上是纯局部问题（oldString 没匹配上），在这一步就地重试比冒泡到外层
+        便宜也更准——外层拿到的是拼装好的整份提案，分不清是哪一步出的问题。
+        A failed edit is a purely local problem (`oldString` did not match); retrying inside
+        the step is cheaper and more precise than letting it bubble up, where the outer loop
+        sees one assembled proposal and cannot tell which step went wrong."""
+        with tempfile.TemporaryDirectory() as temporary:
+            service, _, run_id, _ = self._fixture(temporary)
+            provider = RepairingProvider()
+            agent = RefactoringAgent(service, provider, SequencedHarness())
+
+            result = agent.run(run_id, ["demo.Dependency::1"], "gpt-test", max_retries=1)
+
+            integration = [entry for entry in result["stageLog"] if entry.get("stage") == "INTEGRATION"]
+            self.assertEqual([1, 2], [entry["attempt"] for entry in integration])
+            self.assertIn("editErrors", integration[0])
+            self.assertNotIn("editErrors", integration[1])
+            # 外层预算只花在 harness 失败上，没有被编辑歧义消耗掉。
+            # The outer budget is spent on harness failures only, not on edit ambiguity.
+            self.assertEqual(["HARNESS"], [entry["type"] for entry in result["repairHistory"]])
+            self.assertEqual(1, result["repairAttemptsUsed"])
+
+    def test_verified_cache_is_source_bound_and_revalidated_without_model_tokens(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            service, source, run_id, _ = self._fixture(temporary, "f" * 32)
+            provider = StagedProvider()
+            agent = RefactoringAgent(service, provider, PassingHarness())
+
+            first = agent.run(run_id, ["demo.Dependency::1"], "gpt-test")
+            calls_after_first = provider.calls
+            second = agent.run(run_id, ["demo.Dependency::1"], "gpt-test")
+
+            self.assertTrue(first["harness"]["equivalent"])
+            self.assertTrue(second["cache"]["hit"])
+            self.assertTrue(second["cache"]["revalidated"])
+            self.assertEqual(calls_after_first, provider.calls)
+            source.write_text(java_source(["testRenamed"]), encoding="utf-8")
+            status = agent.cache_status(run_id, ["demo.Dependency::1"])
+            self.assertFalse(status["available"])
 
     def test_sequence_selection_narrows_instance_to_chosen_subset(self):
         with tempfile.TemporaryDirectory() as temporary:
-            repository = Path(temporary) / "tool"
-            project = Path(temporary) / "subject"
-            source = project / "src" / "Test.java"
-            source.parent.mkdir(parents=True)
-            source.write_text("class Test { int value = 1; }\n", encoding="utf-8")
-            service = DetectionService(repository)
-            run_id = "c" * 32
-            run_dir = service.runs_root / run_id
-            run_dir.mkdir(parents=True)
-            (run_dir / "run.json").write_text(json.dumps({"projectRoot": str(project)}), encoding="utf-8")
-            (run_dir / "mock-clone-instances.json").write_text(json.dumps({
-                "detectedMockClones": {"demo.Dependency": [{"sequences": [
-                    {"mockObjectId": 0, "filePath": str(source), "testMethodName": "testFirst"},
-                    {"mockObjectId": 1, "filePath": str(source), "testMethodName": "testSecond"},
-                    {"mockObjectId": 2, "filePath": str(source), "testMethodName": "testThird"},
-                ]}]}
-            }), encoding="utf-8")
-            provider = RecordingProvider("class Test { int value = 2; }\n")
-            agent = RefactoringAgent(service, provider)
+            service, _, run_id, _ = self._fixture(temporary, "c" * 32,
+                                                  methods=["testFirst", "testSecond", "testThird"])
+            provider = StagedProvider()
+            agent = RefactoringAgent(service, provider, PassingHarness())
 
             result = agent.run(run_id, ["demo.Dependency::1"], "gpt-5.6-terra",
-                                sequence_selection={"demo.Dependency::1": [0, 2]})
+                               sequence_selection={"demo.Dependency::1": [0, 2]})
 
             self.assertEqual("COMPLETED", result["stage"])
-            payload = json.loads(provider.captured_input)
-            sent_sequences = payload["selectedMockCloneInstances"][0]["sequences"]
-            self.assertEqual({0, 2}, {sequence["mockObjectId"] for sequence in sent_sequences})
+            integration = [p for p in provider.payloads if p.get("stage") == "INTEGRATION"]
+            self.assertEqual({"testFirst", "testThird"},
+                             {p["facts"]["testMethodName"] for p in integration})
 
     def test_sequence_selection_excluding_every_member_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
-            repository = Path(temporary) / "tool"
-            project = Path(temporary) / "subject"
-            source = project / "src" / "Test.java"
-            source.parent.mkdir(parents=True)
-            source.write_text("class Test { int value = 1; }\n", encoding="utf-8")
-            service = DetectionService(repository)
-            run_id = "d" * 32
-            run_dir = service.runs_root / run_id
-            run_dir.mkdir(parents=True)
-            (run_dir / "run.json").write_text(json.dumps({"projectRoot": str(project)}), encoding="utf-8")
-            (run_dir / "mock-clone-instances.json").write_text(json.dumps({
-                "detectedMockClones": {"demo.Dependency": [{"sequences": [
-                    {"mockObjectId": 0, "filePath": str(source), "testMethodName": "testFirst"},
-                ]}]}
-            }), encoding="utf-8")
-            agent = RefactoringAgent(service, RecordingProvider("class Test { int value = 2; }\n"))
+            service, _, run_id, _ = self._fixture(temporary, "d" * 32)
+            agent = RefactoringAgent(service, StagedProvider())
 
             with self.assertRaises(DetectionError):
                 agent.run(run_id, ["demo.Dependency::1"], "gpt-5.6-terra",
                           sequence_selection={"demo.Dependency::1": [999]})
 
-    def test_model_input_strips_duplicate_method_source_but_keeps_other_fields(self):
-        project_root = Path("subject")
-        files = {Path("src/Test.java"): "class Test {}\n"}
-        instances = [{
-            "sequences": [{
-                "mockObjectId": 0,
-                "testMethodRawCode": "class Test { void testA() {} }",
-                "shareableMockLines": {"5": "Mockito.mock(Dependency.class);"},
-                "rawStatementInfo": {
-                    "5": {
-                        "code": "Mockito.mock(Dependency.class);",
-                        "locationContext": {
-                            "methodName": "testA",
-                            "methodRawCode": "class Test { void testA() {} }",
-                        },
-                    }
-                },
-            }]
-        }]
+    def test_attribute_branch_is_done_in_code_without_a_model_call(self):
+        """没有共享 stub 时，集成只是删掉局部创建再改名——由代码做，可复现且不花 token。
+        With no shared stubbing, integration is a delete plus a rename — done in code,
+        reproducibly and without spending a token."""
+        with tempfile.TemporaryDirectory() as temporary:
+            service, _, run_id, _ = self._fixture(temporary, "e" * 32, shared_statements=[])
+            provider = StagedProvider()
+            agent = RefactoringAgent(service, provider, PassingHarness())
 
-        request = RefactoringAgent._model_input(project_root, instances, files, "")
-        payload = json.loads(request)
-        sequence = payload["selectedMockCloneInstances"][0]["sequences"][0]
+            result = agent.run(run_id, ["demo.Dependency::1"], "gpt-test")
 
-        self.assertNotIn("testMethodRawCode", sequence)
-        self.assertNotIn("methodRawCode", sequence["rawStatementInfo"]["5"]["locationContext"])
-        self.assertEqual(0, sequence["mockObjectId"])
-        self.assertEqual("Mockito.mock(Dependency.class);", sequence["rawStatementInfo"]["5"]["code"])
-        # The original detection data passed in must not be mutated.
-        self.assertIn("testMethodRawCode", instances[0]["sequences"][0])
-        self.assertIn("methodRawCode", instances[0]["sequences"][0]["rawStatementInfo"]["5"]["locationContext"])
+            self.assertEqual("COMPLETED", result["stage"])
+            self.assertEqual(["ENCAPSULATION", "AUDIT"], provider.stages)
+            self.assertIn("-        Dependency value = Mockito.mock(Dependency.class);", result["diff"])
 
     def test_apply_edits_applies_a_unique_search_replace(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -357,3 +522,92 @@ class RefactoringAgentTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NonSourcePathTest(unittest.TestCase):
+    """本工具自己的一次性副本会被旧版建在被测项目里面，检测器会把它当源码扫进去。
+    全量构建时这是隐形的；裁剪之后 `-pl` 点名一个不存在的模块，Maven 直接报
+    `Could not find the selected project in the reactor`。
+    An earlier version placed this tool's disposable copies inside the analyzed project and
+    the detector indexed them as source. Invisible under a full-reactor build; once scoped,
+    `-pl` names a module that does not exist and Maven fails outright."""
+
+    def test_a_copy_inside_the_project_is_not_project_source(self):
+        self.assertFalse(RefactoringAgent._is_project_source(
+            Path(".clonedemocker-workspaces/ddc2b48/dubbo-remoting-api/src/test/java/A.java")))
+
+    def test_build_output_is_not_project_source(self):
+        self.assertFalse(RefactoringAgent._is_project_source(Path("module/target/generated/A.java")))
+        self.assertFalse(RefactoringAgent._is_project_source(Path("module/build/tmp/A.java")))
+
+    def test_real_test_source_is_kept(self):
+        self.assertTrue(RefactoringAgent._is_project_source(
+            Path("dubbo-remoting/dubbo-remoting-api/src/test/java/A.java")))
+
+    def test_affected_files_skips_a_copy_and_keeps_the_real_file(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            real = root / "mod" / "src" / "test" / "java" / "A.java"
+            copy = root / ".clonedemocker-workspaces" / "abc" / "mod" / "src" / "test" / "java" / "A.java"
+            for path in (real, copy):
+                path.parent.mkdir(parents=True)
+                path.write_text("class A {}\n", encoding="utf-8")
+            instances = [{"sequences": [{"filePath": str(real)}, {"filePath": str(copy)}]}]
+
+            files = RefactoringAgent._affected_files(root, instances)
+
+            self.assertEqual([Path("mod/src/test/java/A.java")], list(files))
+
+
+class CacheGenerationTest(unittest.TestCase):
+    """缓存命中不花 token，所以没有任何迹象提示答案来自上一版指令。prompt 一改，
+    旧条目必须失效并被清掉，否则下一批数据里会悄悄混进上一版的结果。
+    A cache hit spends no tokens, so nothing signals that an answer came from an older set of
+    instructions. When a prompt changes, old entries must stop matching and be removed, or the
+    next batch silently mixes in results from the previous version."""
+
+    def _agent(self, temporary: str) -> RefactoringAgent:
+        return RefactoringAgent(DetectionService(Path(temporary) / "tool"))
+
+    def test_an_entry_from_another_generation_is_not_read(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            agent = self._agent(temporary)
+            agent._write_cache("k" * 8, {"version": 1, "key": "k" * 8,
+                                         "response": {"harness": {"equivalent": True}}})
+            self.assertIsNotNone(agent._read_cache("k" * 8))
+
+            stored = agent._cache_directory() / f"{'k' * 8}.json"
+            value = json.loads(stored.read_text(encoding="utf-8"))
+            value["generation"] = "from-an-older-prompt"
+            stored.write_text(json.dumps(value), encoding="utf-8")
+
+            self.assertIsNone(agent._read_cache("k" * 8))
+
+    def test_writing_prunes_entries_from_older_generations(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            agent = self._agent(temporary)
+            stale = agent._cache_directory() / "stale.json"
+            stale.write_text(json.dumps({"version": 1, "key": "stale", "generation": "older"}),
+                             encoding="utf-8")
+
+            agent._write_cache("fresh", {"version": 1, "key": "fresh",
+                                         "response": {"harness": {"equivalent": True}}})
+
+            self.assertFalse(stale.exists())
+            self.assertTrue((agent._cache_directory() / "fresh.json").exists())
+
+    def test_editing_a_prompt_changes_the_generation(self):
+        """读写都走字节，不走文本：Windows 上 `write_text` 会把 `\\n` 换成 `\\r\\n`，
+        "恢复原状"会留下一份换行符不同的文件，指纹再也回不到原值。
+        Bytes rather than text on both sides: on Windows `write_text` turns `\\n` into
+        `\\r\\n`, so "restoring" would leave a file with different line endings and the
+        fingerprint would never return to its original value."""
+        before = RefactoringAgent._generation()
+        prompt = Path(__file__).resolve().parents[1] / "studio" / "prompts" / "_edit_protocol.md"
+        original = prompt.read_bytes()
+        try:
+            prompt.write_bytes(original + b"\nAn extra rule.\n")
+            self.assertNotEqual(before, RefactoringAgent._generation())
+        finally:
+            prompt.write_bytes(original)
+        self.assertEqual(before, RefactoringAgent._generation())

@@ -12,6 +12,9 @@
             model objection) is intentionally not shown; it was a discarded
             evaluation-design mistake, not a result.
   Part 3 -- the proposed 3-arm ablation study (not yet run).
+
+用法 / Usage:
+    uv run --with pygments --with fpdf2 --with Pillow python validation/report_builders/build_final_report.py
 """
 import json
 import html as htmllib
@@ -21,8 +24,10 @@ from pygments.lexers import JavaLexer
 from pygments.formatters import HtmlFormatter
 
 HERE = Path(__file__).parent
-FULL = json.loads((HERE / "case_full_cache.json").read_text(encoding="utf-8"))
-OUT = HERE.parent / "reports" / "clonedemocker-report-20260917.html"
+VALIDATION_DIR = HERE.parent
+REPO_ROOT = VALIDATION_DIR.parent
+FULL = json.loads((VALIDATION_DIR / "case_full_cache.json").read_text(encoding="utf-8"))
+OUT = REPO_ROOT / "reports" / "clonedemocker-report-20260917.html"
 
 fmt = HtmlFormatter(nowrap=True)
 
