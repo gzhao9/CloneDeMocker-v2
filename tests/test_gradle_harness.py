@@ -183,6 +183,25 @@ class GradleProjectsTest(unittest.TestCase):
             self.assertTrue(is_module_directory(module))
             self.assertFalse(is_module_directory(Path(temporary)))
 
+    def test_a_standard_source_layout_marks_a_module_without_a_build_file(self):
+        # Spring Integration 的子项目没有自己的构建文件，由根配置统一注册。
+        # Spring Integration's subprojects have no build file of their own; the root registers them.
+        with tempfile.TemporaryDirectory() as temporary:
+            module = Path(temporary) / "spring-integration-core"
+            (module / "src" / "test" / "java").mkdir(parents=True)
+            self.assertTrue(is_module_directory(module))
+            maven = Path(temporary) / "maven-module"
+            maven.mkdir()
+            (maven / "pom.xml").write_text("<project/>", encoding="utf-8")
+            self.assertTrue(is_module_directory(maven))
+
+    def test_a_package_segment_named_src_is_not_a_module(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary) / "core" / "src" / "test" / "java" / "org" / "foo"
+            (package / "src").mkdir(parents=True)
+            (package / "src" / "FooTest.java").write_text("", encoding="utf-8")
+            self.assertFalse(is_module_directory(package))
+
     def test_english_environment_keeps_existing_options(self):
         with patch.dict("os.environ", {"JAVA_TOOL_OPTIONS": "-Xss4m"}):
             self.assertEqual("-Xss4m " + gradle_support.ENGLISH_JAVA_TOOL_OPTIONS,
