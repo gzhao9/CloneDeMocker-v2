@@ -160,7 +160,7 @@ def gradle_executable(root: Path) -> str:
 
 
 def is_gradle_command(command: list[str]) -> bool:
-    return bool(command) and Path(command[0]).name.lower() in {"gradlew", "gradlew.bat", "gradle", "gradle.bat"}
+    return bool(command) and Path(command[0].replace("\\", "/")).name.lower() in {"gradlew", "gradlew.bat", "gradle", "gradle.bat"}
 
 
 def english_environment() -> dict[str, str]:
