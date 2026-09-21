@@ -1,0 +1,60 @@
+--- a/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/inbound/MessageSourceTests.java
++++ b/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/inbound/MessageSourceTests.java
+@@ -237,17 +237,10 @@
+ 
+ 	@SuppressWarnings({"rawtypes", "unchecked"})
+ 	private void testAckCommon(boolean sync, boolean timeout) {
+-		Consumer consumer = mock(Consumer.class);
+ 		TopicPartition topicPartition = new TopicPartition("foo", 0);
+ 		List<TopicPartition> assigned = Collections.singletonList(topicPartition);
+-		willAnswer(i -> {
+-			((ConsumerRebalanceListener) i.getArgument(1))
+-					.onPartitionsAssigned(assigned);
+-			return null;
+-		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
+ 		ArgumentCaptor<Collection<TopicPartition>> partitions = ArgumentCaptor.forClass(Collection.class);
+-		willDoNothing().given(consumer).pause(partitions.capture());
+-		willDoNothing().given(consumer).resume(partitions.capture());
++		Consumer consumer = createMockConsumer(partitions);
+ 		willAnswer(invoc -> {
+ 			OffsetCommitCallback callback = invoc.getArgument(1);
+ 			callback.onComplete(null, null);
+@@ -367,6 +360,19 @@
+ 	}
+ 
+ 	@SuppressWarnings({"rawtypes", "unchecked"})
++	private static Consumer createMockConsumer(ArgumentCaptor<Collection<TopicPartition>> partitions) {
++		Consumer consumer = mock(Consumer.class);
++		willAnswer(i -> {
++			((ConsumerRebalanceListener) i.getArgument(1))
++					.onPartitionsAssigned(Collections.singletonList(new TopicPartition("foo", 0)));
++			return null;
++		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
++		willDoNothing().given(consumer).pause(partitions.capture());
++		willDoNothing().given(consumer).resume(partitions.capture());
++		return consumer;
++	}
++
++	@SuppressWarnings({"rawtypes", "unchecked"})
+ 	@Test
+ 	void testAckOutOfOrder() {
+ 		Consumer consumer = mock(Consumer.class);
+@@ -708,17 +714,10 @@
+ 	@SuppressWarnings({"rawtypes", "unchecked"})
+ 	@Test
+ 	void testAllowMulti() {
+-		Consumer consumer = mock(Consumer.class);
+ 		TopicPartition topicPartition = new TopicPartition("foo", 0);
+ 		List<TopicPartition> assigned = Collections.singletonList(topicPartition);
+-		willAnswer(i -> {
+-			((ConsumerRebalanceListener) i.getArgument(1))
+-					.onPartitionsAssigned(assigned);
+-			return null;
+-		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
+ 		ArgumentCaptor<Collection<TopicPartition>> partitions = ArgumentCaptor.forClass(Collection.class);
+-		willDoNothing().given(consumer).pause(partitions.capture());
+-		willDoNothing().given(consumer).resume(partitions.capture());
++		Consumer consumer = createMockConsumer(partitions);
+ 		Map<TopicPartition, List<ConsumerRecord>> records = new LinkedHashMap<>();
+ 		records.put(topicPartition, Arrays.asList(
+ 				new ConsumerRecord("foo", 0, 0L, 0L, TimestampType.NO_TIMESTAMP_TYPE, 0, 0, null, "foo",

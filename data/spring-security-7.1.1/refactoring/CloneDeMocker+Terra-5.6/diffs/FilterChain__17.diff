@@ -1,0 +1,158 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/OAuth2AuthorizationRequestRedirectFilterTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/OAuth2AuthorizationRequestRedirectFilterTests.java
+@@ -72,6 +72,8 @@
+ 
+ 	private RequestCache requestCache;
+ 
++	private FilterChain mockFilterChain;
++
+ 	@BeforeEach
+ 	public void setUp() {
+ 		this.registration1 = TestClientRegistrations.clientRegistration().build();
+@@ -80,6 +82,7 @@
+ 				this.registration2);
+ 		this.filter = new OAuth2AuthorizationRequestRedirectFilter(this.clientRegistrationRepository);
+ 		this.requestCache = mock(RequestCache.class);
++		this.mockFilterChain = mock(FilterChain.class);
+ 		this.filter.setRequestCache(this.requestCache);
+ 	}
+ 
+@@ -126,9 +129,8 @@
+ 		String requestUri = "/path";
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
+-		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
++		this.filter.doFilter(request, response, mockFilterChain);
++		verify(mockFilterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+ 
+ 	@Test
+@@ -137,9 +139,8 @@
+ 				+ this.registration1.getRegistrationId() + "-invalid";
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
+-		verifyNoMoreInteractions(filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
++		verifyNoMoreInteractions(mockFilterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.value());
+ 		assertThat(response.getErrorMessage()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+ 	}
+@@ -151,7 +152,6 @@
+ 				+ this.registration1.getRegistrationId() + "-invalid";
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.setAuthenticationFailureHandler((request1, response1, ex) -> {
+ 			Throwable cause = ex.getCause();
+ 			if (InvalidClientRegistrationIdException.class.isAssignableFrom(cause.getClass())) {
+@@ -162,8 +162,8 @@
+ 						HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+ 			}
+ 		});
+-		this.filter.doFilter(request, response, filterChain);
+-		verifyNoMoreInteractions(filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
++		verifyNoMoreInteractions(mockFilterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+ 		assertThat(response.getErrorMessage()).isEqualTo(HttpStatus.BAD_REQUEST.getReasonPhrase());
+ 	}
+@@ -174,9 +174,8 @@
+ 				+ this.registration1.getRegistrationId();
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
+-		verifyNoMoreInteractions(filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
++		verifyNoMoreInteractions(mockFilterChain);
+ 		assertThat(response.getRedirectedUrl()).matches("https://example.com/login/oauth/authorize\\?"
+ 				+ "response_type=code&client_id=client-id&" + "scope=read:user&state=.{15,}&"
+ 				+ "redirect_uri=http://localhost/login/oauth2/code/registration-id&code_challenge=([a-zA-Z0-9\\-\\.\\_\\~]){43}&code_challenge_method=S256");
+@@ -188,12 +187,11 @@
+ 				+ this.registration2.getRegistrationId();
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		AuthorizationRequestRepository<OAuth2AuthorizationRequest> authorizationRequestRepository = mock(
+ 				AuthorizationRequestRepository.class);
+ 		this.filter.setAuthorizationRequestRepository(authorizationRequestRepository);
+-		this.filter.doFilter(request, response, filterChain);
+-		verifyNoMoreInteractions(filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
++		verifyNoMoreInteractions(mockFilterChain);
+ 		verify(authorizationRequestRepository).saveAuthorizationRequest(any(OAuth2AuthorizationRequest.class),
+ 				any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+@@ -206,9 +204,8 @@
+ 		String requestUri = authorizationRequestBaseUri + "/" + this.registration1.getRegistrationId();
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
+-		verifyNoMoreInteractions(filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
++		verifyNoMoreInteractions(mockFilterChain);
+ 		assertThat(response.getRedirectedUrl()).matches("https://example.com/login/oauth/authorize\\?"
+ 				+ "response_type=code&client_id=client-id&" + "scope=read:user&state=.{15,}&"
+ 				+ "redirect_uri=http://localhost/login/oauth2/code/registration-id&code_challenge=([a-zA-Z0-9\\-\\.\\_\\~]){43}&code_challenge_method=S256");
+@@ -258,7 +255,6 @@
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		request.addParameter("idp", "https://other.provider.com");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		OAuth2AuthorizationRequestResolver defaultAuthorizationRequestResolver = new DefaultOAuth2AuthorizationRequestResolver(
+ 				this.clientRegistrationRepository,
+ 				OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI);
+@@ -269,8 +265,8 @@
+ 			.build();
+ 		given(resolver.resolve(any())).willReturn(result);
+ 		OAuth2AuthorizationRequestRedirectFilter filter = new OAuth2AuthorizationRequestRedirectFilter(resolver);
+-		filter.doFilter(request, response, filterChain);
+-		verifyNoMoreInteractions(filterChain);
++		filter.doFilter(request, response, mockFilterChain);
++		verifyNoMoreInteractions(mockFilterChain);
+ 		assertThat(response.getRedirectedUrl()).matches("https://example.com/login/oauth/authorize\\?"
+ 				+ "response_type=code&client_id=client-id&" + "scope=read:user&state=.{15,}&"
+ 				+ "redirect_uri=http://localhost/login/oauth2/code/registration-id&"
+@@ -287,7 +283,6 @@
+ 		String loginHintParamName = "login_hint";
+ 		request.addParameter(loginHintParamName, "user@provider.com");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		OAuth2AuthorizationRequestResolver defaultAuthorizationRequestResolver = new DefaultOAuth2AuthorizationRequestResolver(
+ 				this.clientRegistrationRepository,
+ 				OAuth2AuthorizationRequestRedirectFilter.DEFAULT_AUTHORIZATION_REQUEST_BASE_URI);
+@@ -309,8 +304,8 @@
+ 		// @formatter:on
+ 		given(resolver.resolve(any())).willReturn(result);
+ 		OAuth2AuthorizationRequestRedirectFilter filter = new OAuth2AuthorizationRequestRedirectFilter(resolver);
+-		filter.doFilter(request, response, filterChain);
+-		verifyNoMoreInteractions(filterChain);
++		filter.doFilter(request, response, mockFilterChain);
++		verifyNoMoreInteractions(mockFilterChain);
+ 		assertThat(response.getRedirectedUrl()).matches("https://example.com/login/oauth/authorize\\?"
+ 				+ "response_type=code&client_id=client-id&" + "scope=read:user&state=.{15,}&"
+ 				+ "redirect_uri=http://localhost/login/oauth2/code/registration-id&"
+@@ -324,7 +319,6 @@
+ 				+ this.registration1.getRegistrationId();
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		RedirectStrategy customRedirectStrategy = (httpRequest, httpResponse, url) -> {
+ 			String redirectUrl = httpResponse.encodeRedirectURL(url);
+ 			httpResponse.setStatus(HttpStatus.OK.value());
+@@ -333,8 +327,8 @@
+ 			httpResponse.getWriter().flush();
+ 		};
+ 		this.filter.setAuthorizationRedirectStrategy(customRedirectStrategy);
+-		this.filter.doFilter(request, response, filterChain);
+-		verifyNoMoreInteractions(filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
++		verifyNoMoreInteractions(mockFilterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 		assertThat(response.getContentType()).isEqualTo(MediaType.TEXT_PLAIN_VALUE);
+ 		assertThat(response.getContentAsString(StandardCharsets.UTF_8))

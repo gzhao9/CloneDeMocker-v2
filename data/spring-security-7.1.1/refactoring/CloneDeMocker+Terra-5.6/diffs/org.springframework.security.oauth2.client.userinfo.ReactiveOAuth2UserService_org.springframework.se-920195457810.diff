@@ -1,0 +1,86 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/userinfo/OidcReactiveOAuth2UserServiceTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/userinfo/OidcReactiveOAuth2UserServiceTests.java
+@@ -137,7 +137,8 @@
+ 	public void loadUserWhenOAuth2UserSubjectNullThenOAuth2AuthenticationException() {
+ 		OAuth2User oauth2User = new DefaultOAuth2User(AuthorityUtils.createAuthorityList("ROLE_USER"),
+ 				Collections.singletonMap("user", "rob"), "user");
+-		given(this.oauth2UserService.loadUser(any())).willReturn(Mono.just(oauth2User));
++		this.oauth2UserService = createMockReactiveOAuth2UserService(oauth2User);
++		this.userService.setOauth2UserService(this.oauth2UserService);
+ 		assertThatExceptionOfType(OAuth2AuthenticationException.class)
+ 			.isThrownBy(() -> this.userService.loadUser(userRequest()).block());
+ 	}
+@@ -149,7 +150,8 @@
+ 		attributes.put("user", "rob");
+ 		OAuth2User oauth2User = new DefaultOAuth2User(AuthorityUtils.createAuthorityList("ROLE_USER"), attributes,
+ 				"user");
+-		given(this.oauth2UserService.loadUser(any())).willReturn(Mono.just(oauth2User));
++		this.oauth2UserService = createMockReactiveOAuth2UserService(oauth2User);
++		this.userService.setOauth2UserService(this.oauth2UserService);
+ 		assertThatExceptionOfType(OAuth2AuthenticationException.class)
+ 			.isThrownBy(() -> this.userService.loadUser(userRequest()).block());
+ 	}
+@@ -161,7 +163,8 @@
+ 		attributes.put("user", "rob");
+ 		OAuth2User oauth2User = new DefaultOAuth2User(AuthorityUtils.createAuthorityList("ROLE_USER"), attributes,
+ 				"user");
+-		given(this.oauth2UserService.loadUser(any())).willReturn(Mono.just(oauth2User));
++		this.oauth2UserService = createMockReactiveOAuth2UserService(oauth2User);
++		this.userService.setOauth2UserService(this.oauth2UserService);
+ 		assertThat(this.userService.loadUser(userRequest()).block().getUserInfo()).isNotNull();
+ 	}
+ 
+@@ -173,7 +176,8 @@
+ 		attributes.put("user", "rob");
+ 		OAuth2User oauth2User = new DefaultOAuth2User(AuthorityUtils.createAuthorityList("ROLE_USER"), attributes,
+ 				"user");
+-		given(this.oauth2UserService.loadUser(any())).willReturn(Mono.just(oauth2User));
++		this.oauth2UserService = createMockReactiveOAuth2UserService(oauth2User);
++		this.userService.setOauth2UserService(this.oauth2UserService);
+ 		assertThat(this.userService.loadUser(userRequest()).block().getName()).isEqualTo("rob");
+ 	}
+ 
+@@ -184,7 +188,8 @@
+ 		attributes.put("user", "rob");
+ 		OAuth2User oauth2User = new DefaultOAuth2User(AuthorityUtils.createAuthorityList("ROLE_USER"), attributes,
+ 				"user");
+-		given(this.oauth2UserService.loadUser(any())).willReturn(Mono.just(oauth2User));
++		this.oauth2UserService = createMockReactiveOAuth2UserService(oauth2User);
++		this.userService.setOauth2UserService(this.oauth2UserService);
+ 		OidcUserRequest userRequest = userRequest();
+ 		Function<ClientRegistration, Converter<Map<String, Object>, Map<String, Object>>> customClaimTypeConverterFactory = mock(
+ 				Function.class);
+@@ -202,7 +207,8 @@
+ 		attributes.put("user", "steve");
+ 		OAuth2User oauth2User = new DefaultOAuth2User(AuthorityUtils.createAuthorityList("ROLE_USER"), attributes,
+ 				"user");
+-		given(this.oauth2UserService.loadUser(any())).willReturn(Mono.just(oauth2User));
++		this.oauth2UserService = createMockReactiveOAuth2UserService(oauth2User);
++		this.userService.setOauth2UserService(this.oauth2UserService);
+ 		Predicate<OidcUserRequest> customRetrieveUserInfo = mock(Predicate.class);
+ 		this.userService.setRetrieveUserInfo(customRetrieveUserInfo);
+ 		given(customRetrieveUserInfo.test(any(OidcUserRequest.class))).willReturn(true);
+@@ -265,8 +271,7 @@
+ 				nameAttributeKey);
+ 		OAuth2User oauth2User = new DefaultOAuth2User(actualUser.getAuthorities(), actualUser.getClaims(),
+ 				nameAttributeKey);
+-		ReactiveOAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2 = mock(ReactiveOAuth2UserService.class);
+-		given(oauth2.loadUser(any())).willReturn(Mono.just(oauth2User));
++		ReactiveOAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2 = createMockReactiveOAuth2UserService(oauth2User);
+ 		given(oidcUserConverter.convert(any())).willReturn(Mono.just(actualUser));
+ 		this.userService.setOauth2UserService(oauth2);
+ 		this.userService.setOidcUserConverter(oidcUserConverter);
+@@ -331,6 +336,13 @@
+ 		}
+ 	}
+ 
++	private static ReactiveOAuth2UserService<OAuth2UserRequest, OAuth2User> createMockReactiveOAuth2UserService(
++			OAuth2User oauth2User) {
++		ReactiveOAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService = mock(ReactiveOAuth2UserService.class);
++		given(oauth2UserService.loadUser(any())).willReturn(Mono.just(oauth2User));
++		return oauth2UserService;
++	}
++
+ 	private OidcUserRequest userRequest() {
+ 		return new OidcUserRequest(this.registration.build(), this.accessToken, this.idToken);
+ 	}

@@ -1,0 +1,65 @@
+--- a/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpConnectionEventListenerTests.java
++++ b/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpConnectionEventListenerTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.integration.ip.tcp.connection;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.context.event.ApplicationEventMulticaster;
+@@ -37,6 +38,13 @@
+  */
+ public class TcpConnectionEventListenerTests implements TestApplicationContextAware {
+ 
++	private TcpConnectionSupport tcpConnection;
++
++	@BeforeEach
++	void setUp() {
++		this.tcpConnection = mock(TcpConnectionSupport.class);
++	}
++
+ 	@Test
+ 	public void testNoFilter() {
+ 		ApplicationEventListeningMessageProducer eventProducer = new ApplicationEventListeningMessageProducer();
+@@ -48,18 +56,17 @@
+ 		eventProducer.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+ 		eventProducer.afterPropertiesSet();
+ 		eventProducer.start();
+-		TcpConnectionSupport connection = mock(TcpConnectionSupport.class);
+ 
+ 		assertThat(eventProducer.supportsEventType(ResolvableType.forClass(TcpConnectionOpenEvent.class))).isTrue();
+-		TcpConnectionEvent event1 = new TcpConnectionOpenEvent(connection, "foo");
++		TcpConnectionEvent event1 = new TcpConnectionOpenEvent(tcpConnection, "foo");
+ 		eventProducer.onApplicationEvent(event1);
+ 
+ 		assertThat(eventProducer.supportsEventType(ResolvableType.forClass(FooEvent.class))).isTrue();
+-		FooEvent event2 = new FooEvent(connection, "foo");
++		FooEvent event2 = new FooEvent(tcpConnection, "foo");
+ 		eventProducer.onApplicationEvent(event2);
+ 
+ 		assertThat(eventProducer.supportsEventType(ResolvableType.forClass(BarEvent.class))).isTrue();
+-		BarEvent event3 = new BarEvent(connection, "foo");
++		BarEvent event3 = new BarEvent(tcpConnection, "foo");
+ 		eventProducer.onApplicationEvent(event3);
+ 
+ 		Message<?> message = outputChannel.receive(0);
+@@ -86,16 +93,15 @@
+ 		eventProducer.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+ 		eventProducer.afterPropertiesSet();
+ 		eventProducer.start();
+-		TcpConnectionSupport connection = mock(TcpConnectionSupport.class);
+ 
+ 		assertThat(eventProducer.supportsEventType(ResolvableType.forClass(TcpConnectionOpenEvent.class))).isFalse();
+ 
+ 		assertThat(eventProducer.supportsEventType(ResolvableType.forClass(FooEvent.class))).isTrue();
+-		FooEvent event2 = new FooEvent(connection, "foo");
++		FooEvent event2 = new FooEvent(tcpConnection, "foo");
+ 		eventProducer.onApplicationEvent(event2);
+ 
+ 		assertThat(eventProducer.supportsEventType(ResolvableType.forClass(BarEvent.class))).isTrue();
+-		BarEvent event3 = new BarEvent(connection, "foo");
++		BarEvent event3 = new BarEvent(tcpConnection, "foo");
+ 		eventProducer.onApplicationEvent(event3);
+ 
+ 		Message<?> message = outputChannel.receive(0);

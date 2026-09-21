@@ -1,0 +1,42 @@
+--- a/core/src/test/java/org/springframework/security/authentication/jaas/DefaultJaasAuthenticationProviderTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/jaas/DefaultJaasAuthenticationProviderTests.java
+@@ -127,11 +127,10 @@
+ 	public void logout() throws Exception {
+ 		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
+ 		SecurityContext securityContext = mock(SecurityContext.class);
+-		JaasAuthenticationToken token = mock(JaasAuthenticationToken.class);
+ 		LoginContext context = mock(LoginContext.class);
+ 		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
++		JaasAuthenticationToken token = createMockJaasAuthenticationToken(context);
+ 		given(securityContext.getAuthentication()).willReturn(token);
+-		given(token.getLoginContext()).willReturn(context);
+ 		this.provider.onApplicationEvent(event);
+ 		verify(event).getSecurityContexts();
+ 		verify(securityContext).getAuthentication();
+@@ -192,12 +191,11 @@
+ 	public void logoutLoginException() throws Exception {
+ 		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
+ 		SecurityContext securityContext = mock(SecurityContext.class);
+-		JaasAuthenticationToken token = mock(JaasAuthenticationToken.class);
+ 		LoginContext context = mock(LoginContext.class);
++		JaasAuthenticationToken token = createMockJaasAuthenticationToken(context);
+ 		LoginException loginException = new LoginException("Failed Login");
+ 		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
+ 		given(securityContext.getAuthentication()).willReturn(token);
+-		given(token.getLoginContext()).willReturn(context);
+ 		willThrow(loginException).given(context).logout();
+ 		this.provider.onApplicationEvent(event);
+ 		verify(event).getSecurityContexts();
+@@ -226,6 +224,12 @@
+ 		}
+ 	}
+ 
++	private static JaasAuthenticationToken createMockJaasAuthenticationToken(LoginContext context) {
++		JaasAuthenticationToken token = mock(JaasAuthenticationToken.class);
++		given(token.getLoginContext()).willReturn(context);
++		return token;
++	}
++
+ 	private void verifyFailedLogin() {
+ 		ArgumentCaptor<JaasAuthenticationFailedEvent> event = ArgumentCaptor
+ 			.forClass(JaasAuthenticationFailedEvent.class);
