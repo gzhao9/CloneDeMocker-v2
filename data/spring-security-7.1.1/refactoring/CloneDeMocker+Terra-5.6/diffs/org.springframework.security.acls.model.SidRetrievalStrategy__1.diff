@@ -1,0 +1,47 @@
+--- a/acl/src/test/java/org/springframework/security/acls/AclPermissionCacheOptimizerTests.java
++++ b/acl/src/test/java/org/springframework/security/acls/AclPermissionCacheOptimizerTests.java
+@@ -20,6 +20,7 @@
+ import java.util.Collections;
+ import java.util.List;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.security.acls.domain.ObjectIdentityImpl;
+@@ -42,14 +43,20 @@
+ @SuppressWarnings({ "unchecked" })
+ public class AclPermissionCacheOptimizerTests {
+ 
++	private SidRetrievalStrategy sidRetrievalStrategy;
++
++	@BeforeEach
++	public void setUp() {
++		this.sidRetrievalStrategy = mock(SidRetrievalStrategy.class);
++	}
++
+ 	@Test
+ 	public void eagerlyLoadsRequiredAcls() {
+ 		AclService service = mock(AclService.class);
+ 		AclPermissionCacheOptimizer pco = new AclPermissionCacheOptimizer(service);
+ 		ObjectIdentityRetrievalStrategy oidStrat = mock(ObjectIdentityRetrievalStrategy.class);
+-		SidRetrievalStrategy sidStrat = mock(SidRetrievalStrategy.class);
+ 		pco.setObjectIdentityRetrievalStrategy(oidStrat);
+-		pco.setSidRetrievalStrategy(sidStrat);
++		pco.setSidRetrievalStrategy(sidRetrievalStrategy);
+ 		Object[] dos = { new Object(), null, new Object() };
+ 		ObjectIdentity[] oids = { new ObjectIdentityImpl("A", "1"), new ObjectIdentityImpl("A", "2") };
+ 		given(oidStrat.getObjectIdentity(dos[0])).willReturn(oids[0]);
+@@ -64,11 +71,10 @@
+ 		AclService service = mock(AclService.class);
+ 		AclPermissionCacheOptimizer pco = new AclPermissionCacheOptimizer(service);
+ 		ObjectIdentityRetrievalStrategy oids = mock(ObjectIdentityRetrievalStrategy.class);
+-		SidRetrievalStrategy sids = mock(SidRetrievalStrategy.class);
+ 		pco.setObjectIdentityRetrievalStrategy(oids);
+-		pco.setSidRetrievalStrategy(sids);
++		pco.setSidRetrievalStrategy(sidRetrievalStrategy);
+ 		pco.cachePermissionsFor(mock(Authentication.class), Collections.emptyList());
+-		verifyNoMoreInteractions(service, sids, oids);
++		verifyNoMoreInteractions(service, sidRetrievalStrategy, oids);
+ 	}
+ 
+ }
