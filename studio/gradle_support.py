@@ -117,10 +117,10 @@ allprojects {{ p ->
                 if (pitTests) targetTests = pitTests
                 if (pitClasses) {{
                     targetClasses = pitClasses
-                }} else if (p.group) {{
-                    targetClasses = [p.group + '.*']
                 }} else if (pitTests) {{
                     targetClasses = pitTests.collect {{ it.contains('.') ? it.substring(0, it.lastIndexOf('.')) + '.*' : '*' }}
+                }} else if (p.group) {{
+                    targetClasses = [p.group + '.*']
                 }}
                 // 插件默认只看 test 这个 source set；目标测试在别的 source set 时要显式给出。
                 // The plugin only looks at the test source set by default; others must be named.
