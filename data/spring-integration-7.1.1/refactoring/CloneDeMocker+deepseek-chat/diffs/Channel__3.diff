@@ -12,11 +12,11 @@
   */
  public class InboundEndpointTests implements TestApplicationContextAware {
  
-+	private Channel mockChannel;
++	private Channel channelMock;
 +
 +	@BeforeEach
-+	void setUp() {
-+		this.mockChannel = mock(Channel.class);
++	public void setUp() {
++		channelMock = mock(Channel.class);
 +	}
 +
  	@Test
@@ -28,14 +28,14 @@
  		ChannelAwareMessageListener listener = (ChannelAwareMessageListener) container.getMessageListener();
 -		Channel rabbitChannel = mock(Channel.class);
 -		listener.onMessage(amqpMessage, rabbitChannel);
-+		listener.onMessage(amqpMessage, mockChannel);
++		listener.onMessage(amqpMessage, channelMock);
  
  		Message<?> result = channel.receive(1000);
  		assertThat(result.getPayload()).isEqualTo(payload);
  
  		assertThat(result.getHeaders())
 -				.containsEntry(AmqpHeaders.CHANNEL, rabbitChannel)
-+				.containsEntry(AmqpHeaders.CHANNEL, mockChannel)
++				.containsEntry(AmqpHeaders.CHANNEL, channelMock)
  				.containsEntry(AmqpHeaders.DELIVERY_TAG, 123L);
  		org.springframework.amqp.core.Message sourceData = StaticMessageHeaderAccessor.getSourceData(result);
  		assertThat(sourceData).isSameAs(amqpMessage);
@@ -47,7 +47,7 @@
  
  		channel.subscribe(new MessageTransformingHandler(message -> {
 -			assertThat(message.getHeaders().get(AmqpHeaders.CHANNEL)).isSameAs(rabbitChannel);
-+			assertThat(message.getHeaders().get(AmqpHeaders.CHANNEL)).isSameAs(mockChannel);
++			assertThat(message.getHeaders().get(AmqpHeaders.CHANNEL)).isSameAs(channelMock);
  			assertThat(message.getHeaders().get(AmqpHeaders.DELIVERY_TAG)).isEqualTo(123L);
  			return MessageBuilder.fromMessage(message)
  					.setHeader(JsonHeaders.TYPE_ID, "foo")
@@ -56,7 +56,7 @@
  
  		ChannelAwareMessageListener listener = (ChannelAwareMessageListener) container.getMessageListener();
 -		listener.onMessage(amqpMessage, rabbitChannel);
-+		listener.onMessage(amqpMessage, mockChannel);
++		listener.onMessage(amqpMessage, channelMock);
  
  		assertThat(sendLatch.await(10, TimeUnit.SECONDS)).isTrue();
  	}
@@ -67,7 +67,7 @@
 -		Channel channel = mock();
  		((ChannelAwareMessageListener) container.getMessageListener())
 -				.onMessage(message, channel);
-+				.onMessage(message, mockChannel);
++				.onMessage(message, channelMock);
  		assertThat(outputChannel.receive(0)).isNull();
  		received = errorChannel.receive(0);
  		assertThat(received).isNotNull();
@@ -76,7 +76,7 @@
  		ManualAckListenerExecutionFailedException ex = (ManualAckListenerExecutionFailedException) received
  				.getPayload();
 -		assertThat(ex.getChannel()).isEqualTo(channel);
-+		assertThat(ex.getChannel()).isEqualTo(mockChannel);
++		assertThat(ex.getChannel()).isEqualTo(channelMock);
  		assertThat(ex.getDeliveryTag()).isEqualTo(props.getDeliveryTag());
  	}
  
@@ -87,7 +87,7 @@
 -		Channel channel = mock();
  		((ChannelAwareMessageListener) container.getMessageListener())
 -				.onMessage(message, channel);
-+				.onMessage(message, mockChannel);
++				.onMessage(message, channelMock);
  		assertThat(outputChannel.receive(0)).isNull();
  		received = errorChannel.receive(0);
  		assertThat(received).isNotNull();
@@ -96,7 +96,7 @@
  		ManualAckListenerExecutionFailedException ex = (ManualAckListenerExecutionFailedException) received
  				.getPayload();
 -		assertThat(ex.getChannel()).isEqualTo(channel);
-+		assertThat(ex.getChannel()).isEqualTo(mockChannel);
++		assertThat(ex.getChannel()).isEqualTo(channelMock);
  		assertThat(ex.getDeliveryTag()).isEqualTo(props.getDeliveryTag());
  	}
  
@@ -107,7 +107,7 @@
 -		Channel channel = mock(Channel.class);
  		((ChannelAwareBatchMessageListener) container.getMessageListener())
 -				.onMessageBatch(messages, channel);
-+				.onMessageBatch(messages, mockChannel);
++				.onMessageBatch(messages, channelMock);
  		assertThat(outputChannel.receive(0)).isNull();
  		received = errorChannel.receive(0);
  		assertThat(received).isNotNull();
@@ -116,7 +116,7 @@
  		ManualAckListenerExecutionFailedException ex = (ManualAckListenerExecutionFailedException) received
  				.getPayload();
 -		assertThat(ex.getChannel()).isEqualTo(channel);
-+		assertThat(ex.getChannel()).isEqualTo(mockChannel);
++		assertThat(ex.getChannel()).isEqualTo(channelMock);
  		assertThat(ex.getDeliveryTag()).isEqualTo(43L);
  	}
  
@@ -127,7 +127,7 @@
 -		Channel channel = mock(Channel.class);
  		((ChannelAwareBatchMessageListener) container.getMessageListener())
 -				.onMessageBatch(messages, channel);
-+				.onMessageBatch(messages, mockChannel);
++				.onMessageBatch(messages, channelMock);
  		assertThat(outputChannel.receive(0)).isNull();
  		received = errorChannel.receive(0);
  		assertThat(received).isNotNull();
@@ -136,7 +136,7 @@
  		ManualAckListenerExecutionFailedException ex = (ManualAckListenerExecutionFailedException) received
  				.getPayload();
 -		assertThat(ex.getChannel()).isEqualTo(channel);
-+		assertThat(ex.getChannel()).isEqualTo(mockChannel);
++		assertThat(ex.getChannel()).isEqualTo(channelMock);
  		assertThat(ex.getDeliveryTag()).isEqualTo(43L);
  	}
  
