@@ -1,0 +1,69 @@
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java
+@@ -180,14 +180,8 @@
+         metadataInfo_444 = JsonUtils.toJavaObject(metadata_444, MetadataInfo.class);
+         metadataInfo_555_tri = JsonUtils.toJavaObject(metadata_555_triple, MetadataInfo.class);
+ 
+-        serviceDiscovery = Mockito.mock(ServiceDiscovery.class);
+-        when(serviceDiscovery.getUrl()).thenReturn(registryURL);
+-
+-        when(serviceDiscovery.getRemoteMetadata(eq("111"), anyList())).thenReturn(metadataInfo_111);
+-        when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenReturn(metadataInfo_222);
+-        when(serviceDiscovery.getRemoteMetadata(eq("333"), anyList())).thenReturn(metadataInfo_333);
+-        when(serviceDiscovery.getRemoteMetadata(eq("444"), anyList())).thenReturn(MetadataInfo.EMPTY);
+-        when(serviceDiscovery.getRemoteMetadata(eq("555"), anyList())).thenReturn(metadataInfo_555_tri);
++        serviceDiscovery = MockServiceDiscoveryWithMetadata.createMockServiceDiscovery(
++                registryURL, metadataInfo_111, metadataInfo_222, metadataInfo_333, metadataInfo_555_tri);
+     }
+ 
+     @BeforeEach
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java
+@@ -179,14 +179,8 @@
+         metadataInfo_444 = JsonUtils.toJavaObject(metadata_444, MetadataInfo.class);
+         metadataInfo_555_tri = JsonUtils.toJavaObject(metadata_555_triple, MetadataInfo.class);
+ 
+-        serviceDiscovery = Mockito.mock(ServiceDiscovery.class);
+-        when(serviceDiscovery.getUrl()).thenReturn(registryURL);
+-
+-        when(serviceDiscovery.getRemoteMetadata(eq("111"), anyList())).thenReturn(metadataInfo_111);
+-        when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenReturn(metadataInfo_222);
+-        when(serviceDiscovery.getRemoteMetadata(eq("333"), anyList())).thenReturn(metadataInfo_333);
+-        when(serviceDiscovery.getRemoteMetadata(eq("444"), anyList())).thenReturn(MetadataInfo.EMPTY);
+-        when(serviceDiscovery.getRemoteMetadata(eq("555"), anyList())).thenReturn(metadataInfo_555_tri);
++        serviceDiscovery = MockServiceDiscoveryWithMetadata.createMockServiceDiscovery(
++                registryURL, metadataInfo_111, metadataInfo_222, metadataInfo_333, metadataInfo_555_tri);
+     }
+ 
+     @BeforeEach
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/MockServiceDiscoveryWithMetadata.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/MockServiceDiscoveryWithMetadata.java
+@@ -0,0 +1,28 @@
++package org.apache.dubbo.registry.client.event.listener;
++
++import org.apache.dubbo.common.URL;
++import org.apache.dubbo.metadata.MetadataInfo;
++import org.apache.dubbo.registry.client.ServiceDiscovery;
++
++import static org.mockito.ArgumentMatchers.anyList;
++import static org.mockito.ArgumentMatchers.eq;
++import static org.mockito.Mockito.when;
++
++public class MockServiceDiscoveryWithMetadata {
++
++    public static ServiceDiscovery createMockServiceDiscovery(
++            URL registryURL,
++            MetadataInfo metadataInfo111,
++            MetadataInfo metadataInfo222,
++            MetadataInfo metadataInfo333,
++            MetadataInfo metadataInfo555Tri) {
++        ServiceDiscovery serviceDiscovery = org.mockito.Mockito.mock(ServiceDiscovery.class);
++        when(serviceDiscovery.getUrl()).thenReturn(registryURL);
++        when(serviceDiscovery.getRemoteMetadata(eq("111"), anyList())).thenReturn(metadataInfo111);
++        when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenReturn(metadataInfo222);
++        when(serviceDiscovery.getRemoteMetadata(eq("333"), anyList())).thenReturn(metadataInfo333);
++        when(serviceDiscovery.getRemoteMetadata(eq("444"), anyList())).thenReturn(MetadataInfo.EMPTY);
++        when(serviceDiscovery.getRemoteMetadata(eq("555"), anyList())).thenReturn(metadataInfo555Tri);
++        return serviceDiscovery;
++    }
++}

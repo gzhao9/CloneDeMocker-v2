@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from studio.canonical_store import classify_agent_result
 from studio.detection_service import DetectionError, DetectionService
 from studio.model_provider import ModelResult, ModelUsage
 from studio.refactoring_agent import RefactoringAgent, _test_regression_reason
@@ -113,6 +114,20 @@ class StagedProvider:
                 body = self._integration(payload)
             else:
                 body = dict(payload.get("currentProposal") or {})
+        return ModelResult(json.dumps(body), f"fake-{self.calls}", model, ModelUsage(10, 0, 5, 0, 15), None)
+
+
+class ConcernedAuditProvider(StagedProvider):
+    """三层判据全过，但审查报 HIGH。
+    All three deterministic tiers pass while the audit reports HIGH."""
+
+    def generate(self, instructions: str, input_text: str, model: str) -> ModelResult:
+        if "independent Java test-refactoring reviewer" not in instructions:
+            return super().generate(instructions, input_text, model)
+        self.calls += 1
+        self.stages.append("AUDIT")
+        body = {"risk": "HIGH", "reason": "mock promoted into @BeforeEach",
+                "evidence": "+    @BeforeEach"}
         return ModelResult(json.dumps(body), f"fake-{self.calls}", model, ModelUsage(10, 0, 5, 0, 15), None)
 
 
@@ -320,6 +335,26 @@ class RefactoringAgentTest(unittest.TestCase):
             source.write_text(java_source(["testRenamed"]), encoding="utf-8")
             status = agent.cache_status(run_id, ["demo.Dependency::1"])
             self.assertFalse(status["available"])
+
+    def test_ai_audit_is_advisory_and_cannot_fail_a_verified_refactoring(self):
+        """论文的成功判据只有编译、行为、变异三层，审查不在其中。把"抽成 helper""提成
+        @BeforeEach 字段"这类工具本身的目标判成失败，是审查提示词与工具目的冲突，不是缺陷；
+        而且这种否决过去还会被贴成 FAILED_BEHAVIORAL_EQUIVALENCE，和真的测试行为差异混为一谈。
+        The paper's success criteria has three tiers — compilation, behavior, mutation — and
+        the audit is not one of them. Failing helper extraction or a @BeforeEach field, which
+        are the tool's own goals, reflected an audit prompt at odds with its purpose rather
+        than a defect; such a veto was also labelled FAILED_BEHAVIORAL_EQUIVALENCE, making it
+        indistinguishable from a genuine difference in test outcomes."""
+        with tempfile.TemporaryDirectory() as temporary:
+            service, _, run_id, _ = self._fixture(temporary, "e" * 32)
+            agent = RefactoringAgent(service, ConcernedAuditProvider(), PassingHarness())
+
+            result = agent.run(run_id, ["demo.Dependency::1"], "gpt-test")
+
+            self.assertEqual("HIGH", result["harness"]["aiAudit"]["risk"])
+            self.assertTrue(result["harness"]["aiAuditConcern"])
+            self.assertTrue(result["harness"]["equivalent"])
+            self.assertEqual("SUCCESS", classify_agent_result(result))
 
     def test_sequence_selection_narrows_instance_to_chosen_subset(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -85,6 +85,10 @@ def start_refactoring(payload: dict) -> dict[str, str]:
         REFACTOR_JOBS[job_id] = {
             "state": "RUNNING", "completed": 0, "total": len(items), "current": 0,
             "items": items, "createdAt": time.time(),
+            # 导出时按这两项决定结果落进 data/ 的哪个配置目录。
+            # The export uses these two to pick the setup directory under data/.
+            "model": payload.get("model", "gpt-5.6-terra"),
+            "useMock": bool(payload.get("useMock", False)),
         }
 
     def work() -> None:
@@ -176,7 +180,7 @@ def refactoring_status(job_id: str, summary: bool = False) -> dict:
         return job
 
 
-def run_cctr(project: str, project_root: Path) -> dict:
+def run_cctr(project: str, project_root: Path, setup: str) -> dict:
     """
     在写完 data/ 之后算一次 CCTR（论文 RQ2.2 的可读性指标）。
 
@@ -197,7 +201,8 @@ def run_cctr(project: str, project_root: Path) -> dict:
         return {"ran": False, "reason": "cctr_analysis.py not found"}
     try:
         completed = subprocess.run(
-            [sys.executable, str(script), "--project", project, "--project-root", str(project_root)],
+            [sys.executable, str(script), "--project", project, "--project-root", str(project_root),
+             "--setup", setup],
             cwd=str(REPOSITORY_ROOT), capture_output=True, text=True,
             encoding="utf-8", errors="replace", timeout=900,
         )
@@ -206,7 +211,7 @@ def run_cctr(project: str, project_root: Path) -> dict:
     if completed.returncode != 0:
         return {"ran": False, "reason": (completed.stderr or completed.stdout or "")[-600:]}
     rows = 0
-    cctr_path = REPOSITORY_ROOT / "data" / project / "cctr.json"
+    cctr_path = REPOSITORY_ROOT / "data" / project / "refactoring" / setup / "cctr.json"
     if cctr_path.is_file():
         try:
             rows = len(json.loads(cctr_path.read_text(encoding="utf-8")))
@@ -233,42 +238,68 @@ def refactoring_export(payload: dict) -> dict:
         if job is None:
             raise DetectionError("Refactoring job not found / 未找到重构任务")
         items = [dict(item) for item in job.get("items", [])]
+        job_model = str(job.get("model") or payload.get("model") or "")
+        job_mock = bool(job.get("useMock"))
 
     run_id = str(payload.get("runId") or "")
     run = DETECTION.load_run(run_id)
     project = str(payload.get("project") or "").strip() or run.project_root.name
 
-    entries = []
-    diff_lookup: dict[str, Path] = {}
+    # 目录按请求时选的模型定，而不是 API 回传的名字：后者可能是带日期的快照名，同一个配置
+    # 会因此被拆进好几个目录。回传的名字仍然留在每条记录的 model 里。分组是防御性的，保证
+    # 调试桩和真实模型的结果不会写进同一个目录。
+    # The directory follows the model requested, not the name the API echoes back: that may be
+    # a dated snapshot, which would split one setup across several directories. The echoed
+    # name stays in each entry's model field. Grouping is defensive, keeping debug-stub and
+    # real-model results out of one directory.
+    groups: dict[tuple[str, bool], tuple[list[dict], dict[str, Path]]] = {}
     for item in items:
         result = item.get("result")
         if not result:
             continue
         mci_id = item["mciId"]
-        entries.append(entry_from_agent_result(mci_id, result))
+        key = (job_model or str(result.get("model") or ""), bool(result.get("useMock", job_mock)))
+        entries, diff_lookup = groups.setdefault(key, ([], {}))
+        entries.append({**entry_from_agent_result(mci_id, result), "useMock": key[1]})
         proposal_id = result.get("proposalId")
         if proposal_id:
             candidate = run.run_directory / "refactoring" / proposal_id / "changes.diff"
             if candidate.is_file():
                 diff_lookup[mci_id] = candidate
-    if not entries:
+    if not groups:
         raise DetectionError("This job produced no results to export / 该任务没有可导出的结果")
 
-    summary = merge_canonical(
-        project=project,
-        repository_root=REPOSITORY_ROOT,
-        entries=entries,
-        detection_source=run.run_directory / "mock-clone-instances.json",
-        diff_lookup=diff_lookup,
-        model=str(payload.get("model") or ""),
-    )
+    summaries = [
+        merge_canonical(
+            project=project,
+            repository_root=REPOSITORY_ROOT,
+            entries=entries,
+            detection_source=run.run_directory / "mock-clone-instances.json",
+            diff_lookup=diff_lookup,
+            model=model,
+            use_mock=use_mock,
+        )
+        for (model, use_mock), (entries, diff_lookup) in groups.items()
+    ]
+    summary = dict(summaries[0])
+    if len(summaries) > 1:
+        summary["writtenThisCall"] = sum(item["writtenThisCall"] for item in summaries)
+        summary["setup"] = ", ".join(item["setup"] for item in summaries)
+        summary["setups"] = summaries
     # CCTR 是从刚写好的 diff 和检测数据里算出来的，所以必须在合并之后跑。它失败不影响
     # 这次导出——数据已经落盘，CCTR 随时可以单独补算。
     # CCTR is derived from the diffs and detection data just written, so it runs after the
     # merge. Its failure does not undo the export: the data is on disk and CCTR can be
     # recomputed on its own at any time.
-    summary["cctr"] = (run_cctr(project, run.project_root)
-                       if payload.get("cctr", True) else {"ran": False, "reason": "skipped"})
+    if payload.get("cctr", True):
+        cctr_runs = [run_cctr(project, run.project_root, item["setupDirectory"]) for item in summaries]
+        summary["cctr"] = cctr_runs[0] if len(cctr_runs) == 1 else {
+            "ran": all(item.get("ran") for item in cctr_runs),
+            "methods": sum(item.get("methods", 0) for item in cctr_runs),
+            "reason": "; ".join(item.get("reason", "") for item in cctr_runs if item.get("reason")),
+        }
+    else:
+        summary["cctr"] = {"ran": False, "reason": "skipped"}
     return summary
 
 
@@ -372,6 +403,10 @@ class CloneDeMockerHandler(BaseHTTPRequestHandler):
         if parsed.path == "/api/pick-directory":
             self._handle(pick_directory)
             return
+        if parsed.path == "/api/detection/cached":
+            project_root = parse_qs(parsed.query).get("projectRoot", [""])[0]
+            self._handle(lambda: DETECTION.cached_detection(project_root))
+            return
         if parsed.path == "/api/detection/scan-status":
             self._handle(lambda: scan_status(parse_qs(parsed.query).get("jobId", [""])[0]))
             return
@@ -403,6 +438,9 @@ class CloneDeMockerHandler(BaseHTTPRequestHandler):
                 run_id=payload.get("runId", ""),
                 selected_mock_ids=[int(value) for value in payload.get("selectedMockIds", [])],
             ))
+            return
+        if parsed.path == "/api/detection/load-cached":
+            self._handle(lambda: DETECTION.restore_from_data(payload.get("projectRoot", "")))
             return
         if parsed.path == "/api/refactoring/run":
             self._handle(lambda: start_refactoring(payload))

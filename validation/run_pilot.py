@@ -41,8 +41,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
 from studio.detection_service import DetectionService  # noqa: E402
-from studio.harness import (ProjectHarness, ensure_pit_junit5_support, mutation_regressed,
-                             verification_failure_reason)  # noqa: E402
+from studio.harness import (ProjectHarness, ensure_pit_junit5_support, is_module_directory,  # noqa: E402
+                             mutation_regressed, verification_failure_reason)
 from studio.model_provider import MockModelProvider  # noqa: E402
 from studio.refactoring_agent import RefactoringAgent, _workspace_root  # noqa: E402
 from validation.diff_utils import replay_replacements  # noqa: E402
@@ -74,13 +74,13 @@ def affected_test_classes(instance: dict) -> list[str]:
 
 
 def _module_for_file(resolved_file: Path, project_root: Path) -> str | None:
-    """从测试文件往上找最近的 pom.xml，就是它所属的 Maven 模块 / Walks up from a test
-    file to the nearest pom.xml, which is the Maven module it belongs to."""
+    """从测试文件往上找最近的模块目录（pom.xml 或 Gradle 构建文件）/ Walks up from a test
+    file to the nearest module directory (a pom.xml or a Gradle build file)."""
     current = resolved_file.parent
     while True:
         if current == project_root:
             return None
-        if (current / "pom.xml").is_file():
+        if is_module_directory(current):
             return current.relative_to(project_root).as_posix()
         if current.parent == current:
             return None

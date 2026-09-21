@@ -4,20 +4,26 @@ canonical, git-trackable dataset per project instead of committing a fresh,
 fully-duplicated .clonedemocker/runs/{uuid}/ snapshot or a new timestamped
 validation/results/pilot-*.json for every invocation.
 
-Writes/overwrites in place:
-    data/<project>/detection.json            latest full detection output
-    data/<project>/refactoring-results.json  one record per MCI, keyed by mciId,
+Writes/overwrites in place (<setup> is e.g. CloneDeMocker+Terra-5.6, see
+studio.canonical_store.setup_label):
+    data/<project>/detection.json                      latest full detection output
+    data/<project>/refactoring/<setup>/setup.json      which harness and model produced it
+    data/<project>/refactoring/<setup>/refactoring-results.json
+                                              one record per MCI, keyed by mciId,
                                               overwriting only the MCIs this report
                                               touched -- MCIs from a prior export not
                                               present in this report are kept as-is
-    data/<project>/diffs/<mciId>.diff        one diff file per MCI with a resolvable
+    data/<project>/refactoring/<setup>/diffs/<mciId>.diff
+                                              one diff file per MCI with a resolvable
                                               proposalId, overwritten on re-export
 
 Usage:
     uv run python validation/export_canonical.py --project dubbo \
         --report validation/results/pilot-merged-redesign-round1-20260916.json \
         --detection-run-id acc8c0a744b04cdbbb36ad05a7509789 \
-        [--proposal-overrides path/to/overrides.json]
+        [--proposal-overrides path/to/overrides.json] [--harness CloneDeMocker]
+
+--harness defaults to CloneDeMocker, or DirectLLM for a --direct-llm-baseline report.
 
 --proposal-overrides is a {mciId: proposalId} JSON map for results whose
 report-recorded proposalId doesn't resolve to a real changes.diff (e.g. entries
@@ -43,7 +49,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # studio.canonical_store, or the two paths would each grow their own and drift on which MCIs
 # are kept and which are overwritten.
 sys.path.insert(0, str(REPO_ROOT))
-from studio.canonical_store import safe_mci_filename  # noqa: E402
+from studio.canonical_store import (  # noqa: E402
+    HARNESS_CLONEDEMOCKER, safe_mci_filename, setup_directory, setup_label, write_setup_descriptor,
+)
 
 
 def find_diff(proposal_id: str) -> Path | None:
@@ -58,20 +66,27 @@ def main() -> None:
     parser.add_argument("--detection-run-id", required=True,
                          help="runId whose mock-clone-instances.json has full project coverage")
     parser.add_argument("--proposal-overrides", default=None)
+    parser.add_argument("--harness", default=None,
+                        help="what drove the refactoring; default CloneDeMocker (DirectLLM for a direct baseline)")
     args = parser.parse_args()
 
     report = json.loads(Path(args.report).read_text(encoding="utf-8"))
     overrides = (json.loads(Path(args.proposal_overrides).read_text(encoding="utf-8"))
                  if args.proposal_overrides else {})
 
-    out_dir = REPO_ROOT / "data" / args.project
+    harness = args.harness or ("DirectLLM" if report.get("directLlmBaseline") else HARNESS_CLONEDEMOCKER)
+    use_mock = bool(report.get("useMock"))
+    label = setup_label(harness, report.get("model") or "", use_mock)
+    project_dir = REPO_ROOT / "data" / args.project
+    out_dir = setup_directory(REPO_ROOT, args.project, label)
     diffs_dir = out_dir / "diffs"
     diffs_dir.mkdir(parents=True, exist_ok=True)
+    write_setup_descriptor(out_dir, label, harness, report.get("model") or "", use_mock)
 
     detection_src = REPO_ROOT / ".clonedemocker" / "runs" / args.detection_run_id / "mock-clone-instances.json"
     if not detection_src.is_file():
         sys.exit(f"detection data not found: {detection_src}")
-    shutil.copyfile(detection_src, out_dir / "detection.json")
+    shutil.copyfile(detection_src, project_dir / "detection.json")
 
     existing_path = out_dir / "refactoring-results.json"
     existing = json.loads(existing_path.read_text(encoding="utf-8"))["results"] if existing_path.is_file() else {}
@@ -96,6 +111,8 @@ def main() -> None:
     success = sum(1 for r in results_by_id.values() if r.get("classification") == "SUCCESS")
     canonical = {
         "project": args.project,
+        "setup": label,
+        "harness": harness,
         "lastUpdated": report.get("generatedAt"),
         "sourceReport": Path(args.report).name,
         "model": report.get("model"),
@@ -114,7 +131,7 @@ def main() -> None:
         for mci_id, entry in results_by_id.items():
             writer.writerow({"mciId": mci_id, **entry})
 
-    print(f"wrote {out_dir / 'detection.json'}")
+    print(f"wrote {project_dir / 'detection.json'}")
     print(f"wrote {out_dir / 'refactoring-results.csv'}")
     print(f"wrote {out_dir / 'refactoring-results.json'} "
           f"({len(results_by_id)} MCIs total, {copied} diffs copied this export, {missing} missing)")

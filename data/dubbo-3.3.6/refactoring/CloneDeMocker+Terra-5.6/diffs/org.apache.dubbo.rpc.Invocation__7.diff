@@ -1,0 +1,44 @@
+--- a/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/AccessKeyAuthenticatorTest.java
++++ b/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/AccessKeyAuthenticatorTest.java
+@@ -24,6 +24,7 @@
+ import org.apache.dubbo.rpc.RpcInvocation;
+ import org.apache.dubbo.rpc.model.FrameworkModel;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+@@ -37,6 +38,13 @@
+ import static org.mockito.Mockito.when;
+ 
+ class AccessKeyAuthenticatorTest {
++
++    private Invocation invocationMock;
++
++    @BeforeEach
++    void setUp() {
++        invocationMock = mock(Invocation.class);
++    }
+ 
+     @Test
+     void testSignForRequest() {
+@@ -100,17 +108,15 @@
+     void testGetAccessKeyPairFailed() {
+         URL url = URL.valueOf("dubbo://10.10.10.10:2181").addParameter(Constants.ACCESS_KEY_ID_KEY, "ak");
+         AccessKeyAuthenticator helper = new AccessKeyAuthenticator(FrameworkModel.defaultModel());
+-        Invocation invocation = mock(Invocation.class);
+-        assertThrows(RuntimeException.class, () -> helper.getAccessKeyPair(invocation, url));
++        assertThrows(RuntimeException.class, () -> helper.getAccessKeyPair(invocationMock, url));
+     }
+ 
+     @Test
+     void testGetSignatureNoParameter() {
+         URL url = mock(URL.class);
+-        Invocation invocation = mock(Invocation.class);
+         String secretKey = "123456";
+         AccessKeyAuthenticator helper = new AccessKeyAuthenticator(FrameworkModel.defaultModel());
+-        String signature = helper.getSignature(url, invocation, secretKey, String.valueOf(System.currentTimeMillis()));
++        String signature = helper.getSignature(url, invocationMock, secretKey, String.valueOf(System.currentTimeMillis()));
+         assertNotNull(signature);
+     }
+ }

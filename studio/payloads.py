@@ -78,14 +78,15 @@ def _relative(project_root: Path, file_path: str) -> Path | None:
         return None
 
 
-def _mock_statements(sequence: dict[str, Any], content: str) -> list[dict[str, Any]]:
+def _mock_statements(sequence: dict[str, Any], content: str,
+                     key: str = "testMockLines") -> list[dict[str, Any]]:
     """把检测器给的 mock 语句逐条定位回源文件，返回文件里的原文。定位不到的整条丢弃——
     宁可少给模型一条线索，也不要给它一条抄不得的文本。
     Locates each detector mock statement back in the source and returns the file's own
     text. An entry that cannot be located is dropped: better to withhold a hint than to
     hand over text that must not be copied."""
     located = []
-    for line_number, code in (sequence.get("testMockLines") or {}).items():
+    for line_number, code in (sequence.get(key) or {}).items():
         try:
             number = int(line_number)
         except (TypeError, ValueError):
@@ -113,6 +114,49 @@ def _test_method(sequence: dict[str, Any], content: str) -> str | None:
         if method is not None:
             return content[method[0]:method[1]]
     return None
+
+
+def _setup_statements(sequence: dict[str, Any], content: str) -> list[dict[str, Any]]:
+    """`@Before`/字段声明里的 mock 语句原文。
+
+    before 变体真正要改的就是这些语句，而它们在检测器那边归入 `shareableMockLines`，
+    不在 `testMockLines` 里——只取后者的话，模型被要求改 setup，手上却没有一份可以照抄
+    的原文，只能拒绝。实测 Dubbo 3.3.6：before 变体 4 次拒绝全部是这个原因。
+    The verbatim mock statements that live in `@Before` or a field declaration.
+
+    These are exactly what the before variant must rewrite, yet the detector files them
+    under `shareableMockLines` rather than `testMockLines`. Supplying only the latter asks
+    the model to edit setup while withholding any text it may copy, so it refuses — all
+    four before-variant refusals on Dubbo 3.3.6 were this.
+    """
+    return _mock_statements(sequence, content, "shareableMockLines")
+
+
+def _setup_methods(sequence: dict[str, Any], content: str) -> list[str]:
+    """上面那些语句各自所在的方法原文（`@Before` / `@After`），去重。
+
+    字段声明不在任何方法体内，`enclosing_method` 返回 None，跳过即可——这种情况下
+    `_setup_statements` 给出的那一行本身就是可用的 oldString。
+    The enclosing method text for those statements, deduplicated. A field declaration sits
+    in no method, so `enclosing_method` returns None and it is skipped: there the single
+    line from `_setup_statements` already serves as the `oldString`.
+    """
+    texts: list[str] = []
+    for line_number, code in (sequence.get("shareableMockLines") or {}).items():
+        try:
+            number = int(line_number)
+        except (TypeError, ValueError):
+            continue
+        span = locate(content, str(code), near_line=number)
+        if span is None:
+            continue
+        method = enclosing_method(content, span[0])
+        if method is None:
+            continue
+        text = content[method[0]:method[1]]
+        if text not in texts:
+            texts.append(text)
+    return texts
 
 
 def _line_occurrences(content: str, texts: list[str]) -> dict[str, int]:
@@ -190,6 +234,8 @@ def encapsulation_payload(project_root: Path, instance: dict[str, Any], files: d
 
     methods: list[dict[str, Any]] = []
     statements: list[dict[str, Any]] = []
+    setup_statements: list[dict[str, Any]] = []
+    setup_methods: list[dict[str, Any]] = []
     for sequence in sequences:
         relative = _relative(project_root, sequence.get("filePath", ""))
         if relative is None or relative not in files:
@@ -201,10 +247,27 @@ def encapsulation_payload(project_root: Path, instance: dict[str, Any], files: d
                             "text": text})
         for entry in _mock_statements(sequence, content):
             statements.append({"path": relative.as_posix(), **entry})
+        # mock 建在 @Before 或字段上时，创建与共享打桩都不在测试方法体内。只给
+        # testMockLines，封装阶段就只能照着抽象模板造 helper，造出来的签名对不上真实
+        # setup 代码——实测里 "stub does not match reusable method" 这类拒绝即由此而来。
+        # When the mock is built in @Before or on a field, neither its creation nor its
+        # shared stubbing lives in the test method body. With only testMockLines the
+        # encapsulation stage builds a helper from abstracted templates alone, and its
+        # signature fails to match the real setup code — the observed source of the
+        # "stub does not match reusable method" refusals.
+        for entry in _setup_statements(sequence, content):
+            setup_statements.append({"path": relative.as_posix(), **entry})
+        for text in _setup_methods(sequence, content):
+            if not any(item["text"] == text for item in setup_methods):
+                setup_methods.append({"path": relative.as_posix(), "text": text})
     if not methods:
         raise PayloadError("could not locate any test method in the source / 无法在源码中定位任何测试方法")
 
     verbatim: dict[str, Any] = {"testMethods": methods, "mockStatements": statements}
+    if setup_statements:
+        verbatim["setupStatements"] = setup_statements
+    if setup_methods:
+        verbatim["setupMethods"] = setup_methods
     if scope == "method level":
         verbatim["targetFile"] = {"path": paths[0].as_posix(), "content": files[paths[0]]}
 
@@ -252,6 +315,14 @@ def integration_payload(project_root: Path, instance: dict[str, Any], sequence: 
         raise PayloadError(
             f"could not locate test method {sequence.get('testMethodName', '')!r} in {relative.as_posix()}")
     statements = _mock_statements(sequence, content)
+    # before 变体的编辑点在 setup 里，不在测试方法里。integration_before.md 的 Input 一直
+    # 写着会给出 setup 方法，而 payload 从未附带，模型只能以「setup 源码不在 verbatim 中」
+    # 拒绝——把它补齐，承诺与实际交付才对得上。
+    # The before variant edits setup, not the test method. integration_before.md has always
+    # promised the setup method in its Input while the payload never carried it, leaving the
+    # model to refuse with "the setup method source is not present in the supplied verbatim".
+    setup_statements = _setup_statements(sequence, content) if variant == "before" else []
+    setup_methods = _setup_methods(sequence, content) if variant == "before" else []
 
     facts: dict[str, Any] = {
         "path": relative.as_posix(),
@@ -279,9 +350,13 @@ def integration_payload(project_root: Path, instance: dict[str, Any], sequence: 
         "verbatim": {
             "testMethod": {"path": relative.as_posix(), "text": method},
             "mockStatements": [{"path": relative.as_posix(), **entry} for entry in statements],
+            "setupStatements": [{"path": relative.as_posix(), **entry} for entry in setup_statements],
+            "setupMethods": [{"path": relative.as_posix(), "text": text} for text in setup_methods],
             "reusableCode": reusable_code,
         },
-        "lineOccurrences": _line_occurrences(content, [entry["text"] for entry in statements] + [method]),
+        "lineOccurrences": _line_occurrences(
+            content,
+            [entry["text"] for entry in statements] + [entry["text"] for entry in setup_statements] + [method]),
     }
 
 
@@ -322,4 +397,8 @@ def verbatim_failures(payload: dict[str, Any], files: dict[Path, str]) -> list[s
         check(entry.get("path", ""), entry.get("text", ""), f"testMethods[{index}]")
     for index, entry in enumerate(verbatim.get("mockStatements") or []):
         check(entry.get("path", ""), entry.get("text", ""), f"mockStatements[{index}]")
+    for index, entry in enumerate(verbatim.get("setupStatements") or []):
+        check(entry.get("path", ""), entry.get("text", ""), f"setupStatements[{index}]")
+    for index, entry in enumerate(verbatim.get("setupMethods") or []):
+        check(entry.get("path", ""), entry.get("text", ""), f"setupMethods[{index}]")
     return failures

@@ -149,7 +149,7 @@ const I18N = {
     btn_discard: "Discard Proposal",
     btn_accept: "Apply Verified Refactoring",
     btn_export_data: "Save report to data/",
-    export_done: "Merged into data/{project}: {written} MCI(s) written this time, {total} stored in total, {ok} successful.",
+    export_done: "Merged into data/{project}/refactoring/{setup}: {written} MCI(s) written this time, {total} stored in total, {ok} successful.",
     export_none: "This batch produced no results to export.",
     export_cctr_ok: " CCTR computed over {n} test method(s).",
     export_cctr_failed: " CCTR could not be computed; the data itself was written (see console).",
@@ -174,6 +174,13 @@ const I18N = {
     cache_prompt_reuse: "Use cache",
     cache_prompt_fresh: "Clear cache and regenerate",
     cache_prompt_cancel: "Cancel",
+    saved_detection_title: "Saved detection found",
+    saved_detection_body: "data/{project} already holds a detection result: {mcis} MCIs from {mos} mock objects, detected {when}. Use it and skip scanning and detection?",
+    saved_detection_moved: "\n\nNote: it was detected at {recorded}, not the current project path. The MCIs' file paths may not resolve.",
+    saved_detection_use: "Use saved result",
+    saved_detection_fresh: "Detect again",
+    status_detection_restored: (n) => `Loaded ${n} Mock Clone Instances from data/`,
+    detection_saved_to_data: "Detection saved to data/ — next time it can be reused without scanning.",
     cache_cleared: "Cleared {n} cached proposal(s); regenerating from scratch.",
     metric_model_calls: "Model Calls",
     status_baseline_broken: "Environment not ready — no model call was made",
@@ -338,7 +345,7 @@ const I18N = {
     btn_discard: "丢弃本次提案 (Discard)",
     btn_accept: "应用已验证的重构",
     btn_export_data: "报告存入 data/",
-    export_done: "已并入 data/{project}：本次写入 {written} 个 MCI，累计 {total} 个，成功 {ok} 个。",
+    export_done: "已并入 data/{project}/refactoring/{setup}：本次写入 {written} 个 MCI，累计 {total} 个，成功 {ok} 个。",
     export_none: "这一批没有可导出的结果。",
     export_cctr_ok: " CCTR 已覆盖 {n} 个测试方法。",
     export_cctr_failed: " CCTR 未能计算，但数据本身已写入（详见控制台）。",
@@ -363,6 +370,13 @@ const I18N = {
     cache_prompt_reuse: "使用缓存",
     cache_prompt_fresh: "清除缓存，重新生成",
     cache_prompt_cancel: "取消",
+    saved_detection_title: "发现已保存的检测结果",
+    saved_detection_body: "data/{project} 中已有一份检测结果：{mos} 个 mock 对象中识别出 {mcis} 个 MCI，检测于 {when}。直接使用这份结果、跳过扫描和检测？",
+    saved_detection_moved: "\n\n注意：这份结果是在 {recorded} 下检测的，与当前项目路径不同，MCI 里的文件路径可能对不上。",
+    saved_detection_use: "使用已有结果",
+    saved_detection_fresh: "重新检测",
+    status_detection_restored: (n) => `已从 data/ 载入 ${n} 个 Mock 克隆实例`,
+    detection_saved_to_data: "检测结果已存入 data/，下次可以直接复用、跳过扫描。",
     cache_cleared: "已清除 {n} 个缓存方案，将重新生成。",
     metric_model_calls: "模型调用次数",
     status_baseline_broken: "环境未就绪 —— 未发起任何模型调用",
@@ -980,8 +994,69 @@ $("#browse-root").addEventListener("click", async () => {
   }
 });
 
+// data/<project>/ 里已有检测结果时，先问一句要不要直接用。检测结果对同一份源码是确定的，
+// 每次都重扫一遍大项目只是在等。选"重新检测"就照常扫描。
+// If data/<project>/ already holds a detection, ask whether to use it first. Detection is
+// deterministic for the same sources, so rescanning a large project each time is just waiting.
+// "Detect again" scans as usual.
+// 返回 "use" / "fresh" / "cancel"。 / Returns "use", "fresh" or "cancel".
+async function offerSavedDetection(projectRoot) {
+  let saved;
+  try {
+    saved = await request("/api/detection/cached?projectRoot=" + encodeURIComponent(projectRoot));
+  } catch (error) {
+    return "fresh";
+  }
+  if (!saved.available) return "fresh";
+
+  const dialog = $("#cache-prompt");
+  $("#cache-prompt-title").textContent = t("saved_detection_title");
+  let body = t("saved_detection_body")
+    .replace("{project}", saved.project)
+    .replace("{mcis}", saved.mciCount)
+    .replace("{mos}", saved.mockObjectCount)
+    .replace("{when}", new Date(saved.detectedAt).toLocaleString());
+  if (!saved.projectRootMatches) body += t("saved_detection_moved").replace("{recorded}", saved.recordedProjectRoot);
+  $("#cache-prompt-body").textContent = body;
+  $("#cache-prompt-body").style.whiteSpace = "pre-line";
+  $("#cache-prompt-reuse").textContent = t("saved_detection_use");
+  $("#cache-prompt-fresh").textContent = t("saved_detection_fresh");
+  $("#cache-prompt-cancel").textContent = t("cache_prompt_cancel");
+  return new Promise((resolve) => {
+    const finish = (value) => { dialog.close(); resolve(value); };
+    $("#cache-prompt-reuse").onclick = () => finish("use");
+    $("#cache-prompt-fresh").onclick = () => finish("fresh");
+    $("#cache-prompt-cancel").onclick = () => finish("cancel");
+    dialog.oncancel = () => resolve("cancel");
+    dialog.showModal();
+  });
+}
+
+async function loadSavedDetection(projectRoot) {
+  const result = await request("/api/detection/load-cached", {
+    method: "POST",
+    body: JSON.stringify({ projectRoot }),
+  });
+  state.runId = result.runId;
+  // 这种 run 没有扫描出来的 mock 对象列表，第 2 步是空的，直接到第 3 步。
+  // Such a run has no scanned mock object list, so step 2 is empty; go straight to step 3.
+  state.mocks = [];
+  renderMocks();
+  state.instances = (result.mockCloneInstances || []).map((item) => ({ ...item, selected: false }));
+  renderInstances();
+  showStep(3);
+  status(t("status_detection_restored", state.instances.length), "var(--status-ready)");
+}
+
 $("#scan-mocks").addEventListener("click", async () => {
   try {
+    const projectRoot = $("#project-root").value.trim();
+    const choice = await offerSavedDetection(projectRoot);
+    if (choice === "cancel") return;
+    if (choice === "use") {
+      await loadSavedDetection(projectRoot);
+      return;
+    }
     const selected = $$(".scope-item:checked").map((item) => item.value);
     if (!selected.length) throw new Error(t("err_select_one_file"));
     const includePaths = selected.filter(
@@ -1158,6 +1233,7 @@ $("#detect-clones").addEventListener("click", async () => {
     renderInstances();
     showStep(3);
     status(t("status_detected", state.instances.length), "var(--status-ready)");
+    if (result.savedToData) toast(t("detection_saved_to_data"), false);
   } catch (error) {
     status(t("status_error"), "var(--status-error)");
     toast(error.message);
@@ -2036,6 +2112,7 @@ $("#btn-export-data").addEventListener("click", async () => {
       : (cctr.reason === "skipped" ? "" : t("export_cctr_failed"));
     toast(t("export_done")
       .replace("{project}", summary.project)
+      .replace("{setup}", summary.setupDirectory || summary.setup)
       .replace("{written}", summary.writtenThisCall)
       .replace("{total}", summary.totalMcis)
       .replace("{ok}", summary.successes) + cctrNote, false);

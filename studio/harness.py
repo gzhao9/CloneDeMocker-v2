@@ -10,6 +10,8 @@ import time
 import xml.etree.ElementTree as ET
 from typing import Any, Callable
 
+from studio import gradle_support
+
 
 def _strip_long_path_prefix(path: Path) -> Path:
     r"""
@@ -266,6 +268,30 @@ def ensure_pit_junit5_support(root: Path, maven_repo_local: str | None = None) -
     return True
 
 
+def _report_files(root: Path, *patterns: str) -> list[Path]:
+    r"""
+    找到的报告文件路径，在 Windows 上带 \\?\ 长路径前缀。Spring Security 的测试类全名很长，
+    放进批次副本（batch-<32 位 id>）后 Gradle 的报告路径达到 263 个字符：Gradle 会自己缩短文件名，
+    rglob 也列得出来，但不带前缀就打不开，于是明明跑过的测试读不到结果，被判成"环境未就绪"。
+    Report paths found under root, with the \\?\ long-path prefix on Windows. Spring Security's
+    long test class names put Gradle's report paths at 263 characters inside a batch copy
+    (batch-<32-char id>): Gradle shortens the file name itself and rglob lists it, but without the
+    prefix it cannot be opened, so tests that did run produced no readable result and were
+    classified as an unready environment.
+    """
+    found = [path for pattern in patterns for path in root.rglob(pattern)]
+    if os.name != "nt":
+        return found
+    return [path if str(path).startswith("\\\\?\\") else Path("\\\\?\\" + str(path.resolve()))
+            for path in found]
+
+
+def is_module_directory(directory: Path) -> bool:
+    """Maven 模块（有 pom.xml）或 Gradle 子项目的目录 / A Maven module (has a pom.xml) or a
+    Gradle subproject directory."""
+    return (directory / "pom.xml").is_file() or gradle_support.is_module_directory(directory)
+
+
 @dataclass(frozen=True)
 class BuildScope:
     """这次验证要覆盖的模块与测试类。两个都为空表示不裁剪，走全 reactor。
@@ -297,6 +323,7 @@ class ProjectHarness:
         """
         self.maven_repo_local = str(Path(maven_repo_local).resolve()) if maven_repo_local else None
         self._test_jar_artifacts: dict[str, set[str]] = {}
+        self._gradle_projects: dict[str, gradle_support.GradleProjects] = {}
 
     def _maven_repo_args(self) -> list[str]:
         return [f"-Dmaven.repo.local={self.maven_repo_local}"] if self.maven_repo_local else []
@@ -414,13 +441,8 @@ class ProjectHarness:
                 "test", f"-Dtest={','.join(classes)}", "-DfailIfNoTests=false",
                 "-Dsurefire.failIfNoSpecifiedTests=false",
             ])
-        elif any((root / name).is_file() for name in ("gradlew", "gradlew.bat", "build.gradle", "build.gradle.kts")):
-            executable = str(root / "gradlew.bat") if os.name == "nt" and (root / "gradlew.bat").is_file() else (
-                str(root / "gradlew") if (root / "gradlew").is_file() else ("gradle.bat" if os.name == "nt" else "gradle")
-            )
-            command = [executable, "test"]
-            for test_class in classes:
-                command.extend(["--tests", test_class])
+        elif gradle_support.is_gradle_build(root):
+            _, command, _ = self._gradle_commands(root, BuildScope(tuple(module_list), tuple(classes)))
         else:
             evidence.test_status = HarnessStatus.UNAVAILABLE
             evidence.diagnostics.append("No supported Maven or Gradle build was found / 未找到 Maven 或 Gradle 构建")
@@ -515,6 +537,14 @@ class ProjectHarness:
             evidence.pit_status = HarnessStatus.UNAVAILABLE
             evidence.diagnostics.append("No supported Maven or Gradle build was found / 未找到 Maven 或 Gradle 构建")
             return evidence
+        if gradle_support.is_gradle_command(build[0]):
+            problem = self._gradle_environment_problem(project_root)
+            if problem is not None:
+                evidence.compile_status = HarnessStatus.UNAVAILABLE
+                evidence.test_status = HarnessStatus.UNAVAILABLE
+                evidence.pit_status = HarnessStatus.UNAVAILABLE
+                evidence.diagnostics.append(problem)
+                return evidence
 
         # 范围要如实写进证据里。裁剪之后"测试通过"的含义变窄了——它说的是这些模块的这些
         # 测试类通过，不是整个项目通过。不记下来，后面看报告的人会把两者当成一回事。
@@ -561,7 +591,7 @@ class ProjectHarness:
     @staticmethod
     def _clear_test_reports(root: Path) -> None:
         """Remove prior XML receipts so a later invocation cannot reuse them as evidence."""
-        reports = list(root.rglob("surefire-reports/TEST-*.xml")) + list(root.rglob("test-results/test/TEST-*.xml"))
+        reports = _report_files(root, "surefire-reports/TEST-*.xml", "test-results/*/TEST-*.xml")
         for report in reports:
             try:
                 report.unlink()
@@ -571,7 +601,7 @@ class ProjectHarness:
     @staticmethod
     def _collect_test_identities(root: Path, since: float | None = None) -> dict[str, str]:
         identities: dict[str, str] = {}
-        reports = list(root.rglob("surefire-reports/TEST-*.xml")) + list(root.rglob("test-results/test/TEST-*.xml"))
+        reports = _report_files(root, "surefire-reports/TEST-*.xml", "test-results/*/TEST-*.xml")
         for report in reports:
             if since is not None:
                 try:
@@ -631,7 +661,7 @@ class ProjectHarness:
         of assuming a fixed directory depth.
         """
         reports = [
-            path for path in root.rglob("mutations.xml")
+            path for path in _report_files(root, "mutations.xml")
             if "pit-reports" in path.parts and path.stat().st_mtime >= since
         ]
         if not reports:
@@ -687,11 +717,117 @@ class ProjectHarness:
                 [*prefix, "test", *test_filter],
                 pit_command,
             )
-        if any((root / name).is_file() for name in ("gradlew", "gradlew.bat", "build.gradle", "build.gradle.kts")):
-            executable = str(root / "gradlew.bat") if os.name == "nt" and (root / "gradlew.bat").is_file() else (
-                str(root / "gradlew") if (root / "gradlew").is_file() else ("gradle.bat" if os.name == "nt" else "gradle")
-            )
-            return ([executable, "testClasses"], [executable, "test"], [executable, "pitest"])
+        if gradle_support.is_gradle_build(root):
+            return self._gradle_commands(root, scope)
+        return None
+
+    def _gradle_projects_for(self, root: Path) -> gradle_support.GradleProjects:
+        """每个项目根只问一次 Gradle。一批 MCI 共享一个副本，所以一批只付一次。
+        Gradle is asked once per project root. A batch shares one workspace, so a batch pays once."""
+        key = str(root)
+        projects = self._gradle_projects.get(key)
+        if projects is None:
+            projects = gradle_support.discover_projects(root)
+            self._gradle_projects[key] = projects
+        return projects
+
+    def _gradle_scope(self, root: Path, scope: BuildScope | None) -> tuple[list[str], list[str]]:
+        """
+        Gradle 版的 `-pl X -am [-amd]`：返回 (目标项目, 需要一起编译的下游项目)。
+
+        `:X:testClasses` 本身就会先构建 X 依赖的项目，相当于 `-am`。`-amd` 的对应物是依赖 X 的
+        `tests` 输出的项目——Spring Security 里 25 处 `project(path: ..., configuration: 'tests')`，
+        改了 X 的测试代码，这些项目的测试可能因此编译不过，必须一起编译；和 Maven 一样取传递闭包。
+        The Gradle form of `-pl X -am [-amd]`: returns (target projects, downstream projects to
+        compile with them). `:X:testClasses` already builds what X depends on, which is `-am`.
+        The `-amd` counterpart is the projects consuming X's `tests` output — 25 such edges in
+        Spring Security — whose tests may stop compiling when X's test code changes, so they are
+        compiled too, transitively, as Maven does.
+        """
+        if scope is None or not scope.modules:
+            return [], []
+        projects = self._gradle_projects_for(root)
+        targets = sorted({project for project in (projects.project_for(module) for module in scope.modules) if project})
+        downstream: set[str] = set()
+        pending = list(targets)
+        while pending:
+            for consumer in projects.test_output_consumers.get(pending.pop(), set()):
+                if consumer not in downstream and consumer not in targets:
+                    downstream.add(consumer)
+                    pending.append(consumer)
+        return targets, sorted(downstream)
+
+    @staticmethod
+    def _gradle_task(project: str | None, task: str) -> str:
+        if project is None:
+            return task
+        return f":{task}" if project == ":" else f"{project}:{task}"
+
+    def _gradle_commands(self, root: Path, scope: BuildScope | None) -> tuple[list[str], list[str], list[str]]:
+        prefix = [gradle_support.gradle_executable(root), "-I", str(gradle_support.verify_init_script()),
+                  "--console=plain"]
+        targets, downstream = self._gradle_scope(root, scope)
+        test_classes = sorted(scope.test_classes) if scope is not None else []
+        filters = [argument for name in test_classes for argument in ("--tests", name)]
+        # --rerun 只作用于紧挨在它前面的那个任务，所以逐个任务附上。它保证测试真的执行：Gradle
+        # 会把输入没变的 test 判定为 up-to-date，或从构建缓存（Spring Security 开着
+        # org.gradle.caching）直接还原报告，那样的"通过"不是这一次运行给出的凭据。
+        # --rerun binds to the task right before it, so it is attached per task. It makes the tests
+        # actually run: Gradle otherwise marks an unchanged test task up-to-date or restores its
+        # reports from the build cache (Spring Security enables org.gradle.caching), and a pass
+        # replayed that way is not a receipt from this run.
+        test_tasks: list[str] = []
+        pit_tasks: list[str] = []
+        compile_tasks: list[str] = []
+        source_sets: set[str] = set()
+        projects = self._gradle_projects_for(root) if targets else None
+        for project in targets or [None]:
+            # 目标类所在 source set 对应的 Test 任务；不一定是 test（见 GradleProjects.test_tasks_for）。
+            # The Test tasks for the target classes' source sets, not necessarily test
+            # (see GradleProjects.test_tasks_for).
+            tasks: list[gradle_support.TestTask] = []
+            if projects is not None and project is not None:
+                for name in test_classes:
+                    for task in projects.test_tasks_for(project, name, fallback=False):
+                        if task not in tasks:
+                            tasks.append(task)
+            for task in tasks or [gradle_support.DEFAULT_TEST_TASK]:
+                test_tasks += [self._gradle_task(project, task.name), *filters, "--rerun"]
+                classes_task = self._gradle_task(project, task.classes_task)
+                if classes_task not in compile_tasks:
+                    compile_tasks.append(classes_task)
+                source_sets.add(task.source_set)
+            pit_tasks += [self._gradle_task(project, "pitest"), "--rerun"]
+        compile_tasks += [self._gradle_task(project, "testClasses") for project in downstream]
+        pit_properties = [f"-PcloneDeMockerPitProjects={','.join(targets) or '*'}"]
+        if test_classes:
+            pit_properties.append(f"-PcloneDeMockerPitTests={','.join(test_classes)}")
+        if source_sets - {"test"}:
+            pit_properties.append(f"-PcloneDeMockerPitTestSourceSets={','.join(sorted(source_sets))}")
+        return (
+            [*prefix, *compile_tasks],
+            [*prefix, *test_tasks],
+            [*prefix, *pit_properties, *pit_tasks],
+        )
+
+    def _gradle_environment_problem(self, root: Path) -> str | None:
+        """
+        Gradle 构建本身配置不起来，或要求的 JDK toolchain 本机没有。Spring Security 7.1.1 要求
+        JDK 25；缺了它，编译要跑到任务执行阶段才报错，还会被当成"候选代码编译失败"。
+        The Gradle build cannot configure, or requests a JDK toolchain this host lacks. Spring
+        Security 7.1.1 requests JDK 25; without it the failure only surfaces when tasks execute,
+        where it would be read as the candidate failing to compile.
+        """
+        projects = self._gradle_projects_for(root)
+        if not projects.ok:
+            return ("Gradle could not configure this build / Gradle 无法完成该项目的配置阶段\n"
+                    + projects.output)
+        missing = projects.missing_toolchains()
+        if missing:
+            return (f"The build requests JDK toolchain(s) {', '.join(missing)}, which Gradle cannot find on this "
+                    f"host; install them or list them in org.gradle.java.installations.paths / "
+                    f"构建要求 JDK toolchain {', '.join(missing)}，本机 Gradle 找不到；请安装，或在 "
+                    f"org.gradle.java.installations.paths 中登记")
         return None
 
     # 900 秒对小项目够用，但像 dubbo 这种上百模块的真实 reactor 项目，
@@ -707,8 +843,9 @@ class ProjectHarness:
     def _execute(command: list[str], cwd: Path, evidence: HarnessEvidence) -> HarnessStatus:
         evidence.commands.append(command)
         try:
+            environment = gradle_support.english_environment() if gradle_support.is_gradle_command(command) else None
             completed = subprocess.run(command, cwd=cwd, text=True, encoding="utf-8", errors="replace",
-                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=environment,
                                        timeout=ProjectHarness.TIMEOUT_SECONDS, check=False)
             evidence.diagnostics.append(completed.stdout[-12000:])
             return HarnessStatus.PASSED if completed.returncode == 0 else HarnessStatus.FAILED

@@ -214,3 +214,70 @@ Per-phase timings feed RQ3: `HarnessEvidence.durations` carries compile/test/pit
 `RefactoringAgent.run` returns `timings` with generation, baseline, candidate and total. PIT is
 its own entry rather than folded into refactoring time, since it often outlasts compile and
 test combined.
+
+## data/ layout: one directory per harness+model (2026-09-21)
+
+```
+data/<project>/
+  detection.json, detection-meta.json      shared by every setup
+  refactoring/<harness>+<model>/           e.g. CloneDeMocker+Terra-5.6
+    setup.json                             label, harness, model -- the directory name is shorthand
+    refactoring-results.{json,csv}, diffs/, cctr.{json,csv}
+```
+
+`studio/canonical_store.py` picks the directory (`setup_label`, `MODEL_DISPLAY_NAMES`), so a later
+Codex+model or pricier-model run lands beside the current one instead of overwriting it. Debug-stub
+results go to `<harness>+MockProvider`, never into a real model's directory; that is why the agent
+result now carries `useMock`. CCTR is per setup because it is computed from that setup's diffs.
+
+Detection is saved to `data/<project>/` automatically the first time a project is detected, and the
+UI then offers to reuse it (confirmation dialog on "Scan") instead of rescanning.
+`DetectionService.restore_from_data` rebuilds an ordinary run directory from it, so refactoring
+needs no second code path. An existing saved detection is never overwritten by a fresh detect,
+because stored results are keyed by its MCI numbers. `detection-meta.json` records scan/detect
+seconds; Dubbo's were reconstructed from the cached run's file mtimes (`timingSource` says so).
+
+## Detector language level and the first Gradle subject (2026-09-21)
+
+Spring Security 7.1.1 (Gradle, `D:\Java_projects\Spring\`) is the first Gradle project run.
+JavaParser's default Java 11 level silently skipped 230 of its 4418 files (instanceof patterns,
+text blocks, records, switch expressions), 30 of them Mockito test classes. The detector now uses
+JavaParser 3.28.2 at `JAVA_25`, retries a failed file at `JAVA_8` (only `_` as an identifier
+separates them), passes the same configuration to the source-root `JavaParserTypeSolver`, and
+prints `[INFO] Parse failures / 解析失败文件: N/total`. Dubbo's saved MCIs are reproduced exactly.
+
+Detection never compiles the subject, Maven or Gradle. "Resolve dependencies" only asks the build
+for the test classpath. The Maven variant was broken until now: every reactor module wrote the same
+`-Dmdep.outputFile` and the last one won (13 jars for Dubbo), so enabling it changed nothing. It now
+collects each module's `Dependencies classpath:` from the output with `-fae`. With it, Dubbo's
+unresolved simple type names drop 115 -> 9 and 18 MCI ids change from simple to qualified names
+(two MCIs gain one member each); `data/dubbo-3.3.6/` still holds the no-resolution result.
+
+The harness's Gradle path now mirrors Maven (`studio/gradle_support.py`): Gradle reports its own
+project dirs, `configuration: 'tests'` consumers (the `-amd` counterpart, closed transitively) and
+toolchain availability; `:p:testClasses` / `:p:test --tests X --rerun` / an init-script-injected
+gradle-pitest-plugin writing to `build/pit-reports`; English javac output via `JAVA_TOOL_OPTIONS`
+(a `-D` on gradlew does not reach the compiler JVM). `--rerun` matters: Spring enables the build
+cache, which would otherwise replay test reports. Preflight probes Gradle the same way and blocks
+on a missing toolchain. JDK 25 is at `D:\soft\jdk-25.0.4.1+1`, registered in
+`~/.gradle/gradle.properties`. Verified end to end on `core`/DaoAuthenticationProviderTests:
+compile 286s (core's test output has 13 downstream consumers), test 6s, PIT 75s.
+
+Two things the first Spring batch exposed. Tests need not live in `src/test`: saml2 keeps its
+OpenSAML 5 tests in `src/opensaml5Test`, run only by an `opensaml5Test` task, so `:p:test --tests X`
+left them unexecuted and the baseline gate failed (6 MCIs). Discovery now also reports each Test
+task's source sets; the harness picks the task and `<sourceSet>Classes` from where the class file
+lives, and collects `test-results/*/`. Separately, overlong generic MCI ids broke Windows MAX_PATH
+on export; `safe_mci_filename` hashes names over 125 characters (Dubbo's names are unchanged).
+On this host a proxy's fake-ip DNS resolves any name (198.18.x.x), so
+`NimbusReactiveJwtDecoderTests.decodeWhenInvalidUrl` fails at baseline; 5 MCIs are affected and
+correctly land in ENVIRONMENT_NOT_READY.
+MAX_PATH struck a third time: inside a `batch-<32 hex>` workspace, Gradle report paths for Spring's
+long test class names reach 263 characters. Gradle shortens the file name and `rglob` lists it, but
+it cannot be opened without the `\?\` prefix, so tests that ran yielded no result and the MCI was
+misfiled as ENVIRONMENT_NOT_READY (never as a false SUCCESS: the gate requires fresh results).
+`harness._report_files` now prefixes every report path it reads, deletes or stats.
+That misfiling then outlived its fix: the verification ledger recorded any run whose compile and test
+*status* passed, so the empty-result baselines were replayed on the next batch. `VerificationLedger`
+now records and serves only evidence with at least one non-skipped test result (checked on read too,
+so the three bad records already on disk are ignored).

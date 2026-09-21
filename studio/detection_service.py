@@ -3,14 +3,27 @@ from __future__ import annotations
 import json
 import hashlib
 import os
+import shutil
 import subprocess
+import time
 import uuid
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
 
 IGNORED_DIRECTORIES = {".git", ".gradle", ".idea", "build", "target", "node_modules"}
+
+# 检测结果旁边那份说明：从哪个项目、什么范围、花了多久得来的。run 目录和 data/<project>/
+# 里各有一份，名字相同，导出时原样复制过去。
+# The note beside a detection result: which project, what scope, how long it took. One copy
+# sits in the run directory and one in data/<project>/, under the same name.
+DETECTION_META = "detection-meta.json"
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 class DetectionError(RuntimeError):
@@ -109,9 +122,22 @@ class DetectionService:
         ]
         if not resolve_dependencies:
             command.append("--skip")
+        # 计时从 jar 就绪之后开始：检测器自身的一次性构建不算检测耗时。
+        # Timed once the jar is ready: a one-off build of the detector is not detection time.
+        started = time.time()
         output = self._run(command, root, progress_callback)
+        scan_seconds = round(time.time() - started, 2)
 
         mock_objects = json.loads((run_directory / "mock-objects.json").read_text(encoding="utf-8"))
+        self._write_meta(run_directory, {
+            "projectRoot": str(root),
+            "scope": scope,
+            "resolveDependencies": resolve_dependencies,
+            "mockObjectsScanned": len(mock_objects),
+            "timingSource": "measured",
+            "scanSeconds": scan_seconds,
+            "scannedAt": _now(),
+        })
         return {
             "runId": run_id,
             "scope": scope,
@@ -123,6 +149,7 @@ class DetectionService:
         run = self._load_run(run_id)
         ids_path = run.run_directory / "selected-mock-ids.json"
         ids_path.write_text(json.dumps(selected_mock_ids), encoding="utf-8")
+        started = time.time()
         output = self._run(
             [
                 self._java(),
@@ -136,22 +163,127 @@ class DetectionService:
             ],
             run.project_root,
         )
+        detect_seconds = round(time.time() - started, 2)
         result = json.loads(
             (run.run_directory / "mock-clone-instances.json").read_text(encoding="utf-8")
         )
-        instances: list[dict[str, Any]] = []
-        for mocked_class, values in result.get("detectedMockClones", {}).items():
-            for index, instance in enumerate(values):
-                item = dict(instance)
-                item["id"] = f"{mocked_class}::{index + 1}"
-                instances.append(item)
+        instances = self._indexed_instances(result)
+        meta = self._read_meta(run.run_directory)
+        meta.update({
+            "selectedMockObjects": len(selected_mock_ids),
+            "mciCount": len(instances),
+            "detectSeconds": detect_seconds,
+            "detectedAt": _now(),
+            "runId": run_id,
+        })
+        if isinstance(meta.get("scanSeconds"), (int, float)):
+            meta["totalSeconds"] = round(meta["scanSeconds"] + detect_seconds, 2)
+        self._write_meta(run.run_directory, meta)
+        # data/ 里还没有这个项目的检测结果时自动存一份，下次打开就能跳过检测。已经有的不覆盖：
+        # 已有的重构结果按 MCI 编号挂在那份检测上，换掉它编号就可能对不上。
+        # With no detection for this project in data/ yet, save one so the next session can skip
+        # detection. An existing one is left alone: stored refactoring results are keyed by MCI
+        # numbers from that detection, and replacing it could make the numbers stop matching.
+        saved_to_data = False
+        data_directory = self.data_directory(run.project_root)
+        if not (data_directory / "detection.json").is_file():
+            data_directory.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(run.run_directory / "mock-clone-instances.json", data_directory / "detection.json")
+            shutil.copyfile(run.run_directory / DETECTION_META, data_directory / DETECTION_META)
+            saved_to_data = True
         return {
             "runId": run_id,
             "selectedMockObjectCount": len(selected_mock_ids),
             "mockCloneInstances": instances,
             "rawResult": result,
             "diagnostics": output[-12000:],
+            "savedToData": saved_to_data,
         }
+
+    def data_directory(self, project_root: Path) -> Path:
+        """data/<项目目录名>/，与导出重构结果时用的名字一致。
+        data/<project directory name>/, the same name the refactoring export uses."""
+        return self.repository_root / "data" / project_root.name
+
+    def cached_detection(self, project_root: str) -> dict[str, Any]:
+        """data/ 里是否已有这个项目的检测结果，以及界面确认框要展示的概况。
+        Whether data/ already holds a detection for this project, plus the summary the UI's
+        confirmation dialog shows."""
+        root = self._project_root(project_root)
+        directory = self.data_directory(root)
+        detection_path = directory / "detection.json"
+        if not detection_path.is_file():
+            return {"available": False, "project": root.name}
+        meta_path = directory / DETECTION_META
+        meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.is_file() else {}
+        raw = json.loads(detection_path.read_text(encoding="utf-8"))
+        recorded_root = meta.get("projectRoot")
+        return {
+            "available": True,
+            "project": root.name,
+            "path": detection_path.relative_to(self.repository_root).as_posix(),
+            "mciCount": len(self._indexed_instances(raw)),
+            "mockObjectCount": len(raw.get("detectedMockObjects") or []),
+            "detectedAt": meta.get("detectedAt") or datetime.fromtimestamp(
+                detection_path.stat().st_mtime, timezone.utc).isoformat(timespec="seconds"),
+            "recordedProjectRoot": recorded_root,
+            # 检测结果里的 filePath 是绝对路径；项目换了位置，这份结果就定位不到源文件。
+            # The detection's filePaths are absolute; if the project moved, they no longer
+            # point at the sources.
+            "projectRootMatches": recorded_root is None or Path(recorded_root).resolve() == root,
+        }
+
+    def restore_from_data(self, project_root: str) -> dict[str, Any]:
+        """
+        用 data/ 里存好的检测结果开一个新 run，跳过扫描和检测。
+
+        后面的重构只认 run 目录（run.json + mock-clone-instances.json），所以这里照原样搭一个
+        出来，而不是让重构另开一条读 data/ 的路。没有 mock-objects.json，第 2 步的 mock 对象
+        列表在这种 run 上是空的。
+        Opens a new run from the detection stored in data/, skipping scan and detection.
+        Refactoring reads only the run directory (run.json + mock-clone-instances.json), so one
+        is assembled here rather than giving refactoring a second path that reads data/. There
+        is no mock-objects.json, so step 2's mock object list is empty for such a run.
+        """
+        root = self._project_root(project_root)
+        directory = self.data_directory(root)
+        detection_path = directory / "detection.json"
+        if not detection_path.is_file():
+            raise DetectionError(f"No saved detection in data/{root.name} / data/{root.name} 中没有已保存的检测结果")
+        run_id = uuid.uuid4().hex
+        run_directory = self.runs_root / run_id
+        run_directory.mkdir(parents=True)
+        (run_directory / "run.json").write_text(json.dumps(
+            {"projectRoot": str(root), "restoredFrom": detection_path.relative_to(self.repository_root).as_posix()},
+            ensure_ascii=False, indent=2), encoding="utf-8")
+        shutil.copyfile(detection_path, run_directory / "mock-clone-instances.json")
+        if (directory / DETECTION_META).is_file():
+            shutil.copyfile(directory / DETECTION_META, run_directory / DETECTION_META)
+        result = json.loads(detection_path.read_text(encoding="utf-8"))
+        return {
+            "runId": run_id,
+            "restoredFrom": detection_path.relative_to(self.repository_root).as_posix(),
+            "mockCloneInstances": self._indexed_instances(result),
+        }
+
+    @staticmethod
+    def _indexed_instances(result: dict[str, Any]) -> list[dict[str, Any]]:
+        instances: list[dict[str, Any]] = []
+        for mocked_class, values in result.get("detectedMockClones", {}).items():
+            for index, instance in enumerate(values):
+                item = dict(instance)
+                item["id"] = f"{mocked_class}::{index + 1}"
+                instances.append(item)
+        return instances
+
+    @staticmethod
+    def _read_meta(run_directory: Path) -> dict[str, Any]:
+        path = run_directory / DETECTION_META
+        return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+
+    @staticmethod
+    def _write_meta(run_directory: Path, meta: dict[str, Any]) -> None:
+        (run_directory / DETECTION_META).write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def mock_preview(self, run_id: str, mock_id: int) -> dict[str, Any]:
         run = self._load_run(run_id)

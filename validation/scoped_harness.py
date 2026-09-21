@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from studio.harness import ProjectHarness  # noqa: E402
+from studio.harness import BuildScope, ProjectHarness  # noqa: E402
 
 
 class ScopedProjectHarness(ProjectHarness):
@@ -39,7 +39,9 @@ class ScopedProjectHarness(ProjectHarness):
         """Classes that this scoped invocation must prove it actually executed."""
         return self.test_classes
 
-    def _build_commands(self, root: Path) -> tuple[list[str], list[str], list[str] | None] | None:
+    def _build_commands(self, root: Path, scope: BuildScope | None = None) -> tuple[list[str], list[str], list[str] | None] | None:
+        # 范围由构造参数固定，调用方传入的 scope 不参与 / The scope is fixed by the constructor;
+        # a scope passed by the caller does not apply.
         base = super()._build_commands(root)
         if base is None:
             return None
@@ -109,14 +111,6 @@ class ScopedProjectHarness(ProjectHarness):
             ]
             return compile_command, test_command, pit_command
 
-        # Gradle 路径按类名过滤，PIT 的裁剪依赖项目自身 pitest 配置，这里尽量传相同信息。
-        # Gradle path filters by class name; PIT scoping there depends on the project's
-        # own pitest config, we pass the same info best-effort.
-        executable = compile_command[0]
-        gradle_scope = [f":{module.replace('/', ':')}:" for module in self.modules]
-        test_filters = [arg for name in self.test_classes for arg in ("--tests", name)]
-        test_tasks = [f"{prefix}test" for prefix in gradle_scope] if gradle_scope else ["test"]
-        pit_tasks = [f"{prefix}pitest" for prefix in gradle_scope] if gradle_scope else ["pitest"]
-        test_command = [executable, *test_tasks, *test_filters]
-        pit_command = [executable, *pit_tasks, f"-PpitestTargetTests={pattern}", f"-PpitestTargetClasses={target_classes}"]
-        return compile_command, test_command, pit_command
+        # Gradle 走与产品 harness 相同的裁剪、测试过滤和 PIT 注入。
+        # Gradle takes the same scoping, test filtering and PIT injection as the product harness.
+        return self._gradle_commands(root, BuildScope(tuple(self.modules), tuple(self.test_classes)))

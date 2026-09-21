@@ -76,7 +76,25 @@ class VerificationLedger:
             record = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             return None
-        return record if record.get("key") == key else None
+        if record.get("key") != key or not self._usable(record.get("evidence") or {}):
+            return None
+        return record
+
+    @staticmethod
+    def _usable(evidence: dict[str, Any]) -> bool:
+        """
+        编译和测试都通过，而且确实产生了未跳过的测试结果。只看状态不够：旧 harness 读不到过长路径
+        下的 Gradle 报告时，状态是 PASSED 而结果为空，这份空证据被记下后，修好 harness 也会被原样
+        回放，MCI 永远停在"环境未就绪"。读取时同样检查，已经写进去的这类记录随之失效。
+        Compile and test passed and at least one non-skipped test result exists. Status alone is
+        not enough: when the old harness could not read Gradle reports under an overlong path, the
+        status was PASSED with no results, and once recorded that empty evidence was replayed even
+        after the harness was fixed, pinning the MCI at "environment not ready". Reads check too,
+        so records of that kind already on disk stop being served.
+        """
+        if str(evidence.get("compileStatus")) != "PASSED" or str(evidence.get("testStatus")) != "PASSED":
+            return False
+        return any(status != "SKIPPED" for status in (evidence.get("testResults") or {}).values())
 
     def write(self, key: str, evidence: dict[str, Any], kind: str) -> None:
         """
@@ -86,7 +104,7 @@ class VerificationLedger:
         often environmental (an unresolved dependency, a busy port, a full disk) and likely to
         clear on the next attempt, so recording it would make one transient fault permanent.
         """
-        if str(evidence.get("compileStatus")) != "PASSED" or str(evidence.get("testStatus")) != "PASSED":
+        if not self._usable(evidence):
             return
         self.directory.mkdir(parents=True, exist_ok=True)
         path = self.directory / f"{key}.json"

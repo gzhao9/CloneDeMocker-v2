@@ -1,0 +1,82 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientTokenExchangeTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientTokenExchangeTokenResponseClientTests.java
+@@ -445,10 +445,10 @@
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		TokenExchangeGrantRequest grantRequest = new TokenExchangeGrantRequest(clientRegistration, this.subjectToken,
+ 				this.actorToken);
+-		Converter<TokenExchangeGrantRequest, HttpHeaders> headersConverter = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.put("custom-header-name", Collections.singletonList("custom-header-value"));
+-		given(headersConverter.convert(grantRequest)).willReturn(headers);
++		Converter<TokenExchangeGrantRequest, HttpHeaders> headersConverter = MockTokenExchangeHeadersConverter
++				.createMockTokenExchangeHeadersConverter(grantRequest, headers);
+ 		this.tokenResponseClient.addHeadersConverter(headersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(headersConverter).convert(grantRequest);
+@@ -463,11 +463,11 @@
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		TokenExchangeGrantRequest grantRequest = new TokenExchangeGrantRequest(clientRegistration, this.subjectToken,
+ 				this.actorToken);
+-		Converter<TokenExchangeGrantRequest, HttpHeaders> headersConverter = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+ 		headers.put("custom-header-name", Collections.singletonList("custom-header-value"));
+-		given(headersConverter.convert(grantRequest)).willReturn(headers);
++		Converter<TokenExchangeGrantRequest, HttpHeaders> headersConverter = MockTokenExchangeHeadersConverter
++				.createMockTokenExchangeHeadersConverter(grantRequest, headers);
+ 		this.tokenResponseClient.setHeadersConverter(headersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(headersConverter).convert(grantRequest);
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveTokenExchangeTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveTokenExchangeTokenResponseClientTests.java
+@@ -435,10 +435,10 @@
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		TokenExchangeGrantRequest grantRequest = new TokenExchangeGrantRequest(this.clientRegistration.build(),
+ 				this.subjectToken, this.actorToken);
+-		Converter<TokenExchangeGrantRequest, HttpHeaders> headersConverter = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.put("custom-header-name", Collections.singletonList("custom-header-value"));
+-		given(headersConverter.convert(grantRequest)).willReturn(headers);
++		Converter<TokenExchangeGrantRequest, HttpHeaders> headersConverter = MockTokenExchangeHeadersConverter
++				.createMockTokenExchangeHeadersConverter(grantRequest, headers);
+ 		this.tokenResponseClient.addHeadersConverter(headersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest).block();
+ 		verify(headersConverter).convert(grantRequest);
+@@ -452,10 +452,10 @@
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		TokenExchangeGrantRequest grantRequest = new TokenExchangeGrantRequest(this.clientRegistration.build(),
+ 				this.subjectToken, this.actorToken);
+-		Converter<TokenExchangeGrantRequest, HttpHeaders> headersConverter = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.put("custom-header-name", Collections.singletonList("custom-header-value"));
+-		given(headersConverter.convert(grantRequest)).willReturn(headers);
++		Converter<TokenExchangeGrantRequest, HttpHeaders> headersConverter = MockTokenExchangeHeadersConverter
++				.createMockTokenExchangeHeadersConverter(grantRequest, headers);
+ 		this.tokenResponseClient.setHeadersConverter(headersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest).block();
+ 		verify(headersConverter).convert(grantRequest);
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/MockTokenExchangeHeadersConverter.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/MockTokenExchangeHeadersConverter.java
+@@ -0,0 +1,22 @@
++package org.springframework.security.oauth2.client.endpoint;
++
++import org.mockito.Mockito;
++
++import org.springframework.core.convert.converter.Converter;
++import org.springframework.http.HttpHeaders;
++
++import static org.mockito.BDDMockito.given;
++
++public final class MockTokenExchangeHeadersConverter {
++
++	private MockTokenExchangeHeadersConverter() {
++	}
++
++	public static Converter<TokenExchangeGrantRequest, HttpHeaders> createMockTokenExchangeHeadersConverter(
++			TokenExchangeGrantRequest grantRequest, HttpHeaders headers) {
++		Converter<TokenExchangeGrantRequest, HttpHeaders> headersConverter = Mockito.mock();
++		given(headersConverter.convert(grantRequest)).willReturn(headers);
++		return headersConverter;
++	}
++
++}

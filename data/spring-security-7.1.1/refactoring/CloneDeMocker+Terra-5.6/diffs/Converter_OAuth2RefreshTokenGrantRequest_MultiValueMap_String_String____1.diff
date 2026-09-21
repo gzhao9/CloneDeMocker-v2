@@ -1,0 +1,78 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientRefreshTokenTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientRefreshTokenTokenResponseClientTests.java
+@@ -401,10 +401,10 @@
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		OAuth2RefreshTokenGrantRequest grantRequest = new OAuth2RefreshTokenGrantRequest(clientRegistration,
+ 				this.accessToken, this.refreshToken);
+-		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = MockOAuth2RefreshTokenParametersConverter
++				.createMockRefreshTokenParametersConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.setParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(parametersConverter).convert(grantRequest);
+@@ -445,10 +445,9 @@
+ 		Set<String> scopes = clientRegistration.getScopes();
+ 		OAuth2RefreshTokenGrantRequest grantRequest = new OAuth2RefreshTokenGrantRequest(clientRegistration,
+ 				this.accessToken, this.refreshToken, scopes);
+-		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = MockOAuth2RefreshTokenParametersConverter.createMockRefreshTokenParametersConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.addParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(parametersConverter).convert(grantRequest);
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveRefreshTokenTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveRefreshTokenTokenResponseClientTests.java
+@@ -327,10 +327,10 @@
+ 	public void getTokenResponseWhenParametersConverterAddedThenCalled() throws Exception {
+ 		OAuth2RefreshTokenGrantRequest request = new OAuth2RefreshTokenGrantRequest(
+ 				this.clientRegistrationBuilder.build(), this.accessToken, this.refreshToken);
+-		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> addedParametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(addedParametersConverter.convert(request)).willReturn(parameters);
++		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> addedParametersConverter = MockOAuth2RefreshTokenParametersConverter
++				.createMockRefreshTokenParametersConverter(request, parameters);
+ 		this.tokenResponseClient.addParametersConverter(addedParametersConverter);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.tokenResponseClient.getTokenResponse(request).block();
+@@ -344,10 +344,9 @@
+ 	public void getTokenResponseWhenParametersConverterSetThenCalled() throws Exception {
+ 		OAuth2RefreshTokenGrantRequest request = new OAuth2RefreshTokenGrantRequest(
+ 				this.clientRegistrationBuilder.build(), this.accessToken, this.refreshToken);
+-		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(request)).willReturn(parameters);
++		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = MockOAuth2RefreshTokenParametersConverter.createMockRefreshTokenParametersConverter(request, parameters);
+ 		this.tokenResponseClient.setParametersConverter(parametersConverter);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.tokenResponseClient.getTokenResponse(request).block();
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/MockOAuth2RefreshTokenParametersConverter.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/MockOAuth2RefreshTokenParametersConverter.java
+@@ -0,0 +1,21 @@
++package org.springframework.security.oauth2.client.endpoint;
++
++import org.mockito.Mockito;
++import org.springframework.core.convert.converter.Converter;
++import org.springframework.util.MultiValueMap;
++
++import static org.mockito.BDDMockito.given;
++
++public final class MockOAuth2RefreshTokenParametersConverter {
++
++	private MockOAuth2RefreshTokenParametersConverter() {
++	}
++
++	public static Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> createMockRefreshTokenParametersConverter(
++			OAuth2RefreshTokenGrantRequest grantRequest, MultiValueMap<String, String> parameters) {
++		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = Mockito.mock();
++		given(parametersConverter.convert(grantRequest)).willReturn((MultiValueMap<String, String>) parameters);
++		return parametersConverter;
++	}
++
++}

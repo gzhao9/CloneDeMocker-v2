@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
+from studio import gradle_support
+
 
 # 往上找 reactor 根时的最大层数，避免在极深目录或符号链接环里空转。
 # Cap on how far up we look for a reactor root, so a very deep tree or a
@@ -150,6 +152,43 @@ def unresolvable_parent_version(project_root: Path) -> str | None:
     return version if "${" in version else None
 
 
+def gradle_root(project_root: Path) -> Path | None:
+    """
+    Gradle 版的 reactor_root：目录自己没有 settings 文件、而某个上级有，这个上级才是构建根。
+    Gradle 会自己往上找 settings 文件，但我们只复制所选目录做隔离验证，副本里就没有它和
+    buildSrc 了。
+    The Gradle form of reactor_root: when the directory has no settings file but an ancestor
+    does, that ancestor is the build root. Gradle searches upward for settings on its own, but
+    verification copies only the chosen directory, and the copy would then lack it and buildSrc.
+    """
+    settings = ("settings.gradle", "settings.gradle.kts")
+    current = project_root.resolve()
+    if any((current / name).is_file() for name in settings):
+        return None
+    for _ in range(MAX_ANCESTOR_DEPTH):
+        if current.parent == current:
+            return None
+        current = current.parent
+        if any((current / name).is_file() for name in settings):
+            return current
+    return None
+
+
+def gradle_probe(project_root: Path) -> dict[str, Any]:
+    """
+    第 1 级探针的 Gradle 版：只跑配置阶段，顺带检查构建要求的 JDK toolchain 本机是否具备。
+    Spring Security 7.1.1 要求 JDK 25，缺了它要到编译任务执行时才失败。
+    Tier-1 probe for Gradle: runs the configuration phase only, and checks that the JDK
+    toolchains the build requests exist on this host. Spring Security 7.1.1 requests JDK 25,
+    and without it the failure only appears once compile tasks execute.
+    """
+    projects = gradle_support.discover_projects(project_root, timeout=VALIDATE_TIMEOUT_SECONDS * 5)
+    command = [gradle_support.gradle_executable(project_root), "help"]
+    status = "UNAVAILABLE" if not projects.launched else ("OK" if projects.ok else "FAILED")
+    return {"status": status, "command": command, "output": projects.output,
+            "missingToolchains": projects.missing_toolchains(), "projectCount": len(projects.directories)}
+
+
 def build_system(project_root: Path) -> str:
     if (project_root / "pom.xml").is_file():
         return "maven"
@@ -239,7 +278,7 @@ def inspect_project(project_root: str | Path, run_build_probe: bool = True,
         }
 
     system = build_system(root)
-    suggested = reactor_root(root)
+    suggested = reactor_root(root) if system == "maven" else gradle_root(root)
     placeholder = unresolvable_parent_version(root)
 
     if system == "none":
@@ -292,7 +331,32 @@ def inspect_project(project_root: str | Path, run_build_probe: bool = True,
                 "severity": "BLOCKER",
                 "message": "Maven could not be run on this host / 本机无法运行 Maven",
             })
-    elif run_build_probe and system == "maven" and blocked:
+    elif run_build_probe and system == "gradle" and not blocked:
+        probe = gradle_probe(root)
+        if probe["status"] == "FAILED":
+            findings.append({
+                "code": "GRADLE_CONFIGURE_FAILED",
+                "severity": "BLOCKER",
+                "message": "Gradle could not configure this build, so it cannot be built on this host as configured / "
+                           "Gradle 无法完成配置阶段，该项目在本机当前配置下无法构建",
+            })
+        elif probe["status"] == "UNAVAILABLE":
+            findings.append({
+                "code": "GRADLE_UNAVAILABLE",
+                "severity": "BLOCKER",
+                "message": "Gradle could not be run on this host / 本机无法运行 Gradle",
+            })
+        if probe["missingToolchains"]:
+            versions = ", ".join(probe["missingToolchains"])
+            findings.append({
+                "code": "GRADLE_TOOLCHAIN_MISSING",
+                "severity": "BLOCKER",
+                "message": (f"The build requests JDK toolchain(s) {versions}, which Gradle cannot find on this host. "
+                            f"Install them or list them in org.gradle.java.installations.paths / "
+                            f"构建要求 JDK toolchain {versions}，本机 Gradle 找不到。请安装，或在 "
+                            f"org.gradle.java.installations.paths 中登记"),
+            })
+    elif run_build_probe and system in {"maven", "gradle"} and blocked:
         probe = {"status": "SKIPPED", "command": [],
                  "output": "Skipped because a blocking problem was already found / "
                            "已发现阻断性问题，跳过构建探针"}
@@ -309,7 +373,8 @@ def inspect_project(project_root: str | Path, run_build_probe: bool = True,
     # SAG is only worth suggesting when the environment itself can't be made to
     # work. Picking the wrong directory is fixed by picking another one; spinning
     # up a container for that would be the long way round.
-    environment_codes = {"MAVEN_VALIDATE_FAILED", "MAVEN_UNAVAILABLE", "NO_BUILD_SYSTEM"}
+    environment_codes = {"MAVEN_VALIDATE_FAILED", "MAVEN_UNAVAILABLE", "NO_BUILD_SYSTEM",
+                         "GRADLE_CONFIGURE_FAILED", "GRADLE_UNAVAILABLE", "GRADLE_TOOLCHAIN_MISSING"}
     sag_recommended = any(
         item["severity"] == "BLOCKER" and item["code"] in environment_codes for item in findings
     )

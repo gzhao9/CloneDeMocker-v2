@@ -17,9 +17,13 @@ AFTER == BEFORE and the delta is legitimately 0 -- not an error.
 
 Usage:
     uv run --with tree-sitter --with tree-sitter-java python validation/cctr_analysis.py \
-        --project dubbo --project-root "D:\\Java_projects\\Apache\\dubbo-3.3.6"
-Reads data/<project>/{detection.json,refactoring-results.json,diffs/*.diff}.
-Writes data/<project>/cctr.json and data/<project>/cctr.csv.
+        --project dubbo-3.3.6 --project-root "D:\\Java_projects\\Apache\\dubbo-3.3.6" \
+        [--setup CloneDeMocker+Terra-5.6]
+Reads data/<project>/detection.json and
+      data/<project>/refactoring/<setup>/{refactoring-results.json,diffs/*.diff}.
+Writes data/<project>/refactoring/<setup>/cctr.json and cctr.csv -- CCTR depends on that
+setup's diffs, so each setup keeps its own. --setup may be omitted when the project has
+exactly one setup directory.
 """
 from __future__ import annotations
 
@@ -130,11 +134,21 @@ def main() -> None:
     parser_arg = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser_arg.add_argument("--project", required=True)
     parser_arg.add_argument("--project-root", required=True, help="the real source checkout, e.g. D:\\Java_projects\\Apache\\dubbo-3.3.6")
+    parser_arg.add_argument("--setup", default=None,
+                            help="directory under data/<project>/refactoring/, e.g. CloneDeMocker+Terra-5.6")
     args = parser_arg.parse_args()
 
-    data_dir = REPO_ROOT / "data" / args.project
+    project_dir = REPO_ROOT / "data" / args.project
+    setups_root = project_dir / "refactoring"
+    if args.setup:
+        data_dir = setups_root / args.setup
+    else:
+        candidates = sorted(path for path in setups_root.glob("*") if path.is_dir()) if setups_root.is_dir() else []
+        if len(candidates) != 1:
+            sys.exit(f"--setup is required; found {[path.name for path in candidates]} under {setups_root}")
+        data_dir = candidates[0]
     project_root = Path(args.project_root)
-    raw = json.loads((data_dir / "detection.json").read_text(encoding="utf-8"))
+    raw = json.loads((project_dir / "detection.json").read_text(encoding="utf-8"))
     mci_lookup = indexed_mci_ids(raw)
     refactoring = json.loads((data_dir / "refactoring-results.json").read_text(encoding="utf-8"))
 

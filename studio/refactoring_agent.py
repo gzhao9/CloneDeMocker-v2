@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from studio.detection_service import DetectionError, DetectionService
-from studio.harness import (BuildScope, HarnessEvidence, ProjectHarness, ensure_pit_junit5_support,
+from studio.harness import (BuildScope, HarnessEvidence, ProjectHarness, ensure_pit_junit5_support, is_module_directory,
                              mutation_regressed, verification_failure_reason)
 from studio.mechanical import rename_local_mock_to_field
 from studio.model_provider import MockModelProvider, ModelProvider, ModelResult, ModelUsage, OpenAIModelProvider
@@ -646,8 +646,23 @@ class RefactoringAgent:
             )
         if audit.get("modelResult") is not None:
             model_results.append(audit.pop("modelResult"))
-        ai_concern = audit.get("risk") not in {"LOW", "SKIPPED"}
-        equivalent = deterministic_verified and not ai_concern
+        # 论文的成功判据只有三层（Syntactic Validity / Behavioral Equivalence / Functional
+        # Integrity），再加 goal_achieved 确认克隆确实被消除——这四项都已经在
+        # deterministic_verified 里。AI 审查不属于判据，它的结论只作为证据留档。
+        # 之前把它并进 equivalent 有两个后果：一是"抽成 helper 方法""提成 class-level mock
+        # 字段"这类本身就是工具目标的改动（论文 Prompt 1.1 / 1.2）会被判失败；二是
+        # canonical_store 把这种否决贴成 FAILED_BEHAVIORAL_EQUIVALENCE，和真正的测试行为
+        # 差异混在一起，数据上再也分不开。
+        # The paper's success criteria has exactly three tiers (Syntactic Validity, Behavioral
+        # Equivalence, Functional Integrity), plus goal_achieved confirming the clone really
+        # went away — all four already feed deterministic_verified. The AI audit is not part of
+        # that criteria, so its verdict is recorded as evidence only. Folding it into equivalent
+        # had two consequences: it failed the very transformations the tool exists to produce
+        # (helper extraction and class-level mock fields, the paper's Prompt 1.1 / 1.2), and
+        # canonical_store then labelled each veto FAILED_BEHAVIORAL_EQUIVALENCE, making it
+        # indistinguishable in the data from a genuine test-outcome difference.
+        ai_concern = audit.get("risk") == "HIGH"
+        equivalent = deterministic_verified
         usage = self._combined_usage(model_results)
         validation_reason = (
             candidate_failure or "Baseline non-regression check passed; pre-existing environment failures were unchanged"
@@ -680,12 +695,19 @@ class RefactoringAgent:
                 "targetCandidate": candidate_target.as_dict() if candidate_target else None,
                 "targetTestClasses": target_classes,
                 "aiAudit": audit,
+                # 建议性信号，不参与 equivalent/classification，供报告与人工复核筛选用。
+                # Advisory signal only; it feeds neither equivalent nor classification, and
+                # exists so reports and manual review can filter on it.
+                "aiAuditConcern": ai_concern,
             },
             "validationReason": validation_reason,
             "caveat": proposal.get("caveat", ""),
             "usage": usage,
             "modelCalls": len(model_results),
             "model": result.model,
+            # 导出据此把调试桩的结果和真实模型的结果分到不同目录。
+            # The export uses this to keep debug-stub results apart from a real model's.
+            "useMock": use_mock,
             "responseId": result.response_id,
             "cache": {"hit": cache_hit, "key": cache_key, "revalidated": cache_hit},
             "repairHistory": repair_history,
@@ -977,7 +999,7 @@ class RefactoringAgent:
             classes.add(f"{package_name}.{class_name}" if package_name else class_name)
             parent = (project_root / relative).parent
             while parent != project_root and project_root in parent.parents:
-                if (parent / "pom.xml").is_file() or (parent / "build.gradle").is_file() or (parent / "build.gradle.kts").is_file():
+                if is_module_directory(parent):
                     modules.add(parent.relative_to(project_root).as_posix())
                     break
                 parent = parent.parent
@@ -1513,8 +1535,12 @@ class RefactoringAgent:
             return "Mutation score decreased by more than the allowed five percentage points / 变异得分下降超过允许的五个百分点"
         if not goal_achieved:
             return "Harness passed but the duplicated mock logic was not actually reduced / Harness 通过，但重复的 mock 逻辑并未实际减少"
-        if audit and audit.get("risk") not in {"LOW", "SKIPPED"}:
-            return "Independent AI audit raised a refactoring concern / 独立 AI 审查提出了重构风险"
+        # 审查是建议而不是判据：通过就是通过，审查意见只在措辞上留个人工复核的钩子。
+        # The audit is advisory, not a criterion: a pass stays a pass, and the reviewer's note
+        # only leaves a hook in the wording for manual follow-up.
+        if audit and audit.get("risk") == "HIGH":
+            return ("Harness passed; AI audit flagged a concern for manual review / "
+                    "Harness 已通过；AI 审查提示需人工复核")
         return "Harness passed / Harness 已通过"
 
     @staticmethod
@@ -1528,9 +1554,34 @@ class RefactoringAgent:
             return {"status": "SKIPPED", "risk": "SKIPPED", "reason": "Deterministic verification did not pass"}
         prompt = (
             "You are an independent Java test-refactoring reviewer. Do not propose edits. "
-            "Assess whether the supplied diff genuinely removes the selected duplicated Mockito setup "
-            "without introducing a semantic, lifecycle, scope, or readability risk. Return JSON only: "
-            '{"risk":"LOW|MEDIUM|HIGH","reason":"concise evidence-based explanation"}.'
+            "The supplied diff removes duplicated Mockito setup and has ALREADY passed deterministic "
+            "verification: it compiles, every test produces the same pass/fail outcome as before, and "
+            "the mutation score did not regress.\n"
+            "\n"
+            "The following are the INTENDED OUTPUT of this tool. Never report them as risks:\n"
+            "- Extracting duplicated mock creation or stubbing into a helper method, including into a "
+            "new helper class or a new file.\n"
+            "- Promoting a duplicated mock into a class-level field initialized in a field initializer "
+            "or in @Before/@BeforeEach.\n"
+            "- A helper or field being visible to, or constructed for, test cases that did not "
+            "originally create that mock. Whether a test builds a mock it does not use is a "
+            "pre-existing property of the test suite, not a defect introduced here.\n"
+            "- Reordering, merging or relocating setup statements, when compilation and test outcomes "
+            "are unchanged.\n"
+            "- Readability, naming or style preferences, and a helper having few call sites.\n"
+            "\n"
+            "Report a risk ONLY for a concrete defect the checks above cannot observe, and only when "
+            "you can quote the exact lines that cause it:\n"
+            "- A stub, argument matcher or answer whose behavior differs from the original (dropped, "
+            "weakened, or bound to different arguments), so a test can now pass for a different reason.\n"
+            "- A mock instance now shared across test cases where the original created a fresh one per "
+            "call, when a test asserts on accumulated interactions or mutable state, making outcomes "
+            "depend on execution order.\n"
+            "- The duplication was not actually removed: the helper or field was added but no call site "
+            "was replaced.\n"
+            "\n"
+            'Return JSON only: {"risk":"LOW|HIGH","reason":"concise evidence-based explanation",'
+            '"evidence":"exact lines quoted from the diff, or empty when risk is LOW"}.'
         )
         evidence = json.dumps({
             "selectedMockCloneInstances": selected,
@@ -1541,16 +1592,22 @@ class RefactoringAgent:
         result = provider.generate(prompt, evidence, model)
         try:
             review = RefactoringAgent._parse_json(result.text)
-            risk = str(review.get("risk", "HIGH")).upper()
-            if risk not in {"LOW", "MEDIUM", "HIGH"}:
-                risk = "HIGH"
+            risk = str(review.get("risk", "")).upper()
+            # 审查只是建议，不再参与 SUCCESS 判定，所以无法解析出档位时记 UNKNOWN 而不是
+            # 兜底成 HIGH——兜底成 HIGH 等于让一次解析失败凭空断言存在风险。
+            # The audit is advisory and no longer gates SUCCESS, so an unreadable verdict is
+            # recorded as UNKNOWN rather than defaulting to HIGH, which would let a parse
+            # failure assert a risk that was never actually reported.
+            if risk not in {"LOW", "HIGH"}:
+                risk = "UNKNOWN"
             return {
                 "status": "COMPLETED", "risk": risk, "reason": str(review.get("reason", "No review reason returned")),
-                "modelResult": result,
+                "evidence": str(review.get("evidence", "")), "modelResult": result,
             }
         except DetectionError:
             return {
-                "status": "FAILED", "risk": "HIGH", "reason": "AI auditor returned invalid JSON", "modelResult": result,
+                "status": "FAILED", "risk": "UNKNOWN", "reason": "AI auditor returned invalid JSON",
+                "evidence": "", "modelResult": result,
             }
 
     @staticmethod

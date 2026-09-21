@@ -71,9 +71,12 @@ public class MockInfoExporter {
         // 获取 CombinedTypeSolver
         CombinedTypeSolver combinedSolver = EnhancedProjectResolver.createTypeSolver(projectRoot, runCommand);
 
-        ParserConfiguration parserConfiguration = new ParserConfiguration();
+        ParserConfiguration parserConfiguration = EnhancedProjectResolver.parserConfiguration();
         parserConfiguration.setSymbolResolver(new JavaSymbolSolver(combinedSolver));
         JavaParser parser = new JavaParser(parserConfiguration);
+        JavaParser legacyParser = new JavaParser(EnhancedProjectResolver.legacyParserConfiguration()
+                .setSymbolResolver(new JavaSymbolSolver(combinedSolver)));
+        int parseFailures = 0;
 
         // 收集所有 Java 文件
         List<Path> javaFiles = new ArrayList<>();
@@ -91,6 +94,9 @@ public class MockInfoExporter {
             Path javaFile = javaFiles.get(fileIndex);
             try {
                 ParseResult<CompilationUnit> parseResult = parser.parse(javaFile);
+                if (!parseResult.isSuccessful()) {
+                    parseResult = legacyParser.parse(javaFile);
+                }
 
                 if (parseResult.isSuccessful() && parseResult.getResult().isPresent()) {
                     CompilationUnit cu = parseResult.getResult().get();
@@ -113,7 +119,9 @@ public class MockInfoExporter {
                         combinedResults.addAll(mockList);
                     }
                 } else {
-                    System.err.println("[WARN] Parse failed: " + javaFile);
+                    parseFailures++;
+                    System.err.println("[WARN] Parse failed: " + javaFile + " - "
+                            + parseResult.getProblems().stream().findFirst().map(Object::toString).orElse(""));
                 }
             } catch (Exception e) {
                 System.err.println("[WARN] Skipping file due to exception: " + javaFile + " - " + e.getMessage());
@@ -130,6 +138,10 @@ public class MockInfoExporter {
                         + " " + javaFile.getFileName());
             }
         }
+
+        // 逐文件的警告会被界面日志截断，汇总一行保证解析失败数总能看到。
+        // Per-file warnings get truncated in the UI log; one summary line keeps the count visible.
+        System.out.println("[INFO] Parse failures / 解析失败文件: " + parseFailures + "/" + totalFiles);
 
         // 固定源码快照和检测池下，排序可保证选择界面的 ID 稳定。
         // Sorting keeps selection IDs stable for a fixed source snapshot and scope.

@@ -18,13 +18,19 @@ on top.
 A JSON object with:
 
 - `variableName`: the mock variable's name.
-- `testMethodRawCode`: the complete test method, and the setup method when one is
-  involved.
-- `shareableMockLines`: the lines for this mock that live in setup, as line
-  number to code.
-- `testMockLines`: the lines involving this mock inside the test method, as line
-  number to code.
-- `reusableCode`: the helper method step 1 installed.
+- `verbatim.testMethod`: the complete test method, as it reads in the file.
+- `verbatim.setupMethods`: the complete `@Before` / `@After` method that creates
+  or stubs this mock, as it reads in the file. **This is where the before variant
+  normally edits**, so copy your `oldString` from here.
+- `verbatim.setupStatements`: the individual setup lines for this mock, verbatim.
+  Use one of these when replacing a single line — including a field declaration,
+  which belongs to no method and so appears here but not in `setupMethods`.
+- `verbatim.mockStatements`: the lines involving this mock inside the test method,
+  verbatim.
+- `verbatim.reusableCode`: the helper method step 1 installed.
+- `hints.sharedStatements`: the detector's abstracted view of the setup lines.
+  These are **not** source text — never copy them into an `oldString`. When you
+  need the real text of one, take it from `verbatim.setupStatements`.
 - `lineOccurrences`: how many times each of those lines appears in the whole
   file. A count above 1 means you need extra context to make `oldString` unique.
 

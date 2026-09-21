@@ -64,3 +64,9 @@ Apache Dubbo 目前真正的最新 tag（没有更新的 3.3.x 或 3.4.x）。
 - `notes/`：会话交接记录、失败案例调查笔记、优化日志——人读的背景资料，不是代码。
 - `paper_reference_data.json` / `case_full_cache.json`：分析/报告脚本用的参考数据与缓存，随仓库提交。
 - `results/`：每次跑的原始 JSON/分析报告落在这里（gitignore，不提交）。
+
+## rerun_mcis.py (temporary)
+
+Re-runs selected MCIs through the studio backend on another machine and merges the results back
+(`run` / `merge`). Written for the 5 Spring Security MCIs listed in `spring_security_dns_mcis.txt`,
+whose baseline fails behind a fake-ip DNS proxy; see the script's docstring for both sides' steps.

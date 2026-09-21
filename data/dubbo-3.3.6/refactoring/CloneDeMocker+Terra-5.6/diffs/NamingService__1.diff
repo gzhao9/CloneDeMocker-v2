@@ -1,0 +1,89 @@
+--- a/dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosRegistryTest.java
++++ b/dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosRegistryTest.java
+@@ -82,21 +82,21 @@
+ 
+     @Test
+     void testRegister() {
+-        NamingService namingService = mock(NacosNamingService.class);
+-        try {
+-
+-            String serviceName = "providers:org.apache.dubbo.registry.nacos.NacosService:1.0.0:default";
+-            String category = this.serviceUrl.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
+-            URL newUrl = this.serviceUrl.addParameter(CATEGORY_KEY, category);
+-            newUrl = newUrl.addParameter(PROTOCOL_KEY, this.serviceUrl.getProtocol());
+-            newUrl = newUrl.addParameter(PATH_KEY, this.serviceUrl.getPath());
+-            String ip = newUrl.getHost();
+-            int port = newUrl.getPort();
+-            Instance instance = new Instance();
+-            instance.setIp(ip);
+-            instance.setPort(port);
+-            instance.setMetadata(new HashMap<>(newUrl.getParameters()));
+-            doNothing().when(namingService).registerInstance(serviceName, Constants.DEFAULT_GROUP, instance);
++        NamingService namingService = null;
++        try {
++
++            String serviceName = "providers:org.apache.dubbo.registry.nacos.NacosService:1.0.0:default";
++            String category = this.serviceUrl.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
++            URL newUrl = this.serviceUrl.addParameter(CATEGORY_KEY, category);
++            newUrl = newUrl.addParameter(PROTOCOL_KEY, this.serviceUrl.getProtocol());
++            newUrl = newUrl.addParameter(PATH_KEY, this.serviceUrl.getPath());
++            String ip = newUrl.getHost();
++            int port = newUrl.getPort();
++            Instance instance = new Instance();
++            instance.setIp(ip);
++            instance.setPort(port);
++            instance.setMetadata(new HashMap<>(newUrl.getParameters()));
++            namingService = createMockNamingService(serviceName, instance);
+         } catch (NacosException e) {
+             // ignore
+         }
+@@ -118,22 +118,22 @@
+ 
+     @Test
+     void testUnRegister() {
+-        NamingService namingService = mock(NacosNamingService.class);
+-
+-        try {
+-
+-            String serviceName = "providers:org.apache.dubbo.registry.nacos.NacosService:1.0.0:default";
+-            String category = this.serviceUrl.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
+-            URL newUrl = this.serviceUrl.addParameter(CATEGORY_KEY, category);
+-            newUrl = newUrl.addParameter(PROTOCOL_KEY, this.serviceUrl.getProtocol());
+-            newUrl = newUrl.addParameter(PATH_KEY, this.serviceUrl.getPath());
+-            String ip = newUrl.getHost();
+-            int port = newUrl.getPort();
+-            Instance instance = new Instance();
+-            instance.setIp(ip);
+-            instance.setPort(port);
+-            instance.setMetadata(new HashMap<>(newUrl.getParameters()));
+-            doNothing().when(namingService).registerInstance(serviceName, Constants.DEFAULT_GROUP, instance);
++        NamingService namingService = null;
++
++        try {
++
++            String serviceName = "providers:org.apache.dubbo.registry.nacos.NacosService:1.0.0:default";
++            String category = this.serviceUrl.getParameter(CATEGORY_KEY, DEFAULT_CATEGORY);
++            URL newUrl = this.serviceUrl.addParameter(CATEGORY_KEY, category);
++            newUrl = newUrl.addParameter(PROTOCOL_KEY, this.serviceUrl.getProtocol());
++            newUrl = newUrl.addParameter(PATH_KEY, this.serviceUrl.getPath());
++            String ip = newUrl.getHost();
++            int port = newUrl.getPort();
++            Instance instance = new Instance();
++            instance.setIp(ip);
++            instance.setPort(port);
++            instance.setMetadata(new HashMap<>(newUrl.getParameters()));
++            namingService = createMockNamingService(serviceName, instance);
+ 
+             doNothing().when(namingService).deregisterInstance(serviceName, Constants.DEFAULT_GROUP, ip, port);
+         } catch (NacosException e) {
+@@ -309,4 +309,10 @@
+         Assertions.assertEquals(2, registered.size());
+         Assertions.assertEquals(1, subscribed.get(serviceUrlWithWildcard).size());
+     }
++
++    private static NamingService createMockNamingService(String serviceName, Instance instance) throws NacosException {
++        NamingService namingService = mock(NacosNamingService.class);
++        doNothing().when(namingService).registerInstance(serviceName, Constants.DEFAULT_GROUP, instance);
++        return namingService;
++    }
+ }

@@ -3,7 +3,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from studio.canonical_store import classify_agent_result, entry_from_agent_result, merge
+from studio.canonical_store import (
+    classify_agent_result, entry_from_agent_result, merge, setup_dirname, setup_label,
+)
+
+SETUP = Path("data") / "dubbo" / "refactoring" / "CloneDeMocker+gpt-test"
 
 
 def agent_result(**overrides):
@@ -82,7 +86,7 @@ class MergeTest(unittest.TestCase):
 
             self.assertEqual(1, summary["writtenThisCall"])
             self.assertEqual(2, summary["totalMcis"])
-            stored = json.loads((repo / "data" / "dubbo" / "refactoring-results.json")
+            stored = json.loads((repo / SETUP / "refactoring-results.json")
                                 .read_text(encoding="utf-8"))
             self.assertEqual({"demo.A::1", "demo.B::1"}, set(stored["results"]))
 
@@ -94,7 +98,7 @@ class MergeTest(unittest.TestCase):
             failed = agent_result(stage="FAILED", harness={})
             merge("dubbo", repo, [entry_from_agent_result("demo.A::1", failed)])
 
-            stored = json.loads((repo / "data" / "dubbo" / "refactoring-results.json")
+            stored = json.loads((repo / SETUP / "refactoring-results.json")
                                 .read_text(encoding="utf-8"))["results"]
             self.assertEqual("MODEL_DECLINED", stored["demo.A::1"]["classification"])
             self.assertEqual("SUCCESS", stored["demo.B::1"]["classification"])
@@ -111,20 +115,73 @@ class MergeTest(unittest.TestCase):
                   diff_lookup={"demo.A::1": diff})
             merge("dubbo", repo, [entry_from_agent_result("demo.A::1", agent_result())])
 
-            stored = json.loads((repo / "data" / "dubbo" / "refactoring-results.json")
+            stored = json.loads((repo / SETUP / "refactoring-results.json")
                                 .read_text(encoding="utf-8"))["results"]
             self.assertIn("diffFile", stored["demo.A::1"])
-            self.assertTrue((repo / "data" / "dubbo" / stored["demo.A::1"]["diffFile"]).is_file())
+            self.assertTrue((repo / SETUP / stored["demo.A::1"]["diffFile"]).is_file())
 
     def test_writes_a_csv_alongside_the_json(self):
         with tempfile.TemporaryDirectory() as temporary:
             repo = Path(temporary)
             merge("dubbo", repo, [entry_from_agent_result("demo.A::1", agent_result())])
-            rows = (repo / "data" / "dubbo" / "refactoring-results.csv").read_text(
+            rows = (repo / SETUP / "refactoring-results.csv").read_text(
                 encoding="utf-8").splitlines()
             self.assertIn("totalSeconds", rows[0])
             self.assertIn("demo.A::1", rows[1])
 
 
+class SetupDirectoryTest(unittest.TestCase):
+    """每个 harness+模型 的组合各占一个目录，互不覆盖。
+    Each harness+model combination gets its own directory, overwriting nothing."""
+
+    def test_known_models_get_their_display_name(self):
+        self.assertEqual("CloneDeMocker+Terra 5.6", setup_label("CloneDeMocker", "gpt-5.6-terra"))
+        self.assertEqual("CloneDeMocker+Terra-5.6", setup_dirname("CloneDeMocker+Terra 5.6"))
+
+    def test_debug_stub_results_never_land_in_the_real_models_directory(self):
+        self.assertEqual("CloneDeMocker+MockProvider", setup_label("CloneDeMocker", "gpt-5.6-terra", use_mock=True))
+
+    def test_two_models_do_not_overwrite_each_other(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            merge("dubbo", repo, [entry_from_agent_result("demo.A::1", agent_result())], model="gpt-5.6-terra")
+            merge("dubbo", repo, [entry_from_agent_result("demo.A::1", agent_result(stage="FAILED", harness={}))],
+                  model="gpt-other", harness="Codex")
+            root = repo / "data" / "dubbo" / "refactoring"
+            self.assertEqual({"CloneDeMocker+Terra-5.6", "Codex+gpt-other"}, {p.name for p in root.iterdir()})
+            first = json.loads((root / "CloneDeMocker+Terra-5.6" / "refactoring-results.json").read_text(encoding="utf-8"))
+            self.assertEqual("SUCCESS", first["results"]["demo.A::1"]["classification"])
+            self.assertEqual("CloneDeMocker+Terra 5.6", first["setup"])
+            descriptor = json.loads((root / "Codex+gpt-other" / "setup.json").read_text(encoding="utf-8"))
+            self.assertEqual({"harness": "Codex", "model": "gpt-other"},
+                             {key: descriptor[key] for key in ("harness", "model")})
+
+    def test_detection_stays_shared_at_the_project_level_with_its_meta(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            run_dir = repo / "run"
+            run_dir.mkdir()
+            (run_dir / "mock-clone-instances.json").write_text("{}", encoding="utf-8")
+            (run_dir / "detection-meta.json").write_text('{"scanSeconds": 1.0}', encoding="utf-8")
+            merge("dubbo", repo, [entry_from_agent_result("demo.A::1", agent_result())],
+                  detection_source=run_dir / "mock-clone-instances.json")
+            self.assertTrue((repo / "data" / "dubbo" / "detection.json").is_file())
+            self.assertTrue((repo / "data" / "dubbo" / "detection-meta.json").is_file())
+
+
 if __name__ == "__main__":
     unittest.main()
+
+
+class SafeMciFilenameTest(unittest.TestCase):
+    def test_existing_length_names_are_unchanged(self):
+        from studio.canonical_store import safe_mci_filename
+        self.assertEqual("org.apache.dubbo.rpc.Invoker__5.diff", safe_mci_filename("org.apache.dubbo.rpc.Invoker::5"))
+
+    def test_overlong_generic_ids_are_shortened_and_stay_distinct(self):
+        from studio.canonical_store import MAX_MCI_FILENAME, safe_mci_filename
+        base = "org.springframework.security.authorization.AuthorizationManager<" + "x" * 150 + ">::"
+        first, second = safe_mci_filename(base + "1"), safe_mci_filename(base + "2")
+        self.assertLessEqual(len(first), MAX_MCI_FILENAME)
+        self.assertNotEqual(first, second)
+        self.assertTrue(first.endswith(".diff"))

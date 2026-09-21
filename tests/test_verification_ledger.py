@@ -1,10 +1,12 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
 
 from studio.verification_ledger import VerificationLedger
 
-PASSED = {"compileStatus": "PASSED", "testStatus": "PASSED", "pitStatus": "NOT_RUN"}
+PASSED = {"compileStatus": "PASSED", "testStatus": "PASSED", "pitStatus": "NOT_RUN",
+          "testResults": {"demo.FooTest#works": "PASSED"}}
 
 
 class VerificationLedgerTest(unittest.TestCase):
@@ -30,6 +32,28 @@ class VerificationLedgerTest(unittest.TestCase):
             ledger = self.ledger(temporary)
             key = VerificationLedger.key("baseline", "srchash", "scope", False, "gen1")
             ledger.write(key, {**PASSED, "compileStatus": "FAILED"}, "baseline")
+            self.assertIsNone(ledger.read(key))
+
+    def test_a_passing_status_without_test_results_is_not_recorded(self):
+        """旧 harness 读不到过长路径下的报告时就是这种证据：状态通过、结果为空。
+        What the old harness produced when it could not read reports under an overlong path:
+        passing status, no results."""
+        with tempfile.TemporaryDirectory() as temporary:
+            ledger = self.ledger(temporary)
+            key = VerificationLedger.key("baseline", "srchash", "scope", False, "gen1")
+            ledger.write(key, {**PASSED, "testResults": {}}, "baseline")
+            self.assertIsNone(ledger.read(key))
+            ledger.write(key, {**PASSED, "testResults": {"demo.FooTest#x": "SKIPPED"}}, "baseline")
+            self.assertIsNone(ledger.read(key))
+
+    def test_an_empty_record_already_on_disk_is_not_served(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            ledger = self.ledger(temporary)
+            key = VerificationLedger.key("baseline", "srchash", "scope", False, "gen1")
+            ledger.directory.mkdir(parents=True)
+            (ledger.directory / f"{key}.json").write_text(json.dumps(
+                {"key": key, "kind": "baseline", "recordedAt": "t", "evidence": {**PASSED, "testResults": {}}}),
+                encoding="utf-8")
             self.assertIsNone(ledger.read(key))
 
     def test_any_changed_input_yields_a_different_key(self):
