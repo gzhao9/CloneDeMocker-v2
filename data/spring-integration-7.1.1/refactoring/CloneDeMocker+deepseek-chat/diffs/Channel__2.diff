@@ -1,0 +1,65 @@
+--- a/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/inbound/AmqpMessageSourceTests.java
++++ b/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/inbound/AmqpMessageSourceTests.java
+@@ -57,15 +57,13 @@
+ 
+ 	@Test
+ 	public void testAck() throws Exception {
+-		Channel channel = mock(Channel.class);
+-		willReturn(true).given(channel).isOpen();
+ 		Envelope envelope = new Envelope(123L, false, "ex", "rk");
+ 		BasicProperties props =
+ 				new BasicProperties.Builder()
+ 						.contentType(MessageProperties.DEFAULT_CONTENT_TYPE)
+ 						.build();
+ 		GetResponse getResponse = new GetResponse(envelope, props, "bar".getBytes(), 0);
+-		willReturn(getResponse).given(channel).basicGet("foo", false);
++		Channel channel = createMockChannel(getResponse);
+ 		Connection connection = mock(Connection.class);
+ 		willReturn(true).given(connection).isOpen();
+ 		willReturn(channel).given(connection).createChannel();
+@@ -108,15 +106,13 @@
+ 	}
+ 
+ 	private void testNackOrRequeue(boolean requeue) throws Exception {
+-		Channel channel = mock(Channel.class);
+-		willReturn(true).given(channel).isOpen();
+ 		Envelope envelope = new Envelope(123L, false, "ex", "rk");
+ 		BasicProperties props =
+ 				new BasicProperties.Builder()
+ 						.contentType(MessageProperties.DEFAULT_CONTENT_TYPE)
+ 						.build();
+ 		GetResponse getResponse = new GetResponse(envelope, props, "bar".getBytes(), 0);
+-		willReturn(getResponse).given(channel).basicGet("foo", false);
++		Channel channel = createMockChannel(getResponse);
+ 		Connection connection = mock(Connection.class);
+ 		willReturn(true).given(connection).isOpen();
+ 		willReturn(channel).given(connection).createChannel();
+@@ -148,15 +144,13 @@
+ 		message = new org.springframework.amqp.core.Message("test2".getBytes(), messageProperties);
+ 		MessageBatch batched = bs.addToBatch("foo", "bar", message);
+ 
+-		Channel channel = mock(Channel.class);
+-		willReturn(true).given(channel).isOpen();
+ 		Envelope envelope = new Envelope(123L, false, "ex", "rk");
+ 		BasicProperties props = new BasicProperties.Builder()
+ 				.headers(batched.message().getMessageProperties().getHeaders())
+ 				.contentType("text/plain")
+ 				.build();
+ 		GetResponse getResponse = new GetResponse(envelope, props, batched.message().getBody(), 0);
+-		willReturn(getResponse).given(channel).basicGet("foo", false);
++		Channel channel = createMockChannel(getResponse);
+ 		Connection connection = mock(Connection.class);
+ 		willReturn(true).given(connection).isOpen();
+ 		willReturn(channel).given(connection).createChannel();
+@@ -170,4 +164,11 @@
+ 		assertThat(((List<String>) received.getPayload())).contains("test1", "test2");
+ 	}
+ 
++	private static Channel createMockChannel(GetResponse getResponse) throws Exception {
++		Channel channel = mock(Channel.class);
++		willReturn(true).given(channel).isOpen();
++		willReturn(getResponse).given(channel).basicGet("foo", false);
++		return channel;
++	}
++
+ }

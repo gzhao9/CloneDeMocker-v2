@@ -1,0 +1,50 @@
+--- a/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/outbound/KafkaProducerMessageHandlerTests.java
++++ b/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/outbound/KafkaProducerMessageHandlerTests.java
+@@ -484,6 +484,17 @@
+ 	}
+ 
+ 	@SuppressWarnings({"rawtypes", "unchecked"})
++	private static Producer createMockProducer(CountDownLatch closeLatch) {
++		Producer producer = mock(Producer.class);
++		given(producer.send(any(), any())).willReturn(mock(Future.class));
++		willAnswer(i -> {
++			closeLatch.countDown();
++			return null;
++		}).given(producer).close(any());
++		return producer;
++	}
++
++	@SuppressWarnings({"rawtypes", "unchecked"})
+ 	@Test
+ 	void testTransaction() {
+ 		ProducerFactory pf = mock();
+@@ -531,13 +542,8 @@
+ 		given(mockConsumer.groupMetadata()).willReturn(meta);
+ 		ConsumerFactory cf = mock();
+ 		willReturn(mockConsumer).given(cf).createConsumer("group", "", null, KafkaTestUtils.defaultPropertyOverrides());
+-		Producer producer = mock(Producer.class);
+-		given(producer.send(any(), any())).willReturn(mock(Future.class));
+ 		final CountDownLatch closeLatch = new CountDownLatch(2);
+-		willAnswer(i -> {
+-			closeLatch.countDown();
+-			return null;
+-		}).given(producer).close(any());
++		Producer producer = createMockProducer(closeLatch);
+ 		ProducerFactory pf = mock();
+ 		given(pf.transactionCapable()).willReturn(true);
+ 		willReturn(producer).given(pf).createProducer(isNull());
+@@ -668,13 +674,8 @@
+ 		given(mockConsumer.groupMetadata()).willReturn(meta);
+ 		ConsumerFactory cf = mock();
+ 		willReturn(mockConsumer).given(cf).createConsumer("group", "", null, KafkaTestUtils.defaultPropertyOverrides());
+-		Producer producer = mock(Producer.class);
+-		given(producer.send(any(), any())).willReturn(mock(Future.class));
+ 		final CountDownLatch closeLatch = new CountDownLatch(2);
+-		willAnswer(i -> {
+-			closeLatch.countDown();
+-			return null;
+-		}).given(producer).close(any());
++		Producer producer = createMockProducer(closeLatch);
+ 		AtomicReference<String> txId = new AtomicReference<>();
+ 		DefaultKafkaProducerFactory pf = new DefaultKafkaProducerFactory(Collections.emptyMap()) {
+ 
