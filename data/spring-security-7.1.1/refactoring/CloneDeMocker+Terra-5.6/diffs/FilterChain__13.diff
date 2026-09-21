@@ -1,0 +1,68 @@
+--- a/web/src/test/java/org/springframework/security/web/concurrent/ConcurrentSessionFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/concurrent/ConcurrentSessionFilterTests.java
+@@ -22,6 +22,7 @@
+ import jakarta.servlet.FilterChain;
+ import jakarta.servlet.http.HttpServletRequest;
+ import org.junit.jupiter.api.AfterEach;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.mock.web.MockFilterChain;
+@@ -63,6 +64,13 @@
+  */
+ public class ConcurrentSessionFilterTests {
+ 
++	private FilterChain filterChain;
++
++	@BeforeEach
++	public void setup() {
++		this.filterChain = mock(FilterChain.class);
++	}
++
+ 	@AfterEach
+ 	public void cleanup() {
+ 		SecurityContextHolder.clearContext();
+@@ -108,10 +116,9 @@
+ 		ConcurrentSessionFilter filter = new ConcurrentSessionFilter(registry, expiredSessionStrategy);
+ 		filter.setLogoutHandlers(new LogoutHandler[] { new SecurityContextLogoutHandler() });
+ 		filter.afterPropertiesSet();
+-		FilterChain fc = mock(FilterChain.class);
+-		filter.doFilter(request, response, fc);
++		filter.doFilter(request, response, filterChain);
+ 		// Expect that the filter chain will not be invoked, as we redirect to expiredUrl
+-		verifyNoMoreInteractions(fc);
++		verifyNoMoreInteractions(filterChain);
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/expired.jsp");
+ 	}
+ 
+@@ -126,9 +133,8 @@
+ 		registry.registerNewSession(session.getId(), "principal");
+ 		registry.getSessionInformation(session.getId()).expireNow();
+ 		ConcurrentSessionFilter filter = new ConcurrentSessionFilter(registry);
+-		FilterChain fc = mock(FilterChain.class);
+-		filter.doFilter(request, response, fc);
+-		verifyNoMoreInteractions(fc);
++		filter.doFilter(request, response, filterChain);
++		verifyNoMoreInteractions(filterChain);
+ 		assertThat(response.getContentAsString())
+ 			.isEqualTo("This session has been expired (possibly due to multiple concurrent logins being "
+ 					+ "attempted as the same user).");
+@@ -146,7 +152,6 @@
+ 		MockHttpSession session = new MockHttpSession();
+ 		request.setSession(session);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain fc = mock(FilterChain.class);
+ 		// Setup our test fixture
+ 		SessionRegistry registry = new SessionRegistryImpl();
+ 		registry.registerNewSession(session.getId(), "principal");
+@@ -155,8 +160,8 @@
+ 		ConcurrentSessionFilter filter = new ConcurrentSessionFilter(registry, expiredSessionStrategy);
+ 		Date lastRequest = registry.getSessionInformation(session.getId()).getLastRequest();
+ 		Thread.sleep(1000);
+-		filter.doFilter(request, response, fc);
+-		verify(fc).doFilter(request, response);
++		filter.doFilter(request, response, filterChain);
++		verify(filterChain).doFilter(request, response);
+ 		assertThat(registry.getSessionInformation(session.getId()).getLastRequest().after(lastRequest)).isTrue();
+ 	}
+ 

@@ -1,0 +1,64 @@
+--- a/config/src/test/java/org/springframework/security/config/web/server/ServerHttpSecurityTests.java
++++ b/config/src/test/java/org/springframework/security/config/web/server/ServerHttpSecurityTests.java
+@@ -646,10 +646,7 @@
+ 
+ 	@Test
+ 	public void shouldUseDefaultAuthorizationRedirectStrategyForOAuth2Login() {
+-		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+-				ReactiveClientRegistrationRepository.class);
+-		given(clientRegistrationRepository.findByRegistrationId(anyString()))
+-			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
++		ReactiveClientRegistrationRepository clientRegistrationRepository = createMockReactiveClientRegistrationRepository();
+ 
+ 		SecurityWebFilterChain securityFilterChain = this.http
+ 			.oauth2Login((login) -> login.clientRegistrationRepository(clientRegistrationRepository))
+@@ -668,10 +665,7 @@
+ 	@Test
+ 	public void shouldConfigureAuthorizationRedirectStrategyForOAuth2Login() {
+ 		ServerRedirectStrategy authorizationRedirectStrategy = mock(ServerRedirectStrategy.class);
+-		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+-				ReactiveClientRegistrationRepository.class);
+-		given(clientRegistrationRepository.findByRegistrationId(anyString()))
+-			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
++		ReactiveClientRegistrationRepository clientRegistrationRepository = createMockReactiveClientRegistrationRepository();
+ 		given(authorizationRedirectStrategy.sendRedirect(any(), any())).willReturn(Mono.empty());
+ 
+ 		SecurityWebFilterChain securityFilterChain = this.http
+@@ -692,10 +686,7 @@
+ 
+ 	@Test
+ 	public void shouldUseDefaultAuthorizationRedirectStrategyForOAuth2Client() {
+-		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+-				ReactiveClientRegistrationRepository.class);
+-		given(clientRegistrationRepository.findByRegistrationId(anyString()))
+-			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
++		ReactiveClientRegistrationRepository clientRegistrationRepository = createMockReactiveClientRegistrationRepository();
+ 
+ 		SecurityWebFilterChain securityFilterChain = this.http
+ 			.oauth2Client((client) -> client.clientRegistrationRepository(clientRegistrationRepository))
+@@ -714,10 +705,7 @@
+ 	@Test
+ 	public void shouldConfigureAuthorizationRedirectStrategyForOAuth2Client() {
+ 		ServerRedirectStrategy authorizationRedirectStrategy = mock(ServerRedirectStrategy.class);
+-		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+-				ReactiveClientRegistrationRepository.class);
+-		given(clientRegistrationRepository.findByRegistrationId(anyString()))
+-			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
++		ReactiveClientRegistrationRepository clientRegistrationRepository = createMockReactiveClientRegistrationRepository();
+ 		given(authorizationRedirectStrategy.sendRedirect(any(), any())).willReturn(Mono.empty());
+ 
+ 		SecurityWebFilterChain securityFilterChain = this.http
+@@ -769,6 +757,13 @@
+ 			.isNotFound()
+ 			.expectBody(String.class)
+ 			.isEqualTo(null);
++	}
++
++	private static ReactiveClientRegistrationRepository createMockReactiveClientRegistrationRepository() {
++		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(ReactiveClientRegistrationRepository.class);
++		given(clientRegistrationRepository.findByRegistrationId(anyString()))
++			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
++		return clientRegistrationRepository;
+ 	}
+ 
+ 	private boolean isX509Filter(WebFilter filter) {

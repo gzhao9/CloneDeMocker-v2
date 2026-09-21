@@ -1,0 +1,69 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/client/ClientRegistrationIdProcessorRestClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/client/ClientRegistrationIdProcessorRestClientTests.java
+@@ -45,12 +45,12 @@
+ 
+ 	@Test
+ 	void clientRegistrationIdProcessorWorksWithRestClientAdapter() throws InterruptedException {
++		ArgumentCaptor<OAuth2AuthorizeRequest> authorizeRequest = ArgumentCaptor.forClass(OAuth2AuthorizeRequest.class);
++		this.authorizedClientManager = MockOAuth2AuthorizedClientManager
++				.createMockOAuth2AuthorizedClientManager(authorizeRequest, authorizedClient);
+ 		OAuth2ClientHttpRequestInterceptor interceptor = new OAuth2ClientHttpRequestInterceptor(
+ 				this.authorizedClientManager);
+ 		RestClient.Builder builder = RestClient.builder().requestInterceptor(interceptor).baseUrl(this.baseUrl);
+-
+-		ArgumentCaptor<OAuth2AuthorizeRequest> authorizeRequest = ArgumentCaptor.forClass(OAuth2AuthorizeRequest.class);
+-		given(this.authorizedClientManager.authorize(authorizeRequest.capture())).willReturn(authorizedClient);
+ 
+ 		testWithAdapter(RestClientAdapter.create(builder.build()));
+ 
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/client/ClientRegistrationIdProcessorWebClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/client/ClientRegistrationIdProcessorWebClientTests.java
+@@ -68,7 +68,9 @@
+ 
+ 	@Test
+ 	void clientRegistrationIdProcessorWorksWithServletWebClient() throws InterruptedException {
+-		OAuth2AuthorizedClientManager authorizedClientManager = mock(OAuth2AuthorizedClientManager.class);
++		ArgumentCaptor<OAuth2AuthorizeRequest> authorizeRequest = ArgumentCaptor.forClass(OAuth2AuthorizeRequest.class);
++		OAuth2AuthorizedClientManager authorizedClientManager = MockOAuth2AuthorizedClientManager
++			.createMockOAuth2AuthorizedClientManager(authorizeRequest, this.authorizedClient);
+ 
+ 		ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2Client = new ServletOAuth2AuthorizedClientExchangeFilterFunction(
+ 				authorizedClientManager);
+@@ -81,9 +83,6 @@
+ 			.filter(oauth2Client)
+ 			.baseUrl(this.baseUrl);
+ 
+-		ArgumentCaptor<OAuth2AuthorizeRequest> authorizeRequest = ArgumentCaptor.forClass(OAuth2AuthorizeRequest.class);
+-		given(authorizedClientManager.authorize(authorizeRequest.capture())).willReturn(this.authorizedClient);
+-
+ 		testWithAdapter(WebClientAdapter.create(builder.build()));
+ 
+ 		assertThat(authorizeRequest.getValue().getClientRegistrationId()).isEqualTo(REGISTRATION_ID);
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/client/MockOAuth2AuthorizedClientManager.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/client/MockOAuth2AuthorizedClientManager.java
+@@ -0,0 +1,25 @@
++package org.springframework.security.oauth2.client.web.client;
++
++import org.junit.jupiter.api.extension.ExtendWith;
++import org.mockito.ArgumentCaptor;
++
++import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
++import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
++import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
++
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.mock;
++
++public final class MockOAuth2AuthorizedClientManager {
++
++	private MockOAuth2AuthorizedClientManager() {
++	}
++
++	public static OAuth2AuthorizedClientManager createMockOAuth2AuthorizedClientManager(
++			ArgumentCaptor<OAuth2AuthorizeRequest> authorizeRequest, OAuth2AuthorizedClient authorizedClient) {
++		OAuth2AuthorizedClientManager authorizedClientManager = mock(OAuth2AuthorizedClientManager.class);
++		given(authorizedClientManager.authorize(authorizeRequest.capture())).willReturn(authorizedClient);
++		return authorizedClientManager;
++	}
++
++}

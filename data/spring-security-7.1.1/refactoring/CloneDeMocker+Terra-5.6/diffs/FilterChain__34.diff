@@ -1,0 +1,56 @@
+--- a/web/src/test/java/org/springframework/security/web/RequestMatcherRedirectFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/RequestMatcherRedirectFilterTests.java
+@@ -17,6 +17,7 @@
+ package org.springframework.security.web;
+ 
+ import jakarta.servlet.FilterChain;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.http.HttpStatus;
+@@ -38,20 +39,26 @@
+  */
+ public class RequestMatcherRedirectFilterTests {
+ 
++	private FilterChain mockFilterChain;
++
++	@BeforeEach
++	public void setUp() {
++		this.mockFilterChain = mock(FilterChain.class);
++	}
++
+ 	@Test
+ 	public void doFilterWhenRequestMatchThenRedirectToSpecifiedUrl() throws Exception {
+ 		RequestMatcherRedirectFilter filter = new RequestMatcherRedirectFilter(pathPattern("/context"), "/test");
+ 
+ 		MockHttpServletRequest request = get("/context").build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 
+-		filter.doFilter(request, response, filterChain);
++		filter.doFilter(request, response, mockFilterChain);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.FOUND.value());
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/test");
+ 
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 	}
+ 
+ 	@Test
+@@ -61,13 +68,12 @@
+ 		MockHttpServletRequest request = get("/test").build();
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 
+-		filter.doFilter(request, response, filterChain);
++		filter.doFilter(request, response, mockFilterChain);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+-		verify(filterChain).doFilter(request, response);
++		verify(mockFilterChain).doFilter(request, response);
+ 	}
+ 
+ 	@Test

@@ -1,0 +1,72 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/DefaultServerOAuth2AuthorizationRequestResolverTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/DefaultServerOAuth2AuthorizationRequestResolverTests.java
+@@ -77,7 +77,7 @@
+ 
+ 	@Test
+ 	public void resolveWhenClientRegistrationNotFoundMatchThenBadRequest() {
+-		given(this.clientRegistrationRepository.findByRegistrationId(any())).willReturn(Mono.empty());
++		ReactiveClientRegistrationRepositoryMocks.whenFindByRegistrationIdThenEmpty(this.clientRegistrationRepository);
+ 		assertThatExceptionOfType(ResponseStatusException.class)
+ 			.isThrownBy(() -> resolve("/oauth2/authorization/not-found-id"))
+ 			.satisfies((ex) -> assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/OAuth2AuthorizationCodeGrantWebFilterTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/OAuth2AuthorizationCodeGrantWebFilterTests.java
+@@ -255,7 +255,7 @@
+ 	@Test
+ 	public void filterWhenAuthenticationConverterThrowsOAuth2AuthorizationExceptionThenMappedToOAuth2AuthenticationException() {
+ 		ClientRegistration clientRegistration = TestClientRegistrations.clientRegistration().build();
+-		given(this.clientRegistrationRepository.findByRegistrationId(any())).willReturn(Mono.empty());
++		ReactiveClientRegistrationRepositoryMocks.whenFindByRegistrationIdThenEmpty(this.clientRegistrationRepository);
+ 		MockServerHttpRequest authorizationRequest = createAuthorizationRequest("/authorization/callback");
+ 		OAuth2AuthorizationRequest oauth2AuthorizationRequest = createOAuth2AuthorizationRequest(authorizationRequest,
+ 				clientRegistration);
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/ServerOAuth2AuthorizationCodeAuthenticationTokenConverterTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/ServerOAuth2AuthorizationCodeAuthenticationTokenConverterTests.java
+@@ -114,7 +114,7 @@
+ 	public void applyWhenClientRegistrationMissingThenOAuth2AuthorizationException() {
+ 		given(this.authorizationRequestRepository.removeAuthorizationRequest(any()))
+ 			.willReturn(Mono.just(this.authorizationRequest.build()));
+-		given(this.clientRegistrationRepository.findByRegistrationId(any())).willReturn(Mono.empty());
++		ReactiveClientRegistrationRepositoryMocks.whenFindByRegistrationIdThenEmpty(this.clientRegistrationRepository);
+ 		assertThatExceptionOfType(OAuth2AuthorizationException.class).isThrownBy(() -> applyConverter())
+ 			.withMessageContaining(
+ 					ServerOAuth2AuthorizationCodeAuthenticationTokenConverter.CLIENT_REGISTRATION_NOT_FOUND_ERROR_CODE);
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/ReactiveClientRegistrationRepositoryMocks.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/ReactiveClientRegistrationRepositoryMocks.java
+@@ -0,0 +1,36 @@
++/*
++ * Copyright 2002-present the original author or authors.
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      https://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++package org.springframework.security.oauth2.client.web.server;
++
++import reactor.core.publisher.Mono;
++
++import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
++
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.BDDMockito.given;
++
++final class ReactiveClientRegistrationRepositoryMocks {
++
++	private ReactiveClientRegistrationRepositoryMocks() {
++	}
++
++	static void whenFindByRegistrationIdThenEmpty(
++			ReactiveClientRegistrationRepository clientRegistrationRepository) {
++		given(clientRegistrationRepository.findByRegistrationId(any())).willReturn(Mono.empty());
++	}
++
++}

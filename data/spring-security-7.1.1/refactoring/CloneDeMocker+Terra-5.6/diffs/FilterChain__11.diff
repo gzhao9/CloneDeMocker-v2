@@ -1,0 +1,125 @@
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2PushedAuthorizationRequestEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2PushedAuthorizationRequestEndpointFilterTests.java
+@@ -90,6 +90,8 @@
+ 
+ 	private AuthenticationManager authenticationManager;
+ 
++	private FilterChain sharedFilterChain;
++
+ 	private OAuth2PushedAuthorizationRequestEndpointFilter filter;
+ 
+ 	private TestingAuthenticationToken clientPrincipal;
+@@ -97,6 +99,7 @@
+ 	@BeforeEach
+ 	public void setUp() {
+ 		this.authenticationManager = mock(AuthenticationManager.class);
++		this.sharedFilterChain = mock(FilterChain.class);
+ 		this.filter = new OAuth2PushedAuthorizationRequestEndpointFilter(this.authenticationManager);
+ 		this.clientPrincipal = new TestingAuthenticationToken("client-id", "client-secret");
+ 		this.clientPrincipal.setAuthenticated(true);
+@@ -161,11 +164,10 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest("POST", requestUri);
+ 		request.setServletPath(requestUri);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
++
++		this.filter.doFilter(request, response, sharedFilterChain);
++
++		verify(sharedFilterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+ 
+ 	@Test
+@@ -275,12 +277,11 @@
+ 
+ 		MockHttpServletRequest request = createPushedAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, sharedFilterChain);
+ 
+ 		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(sharedFilterChain);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+ 		OAuth2Error errorResponse = readError(response);
+@@ -307,9 +308,8 @@
+ 
+ 		MockHttpServletRequest request = createPushedAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, sharedFilterChain);
+ 
+ 		verify(authenticationConverter).convert(any());
+ 		verify(this.authenticationManager).authenticate(any());
+@@ -330,12 +330,11 @@
+ 
+ 		MockHttpServletRequest request = createPushedAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, sharedFilterChain);
+ 
+ 		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(sharedFilterChain);
+ 		verify(authenticationSuccessHandler).onAuthenticationSuccess(any(), any(),
+ 				same(pushedAuthorizationRequestAuthenticationResult));
+ 	}
+@@ -352,12 +351,11 @@
+ 
+ 		MockHttpServletRequest request = createPushedAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, sharedFilterChain);
+ 
+ 		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(sharedFilterChain);
+ 		verify(authenticationFailureHandler).onAuthenticationFailure(any(), any(), same(authenticationException));
+ 	}
+ 
+@@ -381,9 +379,8 @@
+ 			.willReturn(pushedAuthorizationRequestAuthenticationResult);
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, sharedFilterChain);
+ 
+ 		verify(authenticationDetailsSource).buildDetails(any());
+ 		verify(this.authenticationManager).authenticate(any());
+@@ -405,14 +402,13 @@
+ 		request.addParameter("custom-param", "custom-value-1", "custom-value-2");
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, sharedFilterChain);
+ 
+ 		ArgumentCaptor<OAuth2PushedAuthorizationRequestAuthenticationToken> pushedAuthorizationRequestAuthenticationCaptor = ArgumentCaptor
+ 			.forClass(OAuth2PushedAuthorizationRequestAuthenticationToken.class);
+ 		verify(this.authenticationManager).authenticate(pushedAuthorizationRequestAuthenticationCaptor.capture());
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(sharedFilterChain);
+ 
+ 		assertThat(pushedAuthorizationRequestAuthenticationCaptor.getValue().getDetails())
+ 			.asInstanceOf(InstanceOfAssertFactories.type(WebAuthenticationDetails.class))

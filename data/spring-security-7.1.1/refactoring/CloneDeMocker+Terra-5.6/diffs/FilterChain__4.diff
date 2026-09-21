@@ -1,0 +1,263 @@
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2AuthorizationEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2AuthorizationEndpointFilterTests.java
+@@ -101,6 +101,8 @@
+ 
+ 	private OAuth2AuthorizationEndpointFilter filter;
+ 
++	private FilterChain filterChainMock;
++
+ 	private TestingAuthenticationToken principal;
+ 
+ 	private OAuth2AuthorizationCode authorizationCode;
+@@ -108,6 +110,7 @@
+ 	@BeforeEach
+ 	public void setUp() {
+ 		this.authenticationManager = mock(AuthenticationManager.class);
++		this.filterChainMock = mock(FilterChain.class);
+ 		this.filter = new OAuth2AuthorizationEndpointFilter(this.authenticationManager);
+ 		this.principal = new TestingAuthenticationToken("principalName", "password");
+ 		this.principal.setAuthenticated(true);
+@@ -182,11 +185,10 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest("GET", requestUri);
+ 		request.setServletPath(requestUri);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verify(filterChainMock).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+ 
+ 	@Test
+@@ -349,12 +351,11 @@
+ 
+ 		MockHttpServletRequest request = createAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verify(this.authenticationManager).authenticate(any());
++		verifyNoInteractions(filterChainMock);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.FOUND.value());
+ 		assertThat(response.getRedirectedUrl()).isEqualTo(
+@@ -381,13 +382,12 @@
+ 
+ 		MockHttpServletRequest request = createAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
+ 
+ 		verify(authenticationConverter).convert(any());
+ 		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(filterChainMock);
+ 	}
+ 
+ 	@Test
+@@ -404,12 +404,11 @@
+ 
+ 		MockHttpServletRequest request = createAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verify(this.authenticationManager).authenticate(any());
++		verifyNoInteractions(filterChainMock);
+ 		verify(authenticationSuccessHandler).onAuthenticationSuccess(any(), any(),
+ 				same(authorizationCodeRequestAuthenticationResult));
+ 	}
+@@ -430,12 +429,11 @@
+ 
+ 		MockHttpServletRequest request = createAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verify(this.authenticationManager).authenticate(any());
++		verifyNoInteractions(filterChainMock);
+ 		verify(authenticationFailureHandler).onAuthenticationFailure(any(), any(), same(authenticationException));
+ 	}
+ 
+@@ -453,12 +451,11 @@
+ 
+ 		MockHttpServletRequest request = createAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verify(this.authenticationManager).authenticate(any());
++		verifyNoInteractions(filterChainMock);
+ 		verify(sessionAuthenticationStrategy).onAuthentication(same(authorizationCodeRequestAuthenticationResult),
+ 				any(), any());
+ 	}
+@@ -481,13 +478,12 @@
+ 		given(this.authenticationManager.authenticate(any())).willReturn(authorizationCodeRequestAuthenticationResult);
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
+ 
+ 		verify(authenticationDetailsSource).buildDetails(any());
+ 		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(filterChainMock);
+ 	}
+ 
+ 	@Test
+@@ -506,13 +502,12 @@
+ 
+ 		MockHttpServletRequest request = createAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 
+ 		this.filter.setConsentPage("/oauth2/custom-consent");
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verify(this.authenticationManager).authenticate(any());
++		verifyNoInteractions(filterChainMock);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.FOUND.value());
+ 		assertThat(response.getRedirectedUrl())
+@@ -534,12 +529,11 @@
+ 
+ 		MockHttpServletRequest request = createAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verify(this.authenticationManager).authenticate(any());
++		verifyNoInteractions(filterChainMock);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 		assertThat(response.getContentType().equals(new MediaType("text", "html", StandardCharsets.UTF_8).toString()));
+@@ -565,12 +559,11 @@
+ 
+ 		MockHttpServletRequest request = createAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verify(this.authenticationManager).authenticate(any());
++		verifyNoInteractions(filterChainMock);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 		assertThat(response.getContentType().equals(new MediaType("text", "html", StandardCharsets.UTF_8).toString()));
+@@ -600,12 +593,11 @@
+ 
+ 		MockHttpServletRequest request = createAuthorizationRequest(registeredClient);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verify(this.authenticationManager).authenticate(any());
++		verifyNoInteractions(filterChainMock);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 		String html = response.getContentAsString();
+@@ -632,14 +624,13 @@
+ 		updateQueryString(request);
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
+ 
+ 		ArgumentCaptor<OAuth2AuthorizationCodeRequestAuthenticationToken> authorizationCodeRequestAuthenticationCaptor = ArgumentCaptor
+ 			.forClass(OAuth2AuthorizationCodeRequestAuthenticationToken.class);
+ 		verify(this.authenticationManager).authenticate(authorizationCodeRequestAuthenticationCaptor.capture());
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(filterChainMock);
+ 
+ 		assertThat(authorizationCodeRequestAuthenticationCaptor.getValue().getDetails())
+ 			.asInstanceOf(InstanceOfAssertFactories.type(WebAuthenticationDetails.class))
+@@ -672,12 +663,11 @@
+ 		request.setMethod("POST");
+ 		request.setQueryString(null);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
+ 
+ 		verify(this.authenticationManager).authenticate(any(OAuth2AuthorizationCodeRequestAuthenticationToken.class));
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(filterChainMock);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.FOUND.value());
+ 		assertThat(response.getRedirectedUrl())
+@@ -701,12 +691,11 @@
+ 		request.setMethod("POST"); // OpenID Connect supports POST method
+ 		request.setQueryString(null);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
+ 
+ 		verify(this.authenticationManager).authenticate(any(OAuth2AuthorizationCodeRequestAuthenticationToken.class));
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(filterChainMock);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.FOUND.value());
+ 		assertThat(response.getRedirectedUrl())
