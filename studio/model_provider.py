@@ -126,7 +126,7 @@ class OpenAIModelProvider:
                 "OpenAI SDK is missing. Restart the UI with start-ui.ps1 so uv can sync project dependencies; "
                 "or run `uv sync`. / 缺少 OpenAI SDK：请用 start-ui.ps1 重启 UI 以同步依赖，或执行 `uv sync`。"
             ) from error
-        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.client = OpenAI(api_key=api_key, base_url=base_url, timeout=180.0, max_retries=5)
 
     def generate(self, instructions: str, input_text: str, model: str) -> ModelResult:
         response = self.client.responses.create(

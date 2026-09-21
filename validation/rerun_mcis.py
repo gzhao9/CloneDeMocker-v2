@@ -122,7 +122,8 @@ def run(args: argparse.Namespace) -> int:
     print(f"runId={restored['runId']} MCIs={len(wanted)} model={args.model}", flush=True)
 
     job_id = server.start_refactoring({"runId": restored["runId"], "selectedMciIds": wanted,
-                                       "model": args.model, "runPit": False, "useMock": args.use_mock})["jobId"]
+                                       "model": args.model, "runPit": bool(getattr(args, "run_pit", False)),
+                                       "useMock": args.use_mock})["jobId"]
     reported: set[int] = set()
     started = time.time()
     while True:
@@ -136,6 +137,11 @@ def run(args: argparse.Namespace) -> int:
             print(f"[{len(reported)}/{len(wanted)} {time.time() - started:5.0f}s] {label:28} {item['mciId']}", flush=True)
             if result and label != "SUCCESS":
                 print(f"    reason: {str(result.get('validationReason') or result.get('reason') or '')[:400]}", flush=True)
+        if reported:
+            try:
+                server.refactoring_export({"jobId": job_id, "runId": restored["runId"], "cctr": False})
+            except Exception:
+                pass
         if job["state"] != "RUNNING":
             break
         time.sleep(10)
@@ -184,6 +190,7 @@ def main() -> int:
     run_parser.add_argument("--ids-file", help="one MCI id per line")
     run_parser.add_argument("--model", default="gpt-5.6-terra")
     run_parser.add_argument("--use-mock", action="store_true", help="local debug provider, no API call")
+    run_parser.add_argument("--run-pit", action="store_true", help="run PIT mutation testing")
     run_parser.set_defaults(handler=run)
 
     merge_parser = commands.add_parser("merge", help="merge a results directory sent back from another machine")

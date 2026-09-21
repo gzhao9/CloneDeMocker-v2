@@ -157,7 +157,7 @@ class GradleProjectsTest(unittest.TestCase):
         # TemporaryDirectory 删不掉超过 MAX_PATH 的树 / TemporaryDirectory cannot remove a tree past MAX_PATH
         temporary = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, long_path(Path(temporary)), True)
-        source = Path(temporary) / ("d" * 60) / "src" / "opensaml5Test" / "java"
+        source = Path(temporary) / ("d" * 80) / "src" / "opensaml5Test" / "java"
         package = long_path(source / "org" / ("p" * 60) / ("q" * 60))
         package.mkdir(parents=True)
         (package / "LongNamedTests.java").write_text("", encoding="utf-8")
