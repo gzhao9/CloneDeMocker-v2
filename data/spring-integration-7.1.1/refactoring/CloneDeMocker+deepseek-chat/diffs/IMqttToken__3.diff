@@ -1,0 +1,42 @@
+--- a/spring-integration-mqtt/src/test/java/org/springframework/integration/mqtt/Mqttv5HandlerTests.java
++++ b/spring-integration-mqtt/src/test/java/org/springframework/integration/mqtt/Mqttv5HandlerTests.java
+@@ -20,6 +20,7 @@
+ import org.eclipse.paho.mqttv5.client.IMqttToken;
+ import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+ import org.eclipse.paho.mqttv5.common.MqttMessage;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.ArgumentCaptor;
+ import tools.jackson.databind.ObjectMapper;
+@@ -51,12 +52,18 @@
+  */
+ class Mqttv5HandlerTests {
+ 
++	private IMqttToken mqttToken;
++
++	@BeforeEach
++	void setup() {
++		mqttToken = mock();
++	}
++
+ 	@Test
+ 	void publishPojoWithDefaultConverter() throws Exception {
+ 		IMqttAsyncClient mockClient = mock();
+-		IMqttToken token = mock();
+ 		given(mockClient.isConnected()).willReturn(true);
+-		given(mockClient.publish(anyString(), any(MqttMessage.class), any(), any())).willReturn(token);
++		given(mockClient.publish(anyString(), any(MqttMessage.class), any(), any())).willReturn(mqttToken);
+ 
+ 		Mqttv5PahoMessageHandler handler = createHandler(mockClient, new ConfigurableCompositeMessageConverter());
+ 
+@@ -76,9 +83,8 @@
+ 	@Test
+ 	void publishPojoWithCustomConverter() throws Exception {
+ 		IMqttAsyncClient mockClient = mock();
+-		IMqttToken token = mock();
+ 		given(mockClient.isConnected()).willReturn(true);
+-		given(mockClient.publish(anyString(), any(MqttMessage.class), any(), any())).willReturn(token);
++		given(mockClient.publish(anyString(), any(MqttMessage.class), any(), any())).willReturn(mqttToken);
+ 
+ 		MessageConverter converter = mock(MessageConverter.class);
+ 		given(converter.toMessage(any(), any(MessageHeaders.class)))

@@ -1,0 +1,76 @@
+--- a/spring-integration-ws/src/test/java/org/springframework/integration/ws/dsl/WsDslTests.java
++++ b/spring-integration-ws/src/test/java/org/springframework/integration/ws/dsl/WsDslTests.java
+@@ -19,6 +19,7 @@
+ import java.util.HashMap;
+ import java.util.Map;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.expression.Expression;
+@@ -55,6 +56,13 @@
+  */
+ public class WsDslTests {
+ 
++	private FaultMessageResolver faultMessageResolverMock;
++
++	@BeforeEach
++	void setUp() {
++		faultMessageResolverMock = mock();
++	}
++
+ 	@Test
+ 	void marshallingInbound() {
+ 		Marshaller marshaller = mock();
+@@ -91,7 +99,6 @@
+ 		Marshaller marshaller = mock();
+ 		Unmarshaller unmarshaller = mock();
+ 		WebServiceMessageFactory messageFactory = mock();
+-		FaultMessageResolver faultMessageResolver = mock();
+ 		SoapHeaderMapper headerMapper = mock();
+ 		ClientInterceptor interceptor = mock();
+ 		WebServiceMessageSender messageSender = mock();
+@@ -105,7 +112,7 @@
+ 						.marshaller(marshaller)
+ 						.unmarshaller(unmarshaller)
+ 						.messageFactory(messageFactory)
+-						.faultMessageResolver(faultMessageResolver)
++						.faultMessageResolver(faultMessageResolverMock)
+ 						.headerMapper(headerMapper)
+ 						.ignoreEmptyResponses(true)
+ 						.interceptors(interceptor)
+@@ -119,7 +126,7 @@
+ 		assertThat(TestUtils.<Object>getPropertyValue(gateway, "webServiceTemplate.messageFactory"))
+ 				.isSameAs(messageFactory);
+ 		assertThat(TestUtils.<Object>getPropertyValue(gateway, "webServiceTemplate.faultMessageResolver"))
+-				.isSameAs(faultMessageResolver);
++				.isSameAs(faultMessageResolverMock);
+ 		assertThat(TestUtils.<Object>getPropertyValue(gateway, "headerMapper")).isSameAs(headerMapper);
+ 		assertThat(TestUtils.<ClientInterceptor[]>getPropertyValue(gateway, "webServiceTemplate.interceptors")[0])
+ 				.isSameAs(interceptor);
+@@ -134,7 +141,6 @@
+ 	void simpleOutbound() {
+ 		DestinationProvider destinationProvider = mock();
+ 		WebServiceMessageFactory messageFactory = mock();
+-		FaultMessageResolver faultMessageResolver = mock();
+ 		SoapHeaderMapper headerMapper = mock();
+ 		ClientInterceptor interceptor = mock();
+ 		WebServiceMessageSender messageSender = mock();
+@@ -149,7 +155,7 @@
+ 						.sourceExtractor(sourceExtractor)
+ 						.messageFactory(messageFactory)
+ 						.encodingMode(DefaultUriBuilderFactory.EncodingMode.VALUES_ONLY)
+-						.faultMessageResolver(faultMessageResolver)
++						.faultMessageResolver(faultMessageResolverMock)
+ 						.headerMapper(headerMapper)
+ 						.ignoreEmptyResponses(true)
+ 						.interceptors(interceptor)
+@@ -161,7 +167,7 @@
+ 		assertThat(TestUtils.<Object>getPropertyValue(gateway, "webServiceTemplate.messageFactory"))
+ 				.isSameAs(messageFactory);
+ 		assertThat(TestUtils.<Object>getPropertyValue(gateway, "webServiceTemplate.faultMessageResolver"))
+-				.isSameAs(faultMessageResolver);
++				.isSameAs(faultMessageResolverMock);
+ 		assertThat(TestUtils.<Object>getPropertyValue(gateway, "headerMapper")).isSameAs(headerMapper);
+ 		assertThat(TestUtils.<ClientInterceptor[]>getPropertyValue(gateway, "webServiceTemplate.interceptors")[0])
+ 				.isSameAs(interceptor);

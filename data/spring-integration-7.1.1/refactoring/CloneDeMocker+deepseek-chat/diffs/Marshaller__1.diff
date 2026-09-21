@@ -1,0 +1,70 @@
+--- a/spring-integration-ws/src/test/java/org/springframework/integration/ws/dsl/WsDslTests.java
++++ b/spring-integration-ws/src/test/java/org/springframework/integration/ws/dsl/WsDslTests.java
+@@ -19,6 +19,7 @@
+ import java.util.HashMap;
+ import java.util.Map;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.expression.Expression;
+@@ -55,20 +56,26 @@
+  */
+ public class WsDslTests {
+ 
++	private Marshaller marshallerMock;
++
++	@BeforeEach
++	void setUp() {
++		marshallerMock = mock();
++	}
++
+ 	@Test
+ 	void marshallingInbound() {
+-		Marshaller marshaller = mock();
+ 		Unmarshaller unmarshaller = mock();
+-		MarshallingWebServiceInboundGateway gateway = Ws.marshallingInboundGateway(marshaller)
++		MarshallingWebServiceInboundGateway gateway = Ws.marshallingInboundGateway(marshallerMock)
+ 				.unmarshaller(unmarshaller)
+ 				.getObject();
+-		assertThat(TestUtils.<Object>getPropertyValue(gateway, "marshaller")).isSameAs(marshaller);
++		assertThat(TestUtils.<Object>getPropertyValue(gateway, "marshaller")).isSameAs(marshallerMock);
+ 		assertThat(TestUtils.<Object>getPropertyValue(gateway, "unmarshaller")).isSameAs(unmarshaller);
+ 
+-		marshaller = mock(Both.class);
+-		gateway = Ws.marshallingInboundGateway(marshaller).getObject();
+-		assertThat(TestUtils.<Object>getPropertyValue(gateway, "marshaller")).isSameAs(marshaller);
+-		assertThat(TestUtils.<Object>getPropertyValue(gateway, "unmarshaller")).isSameAs(marshaller);
++		marshallerMock = mock(Both.class);
++		gateway = Ws.marshallingInboundGateway(marshallerMock).getObject();
++		assertThat(TestUtils.<Object>getPropertyValue(gateway, "marshaller")).isSameAs(marshallerMock);
++		assertThat(TestUtils.<Object>getPropertyValue(gateway, "unmarshaller")).isSameAs(marshallerMock);
+ 	}
+ 
+ 	@Test
+@@ -88,7 +95,6 @@
+ 	@Test
+ 	void marshallingOutbound() {
+ 		DestinationProvider destinationProvider = mock();
+-		Marshaller marshaller = mock();
+ 		Unmarshaller unmarshaller = mock();
+ 		WebServiceMessageFactory messageFactory = mock();
+ 		FaultMessageResolver faultMessageResolver = mock();
+@@ -102,7 +108,7 @@
+ 		MarshallingWebServiceOutboundGateway gateway =
+ 				Ws.marshallingOutboundGateway()
+ 						.destinationProvider(destinationProvider)
+-						.marshaller(marshaller)
++						.marshaller(marshallerMock)
+ 						.unmarshaller(unmarshaller)
+ 						.messageFactory(messageFactory)
+ 						.faultMessageResolver(faultMessageResolver)
+@@ -113,7 +119,7 @@
+ 						.requestCallback(requestCallback)
+ 						.uriVariableExpressions(uriVariableExpressions)
+ 						.getObject();
+-		assertThat(TestUtils.<Object>getPropertyValue(gateway, "webServiceTemplate.marshaller")).isSameAs(marshaller);
++		assertThat(TestUtils.<Object>getPropertyValue(gateway, "webServiceTemplate.marshaller")).isSameAs(marshallerMock);
+ 		assertThat(TestUtils.<Object>getPropertyValue(gateway, "webServiceTemplate.unmarshaller"))
+ 				.isSameAs(unmarshaller);
+ 		assertThat(TestUtils.<Object>getPropertyValue(gateway, "webServiceTemplate.messageFactory"))

@@ -12,11 +12,11 @@
   */
  public class ObservationFilterChainDecoratorTests {
  
-+	private FilterChain chainMock;
++	private FilterChain filterChain;
 +
 +	@BeforeEach
 +	void setUp() {
-+		chainMock = mock(FilterChain.class);
++		filterChain = mock(FilterChain.class);
 +	}
 +
  	@Test
@@ -28,7 +28,7 @@
  		ObservationFilterChainDecorator decorator = new ObservationFilterChainDecorator(registry);
 -		FilterChain chain = mock(FilterChain.class);
 -		FilterChain decorated = decorator.decorate(chain);
-+		FilterChain decorated = decorator.decorate(chainMock);
++		FilterChain decorated = decorator.decorate(filterChain);
  		decorated.doFilter(new MockHttpServletRequest("GET", "/"), new MockHttpServletResponse());
  		verify(handler).onStart(any());
  	}
@@ -38,7 +38,7 @@
  		ObservationFilterChainDecorator decorator = new ObservationFilterChainDecorator(registry);
 -		FilterChain chain = mock(FilterChain.class);
 -		FilterChain decorated = decorator.decorate(chain);
-+		FilterChain decorated = decorator.decorate(chainMock);
++		FilterChain decorated = decorator.decorate(filterChain);
  		decorated.doFilter(new MockHttpServletRequest("GET", "/"), new MockHttpServletResponse());
  		verifyNoInteractions(handler);
  	}
@@ -49,7 +49,7 @@
 -		FilterChain chain = mock(FilterChain.class);
  		Filter filter = mock(Filter.class);
 -		FilterChain decorated = decorator.decorate(chain, List.of(filter));
-+		FilterChain decorated = decorator.decorate(chainMock, List.of(filter));
++		FilterChain decorated = decorator.decorate(filterChain, List.of(filter));
  		decorated.doFilter(new MockHttpServletRequest("GET", "/"), new MockHttpServletResponse());
  		verify(handler, times(2)).onStart(any());
  		ArgumentCaptor<Observation.Event> event = ArgumentCaptor.forClass(Observation.Event.class);
@@ -60,7 +60,7 @@
 -		FilterChain chain = mock(FilterChain.class);
  		Filter filter = new BasicAuthenticationFilter();
 -		FilterChain decorated = decorator.decorate(chain, List.of(filter));
-+		FilterChain decorated = decorator.decorate(chainMock, List.of(filter));
++		FilterChain decorated = decorator.decorate(filterChain, List.of(filter));
  		decorated.doFilter(new MockHttpServletRequest("GET", "/"), new MockHttpServletResponse());
  		ArgumentCaptor<Observation.Event> event = ArgumentCaptor.forClass(Observation.Event.class);
  		verify(handler, times(2)).onEvent(event.capture(), any());
@@ -72,7 +72,7 @@
  		Filter filter = mock(Filter.class);
  		willThrow(IllegalArgumentException.class).given(filter).doFilter(any(), any(), any());
 -		FilterChain decorated = decorator.decorate(chain, List.of(filter));
-+		FilterChain decorated = decorator.decorate(chainMock, List.of(filter));
++		FilterChain decorated = decorator.decorate(filterChain, List.of(filter));
  		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(
  				() -> decorated.doFilter(new MockHttpServletRequest("GET", "/"), new MockHttpServletResponse()));
  		verify(handler).onScopeClosed(any());
@@ -82,7 +82,7 @@
  		ObservationFilterChainDecorator decorator = new ObservationFilterChainDecorator(registry);
 -		FilterChain chain = mock(FilterChain.class);
 -		FilterChain decorated = decorator.decorate(chain, List.of(filter));
-+		FilterChain decorated = decorator.decorate(chainMock, List.of(filter));
++		FilterChain decorated = decorator.decorate(filterChain, List.of(filter));
  		decorated.doFilter(new MockHttpServletRequest("GET", "/"), new MockHttpServletResponse());
  		ArgumentCaptor<Observation.Context> context = ArgumentCaptor.forClass(Observation.Context.class);
  		verify(handler, times(3)).onScopeClosed(context.capture());

@@ -1,0 +1,76 @@
+--- a/kerberos/kerberos-web/src/test/java/org/springframework/security/kerberos/web/SpnegoEntryPointTests.java
++++ b/kerberos/kerberos-web/src/test/java/org/springframework/security/kerberos/web/SpnegoEntryPointTests.java
+@@ -19,6 +19,7 @@
+ import jakarta.servlet.RequestDispatcher;
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpServletResponse;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.ArgumentCaptor;
+ 
+@@ -46,6 +47,13 @@
+ 
+ 	private SpnegoEntryPoint entryPoint = new SpnegoEntryPoint();
+ 
++	private RequestDispatcher sharedRequestDispatcher;
++
++	@BeforeEach
++	public void setUp() {
++		this.sharedRequestDispatcher = mock(RequestDispatcher.class);
++	}
++
+ 	@Test
+ 	public void testEntryPointOk() throws Exception {
+ 		HttpServletRequest request = mock(HttpServletRequest.class);
+@@ -62,8 +70,7 @@
+ 		SpnegoEntryPoint entryPoint = new SpnegoEntryPoint();
+ 		HttpServletResponse response = mock(HttpServletResponse.class);
+ 		HttpServletRequest request = mock(HttpServletRequest.class);
+-		RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
+-		given(request.getRequestDispatcher(anyString())).willReturn(requestDispatcher);
++		given(request.getRequestDispatcher(anyString())).willReturn(sharedRequestDispatcher);
+ 		entryPoint.commence(request, response, null);
+ 		verify(response).addHeader("WWW-Authenticate", "Negotiate");
+ 		verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+@@ -75,13 +82,12 @@
+ 		SpnegoEntryPoint entryPoint = new SpnegoEntryPoint(forwardUrl);
+ 		HttpServletResponse response = mock(HttpServletResponse.class);
+ 		HttpServletRequest request = mock(HttpServletRequest.class);
+-		RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
+-		given(request.getRequestDispatcher(anyString())).willReturn(requestDispatcher);
++		given(request.getRequestDispatcher(anyString())).willReturn(sharedRequestDispatcher);
+ 		entryPoint.commence(request, response, null);
+ 		verify(response).addHeader("WWW-Authenticate", "Negotiate");
+ 		verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+ 		verify(request).getRequestDispatcher(forwardUrl);
+-		verify(requestDispatcher).forward(request, response);
++		verify(sharedRequestDispatcher).forward(request, response);
+ 	}
+ 
+ 	@Test
+@@ -92,10 +98,9 @@
+ 		HttpServletResponse response = mock(HttpServletResponse.class);
+ 		HttpServletRequest request = mock(HttpServletRequest.class);
+ 		given(request.getMethod()).willReturn(RequestMethod.POST.name());
+-		RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
+-		given(request.getRequestDispatcher(anyString())).willReturn(requestDispatcher);
++		given(request.getRequestDispatcher(anyString())).willReturn(sharedRequestDispatcher);
+ 		entryPoint.commence(request, response, null);
+-		verify(requestDispatcher).forward(servletRequestCaptor.capture(), eq(response));
++		verify(sharedRequestDispatcher).forward(servletRequestCaptor.capture(), eq(response));
+ 		assertThat(servletRequestCaptor.getValue().getMethod()).isEqualTo(HttpMethod.POST.name());
+ 	}
+ 
+@@ -106,10 +111,9 @@
+ 		SpnegoEntryPoint entryPoint = new SpnegoEntryPoint(forwardUrl, HttpMethod.DELETE);
+ 		HttpServletResponse response = mock(HttpServletResponse.class);
+ 		HttpServletRequest request = mock(HttpServletRequest.class);
+-		RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
+-		given(request.getRequestDispatcher(anyString())).willReturn(requestDispatcher);
++		given(request.getRequestDispatcher(anyString())).willReturn(sharedRequestDispatcher);
+ 		entryPoint.commence(request, response, null);
+-		verify(requestDispatcher).forward(servletRequestCaptor.capture(), eq(response));
++		verify(sharedRequestDispatcher).forward(servletRequestCaptor.capture(), eq(response));
+ 		assertThat(servletRequestCaptor.getValue().getMethod()).isEqualTo(HttpMethod.DELETE.name());
+ 	}
+ 
