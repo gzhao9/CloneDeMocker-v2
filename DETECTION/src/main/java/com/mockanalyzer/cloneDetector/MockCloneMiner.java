@@ -37,7 +37,10 @@ public class MockCloneMiner {
         if (frequentStubSets.isEmpty()) {
             return new ArrayList<>();
         }
+        return buildInstances(mockedClass, packageName, group, cluster(group.size(), frequentStubSets));
+    }
 
+    static Map<Set<String>, List<Integer>> cluster(int sequenceCount, Map<Set<String>, Set<Integer>> frequentStubSets) {
         List<FrequentStubSet> centers = frequentStubSets.entrySet().stream()
                 .map(entry -> new FrequentStubSet(entry.getKey(), entry.getValue()))
                 .sorted(Comparator.comparingInt(FrequentStubSet::estimatedGain).reversed()
@@ -46,9 +49,7 @@ public class MockCloneMiner {
 
         // 对最高 Estimated Gain 相同的中心进行分支，最终比较 Actual Gain。
         // Branch on centers tied for highest Estimated Gain, then compare Actual Gain.
-        PaperClusteringSearch search = new PaperClusteringSearch(group.size(), centers);
-        Map<Set<String>, List<Integer>> assignments = search.findBestClustering();
-        return buildInstances(mockedClass, packageName, group, assignments);
+        return new PaperClusteringSearch(sequenceCount, centers).findBestClustering();
     }
 
     private List<MockCloneInstance> buildInstances(String mockedClass, String packageName,

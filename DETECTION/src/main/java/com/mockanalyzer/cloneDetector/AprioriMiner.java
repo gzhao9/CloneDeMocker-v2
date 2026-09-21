@@ -5,17 +5,106 @@ import java.util.*;
 /**
  * A standard Apriori implementation for finding frequent itemsets (unordered subsets)
  * in a given list of transactions.
+ *
+ * 小规模输入仍走原来的 Apriori；共享 stub 很多时（例如 cloudstack），全部频繁项集的数量是
+ * 2^共享数，Apriori 会指数爆炸，这时改为只返回闭频繁项集。
+ * Small inputs still take the original Apriori. When many stubs are shared (e.g. cloudstack) the
+ * frequent itemsets number 2^shared and Apriori explodes; only closed frequent itemsets are
+ * returned then.
+ *
+ * 两条路径下游结果相同：{@link MockCloneMiner} 每个序列只取 estimatedGain = |S|·(support−1)
+ * 最大的中心。非闭项集 S 的闭包与它出现在同一批序列里、却多至少一条语句，gain 严格更大，
+ * 所以非闭项集从来不会被选中。
+ * Both paths give the same downstream result: {@link MockCloneMiner} only ever takes, per sequence,
+ * a center of maximal estimatedGain = |S|·(support−1). A non-closed S has a closure present in the
+ * very same sequences with at least one more statement, so a strictly higher gain; a non-closed
+ * itemset is never chosen.
  */
 public class AprioriMiner {
 
     /**
-     * Runs the Apriori algorithm to find frequent itemsets.
-     * 
+     * 原 Apriori 最多会产出多少个频繁项集时仍然走它。按闭项集推上界：每个频繁项集都是某个
+     * 闭项集 c 的非空子集，所以总数 ≤ Σ(2^|c| − 1)。
+     * The most frequent itemsets the original Apriori may produce and still be used. Bounded via
+     * the closed itemsets: every frequent itemset is a non-empty subset of some closed c, so the
+     * total is ≤ Σ(2^|c| − 1).
+     */
+    static final long LEGACY_ITEMSET_LIMIT = 4096;
+
+    /**
      * @param transactions list of mock statement transactions
      * @param minSupport   minimum number of transactions (≥2) an itemset must appear in
-     * @return map of frequent itemsets to set of transaction indices (each itemset → which transactions it appears in)
+     * @return map of frequent itemsets to set of transaction indices (each itemset → which transactions
+     *         it appears in); only the closed ones when the full set would exceed {@link #LEGACY_ITEMSET_LIMIT}
      */
     public Map<Set<String>, Set<Integer>> mine(List<List<String>> transactions, int minSupport) {
+        Map<Set<String>, Set<Integer>> closed = mineClosed(transactions, minSupport);
+        if (frequentItemsetUpperBound(closed.keySet()) <= LEGACY_ITEMSET_LIMIT) {
+            return mineAll(transactions, minSupport);
+        }
+        return closed;
+    }
+
+    /**
+     * 闭频繁项集：恰好是至少 minSupport 个 transaction 的交集。逐个 transaction 维护"已见
+     * transaction 的所有交集"，规模随不同交集的个数增长，而不是随 2^共享数。
+     * Closed frequent itemsets: exactly the intersections of at least minSupport transactions. Keeps
+     * "every intersection of the transactions seen so far" one transaction at a time, which grows
+     * with the number of distinct intersections rather than with 2^shared.
+     */
+    static Map<Set<String>, Set<Integer>> mineClosed(List<List<String>> transactions, int minSupport) {
+        List<Set<String>> sets = new ArrayList<>();
+        Set<Set<String>> intersections = new LinkedHashSet<>();
+        for (List<String> transaction : transactions) {
+            Set<String> current = new TreeSet<>(transaction);
+            sets.add(current);
+            List<Set<String>> added = new ArrayList<>();
+            for (Set<String> seen : intersections) {
+                Set<String> common = new TreeSet<>(seen);
+                common.retainAll(current);
+                if (!common.isEmpty()) {
+                    added.add(common);
+                }
+            }
+            if (!current.isEmpty()) {
+                added.add(current);
+            }
+            intersections.addAll(added);
+        }
+
+        Map<Set<String>, Set<Integer>> result = new LinkedHashMap<>();
+        for (Set<String> itemset : intersections) {
+            Set<Integer> tidSet = new HashSet<>();
+            for (int tIdx = 0; tIdx < sets.size(); tIdx++) {
+                if (sets.get(tIdx).containsAll(itemset)) {
+                    tidSet.add(tIdx);
+                }
+            }
+            if (tidSet.size() >= minSupport) {
+                result.put(itemset, tidSet);
+            }
+        }
+        return result;
+    }
+
+    static long frequentItemsetUpperBound(Collection<Set<String>> closedItemsets) {
+        long total = 0;
+        for (Set<String> itemset : closedItemsets) {
+            if (itemset.size() >= 62) {
+                return Long.MAX_VALUE;
+            }
+            total += (1L << itemset.size()) - 1;
+            if (total > LEGACY_ITEMSET_LIMIT) {
+                return total;
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Runs the Apriori algorithm to find all frequent itemsets.
+     */
+    static Map<Set<String>, Set<Integer>> mineAll(List<List<String>> transactions, int minSupport) {
         // final result: itemset -> set of transaction indices
         Map<Set<String>, Set<Integer>> result = new LinkedHashMap<>();
 
@@ -79,7 +168,7 @@ public class AprioriMiner {
      * requiring that their first (k-2) items are identical (sorted order),
      * and that they differ in the last item.
      */
-    private Set<String> tryMerge(Set<String> a, Set<String> b, int prefixSize) {
+    private static Set<String> tryMerge(Set<String> a, Set<String> b, int prefixSize) {
         // If size differs or not exactly k-1, can't merge
         if (a.size() != b.size()) return null;
         if (a.size() != prefixSize + 1) return null;

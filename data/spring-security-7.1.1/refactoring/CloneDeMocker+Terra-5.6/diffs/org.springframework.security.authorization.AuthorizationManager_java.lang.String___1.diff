@@ -1,0 +1,151 @@
+--- a/core/src/test/java/org/springframework/security/authorization/AuthorizationManagerFactoryTests.java
++++ b/core/src/test/java/org/springframework/security/authorization/AuthorizationManagerFactoryTests.java
+@@ -157,42 +157,38 @@
+ 
+ 	@Test
+ 	public void hasRoleWhenAdditionalAuthorizationThenInvoked() {
++		AuthorizationManager<String> additional = createMockAdditionalAuthorizationManager();
++		DefaultAuthorizationManagerFactory<String> factory = new DefaultAuthorizationManagerFactory<>();
++		factory.setAdditionalAuthorization(additional);
++
++		assertUserGranted(factory.hasRole("USER"));
++		assertUserDenied(factory.hasRole("USER"));
++
++		verify(additional, times(2)).authorize(any(), any());
++
++	}
++
++	@Test
++	public void hasAnyRoleWhenAdditionalAuthorizationThenInvoked() {
++		AuthorizationManager<String> additional = createMockAdditionalAuthorizationManager();
++		DefaultAuthorizationManagerFactory<String> factory = new DefaultAuthorizationManagerFactory<>();
++		factory.setAdditionalAuthorization(additional);
++
++		assertUserGranted(factory.hasAnyRole("USER"));
++		assertUserDenied(factory.hasAnyRole("USER"));
++
++		verify(additional, times(2)).authorize(any(), any());
++
++	}
++
++	@Test
++	public void hasAllRolesWhenAdditionalAuthorizationThenInvoked() {
+ 		AuthorizationManager<String> additional = mock(AuthorizationManager.class);
+ 		given(additional.authorize(any(), any())).willReturn(new AuthorizationDecision(true),
+ 				new AuthorizationDecision(false));
+ 		DefaultAuthorizationManagerFactory<String> factory = new DefaultAuthorizationManagerFactory<>();
+ 		factory.setAdditionalAuthorization(additional);
+ 
+-		assertUserGranted(factory.hasRole("USER"));
+-		assertUserDenied(factory.hasRole("USER"));
+-
+-		verify(additional, times(2)).authorize(any(), any());
+-
+-	}
+-
+-	@Test
+-	public void hasAnyRoleWhenAdditionalAuthorizationThenInvoked() {
+-		AuthorizationManager<String> additional = mock(AuthorizationManager.class);
+-		given(additional.authorize(any(), any())).willReturn(new AuthorizationDecision(true),
+-				new AuthorizationDecision(false));
+-		DefaultAuthorizationManagerFactory<String> factory = new DefaultAuthorizationManagerFactory<>();
+-		factory.setAdditionalAuthorization(additional);
+-
+-		assertUserGranted(factory.hasAnyRole("USER"));
+-		assertUserDenied(factory.hasAnyRole("USER"));
+-
+-		verify(additional, times(2)).authorize(any(), any());
+-
+-	}
+-
+-	@Test
+-	public void hasAllRolesWhenAdditionalAuthorizationThenInvoked() {
+-		AuthorizationManager<String> additional = mock(AuthorizationManager.class);
+-		given(additional.authorize(any(), any())).willReturn(new AuthorizationDecision(true),
+-				new AuthorizationDecision(false));
+-		DefaultAuthorizationManagerFactory<String> factory = new DefaultAuthorizationManagerFactory<>();
+-		factory.setAdditionalAuthorization(additional);
+-
+ 		assertUserGranted(factory.hasAllRoles("USER"));
+ 		assertUserDenied(factory.hasAllRoles("USER"));
+ 
+@@ -202,9 +198,7 @@
+ 
+ 	@Test
+ 	public void hasAuthorityWhenAdditionalAuthorizationThenInvoked() {
+-		AuthorizationManager<String> additional = mock(AuthorizationManager.class);
+-		given(additional.authorize(any(), any())).willReturn(new AuthorizationDecision(true),
+-				new AuthorizationDecision(false));
++		AuthorizationManager<String> additional = createMockAdditionalAuthorizationManager();
+ 		DefaultAuthorizationManagerFactory<String> factory = new DefaultAuthorizationManagerFactory<>();
+ 		factory.setAdditionalAuthorization(additional);
+ 
+@@ -217,9 +211,7 @@
+ 
+ 	@Test
+ 	public void hasAnyAuthorityWhenAdditionalAuthorizationThenInvoked() {
+-		AuthorizationManager<String> additional = mock(AuthorizationManager.class);
+-		given(additional.authorize(any(), any())).willReturn(new AuthorizationDecision(true),
+-				new AuthorizationDecision(false));
++		AuthorizationManager<String> additional = createMockAdditionalAuthorizationManager();
+ 		DefaultAuthorizationManagerFactory<String> factory = new DefaultAuthorizationManagerFactory<>();
+ 		factory.setAdditionalAuthorization(additional);
+ 
+@@ -232,9 +224,7 @@
+ 
+ 	@Test
+ 	public void hasAllAuthoritiesWhenAdditionalAuthorizationThenInvoked() {
+-		AuthorizationManager<String> additional = mock(AuthorizationManager.class);
+-		given(additional.authorize(any(), any())).willReturn(new AuthorizationDecision(true),
+-				new AuthorizationDecision(false));
++		AuthorizationManager<String> additional = createMockAdditionalAuthorizationManager();
+ 		DefaultAuthorizationManagerFactory<String> factory = new DefaultAuthorizationManagerFactory<>();
+ 		factory.setAdditionalAuthorization(additional);
+ 
+@@ -246,9 +236,7 @@
+ 
+ 	@Test
+ 	public void authenticatedWhenAdditionalAuthorizationThenInvoked() {
+-		AuthorizationManager<String> additional = mock(AuthorizationManager.class);
+-		given(additional.authorize(any(), any())).willReturn(new AuthorizationDecision(true),
+-				new AuthorizationDecision(false));
++		AuthorizationManager<String> additional = createMockAdditionalAuthorizationManager();
+ 		DefaultAuthorizationManagerFactory<String> factory = new DefaultAuthorizationManagerFactory<>();
+ 		factory.setAdditionalAuthorization(additional);
+ 
+@@ -260,9 +248,7 @@
+ 
+ 	@Test
+ 	public void fullyAuthenticatedWhenAdditionalAuthorizationThenInvoked() {
+-		AuthorizationManager<String> additional = mock(AuthorizationManager.class);
+-		given(additional.authorize(any(), any())).willReturn(new AuthorizationDecision(true),
+-				new AuthorizationDecision(false));
++		AuthorizationManager<String> additional = createMockAdditionalAuthorizationManager();
+ 		DefaultAuthorizationManagerFactory<String> factory = new DefaultAuthorizationManagerFactory<>();
+ 		factory.setAdditionalAuthorization(additional);
+ 
+@@ -274,9 +260,7 @@
+ 
+ 	@Test
+ 	public void rememberMeWhenAdditionalAuthorizationThenInvoked() {
+-		AuthorizationManager<String> additional = mock(AuthorizationManager.class);
+-		given(additional.authorize(any(), any())).willReturn(new AuthorizationDecision(true),
+-				new AuthorizationDecision(false));
++		AuthorizationManager<String> additional = createMockAdditionalAuthorizationManager();
+ 		DefaultAuthorizationManagerFactory<String> factory = new DefaultAuthorizationManagerFactory<>();
+ 		factory.setAdditionalAuthorization(additional);
+ 
+@@ -366,6 +350,13 @@
+ 			.withMessage("condition cannot be null");
+ 	}
+ 
++	private static AuthorizationManager<String> createMockAdditionalAuthorizationManager() {
++		AuthorizationManager<String> additional = mock(AuthorizationManager.class);
++		given(additional.authorize(any(), any())).willReturn(new AuthorizationDecision(true),
++				new AuthorizationDecision(false));
++		return additional;
++	}
++
+ 	private void assertUserGranted(AuthorizationManager<String> manager) {
+ 		assertThat(manager.authorize(() -> TestAuthentication.authenticatedUser(), "").isGranted()).isTrue();
+ 	}

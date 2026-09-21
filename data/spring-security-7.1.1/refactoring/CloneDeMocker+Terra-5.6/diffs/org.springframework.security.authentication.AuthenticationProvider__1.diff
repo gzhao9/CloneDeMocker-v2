@@ -1,0 +1,48 @@
+--- a/config/src/test/java/org/springframework/security/config/annotation/authentication/AuthenticationManagerBuilderTests.java
++++ b/config/src/test/java/org/springframework/security/config/annotation/authentication/AuthenticationManagerBuilderTests.java
+@@ -19,6 +19,7 @@
+ import java.util.Arrays;
+ import java.util.Properties;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.extension.ExtendWith;
+ 
+@@ -74,14 +75,20 @@
+ 	@Autowired(required = false)
+ 	MockMvc mockMvc;
+ 
++	private AuthenticationProvider providerMock;
++
++	@BeforeEach
++	void setUp() {
++		this.providerMock = mock(AuthenticationProvider.class);
++	}
++
+ 	@Test
+ 	public void buildWhenAddAuthenticationProviderThenDoesNotPerformRegistration() throws Exception {
+ 		ObjectPostProcessor<Object> opp = mock(ObjectPostProcessor.class);
+-		AuthenticationProvider provider = mock(AuthenticationProvider.class);
+-		AuthenticationManagerBuilder builder = new AuthenticationManagerBuilder(opp);
+-		builder.authenticationProvider(provider);
+-		builder.build();
+-		verify(opp, never()).postProcess(provider);
++		AuthenticationManagerBuilder builder = new AuthenticationManagerBuilder(opp);
++		builder.authenticationProvider(providerMock);
++		builder.build();
++		verify(opp, never()).postProcess(providerMock);
+ 	}
+ 
+ 	// https://github.com/spring-projects/spring-security-javaconfig/issues/132
+@@ -135,9 +142,8 @@
+ 	@Test
+ 	public void buildWhenAuthenticationProviderThenIsConfigured() throws Exception {
+ 		ObjectPostProcessor<Object> opp = mock(ObjectPostProcessor.class);
+-		AuthenticationProvider provider = mock(AuthenticationProvider.class);
+-		AuthenticationManagerBuilder builder = new AuthenticationManagerBuilder(opp);
+-		builder.authenticationProvider(provider);
++		AuthenticationManagerBuilder builder = new AuthenticationManagerBuilder(opp);
++		builder.authenticationProvider(providerMock);
+ 		builder.build();
+ 		assertThat(builder.isConfigured()).isTrue();
+ 	}
