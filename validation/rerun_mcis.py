@@ -136,6 +136,11 @@ def run(args: argparse.Namespace) -> int:
             print(f"[{len(reported)}/{len(wanted)} {time.time() - started:5.0f}s] {label:28} {item['mciId']}", flush=True)
             if result and label != "SUCCESS":
                 print(f"    reason: {str(result.get('validationReason') or result.get('reason') or '')[:400]}", flush=True)
+        if reported:
+            try:
+                server.refactoring_export({"jobId": job_id, "runId": restored["runId"], "cctr": False})
+            except Exception:
+                pass
         if job["state"] != "RUNNING":
             break
         time.sleep(10)

@@ -128,6 +128,13 @@ allprojects {{ p ->
         }}
     }}
 }}
+gradle.projectsEvaluated {{
+    allprojects {{ p ->
+        p.tasks.withType(Test).configureEach {{
+            reports.junitXml.required = true
+        }}
+    }}
+}}
 """
 
 
@@ -138,15 +145,19 @@ def is_gradle_build(root: Path) -> bool:
 
 def is_module_directory(directory: Path) -> bool:
     """
-    静态判断一个目录是否像 Gradle 子项目。不能只认 build.gradle：Spring Security 的子项目
-    构建文件叫 spring-security-core.gradle，由 settings.gradle 按文件名注册。这只是给
-    BuildScope 提供候选目录，真正的 Gradle 项目路径由 discover_projects 按实际构建解析。
+    静态判断一个目录是否像 Gradle/Maven 子项目。不能只认 build.gradle：Spring Security 的子项目
+    构建文件叫 spring-security-core.gradle；Spring Integration 子项目没有独立 build 文件，
+    全由根配置统一注册（只有 src/ 目录）。这只是给 BuildScope 提供候选目录，真正的 Gradle
+    项目路径由 discover_projects 按实际构建解析。
     Statically, whether a directory looks like a Gradle subproject. build.gradle alone is not
     enough: Spring Security names its build files spring-security-core.gradle and registers them
-    from settings.gradle by file name. This only proposes a directory for BuildScope; the real
-    project path comes from discover_projects, which asks the build itself.
+    from settings.gradle by file name; Spring Integration has no subproject build files at all
+    (only a src/ directory). This only proposes a directory for BuildScope; the real project
+    path comes from discover_projects, which asks the build itself.
     """
     try:
+        if (directory / "src").is_dir() or (directory / "pom.xml").is_file():
+            return True
         return any(child.is_file() and child.name.endswith(BUILD_FILE_SUFFIXES)
                    and child.name not in SETTINGS_FILE_NAMES for child in directory.iterdir())
     except OSError:
