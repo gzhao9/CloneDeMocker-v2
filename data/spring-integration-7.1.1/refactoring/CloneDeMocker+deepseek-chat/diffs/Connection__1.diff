@@ -1,0 +1,63 @@
+--- a/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/config/AmqpOutboundChannelAdapterParserTests.java
++++ b/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/config/AmqpOutboundChannelAdapterParserTests.java
+@@ -239,13 +239,12 @@
+ 	@Test
+ 	public void testInt2773UseDefaultAmqpTemplateExchangeAndRoutingLey() throws IOException {
+ 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
+-		Connection mockConnection = mock();
+ 		Channel mockChannel = mock();
+ 
+-		when(connectionFactory.createConnection()).thenReturn(mockConnection);
+ 		PublisherCallbackChannelImpl publisherCallbackChannel = new PublisherCallbackChannelImpl(mockChannel,
+ 				mock(ExecutorService.class));
+-		when(mockConnection.createChannel(false)).thenReturn(publisherCallbackChannel);
++		Connection mockConnection = createMockConnection(publisherCallbackChannel);
++		when(connectionFactory.createConnection()).thenReturn(mockConnection);
+ 
+ 		MessageChannel requestChannel = context.getBean("toRabbitOnlyWithTemplateChannel", MessageChannel.class);
+ 		requestChannel.send(MessageBuilder.withPayload("test").build());
+@@ -257,13 +256,12 @@
+ 	@Test
+ 	public void testInt2773WithDefaultAmqpTemplateExchangeAndRoutingKey() throws IOException {
+ 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
+-		Connection mockConnection = mock();
+ 		Channel mockChannel = mock();
+ 
+-		when(connectionFactory.createConnection()).thenReturn(mockConnection);
+ 		PublisherCallbackChannelImpl publisherCallbackChannel = new PublisherCallbackChannelImpl(mockChannel,
+ 				mock(ExecutorService.class));
+-		when(mockConnection.createChannel(false)).thenReturn(publisherCallbackChannel);
++		Connection mockConnection = createMockConnection(publisherCallbackChannel);
++		when(connectionFactory.createConnection()).thenReturn(mockConnection);
+ 
+ 		MessageChannel requestChannel = context.getBean("withDefaultAmqpTemplateExchangeAndRoutingKey",
+ 				MessageChannel.class);
+@@ -275,13 +273,12 @@
+ 	@Test
+ 	public void testInt2773WithOverrideToDefaultAmqpTemplateExchangeAndRoutingLey() throws IOException {
+ 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
+-		Connection mockConnection = mock();
+ 		Channel mockChannel = mock();
+ 
+-		when(connectionFactory.createConnection()).thenReturn(mockConnection);
+ 		PublisherCallbackChannelImpl publisherCallbackChannel = new PublisherCallbackChannelImpl(mockChannel,
+ 				mock(ExecutorService.class));
+-		when(mockConnection.createChannel(false)).thenReturn(publisherCallbackChannel);
++		Connection mockConnection = createMockConnection(publisherCallbackChannel);
++		when(connectionFactory.createConnection()).thenReturn(mockConnection);
+ 
+ 		MessageChannel requestChannel = context.getBean("overrideTemplateAttributesToEmpty", MessageChannel.class);
+ 		requestChannel.send(MessageBuilder.withPayload("test").build());
+@@ -333,6 +330,12 @@
+ 		handler.stop();
+ 	}
+ 
++	private static Connection createMockConnection(PublisherCallbackChannelImpl publisherCallbackChannel) {
++		Connection mockConnection = mock();
++		when(mockConnection.createChannel(false)).thenReturn(publisherCallbackChannel);
++		return mockConnection;
++	}
++
+ 	public static class FooAdvice extends AbstractRequestHandlerAdvice {
+ 
+ 		@Override

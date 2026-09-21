@@ -1,0 +1,147 @@
+--- a/spring-integration-mail/src/test/java/org/springframework/integration/mail/inbound/ImapMailReceiverTests.java
++++ b/spring-integration-mail/src/test/java/org/springframework/integration/mail/inbound/ImapMailReceiverTests.java
+@@ -301,16 +301,15 @@
+ 		receiver.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+ 		receiver.afterPropertiesSet();
+ 
+-		Field folderField = AbstractMailReceiver.class.getDeclaredField("folder");
+-		folderField.setAccessible(true);
+-		Folder folder = mock(Folder.class);
+-		given(folder.getPermanentFlags()).willReturn(new Flags(Flags.Flag.USER));
+-		given(folder.isOpen()).willReturn(true);
+-		folderField.set(receiver, folder);
+-
+ 		Message msg1 = GreenMailUtil.newMimeMessage("test1");
+ 		Message msg2 = GreenMailUtil.newMimeMessage("test2");
+ 		final Message[] messages = new Message[] {msg1, msg2};
++
++		Field folderField = AbstractMailReceiver.class.getDeclaredField("folder");
++		folderField.setAccessible(true);
++		Folder folder = createMockFolder(Folder.class, messages);
++		folderField.set(receiver, folder);
++
+ 		willAnswer(invocation -> {
+ 			DirectFieldAccessor accessor = new DirectFieldAccessor(invocation.getMock());
+ 			int folderOpenMode = (int) accessor.getPropertyValue("folderOpenMode");
+@@ -320,8 +319,6 @@
+ 			return null;
+ 		}).given(receiver).openFolder();
+ 
+-		willAnswer(invocation -> messages).given(folder).search(any(SearchTerm.class));
+-
+ 		willAnswer(invocation -> null).given(receiver).fetchMessages(messages);
+ 		receiver.receive();
+ 
+@@ -341,17 +338,13 @@
+ 
+ 		Field folderField = AbstractMailReceiver.class.getDeclaredField("folder");
+ 		folderField.setAccessible(true);
+-		Folder folder = mock(Folder.class);
+-		given(folder.getPermanentFlags()).willReturn(new Flags(Flags.Flag.USER));
+-		given(folder.isOpen()).willReturn(true);
+-		folderField.set(receiver, folder);
+ 
+ 		Message msg1 = GreenMailUtil.newMimeMessage("test1");
+ 		Message msg2 = GreenMailUtil.newMimeMessage("test2");
+ 		final Message[] messages = new Message[] {msg1, msg2};
++		Folder folder = createMockFolder(Folder.class, messages);
++		folderField.set(receiver, folder);
+ 		willAnswer(invocation -> null).given(receiver).openFolder();
+-
+-		willAnswer(invocation -> messages).given(folder).search(any(SearchTerm.class));
+ 
+ 		willAnswer(invocation -> null).given(receiver).fetchMessages(messages);
+ 		receiver.afterPropertiesSet();
+@@ -371,14 +364,13 @@
+ 
+ 		Field folderField = AbstractMailReceiver.class.getDeclaredField("folder");
+ 		folderField.setAccessible(true);
+-		Folder folder = mock(Folder.class);
+-		given(folder.getPermanentFlags()).willReturn(new Flags(Flags.Flag.USER));
+-		given(folder.isOpen()).willReturn(true);
+-		folderField.set(receiver, folder);
+ 
+ 		Message msg1 = GreenMailUtil.newMimeMessage("test1");
+ 		Message msg2 = GreenMailUtil.newMimeMessage("test2");
+ 		final Message[] messages = new Message[] {msg1, msg2};
++		Folder folder = createMockFolder(Folder.class, messages);
++		folderField.set(receiver, folder);
++
+ 		willAnswer(invocation -> {
+ 			DirectFieldAccessor accessor = new DirectFieldAccessor(invocation.getMock());
+ 			int folderOpenMode = (int) accessor.getPropertyValue("folderOpenMode");
+@@ -388,8 +380,6 @@
+ 			return null;
+ 		}).given(receiver).openFolder();
+ 
+-		willAnswer(invocation -> messages).given(folder).search(any(SearchTerm.class));
+-
+ 		willAnswer(invocation -> null).given(receiver).fetchMessages(messages);
+ 		receiver.afterPropertiesSet();
+ 		receiver.receive();
+@@ -409,14 +399,12 @@
+ 
+ 		Field folderField = AbstractMailReceiver.class.getDeclaredField("folder");
+ 		folderField.setAccessible(true);
+-		Folder folder = mock(Folder.class);
+-		given(folder.getPermanentFlags()).willReturn(new Flags(Flags.Flag.USER));
+-		given(folder.isOpen()).willReturn(true);
+-		folderField.set(receiver, folder);
+-
+ 		Message msg1 = GreenMailUtil.newMimeMessage("test1");
+ 		Message msg2 = GreenMailUtil.newMimeMessage("test2");
+ 		final Message[] messages = new Message[] {msg1, msg2};
++		Folder folder = createMockFolder(Folder.class, messages);
++		folderField.set(receiver, folder);
++
+ 		willAnswer(invocation -> {
+ 			DirectFieldAccessor accessor = new DirectFieldAccessor(invocation.getMock());
+ 			int folderOpenMode = (int) accessor.getPropertyValue("folderOpenMode");
+@@ -425,8 +413,6 @@
+ 			}
+ 			return null;
+ 		}).given(receiver).openFolder();
+-
+-		willAnswer(invocation -> messages).given(folder).search(any(SearchTerm.class));
+ 
+ 		willAnswer(invocation -> null).given(receiver).fetchMessages(messages);
+ 		receiver.receive();
+@@ -503,11 +489,6 @@
+ 
+ 		Field folderField = AbstractMailReceiver.class.getDeclaredField("folder");
+ 		folderField.setAccessible(true);
+-		Folder folder = mock(IMAPFolder.class);
+-		given(folder.getPermanentFlags()).willReturn(new Flags(Flags.Flag.USER));
+-		given(folder.isOpen()).willReturn(true);
+-		given(folder.exists()).willReturn(true);
+-		folderField.set(receiver, folder);
+ 
+ 		Field storeField = AbstractMailReceiver.class.getDeclaredField("store");
+ 		storeField.setAccessible(true);
+@@ -521,7 +502,9 @@
+ 		Message mailMessage = GreenMailUtil.newMimeMessage("test1");
+ 		Message[] messages = new Message[] {mailMessage};
+ 
+-		willAnswer(invocation -> messages).given(folder).search(any(SearchTerm.class));
++		Folder folder = createMockFolder(IMAPFolder.class, messages);
++		given(folder.exists()).willReturn(true);
++		folderField.set(receiver, folder);
+ 
+ 		adapter.start();
+ 		org.springframework.messaging.Message<?> replMessage = errorChannel.receive(10000);
+@@ -990,6 +973,15 @@
+ 		return receiver;
+ 	}
+ 
++	private static Folder createMockFolder(Class<? extends Folder> folderClass, Message[] messages)
++			throws MessagingException {
++		Folder folder = mock(folderClass);
++		given(folder.getPermanentFlags()).willReturn(new Flags(Flags.Flag.USER));
++		given(folder.isOpen()).willReturn(true);
++		willAnswer(invocation -> messages).given(folder).search(any(SearchTerm.class));
++		return folder;
++	}
++
+ 	private static class ImapSearchLoggingHandler extends Handler {
+ 
+ 		private final List<String> searches = new ArrayList<>();
