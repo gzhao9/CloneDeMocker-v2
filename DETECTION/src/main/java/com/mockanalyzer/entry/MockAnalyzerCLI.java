@@ -13,6 +13,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.mockanalyzer.model.DetectionScope;
 import com.mockanalyzer.model.MockInfo;
+import com.mockanalyzer.sequencesParser.ResolutionDiagnostics;
 
 import com.mockanalyzer.exporter.MockCloneExporter;
 import com.mockanalyzer.exporter.MockInfoExporter;
@@ -44,6 +45,13 @@ public class MockAnalyzerCLI {
             default:
                 System.err.println("Unknown command: " + mode);
                 printHelp();
+        }
+
+        long degraded = ResolutionDiagnostics.stackOverflowCount();
+        if (degraded > 0) {
+            System.err.println("[WARN] Symbol resolution degraded to syntactic matching at "
+                    + degraded + " site(s) because JavaParser overflowed the stack on recursive"
+                    + " generic types. Detection continued; report this count alongside results.");
         }
     }
 

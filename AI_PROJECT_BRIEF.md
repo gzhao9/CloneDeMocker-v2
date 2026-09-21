@@ -289,3 +289,19 @@ returned False and `write_text` raised Errno 2, so two Spring Security MCIs (sam
 oauth2-authorization-server) ended as tool ERRORs absent from the export. All of these now go
 through `studio/long_paths.long_path`; `workspace` itself stays plain for Gradle commands, evidence
 and ledger keys.
+
+Parameterized tests whose display name embeds an argument's default `toString()`
+(`ClassName@<identityHashCode>`, e.g. Spring Security's `Observation*FilterChainDecoratorTests`) got
+a new name on every run, so baseline and candidate never matched and four all-green refactorings were
+labelled FAILED_BEHAVIORAL_EQUIVALENCE. Test identities are now compared through
+`_comparable_test_results`, which replaces `@<hex>` with `@<hash>`; names without such a hash compare
+exactly as before.
+
+Detection on CloudStack 4.23 hung in `AprioriMiner` (issue #1): a group whose sequences share n stubs
+has 2^n frequent itemsets. `AprioriMiner.mine` now first computes the closed frequent itemsets (the
+intersections of ≥2 sequences) and only runs the original Apriori when the itemsets it could produce
+stay within 4096; otherwise it returns the closed ones. Downstream clustering is unchanged: a
+non-closed itemset's closure has the same support and more statements, hence a strictly higher
+estimated gain, so a non-closed itemset is never a chosen center. Dubbo and Spring Security detection
+output is byte-identical to before; CloudStack detection now takes 3 s (5 of 2601 groups use the
+closed path).

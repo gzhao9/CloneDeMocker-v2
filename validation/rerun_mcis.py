@@ -140,8 +140,11 @@ def run(args: argparse.Namespace) -> int:
         if reported:
             try:
                 server.refactoring_export({"jobId": job_id, "runId": restored["runId"], "cctr": False})
-            except Exception:
-                pass
+            except Exception as error:  # noqa: BLE001
+                # 中途导出失败不中断补跑，最后一次还会再导出；但要让人看见。
+                # A mid-run export failure does not stop the rerun, and the next poll exports again;
+                # it still has to be visible.
+                print(f"  [export] failed: {error}", flush=True)
         if job["state"] != "RUNNING":
             break
         time.sleep(10)

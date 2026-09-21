@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -20,6 +21,19 @@ IGNORED_DIRECTORIES = {".git", ".gradle", ".idea", "build", "target", "node_modu
 # The note beside a detection result: which project, what scope, how long it took. One copy
 # sits in the run directory and one in data/<project>/, under the same name.
 DETECTION_META = "detection-meta.json"
+
+
+# 检测器在 JavaParser 解析自引用泛型栈溢出、退回语法匹配时，结束前打印这一行。写进 meta，
+# 数字才会跟着检测结果进 data/，而不是只留在会被截断的输出里。
+# The detector prints this line when JavaParser overflowed the stack on recursive generics and
+# resolution fell back to syntactic matching. Kept in meta so the count travels with the
+# detection into data/ rather than living only in output that gets truncated.
+_DEGRADED_RESOLUTION = re.compile(r"degraded to syntactic matching at (\d+) site")
+
+
+def _resolution_degraded_sites(output: str) -> int:
+    match = _DEGRADED_RESOLUTION.search(output)
+    return int(match.group(1)) if match else 0
 
 
 def _now() -> str:
@@ -136,6 +150,7 @@ class DetectionService:
             "mockObjectsScanned": len(mock_objects),
             "timingSource": "measured",
             "scanSeconds": scan_seconds,
+            "resolutionDegradedSites": _resolution_degraded_sites(output),
             "scannedAt": _now(),
         })
         return {
