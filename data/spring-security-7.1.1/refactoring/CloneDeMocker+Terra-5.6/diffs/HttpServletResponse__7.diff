@@ -1,0 +1,50 @@
+--- a/web/src/test/java/org/springframework/security/web/csrf/CookieCsrfTokenRepositoryTests.java
++++ b/web/src/test/java/org/springframework/security/web/csrf/CookieCsrfTokenRepositoryTests.java
+@@ -46,6 +46,8 @@
+ 
+ 	MockHttpServletResponse response;
+ 
++	private HttpServletResponse servletResponse;
++
+ 	MockHttpServletRequest request;
+ 
+ 	@BeforeEach
+@@ -53,6 +55,7 @@
+ 		this.repository = new CookieCsrfTokenRepository();
+ 		this.request = new MockHttpServletRequest();
+ 		this.response = new MockHttpServletResponse();
++		this.servletResponse = mock(HttpServletResponse.class);
+ 		this.request.setContextPath("/context");
+ 	}
+ 
+@@ -454,24 +457,22 @@
+ 	// gh-16173
+ 	@Test
+ 	void saveTokenWhenSameSiteAndServletVersion5ThenUsesAddHeader() {
+-		HttpServletResponse response = mock(HttpServletResponse.class);
+ 		((MockServletContext) this.request.getServletContext()).setMajorVersion(5);
+ 		this.repository.setCookieCustomizer((builder) -> builder.sameSite("Strict"));
+ 		CsrfToken token = this.repository.generateToken(this.request);
+-		this.repository.saveToken(token, this.request, response);
+-		verify(response, never()).addCookie(any(Cookie.class));
+-		verify(response).addHeader(any(), any());
++		this.repository.saveToken(token, this.request, servletResponse);
++		verify(servletResponse, never()).addCookie(any(Cookie.class));
++		verify(servletResponse).addHeader(any(), any());
+ 	}
+ 
+ 	// gh-16173
+ 	@Test
+ 	void saveTokenWhenSameSiteAndServletVersion6OrHigherThenUsesAddCookie() {
+-		HttpServletResponse response = mock(HttpServletResponse.class);
+ 		this.repository.setCookieCustomizer((builder) -> builder.sameSite("Strict"));
+ 		CsrfToken token = this.repository.generateToken(this.request);
+-		this.repository.saveToken(token, this.request, response);
+-		verify(response).addCookie(any(Cookie.class));
+-		verify(response, never()).addHeader(any(), any());
++		this.repository.saveToken(token, this.request, servletResponse);
++		verify(servletResponse).addCookie(any(Cookie.class));
++		verify(servletResponse, never()).addHeader(any(), any());
+ 	}
+ 
+ 	// gh-16173

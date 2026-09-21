@@ -281,3 +281,11 @@ That misfiling then outlived its fix: the verification ledger recorded any run w
 *status* passed, so the empty-result baselines were replayed on the next batch. `VerificationLedger`
 now records and serves only evidence with at least one non-skipped test result (checked on read too,
 so the three bad records already on disk are ignored).
+
+The report-path fix covered only one of several places that hit MAX_PATH inside a batch copy, which
+sits ~43 characters deeper than the project. Our own reads/writes of workspace files, and Gradle's
+test-task lookup (`test_tasks_for`), used plain paths: past 260 characters `is_file()` silently
+returned False and `write_text` raised Errno 2, so two Spring Security MCIs (saml2 opensaml5Test,
+oauth2-authorization-server) ended as tool ERRORs absent from the export. All of these now go
+through `studio/long_paths.long_path`; `workspace` itself stays plain for Gradle commands, evidence
+and ledger keys.

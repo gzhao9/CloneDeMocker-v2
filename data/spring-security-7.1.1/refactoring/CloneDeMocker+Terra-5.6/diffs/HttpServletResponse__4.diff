@@ -1,0 +1,40 @@
+--- a/webauthn/src/test/java/org/springframework/security/web/webauthn/registration/WebAuthnRegistrationFilterTests.java
++++ b/webauthn/src/test/java/org/springframework/security/web/webauthn/registration/WebAuthnRegistrationFilterTests.java
+@@ -78,6 +78,9 @@
+ 
+ 	@Mock
+ 	private FilterChain chain;
++
++	@Mock
++	private HttpServletResponse servletResponse;
+ 
+ 	private MockHttpServletRequest request = new MockHttpServletRequest();
+ 
+@@ -153,23 +156,21 @@
+ 
+ 	@Test
+ 	void doFilterWhenRegisterUrlDoesNotMatchThenChainContinues() throws Exception {
+-		HttpServletResponse response = mock(HttpServletResponse.class);
+ 		this.filter.setConverter(this.converter);
+ 		this.filter.setCreationOptionsRepository(this.creationOptionsRepository);
+-		this.filter.doFilter(post("/nomatch").buildRequest(new MockServletContext()), response, this.chain);
+-		verifyNoInteractions(this.converter, this.creationOptionsRepository, response);
++		this.filter.doFilter(post("/nomatch").buildRequest(new MockServletContext()), servletResponse, this.chain);
++		verifyNoInteractions(this.converter, this.creationOptionsRepository, servletResponse);
+ 		verify(this.chain).doFilter(any(), any());
+ 	}
+ 
+ 	@Test
+ 	void doFilterWhenRegisterMethodDoesNotMatchThenChainContinues() throws Exception {
+-		HttpServletResponse response = mock(HttpServletResponse.class);
+ 		this.filter.setConverter(this.converter);
+ 		this.filter.setCreationOptionsRepository(this.creationOptionsRepository);
+ 		this.filter.doFilter(
+ 				get(WebAuthnRegistrationFilter.DEFAULT_REGISTER_CREDENTIAL_URL).buildRequest(new MockServletContext()),
+-				response, this.chain);
+-		verifyNoInteractions(this.converter, this.creationOptionsRepository, response);
++				servletResponse, this.chain);
++		verifyNoInteractions(this.converter, this.creationOptionsRepository, servletResponse);
+ 		verify(this.chain).doFilter(any(), any());
+ 	}
+ 

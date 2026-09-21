@@ -1,0 +1,62 @@
+--- a/saml2/saml2-service-provider/src/opensaml5Test/java/org/springframework/security/saml2/provider/service/web/OpenSaml5AuthenticationTokenConverterTests.java
++++ b/saml2/saml2-service-provider/src/opensaml5Test/java/org/springframework/security/saml2/provider/service/web/OpenSaml5AuthenticationTokenConverterTests.java
+@@ -160,8 +160,8 @@
+ 	public void convertWhenSavedAuthenticationRequestThenToken() {
+ 		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+ 				Saml2AuthenticationRequestRepository.class);
+-		AbstractSaml2AuthenticationRequest authenticationRequest = mock(AbstractSaml2AuthenticationRequest.class);
+-		given(authenticationRequest.getRelyingPartyRegistrationId()).willReturn(this.registration.getRegistrationId());
++		AbstractSaml2AuthenticationRequest authenticationRequest = MockSaml2AuthenticationRequest
++				.createMockSaml2AuthenticationRequest(this.registration.getRegistrationId());
+ 		OpenSaml5AuthenticationTokenConverter converter = new OpenSaml5AuthenticationTokenConverter(this.registrations);
+ 		converter.setAuthenticationRequestRepository(authenticationRequestRepository);
+ 		given(this.registrations.findByRegistrationId(any())).willReturn(this.registration);
+--- a/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/Saml2AuthenticationTokenConverterTests.java
++++ b/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/Saml2AuthenticationTokenConverterTests.java
+@@ -173,9 +173,8 @@
+ 	public void convertWhenSavedAuthenticationRequestThenToken() {
+ 		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+ 				Saml2AuthenticationRequestRepository.class);
+-		AbstractSaml2AuthenticationRequest authenticationRequest = mock(AbstractSaml2AuthenticationRequest.class);
+-		given(authenticationRequest.getRelyingPartyRegistrationId())
+-			.willReturn(this.relyingPartyRegistration.getRegistrationId());
++		AbstractSaml2AuthenticationRequest authenticationRequest = MockSaml2AuthenticationRequest
++			.createMockSaml2AuthenticationRequest(this.relyingPartyRegistration.getRegistrationId());
+ 		Saml2AuthenticationTokenConverter converter = new Saml2AuthenticationTokenConverter(
+ 				this.relyingPartyRegistrationResolver);
+ 		converter.setAuthenticationRequestRepository(authenticationRequestRepository);
+@@ -198,9 +197,8 @@
+ 			@Mock RelyingPartyRegistrationResolver resolver) {
+ 		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+ 				Saml2AuthenticationRequestRepository.class);
+-		AbstractSaml2AuthenticationRequest authenticationRequest = mock(AbstractSaml2AuthenticationRequest.class);
+-		given(authenticationRequest.getRelyingPartyRegistrationId())
+-			.willReturn(this.relyingPartyRegistration.getRegistrationId());
++		AbstractSaml2AuthenticationRequest authenticationRequest = MockSaml2AuthenticationRequest
++				.createMockSaml2AuthenticationRequest(this.relyingPartyRegistration.getRegistrationId());
+ 		Saml2AuthenticationTokenConverter converter = new Saml2AuthenticationTokenConverter(resolver);
+ 		converter.setAuthenticationRequestRepository(authenticationRequestRepository);
+ 		given(resolver.resolve(any(HttpServletRequest.class), any())).willReturn(this.relyingPartyRegistration);
+--- a/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/MockSaml2AuthenticationRequest.java
++++ b/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/MockSaml2AuthenticationRequest.java
+@@ -0,0 +1,20 @@
++package org.springframework.security.saml2.provider.service.web;
++
++import org.springframework.security.saml2.provider.service.authentication.AbstractSaml2AuthenticationRequest;
++
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.mock;
++
++public final class MockSaml2AuthenticationRequest {
++
++	private MockSaml2AuthenticationRequest() {
++	}
++
++	public static AbstractSaml2AuthenticationRequest createMockSaml2AuthenticationRequest(
++			String relyingPartyRegistrationId) {
++		AbstractSaml2AuthenticationRequest authenticationRequest = mock(AbstractSaml2AuthenticationRequest.class);
++		given(authenticationRequest.getRelyingPartyRegistrationId()).willReturn(relyingPartyRegistrationId);
++		return authenticationRequest;
++	}
++
++}
