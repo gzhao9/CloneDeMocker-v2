@@ -1,0 +1,28 @@
+--- a/web/src/test/java/org/springframework/security/web/server/authorization/DelegatingReactiveAuthorizationManagerTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authorization/DelegatingReactiveAuthorizationManagerTests.java
+@@ -78,7 +78,7 @@
+ 
+ 	@Test
+ 	public void checkWhenFirstMatchesThenNoMoreMatchersAndNoMoreDelegatesInvoked() {
+-		given(this.match1.matches(any())).willReturn(ServerWebExchangeMatcher.MatchResult.match());
++		givenMatches(this.match1);
+ 		given(this.delegate1.authorize(eq(this.authentication), any(AuthorizationContext.class)))
+ 			.willReturn(Mono.just(this.decision));
+ 		assertThat(this.manager.authorize(this.authentication, this.exchange).block()).isEqualTo(this.decision);
+@@ -88,11 +88,15 @@
+ 	@Test
+ 	public void checkWhenSecondMatchesThenNoMoreMatchersAndNoMoreDelegatesInvoked() {
+ 		given(this.match1.matches(any())).willReturn(ServerWebExchangeMatcher.MatchResult.notMatch());
+-		given(this.match2.matches(any())).willReturn(ServerWebExchangeMatcher.MatchResult.match());
++		givenMatches(this.match2);
+ 		given(this.delegate2.authorize(eq(this.authentication), any(AuthorizationContext.class)))
+ 			.willReturn(Mono.just(this.decision));
+ 		assertThat(this.manager.authorize(this.authentication, this.exchange).block()).isEqualTo(this.decision);
+ 		verifyNoMoreInteractions(this.delegate1);
+ 	}
+ 
++	private static void givenMatches(ServerWebExchangeMatcher matcher) {
++		given(matcher.matches(any())).willReturn(ServerWebExchangeMatcher.MatchResult.match());
++	}
++
+ }

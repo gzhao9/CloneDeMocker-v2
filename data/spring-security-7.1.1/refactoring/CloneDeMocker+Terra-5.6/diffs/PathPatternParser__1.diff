@@ -1,0 +1,36 @@
+--- a/config/src/test/java/org/springframework/security/config/web/PathPatternRequestMatcherBuilderFactoryBeanTests.java
++++ b/config/src/test/java/org/springframework/security/config/web/PathPatternRequestMatcherBuilderFactoryBeanTests.java
+@@ -36,9 +36,12 @@
+ 
+ 	GenericApplicationContext context;
+ 
++	private PathPatternParser pathPatternParser;
++
+ 	@BeforeEach
+ 	void setUp() {
+ 		this.context = new GenericApplicationContext();
++		this.pathPatternParser = mock(PathPatternParser.class);
+ 	}
+ 
+ 	@Test
+@@ -56,17 +59,15 @@
+ 
+ 	@Test
+ 	void getObjectWhenPathPatternParserThenUses() throws Exception {
+-		PathPatternParser parser = mock(PathPatternParser.class);
+-		PathPatternRequestMatcher.Builder builder = factoryBean(parser).getObject();
++		PathPatternRequestMatcher.Builder builder = factoryBean(pathPatternParser).getObject();
+ 		builder.matcher("/path/**");
+-		verify(parser).parse("/path/**");
++		verify(pathPatternParser).parse("/path/**");
+ 	}
+ 
+ 	@Test
+ 	void getObjectWhenMvcAndPathPatternParserConflictThenIllegalArgument() {
+ 		registerMvcPatternParser();
+-		PathPatternParser parser = mock(PathPatternParser.class);
+-		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> factoryBean(parser).getObject());
++		assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> factoryBean(pathPatternParser).getObject());
+ 	}
+ 
+ 	@Test

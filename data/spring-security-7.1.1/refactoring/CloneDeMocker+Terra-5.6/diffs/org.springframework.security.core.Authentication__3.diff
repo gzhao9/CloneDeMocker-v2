@@ -1,0 +1,147 @@
+--- a/core/src/test/java/org/springframework/security/authentication/ProviderManagerTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/ProviderManagerTests.java
+@@ -22,6 +22,7 @@
+ import java.util.List;
+ 
+ import org.jspecify.annotations.Nullable;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.context.MessageSource;
+@@ -48,6 +49,13 @@
+  */
+ public class ProviderManagerTests {
+ 
++	private Authentication authenticationRequest;
++
++	@BeforeEach
++	void setUp() {
++		authenticationRequest = mock(Authentication.class);
++	}
++
+ 	@Test
+ 	void authenticationFailsWithUnsupportedToken() {
+ 		Authentication token = new AbstractAuthenticationToken((Collection<? extends GrantedAuthority>) null) {
+@@ -210,10 +218,9 @@
+ 	@Test
+ 	void parentAuthenticationIsUsedIfProvidersDontAuthenticate() {
+ 		AuthenticationManager parent = mock(AuthenticationManager.class);
+-		Authentication authReq = mock(Authentication.class);
+-		given(parent.authenticate(authReq)).willReturn(authReq);
++		given(parent.authenticate(authenticationRequest)).willReturn(authenticationRequest);
+ 		ProviderManager mgr = new ProviderManager(List.of(mock(AuthenticationProvider.class)), parent);
+-		assertThat(mgr.authenticate(authReq)).isSameAs(authReq);
++		assertThat(mgr.authenticate(authenticationRequest)).isSameAs(authenticationRequest);
+ 	}
+ 
+ 	@Test
+@@ -230,17 +237,16 @@
+ 
+ 	@Test
+ 	void providerNotFoundFromParentIsIgnored() {
+-		final Authentication authReq = mock(Authentication.class);
+ 		AuthenticationEventPublisher publisher = mock(AuthenticationEventPublisher.class);
+ 		AuthenticationManager parent = mock(AuthenticationManager.class);
+-		given(parent.authenticate(authReq)).willThrow(new ProviderNotFoundException(""));
++		given(parent.authenticate(authenticationRequest)).willThrow(new ProviderNotFoundException(""));
+ 		// Set a provider that throws an exception - this is the exception we expect to be
+ 		// propagated
+ 		ProviderManager mgr = new ProviderManager(List.of(createProviderWhichThrows(new BadCredentialsException(""))),
+ 				parent);
+ 		mgr.setAuthenticationEventPublisher(publisher);
+-		assertThatExceptionOfType(BadCredentialsException.class).isThrownBy(() -> mgr.authenticate(authReq))
+-			.satisfies((ex) -> verify(publisher).publishAuthenticationFailure(ex, authReq));
++		assertThatExceptionOfType(BadCredentialsException.class).isThrownBy(() -> mgr.authenticate(authenticationRequest))
++			.satisfies((ex) -> verify(publisher).publishAuthenticationFailure(ex, authenticationRequest));
+ 	}
+ 
+ 	@Test
+@@ -248,14 +254,13 @@
+ 		AuthenticationManager parent = mock(AuthenticationManager.class);
+ 		ProviderManager mgr = new ProviderManager(List.of(createProviderWhichThrows(new BadCredentialsException(""))),
+ 				parent);
+-		Authentication authReq = mock(Authentication.class);
+ 		AuthenticationEventPublisher publisher = mock(AuthenticationEventPublisher.class);
+ 		mgr.setAuthenticationEventPublisher(publisher);
+ 		// Set a provider that throws an exception - this is the exception we expect to be
+ 		// propagated
+ 		BadCredentialsException expected = new BadCredentialsException("I'm the one from the parent");
+-		given(parent.authenticate(authReq)).willThrow(expected);
+-		assertThatExceptionOfType(BadCredentialsException.class).isThrownBy(() -> mgr.authenticate(authReq))
++		given(parent.authenticate(authenticationRequest)).willThrow(expected);
++		assertThatExceptionOfType(BadCredentialsException.class).isThrownBy(() -> mgr.authenticate(authenticationRequest))
+ 			.isSameAs(expected);
+ 	}
+ 
+@@ -264,39 +269,35 @@
+ 		AuthenticationManager parent = mock(AuthenticationManager.class);
+ 		LockedException expected = new LockedException("");
+ 		ProviderManager mgr = new ProviderManager(List.of(createProviderWhichThrows(expected)), parent);
+-		Authentication authReq = mock(Authentication.class);
+ 		AuthenticationEventPublisher publisher = mock(AuthenticationEventPublisher.class);
+ 		mgr.setAuthenticationEventPublisher(publisher);
+-		assertThatExceptionOfType(LockedException.class).isThrownBy(() -> mgr.authenticate(authReq));
+-		verify(publisher).publishAuthenticationFailure(expected, authReq);
++		assertThatExceptionOfType(LockedException.class).isThrownBy(() -> mgr.authenticate(authenticationRequest));
++		verify(publisher).publishAuthenticationFailure(expected, authenticationRequest);
+ 	}
+ 
+ 	@Test
+ 	void whenAccountStatusExceptionThenAuthenticationRequestIsIncluded() {
+ 		AuthenticationException expected = new LockedException("");
+ 		ProviderManager mgr = new ProviderManager(createProviderWhichThrows(expected));
+-		Authentication authReq = mock(Authentication.class);
+-		assertThatExceptionOfType(LockedException.class).isThrownBy(() -> mgr.authenticate(authReq));
+-		assertThat(expected.getAuthenticationRequest()).isEqualTo(authReq);
++		assertThatExceptionOfType(LockedException.class).isThrownBy(() -> mgr.authenticate(authenticationRequest));
++		assertThat(expected.getAuthenticationRequest()).isEqualTo(authenticationRequest);
+ 	}
+ 
+ 	@Test
+ 	void whenInternalServiceAuthenticationExceptionThenAuthenticationRequestIsIncluded() {
+ 		AuthenticationException expected = new InternalAuthenticationServiceException("");
+ 		ProviderManager mgr = new ProviderManager(createProviderWhichThrows(expected));
+-		Authentication authReq = mock(Authentication.class);
+ 		assertThatExceptionOfType(InternalAuthenticationServiceException.class)
+-			.isThrownBy(() -> mgr.authenticate(authReq));
+-		assertThat(expected.getAuthenticationRequest()).isEqualTo(authReq);
++			.isThrownBy(() -> mgr.authenticate(authenticationRequest));
++		assertThat(expected.getAuthenticationRequest()).isEqualTo(authenticationRequest);
+ 	}
+ 
+ 	@Test
+ 	void whenAuthenticationExceptionThenAuthenticationRequestIsIncluded() {
+ 		AuthenticationException expected = new BadCredentialsException("");
+ 		ProviderManager mgr = new ProviderManager(createProviderWhichThrows(expected));
+-		Authentication authReq = mock(Authentication.class);
+-		assertThatExceptionOfType(BadCredentialsException.class).isThrownBy(() -> mgr.authenticate(authReq));
+-		assertThat(expected.getAuthenticationRequest()).isEqualTo(authReq);
++		assertThatExceptionOfType(BadCredentialsException.class).isThrownBy(() -> mgr.authenticate(authenticationRequest));
++		assertThat(expected.getAuthenticationRequest()).isEqualTo(authenticationRequest);
+ 	}
+ 
+ 	// SEC-2367
+@@ -305,9 +306,8 @@
+ 		InternalAuthenticationServiceException expected = new InternalAuthenticationServiceException("Expected");
+ 		ProviderManager mgr = new ProviderManager(Arrays.asList(createProviderWhichThrows(expected),
+ 				createProviderWhichThrows(new BadCredentialsException("Oops"))), null);
+-		Authentication authReq = mock(Authentication.class);
+ 		assertThatExceptionOfType(InternalAuthenticationServiceException.class)
+-			.isThrownBy(() -> mgr.authenticate(authReq));
++			.isThrownBy(() -> mgr.authenticate(authenticationRequest));
+ 	}
+ 
+ 	// gh-6281
+@@ -320,10 +320,9 @@
+ 		AuthenticationEventPublisher publisher = mock(AuthenticationEventPublisher.class);
+ 		parentMgr.setAuthenticationEventPublisher(publisher);
+ 		childMgr.setAuthenticationEventPublisher(publisher);
+-		Authentication authReq = mock(Authentication.class);
+-		assertThatExceptionOfType(BadCredentialsException.class).isThrownBy(() -> childMgr.authenticate(authReq))
++		assertThatExceptionOfType(BadCredentialsException.class).isThrownBy(() -> childMgr.authenticate(authenticationRequest))
+ 			.isSameAs(badCredentialsExParent);
+-		verify(publisher).publishAuthenticationFailure(badCredentialsExParent, authReq); // Parent
++		verify(publisher).publishAuthenticationFailure(badCredentialsExParent, authenticationRequest); // Parent
+ 																							// publishes
+ 		verifyNoMoreInteractions(publisher); // Child should not publish (duplicate event)
+ 	}

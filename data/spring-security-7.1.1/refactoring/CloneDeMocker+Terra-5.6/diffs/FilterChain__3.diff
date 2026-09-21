@@ -1,0 +1,177 @@
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2DeviceAuthorizationEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2DeviceAuthorizationEndpointFilterTests.java
+@@ -90,6 +90,8 @@
+ 
+ 	private AuthenticationManager authenticationManager;
+ 
++	private FilterChain mockFilterChain;
++
+ 	private OAuth2DeviceAuthorizationEndpointFilter filter;
+ 
+ 	private final HttpMessageConverter<OAuth2DeviceAuthorizationResponse> deviceAuthorizationHttpResponseConverter = new OAuth2DeviceAuthorizationResponseHttpMessageConverter();
+@@ -99,6 +101,7 @@
+ 	@BeforeEach
+ 	public void setUp() {
+ 		this.authenticationManager = mock(AuthenticationManager.class);
++		this.mockFilterChain = mock(FilterChain.class);
+ 		this.filter = new OAuth2DeviceAuthorizationEndpointFilter(this.authenticationManager);
+ 		mockAuthorizationServerContext();
+ 	}
+@@ -176,9 +179,8 @@
+ 	public void doFilterWhenNotDeviceAuthorizationRequestThenNotProcessed() throws Exception {
+ 		MockHttpServletRequest request = new MockHttpServletRequest(HttpMethod.GET.name(), "/path");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
+-		verify(filterChain).doFilter(request, response);
++		this.filter.doFilter(request, response, mockFilterChain);
++		verify(mockFilterChain).doFilter(request, response);
+ 		verifyNoInteractions(this.authenticationManager);
+ 	}
+ 
+@@ -187,9 +189,8 @@
+ 		MockHttpServletRequest request = createRequest();
+ 		request.setMethod(HttpMethod.GET.name());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
+-		verify(filterChain).doFilter(request, response);
++		this.filter.doFilter(request, response, mockFilterChain);
++		verify(mockFilterChain).doFilter(request, response);
+ 		verifyNoInteractions(this.authenticationManager);
+ 	}
+ 
+@@ -205,14 +206,13 @@
+ 		request.addParameter("custom-param-1", "custom-value-1");
+ 		request.addParameter("custom-param-2", "custom-value-1", "custom-value-2");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+ 		ArgumentCaptor<OAuth2DeviceAuthorizationRequestAuthenticationToken> deviceAuthorizationRequestAuthenticationCaptor = ArgumentCaptor
+ 			.forClass(OAuth2DeviceAuthorizationRequestAuthenticationToken.class);
+ 		verify(this.authenticationManager).authenticate(deviceAuthorizationRequestAuthenticationCaptor.capture());
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 
+ 		OAuth2DeviceAuthorizationRequestAuthenticationToken deviceAuthorizationRequestAuthentication = deviceAuthorizationRequestAuthenticationCaptor
+ 			.getValue();
+@@ -257,12 +257,11 @@
+ 		request.setRequestURI("/contextPath" + AUTHORIZATION_URI);
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+ 		verify(this.authenticationManager).authenticate(any(OAuth2DeviceAuthorizationRequestAuthenticationToken.class));
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 
+ 		OAuth2DeviceAuthorizationResponse deviceAuthorizationResponse = readDeviceAuthorizationResponse(response);
+ 		String verificationUri = ISSUER_URI + "/contextPath" + VERIFICATION_URI;
+@@ -281,12 +280,11 @@
+ 
+ 		MockHttpServletRequest request = createRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+ 
+ 		verify(authenticationConverter).convert(request);
+-		verifyNoInteractions(filterChain, this.authenticationManager);
++		verifyNoInteractions(mockFilterChain, this.authenticationManager);
+ 
+ 		OAuth2Error error = readError(response);
+ 		assertThat(error.getErrorCode()).isEqualTo(OAuth2ErrorCodes.INVALID_REQUEST);
+@@ -306,13 +304,12 @@
+ 		request.setRequestURI("/device");
+ 		request.setServletPath("/device");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter = new OAuth2DeviceAuthorizationEndpointFilter(this.authenticationManager, "/device");
+-		this.filter.doFilter(request, response, filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+ 		verify(this.authenticationManager).authenticate(any(Authentication.class));
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 	}
+ 
+ 	@Test
+@@ -331,13 +328,12 @@
+ 
+ 		MockHttpServletRequest request = createRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+ 		verify(authenticationConverter).convert(request);
+ 		verify(this.authenticationManager).authenticate(authenticationRequest);
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 	}
+ 
+ 	@Test
+@@ -350,7 +346,6 @@
+ 
+ 		MockHttpServletRequest request = createRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 
+ 		@SuppressWarnings("unchecked")
+ 		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = mock(
+@@ -359,12 +354,12 @@
+ 			.willReturn(new WebAuthenticationDetails(request));
+ 		this.filter.setAuthenticationDetailsSource(authenticationDetailsSource);
+ 
+-		this.filter.doFilter(request, response, filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+ 		verify(this.authenticationManager).authenticate(any(Authentication.class));
+ 		verify(authenticationDetailsSource).buildDetails(request);
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 	}
+ 
+ 	@Test
+@@ -380,13 +375,12 @@
+ 
+ 		MockHttpServletRequest request = createRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+ 		verify(this.authenticationManager).authenticate(any(Authentication.class));
+ 		verify(authenticationSuccessHandler).onAuthenticationSuccess(request, response, authenticationResult);
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 	}
+ 
+ 	@Test
+@@ -403,13 +397,12 @@
+ 
+ 		MockHttpServletRequest request = createRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		this.filter.doFilter(request, response, filterChain);
++		this.filter.doFilter(request, response, mockFilterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+ 		verify(this.authenticationManager).authenticate(any(Authentication.class));
+ 		verify(authenticationFailureHandler).onAuthenticationFailure(request, response, authenticationException);
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 	}
+ 
+ 	private OAuth2DeviceAuthorizationResponse readDeviceAuthorizationResponse(MockHttpServletResponse response)

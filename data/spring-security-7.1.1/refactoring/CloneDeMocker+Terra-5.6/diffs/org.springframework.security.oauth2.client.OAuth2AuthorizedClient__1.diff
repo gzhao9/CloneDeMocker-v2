@@ -1,0 +1,43 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/AuthenticatedPrincipalServerOAuth2AuthorizedClientRepositoryTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/AuthenticatedPrincipalServerOAuth2AuthorizedClientRepositoryTests.java
+@@ -47,6 +47,8 @@
+ 
+ 	private ReactiveOAuth2AuthorizedClientService authorizedClientService;
+ 
++	private OAuth2AuthorizedClient authorizedClientMock;
++
+ 	private ServerOAuth2AuthorizedClientRepository anonymousAuthorizedClientRepository;
+ 
+ 	private AuthenticatedPrincipalServerOAuth2AuthorizedClientRepository authorizedClientRepository;
+@@ -56,6 +58,7 @@
+ 	@BeforeEach
+ 	public void setup() {
+ 		this.authorizedClientService = mock(ReactiveOAuth2AuthorizedClientService.class);
++		this.authorizedClientMock = mock(OAuth2AuthorizedClient.class);
+ 		this.anonymousAuthorizedClientRepository = mock(ServerOAuth2AuthorizedClientRepository.class);
+ 		this.authorizedClientRepository = new AuthenticatedPrincipalServerOAuth2AuthorizedClientRepository(
+ 				this.authorizedClientService);
+@@ -99,9 +102,8 @@
+ 	public void saveAuthorizedClientWhenAuthenticatedPrincipalThenSaveToService() {
+ 		given(this.authorizedClientService.saveAuthorizedClient(any(), any())).willReturn(Mono.empty());
+ 		Authentication authentication = this.createAuthenticatedPrincipal();
+-		OAuth2AuthorizedClient authorizedClient = mock(OAuth2AuthorizedClient.class);
+-		this.authorizedClientRepository.saveAuthorizedClient(authorizedClient, authentication, this.exchange).block();
+-		verify(this.authorizedClientService).saveAuthorizedClient(authorizedClient, authentication);
++		this.authorizedClientRepository.saveAuthorizedClient(authorizedClientMock, authentication, this.exchange).block();
++		verify(this.authorizedClientService).saveAuthorizedClient(authorizedClientMock, authentication);
+ 	}
+ 
+ 	@Test
+@@ -109,9 +111,8 @@
+ 		given(this.anonymousAuthorizedClientRepository.saveAuthorizedClient(any(), any(), any()))
+ 			.willReturn(Mono.empty());
+ 		Authentication authentication = this.createAnonymousPrincipal();
+-		OAuth2AuthorizedClient authorizedClient = mock(OAuth2AuthorizedClient.class);
+-		this.authorizedClientRepository.saveAuthorizedClient(authorizedClient, authentication, this.exchange).block();
+-		verify(this.anonymousAuthorizedClientRepository).saveAuthorizedClient(authorizedClient, authentication,
++		this.authorizedClientRepository.saveAuthorizedClient(authorizedClientMock, authentication, this.exchange).block();
++		verify(this.anonymousAuthorizedClientRepository).saveAuthorizedClient(authorizedClientMock, authentication,
+ 				this.exchange);
+ 	}
+ 

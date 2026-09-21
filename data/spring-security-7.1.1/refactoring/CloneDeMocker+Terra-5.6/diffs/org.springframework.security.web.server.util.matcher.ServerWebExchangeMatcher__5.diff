@@ -1,0 +1,81 @@
+--- a/web/src/test/java/org/springframework/security/web/server/util/matcher/AndServerWebExchangeMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/util/matcher/AndServerWebExchangeMatcherTests.java
+@@ -72,7 +72,7 @@
+ 
+ 	@Test
+ 	public void matchesWhenFalseFalseThenFalseAndMatcher2NotInvoked() {
+-		given(this.matcher1.matches(this.exchange)).willReturn(ServerWebExchangeMatcher.MatchResult.notMatch());
++		MockServerWebExchangeMatcher.stubNotMatch(this.matcher1, this.exchange);
+ 		ServerWebExchangeMatcher.MatchResult matches = this.matcher.matches(this.exchange).block();
+ 		assertThat(matches.isMatch()).isFalse();
+ 		assertThat(matches.getVariables()).isEmpty();
+@@ -84,7 +84,7 @@
+ 	public void matchesWhenTrueFalseThenFalse() {
+ 		Map<String, Object> params = Collections.singletonMap("foo", "bar");
+ 		given(this.matcher1.matches(this.exchange)).willReturn(ServerWebExchangeMatcher.MatchResult.match(params));
+-		given(this.matcher2.matches(this.exchange)).willReturn(ServerWebExchangeMatcher.MatchResult.notMatch());
++		MockServerWebExchangeMatcher.stubNotMatch(this.matcher2, this.exchange);
+ 		ServerWebExchangeMatcher.MatchResult matches = this.matcher.matches(this.exchange).block();
+ 		assertThat(matches.isMatch()).isFalse();
+ 		assertThat(matches.getVariables()).isEmpty();
+@@ -94,7 +94,7 @@
+ 
+ 	@Test
+ 	public void matchesWhenFalseTrueThenFalse() {
+-		given(this.matcher1.matches(this.exchange)).willReturn(ServerWebExchangeMatcher.MatchResult.notMatch());
++		MockServerWebExchangeMatcher.stubNotMatch(this.matcher1, this.exchange);
+ 		ServerWebExchangeMatcher.MatchResult matches = this.matcher.matches(this.exchange).block();
+ 		assertThat(matches.isMatch()).isFalse();
+ 		assertThat(matches.getVariables()).isEmpty();
+--- a/web/src/test/java/org/springframework/security/web/server/util/matcher/NegatedServerWebExchangeMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/util/matcher/NegatedServerWebExchangeMatcherTests.java
+@@ -50,7 +50,7 @@
+ 
+ 	@Test
+ 	public void matchesWhenFalseThenTrue() {
+-		given(this.matcher1.matches(this.exchange)).willReturn(ServerWebExchangeMatcher.MatchResult.notMatch());
++		MockServerWebExchangeMatcher.stubNotMatch(this.matcher1, this.exchange);
+ 		ServerWebExchangeMatcher.MatchResult matches = this.matcher.matches(this.exchange).block();
+ 		assertThat(matches.isMatch()).isTrue();
+ 		assertThat(matches.getVariables()).isEmpty();
+--- a/web/src/test/java/org/springframework/security/web/server/util/matcher/OrServerWebExchangeMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/util/matcher/OrServerWebExchangeMatcherTests.java
+@@ -57,8 +57,8 @@
+ 
+ 	@Test
+ 	public void matchesWhenFalseFalseThenFalse() {
+-		given(this.matcher1.matches(this.exchange)).willReturn(ServerWebExchangeMatcher.MatchResult.notMatch());
+-		given(this.matcher2.matches(this.exchange)).willReturn(ServerWebExchangeMatcher.MatchResult.notMatch());
++		MockServerWebExchangeMatcher.stubNotMatch(this.matcher1, this.exchange);
++		MockServerWebExchangeMatcher.stubNotMatch(this.matcher2, this.exchange);
+ 		ServerWebExchangeMatcher.MatchResult matches = this.matcher.matches(this.exchange).block();
+ 		assertThat(matches.isMatch()).isFalse();
+ 		assertThat(matches.getVariables()).isEmpty();
+@@ -80,7 +80,7 @@
+ 	@Test
+ 	public void matchesWhenFalseTrueThenTrue() {
+ 		Map<String, Object> params = Collections.singletonMap("foo", "bar");
+-		given(this.matcher1.matches(this.exchange)).willReturn(ServerWebExchangeMatcher.MatchResult.notMatch());
++		MockServerWebExchangeMatcher.stubNotMatch(this.matcher1, this.exchange);
+ 		given(this.matcher2.matches(this.exchange)).willReturn(ServerWebExchangeMatcher.MatchResult.match(params));
+ 		ServerWebExchangeMatcher.MatchResult matches = this.matcher.matches(this.exchange).block();
+ 		assertThat(matches.isMatch()).isTrue();
+--- a/web/src/test/java/org/springframework/security/web/server/util/matcher/MockServerWebExchangeMatcher.java
++++ b/web/src/test/java/org/springframework/security/web/server/util/matcher/MockServerWebExchangeMatcher.java
+@@ -0,0 +1,16 @@
++package org.springframework.security.web.server.util.matcher;
++
++import org.springframework.web.server.ServerWebExchange;
++
++import static org.mockito.BDDMockito.given;
++
++final class MockServerWebExchangeMatcher {
++
++	private MockServerWebExchangeMatcher() {
++	}
++
++	static void stubNotMatch(ServerWebExchangeMatcher matcher, ServerWebExchange exchange) {
++		given(matcher.matches(exchange)).willReturn(ServerWebExchangeMatcher.MatchResult.notMatch());
++	}
++
++}
