@@ -72,7 +72,8 @@ public class MockAnalyzer {
                 try {
                     ResolvedType resolvedType = variable.getType().resolve();
                     mockInfo.mockedClass = resolvedType.describe();
-                } catch (UnsolvedSymbolException e) {
+                } catch (UnsolvedSymbolException | StackOverflowError e) {
+                    ResolutionDiagnostics.note(e);
                     mockInfo.mockedClass = variable.getType().asString();
                 }
 
@@ -161,7 +162,8 @@ public class MockAnalyzer {
                                 try {
                                     ResolvedType resolvedType = variable.getType().resolve();
                                     mockInfo.mockedClass = resolvedType.describe();
-                                } catch (UnsolvedSymbolException e) {
+                                } catch (UnsolvedSymbolException | StackOverflowError e) {
+                                    ResolutionDiagnostics.note(e);
                                     // 退化到变量声明的类型，保证不是 null
                                     mockInfo.mockedClass = mockInfo.variableType;
                                 }

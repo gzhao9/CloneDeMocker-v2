@@ -1,0 +1,105 @@
+--- a/web/src/test/java/org/springframework/security/web/FilterChainProxyTests.java
++++ b/web/src/test/java/org/springframework/security/web/FilterChainProxyTests.java
+@@ -292,8 +292,7 @@
+ 
+ 	@Test
+ 	public void doFilterWhenMatchesThenObservationRegistryObserves() throws Exception {
+-		ObservationHandler<Observation.Context> handler = mock(ObservationHandler.class);
+-		given(handler.supportsContext(any())).willReturn(true);
++		ObservationHandler<Observation.Context> handler = MockObservationHandler.createMockObservationHandler();
+ 		ObservationRegistry registry = ObservationRegistry.create();
+ 		registry.observationConfig().observationHandler(handler);
+ 		given(this.matcher.matches(any())).willReturn(true);
+@@ -317,8 +316,7 @@
+ 	// gh-12610
+ 	@Test
+ 	void parentObservationIsTakenIntoAccountDuringDispatchError() throws Exception {
+-		ObservationHandler<Observation.Context> handler = mock(ObservationHandler.class);
+-		given(handler.supportsContext(any())).willReturn(true);
++		ObservationHandler<Observation.Context> handler = MockObservationHandler.createMockObservationHandler();
+ 		ObservationRegistry registry = ObservationRegistry.create();
+ 		registry.observationConfig().observationHandler(handler);
+ 
+@@ -375,8 +373,7 @@
+ 
+ 	@Test
+ 	public void doFilterWhenMultipleFiltersThenObservationRegistryObserves() throws Exception {
+-		ObservationHandler<Observation.Context> handler = mock(ObservationHandler.class);
+-		given(handler.supportsContext(any())).willReturn(true);
++		ObservationHandler<Observation.Context> handler = MockObservationHandler.createMockObservationHandler();
+ 		ObservationRegistry registry = ObservationRegistry.create();
+ 		registry.observationConfig().observationHandler(handler);
+ 		given(this.matcher.matches(any())).willReturn(true);
+@@ -402,8 +399,7 @@
+ 
+ 	@Test
+ 	public void doFilterWhenMismatchesThenObservationRegistryObserves() throws Exception {
+-		ObservationHandler<Observation.Context> handler = mock(ObservationHandler.class);
+-		given(handler.supportsContext(any())).willReturn(true);
++		ObservationHandler<Observation.Context> handler = MockObservationHandler.createMockObservationHandler();
+ 		ObservationRegistry registry = ObservationRegistry.create();
+ 		registry.observationConfig().observationHandler(handler);
+ 		SecurityFilterChain sec = new DefaultSecurityFilterChain(this.matcher, Arrays.asList(this.filter));
+@@ -423,8 +419,7 @@
+ 
+ 	@Test
+ 	public void doFilterWhenFilterExceptionThenObservationRegistryObserves() throws Exception {
+-		ObservationHandler<Observation.Context> handler = mock(ObservationHandler.class);
+-		given(handler.supportsContext(any())).willReturn(true);
++		ObservationHandler<Observation.Context> handler = MockObservationHandler.createMockObservationHandler();
+ 		ObservationRegistry registry = ObservationRegistry.create();
+ 		registry.observationConfig().observationHandler(handler);
+ 		willThrow(IllegalStateException.class).given(this.filter).doFilter(any(), any(), any());
+@@ -448,8 +443,7 @@
+ 
+ 	@Test
+ 	public void doFilterWhenExceptionWithMultipleFiltersThenObservationRegistryObserves() throws Exception {
+-		ObservationHandler<Observation.Context> handler = mock(ObservationHandler.class);
+-		given(handler.supportsContext(any())).willReturn(true);
++		ObservationHandler<Observation.Context> handler = MockObservationHandler.createMockObservationHandler();
+ 		ObservationRegistry registry = ObservationRegistry.create();
+ 		registry.observationConfig().observationHandler(handler);
+ 		given(this.matcher.matches(any())).willReturn(true);
+@@ -475,8 +469,7 @@
+ 
+ 	@Test
+ 	public void doFilterWhenOneFilterDoesNotProceedThenObservationRegistryObserves() throws Exception {
+-		ObservationHandler<Observation.Context> handler = mock(ObservationHandler.class);
+-		given(handler.supportsContext(any())).willReturn(true);
++		ObservationHandler<Observation.Context> handler = MockObservationHandler.createMockObservationHandler();
+ 		ObservationRegistry registry = ObservationRegistry.create();
+ 		registry.observationConfig().observationHandler(handler);
+ 		given(this.matcher.matches(any())).willReturn(true);
+--- a/web/src/test/java/org/springframework/security/web/ObservationFilterChainDecoratorTests.java
++++ b/web/src/test/java/org/springframework/security/web/ObservationFilterChainDecoratorTests.java
+@@ -136,8 +136,7 @@
+ 	@MethodSource("decorateFiltersWhenCompletesThenHasSpringSecurityReachedFilterNameTag")
+ 	void decorateFiltersWhenCompletesThenHasSpringSecurityReachedFilterNameTag(Filter filter,
+ 			String expectedFilterNameTag) throws Exception {
+-		ObservationHandler<Observation.Context> handler = mock(ObservationHandler.class);
+-		given(handler.supportsContext(any())).willReturn(true);
++		ObservationHandler<Observation.Context> handler = MockObservationHandler.createMockObservationHandler();
+ 		ObservationRegistry registry = ObservationRegistry.create();
+ 		registry.observationConfig().observationHandler(handler);
+ 		ObservationFilterChainDecorator decorator = new ObservationFilterChainDecorator(registry);
+--- a/web/src/test/java/org/springframework/security/web/MockObservationHandler.java
++++ b/web/src/test/java/org/springframework/security/web/MockObservationHandler.java
+@@ -0,0 +1,18 @@
++package org.springframework.security.web;
++
++import io.micrometer.observation.Observation;
++import io.micrometer.observation.ObservationHandler;
++
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.mock;
++
++public class MockObservationHandler {
++
++	public static ObservationHandler<Observation.Context> createMockObservationHandler() {
++		ObservationHandler<Observation.Context> handler = mock(ObservationHandler.class);
++		given(handler.supportsContext(any())).willReturn(true);
++		return handler;
++	}
++
++}

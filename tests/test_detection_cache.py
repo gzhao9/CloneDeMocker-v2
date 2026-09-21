@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from studio.detection_service import DetectionError, DetectionService
 
@@ -57,6 +58,23 @@ class SavedDetectionTest(unittest.TestCase):
         self.assertEqual(self.project.resolve(), run.project_root)
         self.assertEqual(DETECTION, raw)
         self.assertTrue((run.run_directory / "detection-meta.json").is_file())
+
+    def test_scan_records_how_often_resolution_degraded(self):
+        # JavaParser 在自引用泛型上栈溢出时检测器退回语法匹配（druid），次数要跟着 meta 走。
+        # The detector falls back to syntactic matching when JavaParser overflows on recursive
+        # generics (druid); the count has to travel with the meta.
+        warning = ("[WARN] Symbol resolution degraded to syntactic matching at 17 site(s) because JavaParser"
+                   " overflowed the stack on recursive generic types.")
+
+        def run(command, cwd, progress_callback=None):
+            Path(command[command.index("scan") + 2]).write_text("[]", encoding="utf-8")
+            return "[PROGRESS] SCAN 1/1\n" + warning + "\n"
+
+        with patch.object(DetectionService, "_detector_jar", return_value=Path("detector.jar")), \
+                patch.object(DetectionService, "_run", side_effect=run):
+            result = self.service.scan(str(self.project), [], [], [], False)
+        meta = json.loads((self.service.runs_root / result["runId"] / "detection-meta.json").read_text(encoding="utf-8"))
+        self.assertEqual(17, meta["resolutionDegradedSites"])
 
     def test_restoring_without_a_saved_detection_fails_clearly(self):
         with self.assertRaises(DetectionError):

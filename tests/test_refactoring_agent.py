@@ -7,7 +7,7 @@ from pathlib import Path
 from studio.canonical_store import classify_agent_result
 from studio.detection_service import DetectionError, DetectionService
 from studio.model_provider import ModelResult, ModelUsage
-from studio.refactoring_agent import RefactoringAgent, _test_regression_reason
+from studio.refactoring_agent import RefactoringAgent, _comparable_test_results, _test_regression_reason
 from studio.harness import HarnessEvidence, HarnessStatus
 from studio.long_paths import long_path
 
@@ -196,6 +196,32 @@ class RefactoringAgentTest(unittest.TestCase):
                                     test_results={"demo.Test#stable": "FAILED", "demo.Net#dns": "FAILED"})
         self.assertIsNone(_test_regression_reason(baseline, unchanged))
         self.assertIn("previously passing", _test_regression_reason(baseline, regressed))
+
+    def test_identity_hashes_in_parameterized_test_names_do_not_break_equivalence(self):
+        # Spring Security 的 Observation*FilterChainDecoratorTests：参数的 toString() 带 @identityHashCode。
+        # Spring Security's Observation*FilterChainDecoratorTests: the argument's toString() carries @identityHashCode.
+        name = "demo.DecoratorTests#[2] filter = demo.DecoratorTests$1@{}, expectedFilterNameTag = \"none\""
+        baseline = HarnessEvidence(HarnessStatus.PASSED, HarnessStatus.PASSED,
+                                   test_results={name.format("9214725"): "PASSED", "demo.Test#stable": "PASSED"})
+        candidate = HarnessEvidence(HarnessStatus.PASSED, HarnessStatus.PASSED,
+                                    test_results={name.format("3f2afa8b"): "PASSED", "demo.Test#stable": "PASSED"})
+        self.assertEqual(_comparable_test_results(baseline.test_results),
+                         _comparable_test_results(candidate.test_results))
+        self.assertIsNone(_test_regression_reason(baseline, candidate))
+        failed = HarnessEvidence(HarnessStatus.PASSED, HarnessStatus.FAILED,
+                                 test_results={name.format("50a095cb"): "FAILED", "demo.Test#stable": "PASSED"})
+        self.assertIn("previously passing", _test_regression_reason(baseline, failed))
+
+    def test_names_that_collapse_after_normalization_keep_every_status(self):
+        first, second = "demo.T#[1] x = demo.A@1a2b", "demo.T#[1] x = demo.A@3c4d"
+        self.assertEqual({"demo.T#[1] x = demo.A@<hash>": ("FAILED", "PASSED")},
+                         _comparable_test_results({first: "PASSED", second: "FAILED"}))
+        self.assertNotEqual(_comparable_test_results({first: "PASSED", second: "PASSED"}),
+                            _comparable_test_results({first: "PASSED", second: "FAILED"}))
+
+    def test_names_without_identity_hashes_compare_exactly_as_before(self):
+        results = {"demo.Test#a": "PASSED", "demo.Test#b(String)[1]": "SKIPPED", "user@example.com#c": "PASSED"}
+        self.assertEqual({key: (status,) for key, status in results.items()}, _comparable_test_results(results))
 
     @staticmethod
     def _fixture(temporary: str, run_id: str = "e" * 32, methods: list[str] | None = None,
