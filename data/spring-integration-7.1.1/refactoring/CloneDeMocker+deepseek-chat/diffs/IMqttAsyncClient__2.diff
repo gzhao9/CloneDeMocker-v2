@@ -12,18 +12,18 @@
   */
  public class Mqttv5AdapterTests {
  
-+	private IMqttAsyncClient clientMock;
++	private IMqttAsyncClient mqttClient;
 +
 +	@BeforeEach
-+	void setUp() {
-+		this.clientMock = mock(IMqttAsyncClient.class);
++	void setup() {
++		this.mqttClient = mock(IMqttAsyncClient.class);
 +	}
 +
  	@Test
  	public void testStop() throws Exception {
 -		final IMqttAsyncClient client = mock(IMqttAsyncClient.class);
 -		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(client, true);
-+		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(clientMock, true);
++		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(mqttClient, true);
  
  		adapter.start();
  		adapter.connectComplete(false, null);
@@ -32,16 +32,16 @@
 -		verify(client).connect(any(MqttConnectionOptions.class));
 -		verify(client).subscribe(any(MqttSubscription[].class), any(), any(), any(IMqttMessageListener.class), any());
 -		verify(client).unsubscribe(any(String[].class));
-+		verify(clientMock).connect(any(MqttConnectionOptions.class));
-+		verify(clientMock).subscribe(any(MqttSubscription[].class), any(), any(), any(IMqttMessageListener.class), any());
-+		verify(clientMock).unsubscribe(any(String[].class));
++		verify(mqttClient).connect(any(MqttConnectionOptions.class));
++		verify(mqttClient).subscribe(any(MqttSubscription[].class), any(), any(), any(IMqttMessageListener.class), any());
++		verify(mqttClient).unsubscribe(any(String[].class));
  	}
  
  	@Test
  	public void testStopNotClean() throws Exception {
 -		final IMqttAsyncClient client = mock(IMqttAsyncClient.class);
 -		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(client, false);
-+		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(clientMock, false);
++		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(mqttClient, false);
  
  		adapter.start();
  		adapter.connectComplete(false, null);
@@ -50,9 +50,9 @@
 -		verify(client).connect(any(MqttConnectionOptions.class));
 -		verify(client).subscribe(any(MqttSubscription[].class), any(), any(), any(IMqttMessageListener.class), any());
 -		verify(client, never()).unsubscribe(any(String[].class));
-+		verify(clientMock).connect(any(MqttConnectionOptions.class));
-+		verify(clientMock).subscribe(any(MqttSubscription[].class), any(), any(), any(IMqttMessageListener.class), any());
-+		verify(clientMock, never()).unsubscribe(any(String[].class));
++		verify(mqttClient).connect(any(MqttConnectionOptions.class));
++		verify(mqttClient).subscribe(any(MqttSubscription[].class), any(), any(), any(IMqttMessageListener.class), any());
++		verify(mqttClient, never()).unsubscribe(any(String[].class));
  	}
  
  	@Test
@@ -60,7 +60,7 @@
  	public void sharedSubscriptionsPopulation() throws Exception {
 -		IMqttAsyncClient client = mock();
 -		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(client, false);
-+		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(clientMock, false);
++		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(mqttClient, false);
  
  		adapter.addTopic("$share/group/testTopic", "$SharedSubscription/myGroup/test/#", "some_other_topic",
  				"$SYS/broker/#");
@@ -71,7 +71,7 @@
 -		IMqttAsyncClient client = mock();
  		QueueChannel outputChannel = new QueueChannel();
 -		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(client, false, outputChannel);
-+		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(clientMock, false, outputChannel);
++		Mqttv5PahoMessageDrivenChannelAdapter adapter = buildAdapterIn(mqttClient, false, outputChannel);
  		adapter.setPayloadType(String.class);
  		adapter.setMessageConverter(new CompositeMessageConverter(List.of(
  				new ByteArrayMessageConverter(),
