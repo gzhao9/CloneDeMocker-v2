@@ -46,6 +46,16 @@ class VerificationLedgerTest(unittest.TestCase):
             ledger.write(key, {**PASSED, "testResults": {"demo.FooTest#x": "SKIPPED"}}, "baseline")
             self.assertIsNone(ledger.read(key))
 
+    def test_a_passing_pit_without_mutation_data_is_not_recorded(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            ledger = self.ledger(temporary)
+            key = VerificationLedger.key("baseline", "srchash", "scope", True, "gen1")
+            ledger.write(key, {**PASSED, "pitStatus": "PASSED"}, "baseline")
+            self.assertIsNone(ledger.read(key))
+            ledger.write(key, {**PASSED, "pitStatus": "PASSED", "mutants": {"m1": "KILLED"}, "mutationScore": 1.0},
+                         "baseline")
+            self.assertIsNotNone(ledger.read(key))
+
     def test_an_empty_record_already_on_disk_is_not_served(self):
         with tempfile.TemporaryDirectory() as temporary:
             ledger = self.ledger(temporary)

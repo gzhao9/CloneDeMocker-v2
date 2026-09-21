@@ -1,0 +1,53 @@
+--- a/config/src/test/java/org/springframework/security/config/web/server/OAuth2ResourceServerSpecTests.java
++++ b/config/src/test/java/org/springframework/security/config/web/server/OAuth2ResourceServerSpecTests.java
+@@ -35,6 +35,7 @@
+ import okhttp3.mockwebserver.MockWebServer;
+ import okhttp3.mockwebserver.RecordedRequest;
+ import org.apache.http.HttpHeaders;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.extension.ExtendWith;
+ import reactor.core.publisher.Mono;
+@@ -150,6 +151,13 @@
+ 
+ 	WebTestClient client;
+ 
++	private ReactiveJwtDecoder dslWiredJwtDecoderMock;
++
++	@BeforeEach
++	public void setUp() {
++		this.dslWiredJwtDecoderMock = mock(ReactiveJwtDecoder.class);
++	}
++
+ 	@Autowired
+ 	public void setApplicationContext(ApplicationContext context) {
+ 		this.client = WebTestClient.bindToApplicationContext(context).build();
+@@ -463,11 +471,10 @@
+ 		ServerHttpSecurity http = new ServerHttpSecurity();
+ 		http.setApplicationContext(context);
+ 		ReactiveJwtDecoder beanWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+-		ReactiveJwtDecoder dslWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+ 		context.registerBean(ReactiveJwtDecoder.class, () -> beanWiredJwtDecoder);
+ 		http.oauth2ResourceServer((server) -> server.jwt((jwt) -> {
+-			jwt.jwtDecoder(dslWiredJwtDecoder);
+-			assertThat(jwt.getJwtDecoder()).isEqualTo(dslWiredJwtDecoder);
++			jwt.jwtDecoder(dslWiredJwtDecoderMock);
++			assertThat(jwt.getJwtDecoder()).isEqualTo(dslWiredJwtDecoderMock);
+ 		}));
+ 	}
+ 
+@@ -477,12 +484,11 @@
+ 		ServerHttpSecurity http = new ServerHttpSecurity();
+ 		http.setApplicationContext(context);
+ 		ReactiveJwtDecoder beanWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+-		ReactiveJwtDecoder dslWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+ 		context.registerBean("firstJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoder);
+ 		context.registerBean("secondJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoder);
+ 		http.oauth2ResourceServer((server) -> server.jwt((jwt) -> {
+-			jwt.jwtDecoder(dslWiredJwtDecoder);
+-			assertThat(jwt.getJwtDecoder()).isEqualTo(dslWiredJwtDecoder);
++			jwt.jwtDecoder(dslWiredJwtDecoderMock);
++			assertThat(jwt.getJwtDecoder()).isEqualTo(dslWiredJwtDecoderMock);
+ 		}));
+ 	}
+ 

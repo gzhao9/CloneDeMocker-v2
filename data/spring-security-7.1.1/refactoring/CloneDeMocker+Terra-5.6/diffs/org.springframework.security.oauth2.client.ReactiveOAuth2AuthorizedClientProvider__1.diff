@@ -1,0 +1,74 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/DelegatingReactiveOAuth2AuthorizedClientProviderTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/DelegatingReactiveOAuth2AuthorizedClientProviderTests.java
+@@ -62,12 +62,10 @@
+ 		ClientRegistration clientRegistration = TestClientRegistrations.clientRegistration().build();
+ 		OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(clientRegistration, principal.getName(),
+ 				TestOAuth2AccessTokens.noScopes());
+-		ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider1 = mock(
+-				ReactiveOAuth2AuthorizedClientProvider.class);
+-		given(authorizedClientProvider1.authorize(any())).willReturn(Mono.empty());
+-		ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider2 = mock(
+-				ReactiveOAuth2AuthorizedClientProvider.class);
+-		given(authorizedClientProvider2.authorize(any())).willReturn(Mono.empty());
++		ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider1 = MockReactiveOAuth2AuthorizedClientProvider
++			.createMockReactiveOAuth2AuthorizedClientProvider();
++		ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider2 = MockReactiveOAuth2AuthorizedClientProvider
++			.createMockReactiveOAuth2AuthorizedClientProvider();
+ 		ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider3 = mock(
+ 				ReactiveOAuth2AuthorizedClientProvider.class);
+ 		given(authorizedClientProvider3.authorize(any())).willReturn(Mono.just(authorizedClient));
+@@ -86,12 +84,10 @@
+ 		OAuth2AuthorizationContext context = OAuth2AuthorizationContext.withClientRegistration(clientRegistration)
+ 			.principal(new TestingAuthenticationToken("principal", "password"))
+ 			.build();
+-		ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider1 = mock(
+-				ReactiveOAuth2AuthorizedClientProvider.class);
+-		given(authorizedClientProvider1.authorize(any())).willReturn(Mono.empty());
+-		ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider2 = mock(
+-				ReactiveOAuth2AuthorizedClientProvider.class);
+-		given(authorizedClientProvider2.authorize(any())).willReturn(Mono.empty());
++		ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider1 = MockReactiveOAuth2AuthorizedClientProvider
++			.createMockReactiveOAuth2AuthorizedClientProvider();
++		ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider2 = MockReactiveOAuth2AuthorizedClientProvider
++			.createMockReactiveOAuth2AuthorizedClientProvider();
+ 		DelegatingReactiveOAuth2AuthorizedClientProvider delegate = new DelegatingReactiveOAuth2AuthorizedClientProvider(
+ 				authorizedClientProvider1, authorizedClientProvider2);
+ 		assertThat(delegate.authorize(context).block()).isNull();
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/ReactiveOAuth2AuthorizedClientProviderBuilderTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/ReactiveOAuth2AuthorizedClientProviderBuilderTests.java
+@@ -198,8 +198,8 @@
+ 
+ 	@Test
+ 	public void buildWhenCustomProviderThenProviderCalled() {
+-		ReactiveOAuth2AuthorizedClientProvider customProvider = mock(ReactiveOAuth2AuthorizedClientProvider.class);
+-		given(customProvider.authorize(any())).willReturn(Mono.empty());
++		ReactiveOAuth2AuthorizedClientProvider customProvider = MockReactiveOAuth2AuthorizedClientProvider
++				.createMockReactiveOAuth2AuthorizedClientProvider();
+ 		// @formatter:off
+ 		ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider = ReactiveOAuth2AuthorizedClientProviderBuilder
+ 				.builder()
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/MockReactiveOAuth2AuthorizedClientProvider.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/MockReactiveOAuth2AuthorizedClientProvider.java
+@@ -0,0 +1,22 @@
++package org.springframework.security.oauth2.client;
++
++import reactor.core.publisher.Mono;
++
++import org.mockito.Mockito;
++
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.BDDMockito.given;
++
++public final class MockReactiveOAuth2AuthorizedClientProvider {
++
++	private MockReactiveOAuth2AuthorizedClientProvider() {
++	}
++
++	public static ReactiveOAuth2AuthorizedClientProvider createMockReactiveOAuth2AuthorizedClientProvider() {
++		ReactiveOAuth2AuthorizedClientProvider authorizedClientProvider = Mockito
++			.mock(ReactiveOAuth2AuthorizedClientProvider.class);
++		given(authorizedClientProvider.authorize(any())).willReturn(Mono.empty());
++		return authorizedClientProvider;
++	}
++
++}

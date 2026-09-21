@@ -1,0 +1,57 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcAuthorizationCodeAuthenticationProviderTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcAuthorizationCodeAuthenticationProviderTests.java
+@@ -296,9 +296,8 @@
+ 		given(principal.getAuthorities()).willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> authorities);
+ 		given(this.userService.loadUser(any())).willReturn(principal);
+ 		List<GrantedAuthority> mappedAuthorities = AuthorityUtils.createAuthorityList("ROLE_OIDC_USER");
+-		GrantedAuthoritiesMapper authoritiesMapper = mock(GrantedAuthoritiesMapper.class);
+-		given(authoritiesMapper.mapAuthorities(anyCollection()))
+-			.willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> mappedAuthorities);
++		GrantedAuthoritiesMapper authoritiesMapper = MockGrantedAuthoritiesMapper
++			.createMockGrantedAuthoritiesMapper(mappedAuthorities);
+ 		this.authenticationProvider.setAuthoritiesMapper(authoritiesMapper);
+ 		OAuth2LoginAuthenticationToken authentication = (OAuth2LoginAuthenticationToken) this.authenticationProvider
+ 			.authenticate(new OAuth2LoginAuthenticationToken(this.clientRegistration, this.authorizationExchange));
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcAuthorizationCodeReactiveAuthenticationManagerTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcAuthorizationCodeReactiveAuthenticationManagerTests.java
+@@ -353,9 +353,8 @@
+ 		ArgumentCaptor<OidcUserRequest> userRequestArgCaptor = ArgumentCaptor.forClass(OidcUserRequest.class);
+ 		given(this.userService.loadUser(userRequestArgCaptor.capture())).willReturn(Mono.just(user));
+ 		List<GrantedAuthority> mappedAuthorities = AuthorityUtils.createAuthorityList("ROLE_OIDC_USER");
+-		GrantedAuthoritiesMapper authoritiesMapper = mock(GrantedAuthoritiesMapper.class);
+-		given(authoritiesMapper.mapAuthorities(anyCollection()))
+-			.willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> mappedAuthorities);
++		GrantedAuthoritiesMapper authoritiesMapper = org.springframework.security.oauth2.client.oidc.authentication.MockGrantedAuthoritiesMapper
++				.createMockGrantedAuthoritiesMapper(mappedAuthorities);
+ 		given(this.jwtDecoder.decode(any())).willReturn(Mono.just(idToken));
+ 		this.manager.setJwtDecoderFactory((c) -> this.jwtDecoder);
+ 		this.manager.setAuthoritiesMapper(authoritiesMapper);
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/MockGrantedAuthoritiesMapper.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/MockGrantedAuthoritiesMapper.java
+@@ -0,0 +1,26 @@
++package org.springframework.security.oauth2.client.oidc.authentication;
++
++import java.util.List;
++
++import org.mockito.stubbing.Answer;
++import org.springframework.security.core.GrantedAuthority;
++import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
++
++import static org.mockito.ArgumentMatchers.anyCollection;
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.mock;
++
++public final class MockGrantedAuthoritiesMapper {
++
++	private MockGrantedAuthoritiesMapper() {
++	}
++
++	public static GrantedAuthoritiesMapper createMockGrantedAuthoritiesMapper(
++			List<GrantedAuthority> mappedAuthorities) {
++		GrantedAuthoritiesMapper authoritiesMapper = mock(GrantedAuthoritiesMapper.class);
++		given(authoritiesMapper.mapAuthorities(anyCollection()))
++			.willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> mappedAuthorities);
++		return authoritiesMapper;
++	}
++
++}

@@ -212,6 +212,15 @@ class RefactoringAgentTest(unittest.TestCase):
                                  test_results={name.format("50a095cb"): "FAILED", "demo.Test#stable": "PASSED"})
         self.assertIn("previously passing", _test_regression_reason(baseline, failed))
 
+    def test_a_harness_revision_expires_verification_evidence_but_not_model_answers(self):
+        from unittest.mock import patch
+        from studio import refactoring_agent
+        prompts = RefactoringAgent._generation()
+        before = RefactoringAgent._verification_generation()
+        with patch.object(refactoring_agent, "_HARNESS_REVISION", "next"):
+            self.assertNotEqual(before, RefactoringAgent._verification_generation())
+            self.assertEqual(prompts, RefactoringAgent._generation())
+
     def test_names_that_collapse_after_normalization_keep_every_status(self):
         first, second = "demo.T#[1] x = demo.A@1a2b", "demo.T#[1] x = demo.A@3c4d"
         self.assertEqual({"demo.T#[1] x = demo.A@<hash>": ("FAILED", "PASSED")},

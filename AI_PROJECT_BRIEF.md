@@ -305,3 +305,11 @@ non-closed itemset's closure has the same support and more statements, hence a s
 estimated gain, so a non-closed itemset is never a chosen center. Dubbo and Spring Security detection
 output is byte-identical to before; CloudStack detection now takes 3 s (5 of 2601 groups use the
 closed path).
+
+Verification evidence recorded before the long-path fix was still being replayed afterwards: the
+ledger key covered sources, scope and prompts but not how the harness routes a class to a Gradle
+test task, and before the fix saml2's opensaml5Test classes fell back to `:test` (which drags in
+the whole unfiltered opensaml5Test run, 142 results) while the fixed harness runs the filtered
+`:opensaml5Test` (4 results). The mismatch surfaced as FAILED_BEHAVIORAL_EQUIVALENCE. Ledger keys
+now carry `_HARNESS_REVISION`; bump it whenever the harness changes which tests run for a scope.
+The proposal cache keys on `_generation()` alone and is unaffected.
