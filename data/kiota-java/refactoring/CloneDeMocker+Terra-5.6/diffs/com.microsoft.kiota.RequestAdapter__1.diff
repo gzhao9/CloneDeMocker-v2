@@ -1,0 +1,40 @@
+--- a/components/abstractions/src/test/java/com/microsoft/kiota/MultiPartBodyTest.java
++++ b/components/abstractions/src/test/java/com/microsoft/kiota/MultiPartBodyTest.java
+@@ -12,6 +12,8 @@
+ import org.junit.jupiter.api.Test;
+ 
+ class MultiPartBodyTest {
++    private final RequestAdapter sharedRequestAdapter = mock(RequestAdapter.class);
++
+     private static <T> T nullValue() {
+         return java.util.Collections.<String, T>emptyMap().get("missing");
+     }
+@@ -46,16 +48,14 @@
+     void requiresPartsForSerialization() {
+         final MultipartBody multipartBody = new MultipartBody();
+         final SerializationWriter writer = mock(SerializationWriter.class);
+-        final RequestAdapter requestAdapter = mock(RequestAdapter.class);
+-        multipartBody.requestAdapter = requestAdapter;
++        multipartBody.requestAdapter = sharedRequestAdapter;
+         assertThrows(IllegalStateException.class, () -> multipartBody.serialize(writer));
+     }
+ 
+     @Test
+     void addsPart() {
+         final MultipartBody multipartBody = new MultipartBody();
+-        final RequestAdapter requestAdapter = mock(RequestAdapter.class);
+-        multipartBody.requestAdapter = requestAdapter;
++        multipartBody.requestAdapter = sharedRequestAdapter;
+         multipartBody.addOrReplacePart("foo", "bar", "baz");
+         final Object result = multipartBody.getPartValue("foo");
+         assertNotNull(result);
+@@ -65,8 +65,7 @@
+     @Test
+     void removesPart() {
+         final MultipartBody multipartBody = new MultipartBody();
+-        final RequestAdapter requestAdapter = mock(RequestAdapter.class);
+-        multipartBody.requestAdapter = requestAdapter;
++        multipartBody.requestAdapter = sharedRequestAdapter;
+         multipartBody.addOrReplacePart("foo", "bar", "baz");
+         multipartBody.removePart("FOO");
+         final Object result = multipartBody.getPartValue("foo");
