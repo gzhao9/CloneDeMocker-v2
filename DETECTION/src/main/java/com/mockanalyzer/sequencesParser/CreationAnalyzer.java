@@ -19,7 +19,8 @@ public class CreationAnalyzer {
             // interceptor handles, not a plain mock object; startsWith would misclassify them.
             String qualifiedName = expression.asMethodCallExpr().resolve().getQualifiedName();
             return qualifiedName.equals("org.mockito.Mockito.mock");
-        } catch (Exception e) {
+        } catch (Exception | StackOverflowError e) {
+            ResolutionDiagnostics.note(e);
             // 无依赖源码仍需可检测：仅接受静态导入形式 mock(...) 或 Mockito.mock(...)。
             // Keep source-only detection: accept static-import mock(...) or Mockito.mock(...).
             return hasMockitoShape(expression.asMethodCallExpr(), "mock");
@@ -33,7 +34,8 @@ public class CreationAnalyzer {
         try {
             String qualifiedName = expression.asMethodCallExpr().resolve().getQualifiedName();
             return qualifiedName.equals("org.mockito.Mockito.spy");
-        } catch (Exception e) {
+        } catch (Exception | StackOverflowError e) {
+            ResolutionDiagnostics.note(e);
             return hasMockitoShape(expression.asMethodCallExpr(), "spy");
         }
     }

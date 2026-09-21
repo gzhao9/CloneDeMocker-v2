@@ -159,7 +159,8 @@ public class StubbingAnalyzer {
                         if (rootScope != null) {
                             try {
                                 mockType = rootScope.calculateResolvedType().describe(); // 真正的 mock 对象类型
-                            } catch (Exception ignored) {
+                            } catch (Exception | StackOverflowError ignored) {
+                                ResolutionDiagnostics.note(ignored);
                                 // 保持原值
                             }
                         }
@@ -182,7 +183,8 @@ public class StubbingAnalyzer {
                                                                                                       // used
                                         isMockitoMatcher = true;
                                     }
-                                } catch (Exception e) {
+                                } catch (Exception | StackOverflowError e) {
+                                    ResolutionDiagnostics.note(e);
                                     // Resolution failed, fallback to name-based check or treat as non-matcher
                                     // For robustness, we can still include a simplified name check as a fallback
                                     String paramName = paramAsMethodCall.getNameAsString();
@@ -199,7 +201,8 @@ public class StubbingAnalyzer {
                             } else {
                                 try {
                                     paramTypes.add(param.calculateResolvedType().describe());
-                                } catch (Exception e) {
+                                } catch (Exception | StackOverflowError e) {
+                                    ResolutionDiagnostics.note(e);
                                     // Fallback if type resolution fails for non-matchers
                                     paramTypes.add(param.toString());
                                 }
@@ -231,7 +234,8 @@ public class StubbingAnalyzer {
                     for (Expression arg : current.getArguments()) {
                         try {
                             argTypes.add(arg.calculateResolvedType().describe());
-                        } catch (Exception e) {
+                        } catch (Exception | StackOverflowError e) {
+                            ResolutionDiagnostics.note(e);
                             String simpleType; // 兜底结果
 
                             /* ---------- ① 尝试解析返回类型（MethodCallExpr 专用） ---------- */
@@ -240,14 +244,16 @@ public class StubbingAnalyzer {
                                     ResolvedMethodDeclaration r = arg.asMethodCallExpr().resolve(); // 解析失败直接跳过
                                     simpleType = r.getReturnType().describe(); // 例如 io.netty.channel.ChannelFuture
 
-                                } catch (Exception ignored) {
+                                } catch (Exception | StackOverflowError ignored) {
+                                    ResolutionDiagnostics.note(ignored);
                                     simpleType = null; // 留给下一步
                                 }
                             } else {
                                 /* ---------- ② 若不是方法调用，再退回 calculateResolvedType() ---------- */
                                 try {
                                     simpleType = arg.calculateResolvedType().describe();
-                                } catch (Exception ignored) {
+                                } catch (Exception | StackOverflowError ignored) {
+                                    ResolutionDiagnostics.note(ignored);
                                     simpleType = null;
                                 }
                             }
