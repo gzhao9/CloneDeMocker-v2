@@ -1,0 +1,39 @@
+--- a/web/src/test/java/org/springframework/security/web/server/authentication/SwitchUserWebFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authentication/SwitchUserWebFilterTests.java
+@@ -83,6 +83,9 @@
+ 	@Mock
+ 	private ServerSecurityContextRepository serverSecurityContextRepository;
+ 
++	@Mock
++	private Authentication authentication;
++
+ 	@BeforeEach
+ 	public void setUp() {
+ 		this.switchUserWebFilter = new SwitchUserWebFilter(this.userDetailsService, this.successHandler,
+@@ -183,7 +186,7 @@
+ 		final MockServerWebExchange exchange = MockServerWebExchange
+ 			.from(MockServerHttpRequest.post("/login/impersonate"));
+ 		final WebFilterChain chain = mock(WebFilterChain.class);
+-		final SecurityContextImpl securityContext = new SecurityContextImpl(mock(Authentication.class));
++		final SecurityContextImpl securityContext = new SecurityContextImpl(this.authentication);
+ 		assertThatIllegalArgumentException().isThrownBy(() -> {
+ 			Context securityContextHolder = ReactiveSecurityContextHolder
+ 				.withSecurityContext(Mono.just(securityContext));
+@@ -198,7 +201,7 @@
+ 		final MockServerWebExchange exchange = MockServerWebExchange
+ 			.from(MockServerHttpRequest.post("/login/impersonate?username={targetUser}", targetUsername));
+ 		final WebFilterChain chain = mock(WebFilterChain.class);
+-		final SecurityContextImpl securityContext = new SecurityContextImpl(mock(Authentication.class));
++		final SecurityContextImpl securityContext = new SecurityContextImpl(authentication);
+ 		final UserDetails switchUserDetails = switchUserDetails(targetUsername, false);
+ 		given(this.userDetailsService.findByUsername(any(String.class))).willReturn(Mono.just(switchUserDetails));
+ 		given(this.failureHandler.onAuthenticationFailure(any(WebFilterExchange.class), any(DisabledException.class)))
+@@ -217,7 +220,7 @@
+ 		final MockServerWebExchange exchange = MockServerWebExchange
+ 			.from(MockServerHttpRequest.post("/login/impersonate?username={targetUser}", targetUsername));
+ 		final WebFilterChain chain = mock(WebFilterChain.class);
+-		final SecurityContextImpl securityContext = new SecurityContextImpl(mock(Authentication.class));
++		final SecurityContextImpl securityContext = new SecurityContextImpl(this.authentication);
+ 		final UserDetails switchUserDetails = switchUserDetails(targetUsername, false);
+ 		given(this.userDetailsService.findByUsername(any(String.class))).willReturn(Mono.just(switchUserDetails));
+ 		assertThatExceptionOfType(DisabledException.class).isThrownBy(() -> {

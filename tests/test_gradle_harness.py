@@ -1,3 +1,4 @@
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -5,6 +6,7 @@ from unittest.mock import patch
 
 from studio import gradle_support
 from studio.harness import BuildScope, HarnessStatus, ProjectHarness, is_module_directory
+from studio.long_paths import long_path
 from studio.preflight import gradle_root, inspect_project
 from validation.scoped_harness import ScopedProjectHarness
 
@@ -148,6 +150,25 @@ class GradleHarnessTest(unittest.TestCase):
 
 
 class GradleProjectsTest(unittest.TestCase):
+    def test_test_task_lookup_sees_source_files_past_max_path(self):
+        # 批次副本里 saml2 的 opensaml5Test 源文件正好 260 字符；查不到就退回 test 任务，测试一个都不跑。
+        # In a batch copy saml2's opensaml5Test source file is exactly 260 characters; missing it
+        # falls back to the test task, which runs none of its tests.
+        # TemporaryDirectory 删不掉超过 MAX_PATH 的树 / TemporaryDirectory cannot remove a tree past MAX_PATH
+        temporary = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, long_path(Path(temporary)), True)
+        source = Path(temporary) / ("d" * 60) / "src" / "opensaml5Test" / "java"
+        package = long_path(source / "org" / ("p" * 60) / ("q" * 60))
+        package.mkdir(parents=True)
+        (package / "LongNamedTests.java").write_text("", encoding="utf-8")
+        projects = _spring_like(Path(temporary))
+        projects.test_tasks[":saml2"] = [
+            gradle_support.TestTask("opensaml5Test", "opensaml5Test", "opensaml5TestClasses", str(source))]
+        test_class = f"org.{'p' * 60}.{'q' * 60}.LongNamedTests"
+        self.assertGreater(len(str(source)) + len(test_class) + len(".java"), 260)
+        self.assertEqual(["opensaml5Test"],
+                         [task.name for task in projects.test_tasks_for(":saml2", test_class, fallback=False)])
+
     def test_nested_directory_falls_back_to_nearest_project(self):
         projects = _spring_like(Path("."))
         self.assertEqual(":spring-security-oauth2-client", projects.project_for("oauth2/oauth2-client/src/test"))

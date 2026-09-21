@@ -1,0 +1,39 @@
+--- a/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
++++ b/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
+@@ -67,8 +67,11 @@
+ 
+ 	private AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
+ 
++	private AuthenticationConverter customAuthenticationConverter;
++
+ 	@BeforeEach
+ 	public void setup() {
++		this.customAuthenticationConverter = mock(AuthenticationConverter.class);
+ 		this.filter = new Saml2WebSsoAuthenticationFilter(this.repository);
+ 		this.request.setRequestURI("/login/saml2/sso/idp-registration-id");
+ 		this.request.setPathInfo("/login/saml2/sso/idp-registration-id");
+@@ -90,8 +93,7 @@
+ 
+ 	@Test
+ 	public void constructingFilterWithMissingRegistrationIdVariableAndCustomAuthenticationConverterThenSucceeds() {
+-		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
+-		this.filter = new Saml2WebSsoAuthenticationFilter(authenticationConverter, "/url/missing/variable");
++		this.filter = new Saml2WebSsoAuthenticationFilter(customAuthenticationConverter, "/url/missing/variable");
+ 	}
+ 
+ 	@Test
+@@ -210,12 +212,11 @@
+ 
+ 	@Test
+ 	public void setAuthenticationRequestRepositoryWhenNotExpectedAuthenticationConverterTypeThenDoNotSet() {
+-		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
+ 		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+ 				Saml2AuthenticationRequestRepository.class);
+-		this.filter = new Saml2WebSsoAuthenticationFilter(authenticationConverter, "/some/other/path/{registrationId}");
++		this.filter = new Saml2WebSsoAuthenticationFilter(customAuthenticationConverter, "/some/other/path/{registrationId}");
+ 		this.filter.setAuthenticationRequestRepository(authenticationRequestRepository);
+-		verifyNoInteractions(authenticationConverter);
++		verifyNoInteractions(customAuthenticationConverter);
+ 	}
+ 
+ 	@Test

@@ -1,0 +1,47 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcAuthorizationCodeAuthenticationProviderTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcAuthorizationCodeAuthenticationProviderTests.java
+@@ -266,9 +266,8 @@
+ 		claims.put(IdTokenClaimNames.AZP, "client1");
+ 		claims.put(IdTokenClaimNames.NONCE, this.nonceHash);
+ 		this.setUpIdToken(claims);
+-		OidcUser principal = mock(OidcUser.class);
+ 		List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_USER");
+-		given(principal.getAuthorities()).willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> authorities);
++		OidcUser principal = createMockOidcUser(authorities);
+ 		given(this.userService.loadUser(any())).willReturn(principal);
+ 		OAuth2LoginAuthenticationToken authentication = (OAuth2LoginAuthenticationToken) this.authenticationProvider
+ 			.authenticate(new OAuth2LoginAuthenticationToken(this.clientRegistration, this.authorizationExchange));
+@@ -291,9 +290,8 @@
+ 		claims.put(IdTokenClaimNames.AZP, "client1");
+ 		claims.put(IdTokenClaimNames.NONCE, this.nonceHash);
+ 		this.setUpIdToken(claims);
+-		OidcUser principal = mock(OidcUser.class);
+ 		List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_USER");
+-		given(principal.getAuthorities()).willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> authorities);
++		OidcUser principal = createMockOidcUser(authorities);
+ 		given(this.userService.loadUser(any())).willReturn(principal);
+ 		List<GrantedAuthority> mappedAuthorities = AuthorityUtils.createAuthorityList("ROLE_OIDC_USER");
+ 		GrantedAuthoritiesMapper authoritiesMapper = mock(GrantedAuthoritiesMapper.class);
+@@ -315,15 +313,20 @@
+ 		claims.put(IdTokenClaimNames.AZP, "client1");
+ 		claims.put(IdTokenClaimNames.NONCE, this.nonceHash);
+ 		this.setUpIdToken(claims);
+-		OidcUser principal = mock(OidcUser.class);
+ 		List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_USER");
+-		given(principal.getAuthorities()).willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> authorities);
++		OidcUser principal = createMockOidcUser(authorities);
+ 		ArgumentCaptor<OidcUserRequest> userRequestArgCaptor = ArgumentCaptor.forClass(OidcUserRequest.class);
+ 		given(this.userService.loadUser(userRequestArgCaptor.capture())).willReturn(principal);
+ 		this.authenticationProvider
+ 			.authenticate(new OAuth2LoginAuthenticationToken(this.clientRegistration, this.authorizationExchange));
+ 		assertThat(userRequestArgCaptor.getValue().getAdditionalParameters())
+ 			.containsAllEntriesOf(this.accessTokenResponse.getAdditionalParameters());
++	}
++
++	private static OidcUser createMockOidcUser(List<GrantedAuthority> authorities) {
++		OidcUser principal = mock(OidcUser.class);
++		given(principal.getAuthorities()).willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> authorities);
++		return principal;
+ 	}
+ 
+ 	private void setUpIdToken(Map<String, Object> claims) {

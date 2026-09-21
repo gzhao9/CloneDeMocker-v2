@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 from typing import Any, Callable
 
 from studio import gradle_support
+from studio.long_paths import long_path
 
 
 def _strip_long_path_prefix(path: Path) -> Path:
@@ -279,11 +280,7 @@ def _report_files(root: Path, *patterns: str) -> list[Path]:
     prefix it cannot be opened, so tests that did run produced no readable result and were
     classified as an unready environment.
     """
-    found = [path for pattern in patterns for path in root.rglob(pattern)]
-    if os.name != "nt":
-        return found
-    return [path if str(path).startswith("\\\\?\\") else Path("\\\\?\\" + str(path.resolve()))
-            for path in found]
+    return [long_path(path) for pattern in patterns for path in root.rglob(pattern)]
 
 
 def is_module_directory(directory: Path) -> bool:

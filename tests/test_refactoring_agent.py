@@ -1,4 +1,5 @@
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +9,7 @@ from studio.detection_service import DetectionError, DetectionService
 from studio.model_provider import ModelResult, ModelUsage
 from studio.refactoring_agent import RefactoringAgent, _test_regression_reason
 from studio.harness import HarnessEvidence, HarnessStatus
+from studio.long_paths import long_path
 
 HELPER = "    private static Dependency createDependency() {\n        return Mockito.mock(Dependency.class);\n    }\n"
 
@@ -197,11 +199,11 @@ class RefactoringAgentTest(unittest.TestCase):
 
     @staticmethod
     def _fixture(temporary: str, run_id: str = "e" * 32, methods: list[str] | None = None,
-                 shared_statements: list[str] | None = None):
+                 shared_statements: list[str] | None = None, source_directory: str = "src"):
         methods = methods or ["testFirst"]
         repository = Path(temporary) / "tool"
         project = Path(temporary) / "subject"
-        source = project / "src" / "Test.java"
+        source = project / source_directory / "Test.java"
         source.parent.mkdir(parents=True)
         content = java_source(methods)
         source.write_text(content, encoding="utf-8")
@@ -232,6 +234,28 @@ class RefactoringAgentTest(unittest.TestCase):
             applied = agent.apply(run_id, result["proposalId"], force=True)
             self.assertTrue(applied["applied"])
             self.assertEqual(patched, source.read_text(encoding="utf-8"))
+
+    def test_source_that_passes_max_path_only_inside_the_workspace_is_still_written(self):
+        # 源文件本身不到 260 字符，复制进 .clonedemocker-workspaces/<id>/ 后超过——Spring Security
+        # saml2/oauth2 的实际情况。以前这里 write_text 报 Errno 2，MCI 以 ERROR 结束且不进导出。
+        # The source itself is under 260 characters but passes it once copied into
+        # .clonedemocker-workspaces/<id>/, as in Spring Security's saml2/oauth2. write_text used to
+        # raise Errno 2 here, ending the MCI as an ERROR that never reached the export.
+        # TemporaryDirectory 删不掉超过 MAX_PATH 的树 / TemporaryDirectory cannot remove a tree past MAX_PATH
+        temporary = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, long_path(Path(temporary)), True)
+        padding = 245 - len(str(Path(temporary) / "subject" / "src" / "Test.java"))
+        if padding < 10:
+            self.skipTest("temporary directory is already too deep")
+        deep = "src/" + "/".join("d" * 40 for _ in range(padding // 41)) + "/" + "e" * (padding % 41 or 1)
+        service, source, run_id, run_dir = self._fixture(temporary, "f" * 32, source_directory=deep)
+        self.assertLess(len(str(source)), 260)
+
+        result = RefactoringAgent(service, StagedProvider(), PassingHarness()).run(
+            run_id, ["demo.Dependency::1"], "gpt-5.6-terra")
+
+        self.assertEqual("COMPLETED", result["stage"])
+        self.assertIn("+        Dependency value = createDependency();", result["diff"])
 
     def test_runs_one_encapsulation_then_one_integration_per_sequence(self):
         """论文的两步走必须体现在调用结构上，而不只是 prompt 里的一句话。

@@ -1,0 +1,34 @@
+--- a/web/src/test/java/org/springframework/security/web/context/DelegatingSecurityContextRepositoryTests.java
++++ b/web/src/test/java/org/springframework/security/web/context/DelegatingSecurityContextRepositoryTests.java
+@@ -112,8 +112,7 @@
+ 	public void containsContextWhenAllDelegatesReturnFalseThenReturnsFalse() {
+ 		List<SecurityContextRepository> delegates = new ArrayList<>();
+ 		for (int i = 0; i < 3; i++) {
+-			SecurityContextRepository repository = mock(SecurityContextRepository.class);
+-			given(repository.containsContext(this.request)).willReturn(false);
++			SecurityContextRepository repository = createMockSecurityContextRepository(this.request, false);
+ 			delegates.add(repository);
+ 		}
+ 
+@@ -129,8 +128,7 @@
+ 	public void containsContextWhenFirstDelegatesReturnTrueThenReturnsTrue() {
+ 		List<SecurityContextRepository> delegates = new ArrayList<>();
+ 		for (int i = 0; i < 3; i++) {
+-			SecurityContextRepository repository = mock(SecurityContextRepository.class);
+-			given(repository.containsContext(this.request)).willReturn(true);
++			SecurityContextRepository repository = createMockSecurityContextRepository(this.request, true);
+ 			delegates.add(repository);
+ 		}
+ 
+@@ -201,4 +199,11 @@
+ 		assertThat(returnedSecurityContext).isSameAs(securityContext1);
+ 	}
+ 
++	private static SecurityContextRepository createMockSecurityContextRepository(MockHttpServletRequest request,
++			boolean containsContext) {
++		SecurityContextRepository repository = mock(SecurityContextRepository.class);
++		given(repository.containsContext(request)).willReturn(containsContext);
++		return repository;
++	}
++
+ }

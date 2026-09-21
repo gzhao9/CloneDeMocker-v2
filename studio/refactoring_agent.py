@@ -17,6 +17,7 @@ from typing import Any, Callable
 from studio.detection_service import DetectionError, DetectionService
 from studio.harness import (BuildScope, HarnessEvidence, ProjectHarness, ensure_pit_junit5_support, is_module_directory,
                              mutation_regressed, verification_failure_reason)
+from studio.long_paths import long_path
 from studio.mechanical import rename_local_mock_to_field
 from studio.model_provider import MockModelProvider, ModelProvider, ModelResult, ModelUsage, OpenAIModelProvider
 from studio.payloads import (PayloadError, encapsulation_payload, integration_payload, route_encapsulation,
@@ -55,21 +56,6 @@ def _test_regression_reason(baseline: Any, candidate: Any) -> str | None:
         if status in {"FAILED", "ERROR"} and before.get(key) not in {"FAILED", "ERROR"}:
             return f"Candidate introduced a new failing test: {key}"
     return None
-
-
-def _long_path(path: Path) -> Path:
-    """规避 Windows 默认 260 字符 MAX_PATH 限制（真实项目 + 我们自己 run/proposal 目录嵌套
-    很容易超限，报 WinError 206）。用扩展长度前缀 \\\\?\\，之后所有 / 拼接都会带着它。
-    Works around Windows' default 260-char MAX_PATH limit (real projects nested under our
-    own run/proposal directories easily exceed it, raising WinError 206). Uses the \\\\?\\
-    extended-length prefix; every subsequent `/` join inherits it automatically.
-    """
-    if os.name != "nt":
-        return path
-    resolved = str(path.resolve())
-    if resolved.startswith("\\\\?\\"):
-        return path
-    return Path("\\\\?\\" + resolved)
 
 
 def _workspace_root(project_root: Path, proposal_id: str) -> Path:
@@ -209,7 +195,7 @@ class RefactoringAgent:
                 provider = MockModelProvider() if use_mock else (self.provider or self._openai_provider(api_profile))
             return provider
         proposal_id = uuid.uuid4().hex
-        proposal_root = _long_path(run.run_directory / "refactoring" / proposal_id)
+        proposal_root = long_path(run.run_directory / "refactoring" / proposal_id)
         proposal_root.mkdir(parents=True)
 
         # 先在隔离副本上跑 baseline，再调模型。baseline 跟模型产出毫无关系，它衡量的是
@@ -254,6 +240,14 @@ class RefactoringAgent:
         else:
             progress("COPYING", 6, "Creating isolated workspace")
             self._copy_project(run.project_root, workspace)
+        # `workspace` 保持裸路径：它会进 Gradle 命令、证据和 ledger 键。我们自己读写副本里的
+        # 文件则走扩展长度路径——Spring Security 的 saml2/oauth2 深层测试文件放进副本后
+        # 正好达到或超过 260 字符，裸路径下 is_file() 静默返回 False，write_text 报 Errno 2。
+        # `workspace` stays a plain path: it goes into Gradle commands, evidence and ledger keys.
+        # Our own reads and writes inside the copy use the extended-length form instead — deep
+        # saml2/oauth2 test files in Spring Security reach 260+ chars once copied, where the
+        # plain path makes is_file() silently return False and write_text raise Errno 2.
+        workspace_files = long_path(workspace)
         if run_pit:
             ensure_pit_junit5_support(workspace, getattr(self.harness, "maven_repo_local", None))
         # 同一个模块里的 MCI 共用同一份未改动源码，它们的基线编译与测试跑的是字节完全相同
@@ -419,12 +413,12 @@ class RefactoringAgent:
         def remember_workspace_paths(paths: dict[Path, str]) -> None:
             for relative in paths:
                 if relative not in workspace_baseline:
-                    target = workspace / relative
+                    target = workspace_files / relative
                     workspace_baseline[relative] = target.read_text(encoding="utf-8") if target.is_file() else None
 
         def restore_workspace_baseline() -> None:
             for relative, original_content in workspace_baseline.items():
-                target = workspace / relative
+                target = workspace_files / relative
                 if original_content is None:
                     target.unlink(missing_ok=True)
                 else:
@@ -454,7 +448,7 @@ class RefactoringAgent:
         # The candidate changes go into the same isolated copy the baseline already ran in;
         # the source project is never written.
         for relative, new_content in replacements.items():
-            target = workspace / relative
+            target = workspace_files / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(new_content, encoding="utf-8", newline="\n")
         # 候选侧的键要带上补丁本身的指纹：源码相同但补丁不同，验证结论完全可以不同。
@@ -523,7 +517,7 @@ class RefactoringAgent:
             restore_workspace_baseline()
             remember_workspace_paths(replacements)
             for relative, new_content in replacements.items():
-                target = workspace / relative
+                target = workspace_files / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(new_content, encoding="utf-8", newline="\n")
             candidate_evidence = validate(workspace, effective_run_pit, 52, 82, "CANDIDATE", scope)
@@ -572,7 +566,7 @@ class RefactoringAgent:
             restore_workspace_baseline()
             remember_workspace_paths(replacements)
             for relative, new_content in replacements.items():
-                (workspace / relative).write_text(new_content, encoding="utf-8", newline="\n")
+                (workspace_files / relative).write_text(new_content, encoding="utf-8", newline="\n")
             candidate_evidence = validate(workspace, effective_run_pit, 52, 82, "CANDIDATE", scope)
             if baseline_target is not None:
                 candidate_target = self.harness.validate_targets(workspace, target_classes, target_modules)
@@ -769,7 +763,7 @@ class RefactoringAgent:
         # 校验用普通路径，实际读写换成扩展长度路径，避免深层项目触发 Windows MAX_PATH。
         # Validation uses the plain path; actual I/O switches to the extended-length form
         # to avoid Windows' MAX_PATH limit on deeply nested projects.
-        proposal_root = _long_path(proposal_root)
+        proposal_root = long_path(proposal_root)
         proposal = json.loads((proposal_root / "proposal.json").read_text(encoding="utf-8"))
         verified = bool((proposal.get("harness") or {}).get("equivalent"))
         if not verified and not force:
@@ -1068,7 +1062,7 @@ class RefactoringAgent:
                 except (OSError, ValueError):
                     continue
                 if resolved.suffix == ".java" and cls._is_project_source(relative):
-                    files[relative] = resolved.read_text(encoding="utf-8")
+                    files[relative] = long_path(resolved).read_text(encoding="utf-8")
         return files
 
     @staticmethod
@@ -1500,7 +1494,7 @@ class RefactoringAgent:
         # Some source files have very long names on their own (e.g. Spring Boot's
         # *.imports metadata files), so the read side can hit Windows' MAX_PATH too;
         # both source and destination need the extended-length form.
-        shutil.copytree(_long_path(source), _long_path(destination), ignore=ignored)
+        shutil.copytree(long_path(source), long_path(destination), ignore=ignored)
 
     @staticmethod
     def _openai_provider(profile: str) -> ModelProvider:
