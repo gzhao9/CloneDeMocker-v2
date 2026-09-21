@@ -1,0 +1,50 @@
+--- a/access/src/test/java/org/springframework/security/access/intercept/aopalliance/MethodSecurityInterceptorTests.java
++++ b/access/src/test/java/org/springframework/security/access/intercept/aopalliance/MethodSecurityInterceptorTests.java
+@@ -84,6 +84,8 @@
+ 
+ 	private ApplicationEventPublisher eventPublisher;
+ 
++	private AfterInvocationManager afterInvocationManager;
++
+ 	@BeforeEach
+ 	public final void setUp() {
+ 		SecurityContextHolder.clearContext();
+@@ -93,6 +95,7 @@
+ 		this.authman = mock(AuthenticationManager.class);
+ 		this.mds = mock(MethodSecurityMetadataSource.class);
+ 		this.eventPublisher = mock(ApplicationEventPublisher.class);
++		this.afterInvocationManager = mock(AfterInvocationManager.class);
+ 		this.interceptor.setAccessDecisionManager(this.adm);
+ 		this.interceptor.setAuthenticationManager(this.authman);
+ 		this.interceptor.setSecurityMetadataSource(this.mds);
+@@ -115,14 +118,13 @@
+ 	@Test
+ 	public void gettersReturnExpectedData() {
+ 		RunAsManager runAs = mock(RunAsManager.class);
+-		AfterInvocationManager aim = mock(AfterInvocationManager.class);
+ 		this.interceptor.setRunAsManager(runAs);
+-		this.interceptor.setAfterInvocationManager(aim);
++		this.interceptor.setAfterInvocationManager(afterInvocationManager);
+ 		assertThat(this.interceptor.getAccessDecisionManager()).isEqualTo(this.adm);
+ 		assertThat(this.interceptor.getRunAsManager()).isEqualTo(runAs);
+ 		assertThat(this.interceptor.getAuthenticationManager()).isEqualTo(this.authman);
+ 		assertThat(this.interceptor.getSecurityMetadataSource()).isEqualTo(this.mds);
+-		assertThat(this.interceptor.getAfterInvocationManager()).isEqualTo(aim);
++		assertThat(this.interceptor.getAfterInvocationManager()).isEqualTo(afterInvocationManager);
+ 	}
+ 
+ 	@Test
+@@ -314,11 +316,10 @@
+ 		this.token.setAuthenticated(true);
+ 		SecurityContextHolder.getContext().setAuthentication(this.token);
+ 		mdsReturnsUserRole();
+-		AfterInvocationManager aim = mock(AfterInvocationManager.class);
+-		this.interceptor.setAfterInvocationManager(aim);
++		this.interceptor.setAfterInvocationManager(afterInvocationManager);
+ 		given(mi.proceed()).willThrow(new Throwable());
+ 		assertThatExceptionOfType(Throwable.class).isThrownBy(() -> this.interceptor.invoke(mi));
+-		verifyNoMoreInteractions(aim);
++		verifyNoMoreInteractions(afterInvocationManager);
+ 	}
+ 
+ 	void mdsReturnsNull() {

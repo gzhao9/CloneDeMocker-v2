@@ -1,0 +1,61 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/www/BasicAuthenticationFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/www/BasicAuthenticationFilterTests.java
+@@ -508,8 +508,8 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		request.addHeader(HttpHeaders.AUTHORIZATION, "Basic " + CodecTestUtils.encodeBase64("a:b"));
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		AuthenticationManager manager = mock(AuthenticationManager.class);
+-		given(manager.authenticate(any())).willReturn(new TestingAuthenticationToken("username", "password", "TEST"));
++		AuthenticationManager manager = createMockAuthenticationManager(
++				new TestingAuthenticationToken("username", "password", "TEST"));
+ 		BasicAuthenticationFilter filter = new BasicAuthenticationFilter(manager);
+ 		filter.setMfaEnabled(true);
+ 		filter.doFilter(request, response, new MockFilterChain());
+@@ -527,9 +527,8 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		request.addHeader(HttpHeaders.AUTHORIZATION, "Basic " + CodecTestUtils.encodeBase64("a:b"));
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		AuthenticationManager manager = mock(AuthenticationManager.class);
+ 		TestingAuthenticationToken newAuthn = new TestingAuthenticationToken("username", "password", "TEST");
+-		given(manager.authenticate(any())).willReturn(newAuthn);
++		AuthenticationManager manager = createMockAuthenticationManager(newAuthn);
+ 		BasicAuthenticationFilter filter = new BasicAuthenticationFilter(manager);
+ 		filter.doFilter(request, response, new MockFilterChain());
+ 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+@@ -546,10 +545,9 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		request.addHeader(HttpHeaders.AUTHORIZATION, "Basic " + CodecTestUtils.encodeBase64("a:b"));
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		AuthenticationManager manager = mock(AuthenticationManager.class);
+ 		TestingAuthenticationToken newAuthn = new TestingAuthenticationToken(existingAuthn.getName() + "different",
+ 				"password", "TEST");
+-		given(manager.authenticate(any())).willReturn(newAuthn);
++		AuthenticationManager manager = createMockAuthenticationManager(newAuthn);
+ 		BasicAuthenticationFilter filter = new BasicAuthenticationFilter(manager);
+ 		filter.setMfaEnabled(true);
+ 		filter.doFilter(request, response, new MockFilterChain());
+@@ -570,9 +568,8 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		request.addHeader(HttpHeaders.AUTHORIZATION, "Basic " + CodecTestUtils.encodeBase64("a:b"));
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		AuthenticationManager manager = mock(AuthenticationManager.class);
+-		given(manager.authenticate(any()))
+-			.willReturn(new TestingAuthenticationToken("username", "password", new DefaultEqualsGrantedAuthority()));
++		AuthenticationManager manager = createMockAuthenticationManager(
++				new TestingAuthenticationToken("username", "password", new DefaultEqualsGrantedAuthority()));
+ 		BasicAuthenticationFilter filter = new BasicAuthenticationFilter(manager);
+ 		filter.doFilter(request, response, new MockFilterChain());
+ 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+@@ -619,6 +616,12 @@
+ 		assertThatIllegalArgumentException().isThrownBy(() -> this.filter.setAuthenticationConverter(null));
+ 	}
+ 
++	private static AuthenticationManager createMockAuthenticationManager(Authentication authentication) {
++		AuthenticationManager manager = mock(AuthenticationManager.class);
++		given(manager.authenticate(any())).willReturn(authentication);
++		return manager;
++	}
++
+ 	static class TestAuthenticationConverter implements AuthenticationConverter {
+ 
+ 		private final RequestMatcher matcher = pathPattern("/ignored");

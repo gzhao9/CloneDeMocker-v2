@@ -20,6 +20,8 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from studio.long_paths import long_path
+
 GRADLE_PITEST_PLUGIN_VERSION = "1.19.0"
 PITEST_VERSION = "1.30.0"
 PITEST_JUNIT5_PLUGIN_VERSION = "1.2.3"
@@ -160,7 +162,7 @@ def gradle_executable(root: Path) -> str:
 
 
 def is_gradle_command(command: list[str]) -> bool:
-    return bool(command) and Path(command[0]).name.lower() in {"gradlew", "gradlew.bat", "gradle", "gradle.bat"}
+    return bool(command) and Path(command[0].replace("\\", "/")).name.lower() in {"gradlew", "gradlew.bat", "gradle", "gradle.bat"}
 
 
 def english_environment() -> dict[str, str]:
@@ -241,7 +243,7 @@ class GradleProjects:
         or the class is in no known directory.
         """
         relative = test_class.replace(".", "/") + ".java"
-        found = [task for task in self.test_tasks.get(project, []) if (Path(task.source_dir) / relative).is_file()]
+        found = [task for task in self.test_tasks.get(project, []) if long_path(Path(task.source_dir) / relative).is_file()]
         return found or ([DEFAULT_TEST_TASK] if fallback else [])
 
     def missing_toolchains(self) -> list[str]:

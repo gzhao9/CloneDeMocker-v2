@@ -1,0 +1,38 @@
+--- a/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
++++ b/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
+@@ -151,8 +151,8 @@
+ 	public void attemptAuthenticationWhenSavedAuthnRequestThenRemovesAuthnRequest() {
+ 		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+ 				Saml2AuthenticationRequestRepository.class);
+-		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
+-		given(authenticationConverter.convert(this.request)).willReturn(TestSaml2AuthenticationTokens.token());
++		AuthenticationConverter authenticationConverter = createMockAuthenticationConverter(this.request,
++				TestSaml2AuthenticationTokens.token());
+ 		this.filter = new Saml2WebSsoAuthenticationFilter(authenticationConverter, "/some/other/path/{registrationId}");
+ 		this.filter.setAuthenticationManager((authentication) -> null);
+ 		this.request.setRequestURI("/some/other/path/idp-registration-id");
+@@ -164,9 +164,8 @@
+ 
+ 	@Test
+ 	public void attemptAuthenticationAddsDetails() {
+-		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
+ 		final Saml2AuthenticationToken token = TestSaml2AuthenticationTokens.token();
+-		given(authenticationConverter.convert(this.request)).willReturn(token);
++		AuthenticationConverter authenticationConverter = createMockAuthenticationConverter(this.request, token);
+ 		final AuthenticationDetailsSource authenticationDetailsSource = mock(AuthenticationDetailsSource.class);
+ 		final WebAuthenticationDetails details = mock(WebAuthenticationDetails.class);
+ 		given(authenticationDetailsSource.buildDetails(this.request)).willReturn(details);
+@@ -241,6 +240,13 @@
+ 		verify(this.repository).findByRegistrationId("registration-id");
+ 	}
+ 
++	private static AuthenticationConverter createMockAuthenticationConverter(HttpServletRequest request,
++			Saml2AuthenticationToken token) {
++		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
++		given(authenticationConverter.convert(request)).willReturn(token);
++		return authenticationConverter;
++	}
++
+ 	static final class RequiresAuthenticationExposingFilter extends Saml2WebSsoAuthenticationFilter {
+ 
+ 		RequiresAuthenticationExposingFilter(RelyingPartyRegistrationRepository relyingPartyRegistrationRepository) {

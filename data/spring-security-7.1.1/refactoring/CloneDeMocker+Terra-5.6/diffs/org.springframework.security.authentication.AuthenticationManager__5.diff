@@ -1,0 +1,49 @@
+--- a/core/src/test/java/org/springframework/security/authentication/ProviderManagerTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/ProviderManagerTests.java
+@@ -22,6 +22,7 @@
+ import java.util.List;
+ 
+ import org.jspecify.annotations.Nullable;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.context.MessageSource;
+@@ -48,6 +49,13 @@
+  */
+ public class ProviderManagerTests {
+ 
++	private AuthenticationManager parentAuthenticationManager;
++
++	@BeforeEach
++	void setUp() {
++		parentAuthenticationManager = mock(AuthenticationManager.class);
++	}
++
+ 	@Test
+ 	void authenticationFailsWithUnsupportedToken() {
+ 		Authentication token = new AbstractAuthenticationToken((Collection<? extends GrantedAuthority>) null) {
+@@ -221,11 +229,10 @@
+ 		AuthenticationProvider iThrowAccountStatusException = createProviderWhichThrows(
+ 				new AccountStatusException("", new Throwable()) {
+ 				});
+-		AuthenticationManager parent = mock(AuthenticationManager.class);
+-		ProviderManager mgr = new ProviderManager(List.of(iThrowAccountStatusException), parent);
++		ProviderManager mgr = new ProviderManager(List.of(iThrowAccountStatusException), parentAuthenticationManager);
+ 		assertThatExceptionOfType(AccountStatusException.class)
+ 			.isThrownBy(() -> mgr.authenticate(mock(Authentication.class)));
+-		verifyNoInteractions(parent);
++		verifyNoInteractions(parentAuthenticationManager);
+ 	}
+ 
+ 	@Test
+@@ -261,9 +268,8 @@
+ 
+ 	@Test
+ 	void statusExceptionIsPublished() {
+-		AuthenticationManager parent = mock(AuthenticationManager.class);
+ 		LockedException expected = new LockedException("");
+-		ProviderManager mgr = new ProviderManager(List.of(createProviderWhichThrows(expected)), parent);
++		ProviderManager mgr = new ProviderManager(List.of(createProviderWhichThrows(expected)), parentAuthenticationManager);
+ 		Authentication authReq = mock(Authentication.class);
+ 		AuthenticationEventPublisher publisher = mock(AuthenticationEventPublisher.class);
+ 		mgr.setAuthenticationEventPublisher(publisher);

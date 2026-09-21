@@ -1,0 +1,41 @@
+--- a/core/src/test/java/org/springframework/security/authorization/method/AuthorizationManagerAfterReactiveMethodInterceptorTests.java
++++ b/core/src/test/java/org/springframework/security/authorization/method/AuthorizationManagerAfterReactiveMethodInterceptorTests.java
+@@ -67,10 +67,7 @@
+ 		MethodInvocation mockMethodInvocation = spy(
+ 				new MockMethodInvocation(new Sample(), Sample.class.getDeclaredMethod("mono")));
+ 		given(mockMethodInvocation.proceed()).willReturn(Mono.just("john"));
+-		ReactiveAuthorizationManager<MethodInvocationResult> mockReactiveAuthorizationManager = mock(
+-				ReactiveAuthorizationManager.class);
+-		given(mockReactiveAuthorizationManager.authorize(any(), any()))
+-			.willReturn(Mono.just(new AuthorizationDecision(true)));
++		ReactiveAuthorizationManager<MethodInvocationResult> mockReactiveAuthorizationManager = createMockReactiveAuthorizationManager();
+ 		AuthorizationManagerAfterReactiveMethodInterceptor interceptor = new AuthorizationManagerAfterReactiveMethodInterceptor(
+ 				Pointcut.TRUE, mockReactiveAuthorizationManager);
+ 		Object result = interceptor.invoke(mockMethodInvocation);
+@@ -85,10 +82,7 @@
+ 		MethodInvocation mockMethodInvocation = spy(
+ 				new MockMethodInvocation(new Sample(), Sample.class.getDeclaredMethod("flux")));
+ 		given(mockMethodInvocation.proceed()).willReturn(Flux.just("john", "bob"));
+-		ReactiveAuthorizationManager<MethodInvocationResult> mockReactiveAuthorizationManager = mock(
+-				ReactiveAuthorizationManager.class);
+-		given(mockReactiveAuthorizationManager.authorize(any(), any()))
+-			.willReturn(Mono.just(new AuthorizationDecision(true)));
++		ReactiveAuthorizationManager<MethodInvocationResult> mockReactiveAuthorizationManager = createMockReactiveAuthorizationManager();
+ 		AuthorizationManagerAfterReactiveMethodInterceptor interceptor = new AuthorizationManagerAfterReactiveMethodInterceptor(
+ 				Pointcut.TRUE, mockReactiveAuthorizationManager);
+ 		Object result = interceptor.invoke(mockMethodInvocation);
+@@ -254,6 +248,14 @@
+ 			.isThrownBy(() -> ((Mono<?>) advice.invoke(mockMethodInvocation)).block());
+ 	}
+ 
++	private static ReactiveAuthorizationManager<MethodInvocationResult> createMockReactiveAuthorizationManager() {
++		ReactiveAuthorizationManager<MethodInvocationResult> mockReactiveAuthorizationManager = mock(
++				ReactiveAuthorizationManager.class);
++		given(mockReactiveAuthorizationManager.authorize(any(), any()))
++			.willReturn(Mono.just(new AuthorizationDecision(true)));
++		return mockReactiveAuthorizationManager;
++	}
++
+ 	private Object masking(InvocationOnMock invocation) {
+ 		MethodInvocationResult result = invocation.getArgument(0);
+ 		return result.getResult() + "-masked";
