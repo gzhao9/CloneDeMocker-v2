@@ -1,0 +1,72 @@
+--- a/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpMessageMapperTests.java
++++ b/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpMessageMapperTests.java
+@@ -65,9 +65,12 @@
+ 
+ 	private Codec codec;
+ 
++	private InetAddress localAddress;
++
+ 	@BeforeEach
+ 	public void setup() {
+ 		this.codec = new MessageCodec();
++		this.localAddress = mock(InetAddress.class);
+ 	}
+ 
+ 	@Test
+@@ -75,8 +78,7 @@
+ 		TcpMessageMapper mapper = new TcpMessageMapper();
+ 		mapper.setBeanFactory(mock());
+ 		TcpConnection connection = creatMockTcpConcnection(TEST_PAYLOAD.getBytes(), "MyHost", "1.1.1.1", 1234);
+-		InetAddress local = mock(InetAddress.class);
+-		Socket socket = creatMockSocket(local);
++		Socket socket = creatMockSocket(localAddress);
+ 		SocketInfo info = new SocketInfo(socket);
+ 		when(connection.getSocketInfo()).thenReturn(info);
+ 		Message<?> message = mapper.toMessage(connection);
+@@ -84,7 +86,7 @@
+ 		assertThat(message.getHeaders().get(IpHeaders.HOSTNAME)).isEqualTo("MyHost");
+ 		assertThat(message.getHeaders().get(IpHeaders.IP_ADDRESS)).isEqualTo("1.1.1.1");
+ 		assertThat(message.getHeaders().get(IpHeaders.REMOTE_PORT)).isEqualTo(1234);
+-		assertThat(message.getHeaders().get(IpHeaders.LOCAL_ADDRESS)).isSameAs(local);
++		assertThat(message.getHeaders().get(IpHeaders.LOCAL_ADDRESS)).isSameAs(localAddress);
+ 		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE)).isNull();
+ 	}
+ 
+@@ -94,8 +96,7 @@
+ 		mapper.setAddContentTypeHeader(true);
+ 		mapper.setBeanFactory(mock());
+ 		TcpConnection connection = creatMockTcpConcnection(TEST_PAYLOAD.getBytes(), "MyHost", "1.1.1.1", 1234);
+-		InetAddress local = mock(InetAddress.class);
+-		Socket socket = creatMockSocket(local);
++		Socket socket = creatMockSocket(localAddress);
+ 		SocketInfo info = new SocketInfo(socket);
+ 		when(connection.getSocketInfo()).thenReturn(info);
+ 		Message<?> message = mapper.toMessage(connection);
+@@ -103,7 +104,7 @@
+ 		assertThat(message.getHeaders().get(IpHeaders.HOSTNAME)).isEqualTo("MyHost");
+ 		assertThat(message.getHeaders().get(IpHeaders.IP_ADDRESS)).isEqualTo("1.1.1.1");
+ 		assertThat(message.getHeaders().get(IpHeaders.REMOTE_PORT)).isEqualTo(1234);
+-		assertThat(message.getHeaders().get(IpHeaders.LOCAL_ADDRESS)).isSameAs(local);
++		assertThat(message.getHeaders().get(IpHeaders.LOCAL_ADDRESS)).isSameAs(localAddress);
+ 		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE))
+ 				.isEqualTo("application/octet-stream;charset=UTF-8");
+ 		MimeType parseOk = MimeType.valueOf((String) message.getHeaders().get(MessageHeaders.CONTENT_TYPE));
+@@ -117,8 +118,7 @@
+ 		mapper.setContentType("application/octet-stream;charset=ISO-8859-1");
+ 		mapper.setBeanFactory(mock());
+ 		TcpConnection connection = creatMockTcpConcnection(TEST_PAYLOAD.getBytes(), "MyHost", "1.1.1.1", 1234);
+-		InetAddress local = mock(InetAddress.class);
+-		Socket socket = creatMockSocket(local);
++		Socket socket = creatMockSocket(localAddress);
+ 		SocketInfo info = new SocketInfo(socket);
+ 		when(connection.getSocketInfo()).thenReturn(info);
+ 		Message<?> message = mapper.toMessage(connection);
+@@ -126,7 +126,7 @@
+ 		assertThat(message.getHeaders().get(IpHeaders.HOSTNAME)).isEqualTo("MyHost");
+ 		assertThat(message.getHeaders().get(IpHeaders.IP_ADDRESS)).isEqualTo("1.1.1.1");
+ 		assertThat(message.getHeaders().get(IpHeaders.REMOTE_PORT)).isEqualTo(1234);
+-		assertThat(message.getHeaders().get(IpHeaders.LOCAL_ADDRESS)).isSameAs(local);
++		assertThat(message.getHeaders().get(IpHeaders.LOCAL_ADDRESS)).isSameAs(localAddress);
+ 		assertThat(message.getHeaders().get(MessageHeaders.CONTENT_TYPE))
+ 				.isEqualTo("application/octet-stream;charset=ISO-8859-1");
+ 		MimeType parseOk = MimeType.valueOf((String) message.getHeaders().get(MessageHeaders.CONTENT_TYPE));

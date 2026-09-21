@@ -1,0 +1,64 @@
+--- a/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
++++ b/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
+@@ -243,13 +243,8 @@
+ 		SessionFactory sessionFactory = mock(SessionFactory.class);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mv", "payload");
+ 		gw.afterPropertiesSet();
+-		Session<?> session = mock(Session.class);
+ 		final AtomicReference<String> args = new AtomicReference<>();
+-		doAnswer(invocation -> {
+-			Object[] arguments = invocation.getArguments();
+-			args.set((String) arguments[0] + arguments[1]);
+-			return null;
+-		}).when(session).rename(anyString(), anyString());
++		Session<?> session = createMockSession(args);
+ 		when(sessionFactory.getSession()).thenReturn(session);
+ 		Message<String> requestMessage = MessageBuilder.withPayload("foo")
+ 				.setHeader(FileHeaders.RENAME_TO, "bar")
+@@ -266,13 +261,8 @@
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mv", "payload");
+ 		gw.setRenameExpression(PARSER.parseExpression("payload.substring(1)"));
+ 		gw.afterPropertiesSet();
+-		Session<?> session = mock(Session.class);
+ 		final AtomicReference<String> args = new AtomicReference<>();
+-		doAnswer(invocation -> {
+-			Object[] arguments = invocation.getArguments();
+-			args.set((String) arguments[0] + arguments[1]);
+-			return null;
+-		}).when(session).rename(anyString(), anyString());
++		Session<?> session = createMockSession(args);
+ 		when(sessionFactory.getSession()).thenReturn(session);
+ 		MessageBuilder<?> out = (MessageBuilder<?>) gw.handleRequestMessage(new GenericMessage<>("foo"));
+ 		assertThat(out.getHeaders().get(FileHeaders.RENAME_TO)).isEqualTo("oo");
+@@ -287,13 +277,8 @@
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mv", "payload");
+ 		gw.setRenameExpression(PARSER.parseExpression("'foo/bar/baz'"));
+ 		gw.afterPropertiesSet();
+-		Session<?> session = mock(Session.class);
+ 		final AtomicReference<String> args = new AtomicReference<>();
+-		doAnswer(invocation -> {
+-			Object[] arguments = invocation.getArguments();
+-			args.set((String) arguments[0] + arguments[1]);
+-			return null;
+-		}).when(session).rename(anyString(), anyString());
++		Session<?> session = createMockSession(args);
+ 		final List<String> madeDirs = new ArrayList<>();
+ 		doAnswer(invocation -> {
+ 			madeDirs.add(invocation.getArgument(0));
+@@ -706,6 +691,16 @@
+ 		BufferedReader reader = new BufferedReader(new FileReader(outFile));
+ 		assertThat(reader.readLine()).isEqualTo(expected);
+ 		reader.close();
++	}
++
++	private static Session<?> createMockSession(AtomicReference<String> args) throws Exception {
++		Session<?> session = mock(Session.class);
++		doAnswer(invocation -> {
++			Object[] arguments = invocation.getArguments();
++			args.set((String) arguments[0] + arguments[1]);
++			return null;
++		}).when(session).rename(anyString(), anyString());
++		return session;
+ 	}
+ 
+ 	@Test

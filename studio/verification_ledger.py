@@ -95,6 +95,11 @@ class VerificationLedger:
         if str(evidence.get("compileStatus")) != "PASSED" or str(evidence.get("testStatus")) != "PASSED":
             return False
         return any(status != "SKIPPED" for status in (evidence.get("testResults") or {}).values())
+        if not any(status != "SKIPPED" for status in (evidence.get("testResults") or {}).values()):
+            return False
+        if evidence.get("pitStatus") == "PASSED" and (not evidence.get("mutants") or evidence.get("mutationScore") is None):
+            return False
+        return True
 
     def write(self, key: str, evidence: dict[str, Any], kind: str) -> None:
         """
