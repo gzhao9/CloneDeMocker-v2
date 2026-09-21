@@ -1,0 +1,69 @@
+--- a/core/src/test/java/org/springframework/security/authentication/dao/DaoAuthenticationProviderTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/dao/DaoAuthenticationProviderTests.java
+@@ -263,16 +263,15 @@
+ 		UsernamePasswordAuthenticationToken token = UsernamePasswordAuthenticationToken.unauthenticated("user",
+ 				password);
+ 		PasswordEncoder encoder = mock(PasswordEncoder.class);
+-		UserDetailsService userDetailsService = mock(UserDetailsService.class);
++		UserDetails user = PasswordEncodedUser.user();
++		UserDetailsService userDetailsService = createMockUserDetailsService(user);
+ 		UserDetailsPasswordService passwordManager = mock(UserDetailsPasswordService.class);
+ 		DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+ 		provider.setPasswordEncoder(encoder);
+ 		provider.setUserDetailsPasswordService(passwordManager);
+-		UserDetails user = PasswordEncodedUser.user();
+ 		given(encoder.matches(any(), any())).willReturn(true);
+ 		given(encoder.upgradeEncoding(any())).willReturn(true);
+ 		given(encoder.encode(any())).willReturn(encodedPassword);
+-		given(userDetailsService.loadUserByUsername(any())).willReturn(user);
+ 		given(passwordManager.updatePassword(any(), any())).willReturn(user);
+ 		Authentication result = provider.authenticate(token);
+ 		verify(encoder).encode(password);
+@@ -284,14 +283,13 @@
+ 		UsernamePasswordAuthenticationToken token = UsernamePasswordAuthenticationToken.unauthenticated("user",
+ 				"password");
+ 		PasswordEncoder encoder = mock(PasswordEncoder.class);
+-		UserDetailsService userDetailsService = mock(UserDetailsService.class);
++		UserDetails user = PasswordEncodedUser.user();
++		UserDetailsService userDetailsService = createMockUserDetailsService(user);
+ 		UserDetailsPasswordService passwordManager = mock(UserDetailsPasswordService.class);
+ 		DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+ 		provider.setPasswordEncoder(encoder);
+ 		provider.setUserDetailsPasswordService(passwordManager);
+-		UserDetails user = PasswordEncodedUser.user();
+ 		given(encoder.matches(any(), any())).willReturn(false);
+-		given(userDetailsService.loadUserByUsername(any())).willReturn(user);
+ 		assertThatExceptionOfType(BadCredentialsException.class).isThrownBy(() -> provider.authenticate(token));
+ 		verifyNoMoreInteractions(passwordManager);
+ 	}
+@@ -301,15 +299,14 @@
+ 		UsernamePasswordAuthenticationToken token = UsernamePasswordAuthenticationToken.unauthenticated("user",
+ 				"password");
+ 		PasswordEncoder encoder = mock(PasswordEncoder.class);
+-		UserDetailsService userDetailsService = mock(UserDetailsService.class);
+ 		UserDetailsPasswordService passwordManager = mock(UserDetailsPasswordService.class);
++		UserDetails user = PasswordEncodedUser.user();
++		UserDetailsService userDetailsService = createMockUserDetailsService(user);
+ 		DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+ 		provider.setPasswordEncoder(encoder);
+ 		provider.setUserDetailsPasswordService(passwordManager);
+-		UserDetails user = PasswordEncodedUser.user();
+ 		given(encoder.matches(any(), any())).willReturn(true);
+ 		given(encoder.upgradeEncoding(any())).willReturn(false);
+-		given(userDetailsService.loadUserByUsername(any())).willReturn(user);
+ 		Authentication result = provider.authenticate(token);
+ 		verifyNoMoreInteractions(passwordManager);
+ 	}
+@@ -550,6 +547,12 @@
+ 		SecurityAssertions.assertThat(result).hasAuthority(FactorGrantedAuthority.PASSWORD_AUTHORITY);
+ 	}
+ 
++	private static UserDetailsService createMockUserDetailsService(UserDetails user) {
++		UserDetailsService userDetailsService = mock(UserDetailsService.class);
++		given(userDetailsService.loadUserByUsername(any())).willReturn(user);
++		return userDetailsService;
++	}
++
+ 	private UserDetailsService withUsers(UserDetails... users) {
+ 		return new InMemoryUserDetailsManager(users);
+ 	}

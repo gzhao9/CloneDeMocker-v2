@@ -1,0 +1,69 @@
+--- a/web/src/test/java/org/springframework/security/web/context/HttpSessionSecurityContextRepositoryTests.java
++++ b/web/src/test/java/org/springframework/security/web/context/HttpSessionSecurityContextRepositoryTests.java
+@@ -34,6 +34,7 @@
+ import jakarta.servlet.http.HttpServletResponseWrapper;
+ import jakarta.servlet.http.HttpSession;
+ import org.junit.jupiter.api.AfterEach;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.mock.web.MockFilterChain;
+@@ -76,6 +77,13 @@
+ 
+ 	private final TestingAuthenticationToken testToken = new TestingAuthenticationToken("someone", "passwd", "ROLE_A");
+ 
++	private HttpServletRequest asyncRequest;
++
++	@BeforeEach
++	public void setUp() {
++		this.asyncRequest = mock(HttpServletRequest.class);
++	}
++
+ 	@AfterEach
+ 	public void tearDown() {
+ 		SecurityContextHolder.clearContext();
+@@ -84,31 +92,29 @@
+ 	@Test
+ 	public void startAsyncDisablesSaveOnCommit() throws Exception {
+ 		HttpSessionSecurityContextRepository repo = new HttpSessionSecurityContextRepository();
+-		HttpServletRequest request = mock(HttpServletRequest.class);
+-		MockHttpServletResponse response = new MockHttpServletResponse();
+-		HttpRequestResponseHolder holder = new HttpRequestResponseHolder(request, response);
+-		repo.loadContext(holder);
+-		reset(request);
++		MockHttpServletResponse response = new MockHttpServletResponse();
++		HttpRequestResponseHolder holder = new HttpRequestResponseHolder(asyncRequest, response);
++		repo.loadContext(holder);
++		reset(asyncRequest);
+ 		holder.getRequest().startAsync();
+ 		holder.getResponse().sendError(HttpServletResponse.SC_BAD_REQUEST);
+ 		// ensure that sendError did cause interaction with the HttpSession
+-		verify(request, never()).getSession(anyBoolean());
+-		verify(request, never()).getSession();
++		verify(asyncRequest, never()).getSession(anyBoolean());
++		verify(asyncRequest, never()).getSession();
+ 	}
+ 
+ 	@Test
+ 	public void startAsyncRequestResponseDisablesSaveOnCommit() throws Exception {
+ 		HttpSessionSecurityContextRepository repo = new HttpSessionSecurityContextRepository();
+-		HttpServletRequest request = mock(HttpServletRequest.class);
+-		MockHttpServletResponse response = new MockHttpServletResponse();
+-		HttpRequestResponseHolder holder = new HttpRequestResponseHolder(request, response);
+-		repo.loadContext(holder);
+-		reset(request);
+-		holder.getRequest().startAsync(request, response);
++		MockHttpServletResponse response = new MockHttpServletResponse();
++		HttpRequestResponseHolder holder = new HttpRequestResponseHolder(asyncRequest, response);
++		repo.loadContext(holder);
++		reset(asyncRequest);
++		holder.getRequest().startAsync(asyncRequest, response);
+ 		holder.getResponse().sendError(HttpServletResponse.SC_BAD_REQUEST);
+ 		// ensure that sendError did cause interaction with the HttpSession
+-		verify(request, never()).getSession(anyBoolean());
+-		verify(request, never()).getSession();
++		verify(asyncRequest, never()).getSession(anyBoolean());
++		verify(asyncRequest, never()).getSession();
+ 	}
+ 
+ 	@Test

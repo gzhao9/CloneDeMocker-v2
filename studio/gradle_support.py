@@ -97,6 +97,7 @@ initscript {{
 def cloneDeMockerList = {{ String name -> (gradle.startParameter.projectProperties[name] ?: '').split(',').findAll {{ it }} }}
 def pitProjects = cloneDeMockerList('cloneDeMockerPitProjects') as Set
 def pitTests = cloneDeMockerList('cloneDeMockerPitTests')
+def pitClasses = cloneDeMockerList('cloneDeMockerPitClasses')
 def pitTestSourceSets = cloneDeMockerList('cloneDeMockerPitTestSourceSets')
 allprojects {{ p ->
     // 等价于 Maven 的 -Dsurefire.failIfNoSpecifiedTests=false：同一组 --tests 过滤会套到每个
@@ -114,6 +115,13 @@ allprojects {{ p ->
                 pitestVersion = '{PITEST_VERSION}'
                 junit5PluginVersion = '{PITEST_JUNIT5_PLUGIN_VERSION}'
                 if (pitTests) targetTests = pitTests
+                if (pitClasses) {{
+                    targetClasses = pitClasses
+                }} else if (p.group) {{
+                    targetClasses = [p.group + '.*']
+                }} else if (pitTests) {{
+                    targetClasses = pitTests.collect {{ it.contains('.') ? it.substring(0, it.lastIndexOf('.')) + '.*' : '*' }}
+                }}
                 // 插件默认只看 test 这个 source set；目标测试在别的 source set 时要显式给出。
                 // The plugin only looks at the test source set by default; others must be named.
                 if (pitTestSourceSets) testSourceSets = pitTestSourceSets.collect {{ p.sourceSets.getByName(it) }}
