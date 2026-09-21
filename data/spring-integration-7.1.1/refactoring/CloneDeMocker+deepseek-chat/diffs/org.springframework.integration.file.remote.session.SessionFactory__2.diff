@@ -148,17 +148,14 @@
 -		gw.afterPropertiesSet();
 -		new File(this.tmpDir + "/f1").delete();
 -		when(sessionFactory.getSession()).thenReturn(new TestSession() {
-+		Session session = new TestSession() {
++		SessionFactory sessionFactory = createMockSessionFactory(new TestSession() {
  
  			@Override
  			public TestLsEntry[] list(String path) {
-@@ -572,7 +557,12 @@
- 				outputStream.write("testfile".getBytes());
+@@ -573,6 +558,10 @@
  			}
  
--		});
-+		};
-+		SessionFactory sessionFactory = createMockSessionFactory(session);
+ 		});
 +		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
 +		gw.setLocalDirectory(new File(this.tmpDir));
 +		gw.afterPropertiesSet();
@@ -166,7 +163,7 @@
  		@SuppressWarnings("unchecked")
  		MessageBuilder<File> out = (MessageBuilder<File>) gw.handleRequestMessage(new GenericMessage<>("f1"));
  		File outFile = new File(this.tmpDir + "/f1").getCanonicalFile();
-@@ -706,6 +696,12 @@
+@@ -706,6 +695,12 @@
  		BufferedReader reader = new BufferedReader(new FileReader(outFile));
  		assertThat(reader.readLine()).isEqualTo(expected);
  		reader.close();
@@ -179,7 +176,7 @@
  	}
  
  	@Test
-@@ -811,11 +807,10 @@
+@@ -811,11 +806,10 @@
  
  	@Test
  	public void testRm() throws Exception {
