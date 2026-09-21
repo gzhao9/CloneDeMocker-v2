@@ -97,6 +97,7 @@ initscript {{
 def cloneDeMockerList = {{ String name -> (gradle.startParameter.projectProperties[name] ?: '').split(',').findAll {{ it }} }}
 def pitProjects = cloneDeMockerList('cloneDeMockerPitProjects') as Set
 def pitTests = cloneDeMockerList('cloneDeMockerPitTests')
+def pitClasses = cloneDeMockerList('cloneDeMockerPitClasses')
 def pitTestSourceSets = cloneDeMockerList('cloneDeMockerPitTestSourceSets')
 allprojects {{ p ->
     // 等价于 Maven 的 -Dsurefire.failIfNoSpecifiedTests=false：同一组 --tests 过滤会套到每个
@@ -114,6 +115,13 @@ allprojects {{ p ->
                 pitestVersion = '{PITEST_VERSION}'
                 junit5PluginVersion = '{PITEST_JUNIT5_PLUGIN_VERSION}'
                 if (pitTests) targetTests = pitTests
+                if (pitClasses) {{
+                    targetClasses = pitClasses
+                }} else if (p.group) {{
+                    targetClasses = [p.group + '.*']
+                }} else if (pitTests) {{
+                    targetClasses = pitTests.collect {{ it.contains('.') ? it.substring(0, it.lastIndexOf('.')) + '.*' : '*' }}
+                }}
                 // 插件默认只看 test 这个 source set；目标测试在别的 source set 时要显式给出。
                 // The plugin only looks at the test source set by default; others must be named.
                 if (pitTestSourceSets) testSourceSets = pitTestSourceSets.collect {{ p.sourceSets.getByName(it) }}
@@ -128,6 +136,13 @@ allprojects {{ p ->
         }}
     }}
 }}
+gradle.projectsEvaluated {{
+    allprojects {{ p ->
+        p.tasks.withType(Test).configureEach {{
+            reports.junitXml.required = true
+        }}
+    }}
+}}
 """
 
 
@@ -138,15 +153,19 @@ def is_gradle_build(root: Path) -> bool:
 
 def is_module_directory(directory: Path) -> bool:
     """
-    静态判断一个目录是否像 Gradle 子项目。不能只认 build.gradle：Spring Security 的子项目
-    构建文件叫 spring-security-core.gradle，由 settings.gradle 按文件名注册。这只是给
-    BuildScope 提供候选目录，真正的 Gradle 项目路径由 discover_projects 按实际构建解析。
+    静态判断一个目录是否像 Gradle/Maven 子项目。不能只认 build.gradle：Spring Security 的子项目
+    构建文件叫 spring-security-core.gradle；Spring Integration 子项目没有独立 build 文件，
+    全由根配置统一注册（只有 src/ 目录）。这只是给 BuildScope 提供候选目录，真正的 Gradle
+    项目路径由 discover_projects 按实际构建解析。
     Statically, whether a directory looks like a Gradle subproject. build.gradle alone is not
     enough: Spring Security names its build files spring-security-core.gradle and registers them
-    from settings.gradle by file name. This only proposes a directory for BuildScope; the real
-    project path comes from discover_projects, which asks the build itself.
+    from settings.gradle by file name; Spring Integration has no subproject build files at all
+    (only a src/ directory). This only proposes a directory for BuildScope; the real project
+    path comes from discover_projects, which asks the build itself.
     """
     try:
+        if (directory / "src").is_dir() or (directory / "pom.xml").is_file():
+            return True
         return any(child.is_file() and child.name.endswith(BUILD_FILE_SUFFIXES)
                    and child.name not in SETTINGS_FILE_NAMES for child in directory.iterdir())
     except OSError:

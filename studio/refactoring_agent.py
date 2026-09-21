@@ -41,19 +41,41 @@ def _baseline_test_failure_keys(evidence: Any) -> set[str]:
     return {key for key, status in evidence.test_results.items() if status in {"FAILED", "ERROR"}}
 
 
+# JUnit 参数化测试的显示名里带着参数的默认 toString()，即 类名@identityHashCode 的十六进制，
+# 每次运行都不同（Spring Security 的 Observation*FilterChainDecoratorTests）。不归一化的话，
+# 同一个测试在 baseline 和 candidate 里名字对不上，被判成"少了一个、多了一个"。
+# A parameterized test's display name carries its argument's default toString(), i.e.
+# ClassName@<hex identityHashCode>, which differs on every run (Spring Security's
+# Observation*FilterChainDecoratorTests). Unnormalized, the same test gets a different name in
+# baseline and candidate and reads as one test missing and another added.
+_IDENTITY_HASH = re.compile(r"(?<=[\w$])@[0-9a-f]{1,8}\b")
+
+
+def _comparable_test_results(results: dict[str, str]) -> dict[str, tuple[str, ...]]:
+    """测试身份 -> 状态，去掉身份哈希；归一化后同名的测试保留全部状态。
+    Test identity -> statuses with identity hashes removed; tests that collapse onto one name
+    keep all their statuses."""
+    grouped: dict[str, list[str]] = {}
+    for key, status in results.items():
+        grouped.setdefault(_IDENTITY_HASH.sub("@<hash>", key), []).append(status)
+    return {key: tuple(sorted(statuses)) for key, statuses in grouped.items()}
+
+
 def _test_regression_reason(baseline: Any, candidate: Any) -> str | None:
     """Compare test identities against a non-clean baseline without accepting new failures."""
-    before, after = baseline.test_results, candidate.test_results
+    before = _comparable_test_results(baseline.test_results)
+    after = _comparable_test_results(candidate.test_results)
     if not after:
         return "Candidate produced no test results / 候选未产生测试结果"
-    for key, status in before.items():
-        candidate_status = after.get(key)
-        if candidate_status is None:
+    for key, statuses in before.items():
+        candidate_statuses = after.get(key)
+        if candidate_statuses is None:
             return f"A baseline test did not run in the candidate: {key}"
-        if status == "PASSED" and candidate_status != "PASSED":
-            return f"A previously passing test regressed: {key} ({candidate_status})"
-    for key, status in after.items():
-        if status in {"FAILED", "ERROR"} and before.get(key) not in {"FAILED", "ERROR"}:
+        if statuses.count("PASSED") > candidate_statuses.count("PASSED"):
+            return f"A previously passing test regressed: {key} ({', '.join(candidate_statuses)})"
+    for key, statuses in after.items():
+        failing = sum(status in {"FAILED", "ERROR"} for status in statuses)
+        if failing > sum(status in {"FAILED", "ERROR"} for status in before.get(key, ())):
             return f"Candidate introduced a new failing test: {key}"
     return None
 
@@ -623,7 +645,8 @@ class RefactoringAgent:
         deterministic_verified = (
             baseline_failure is None
             and candidate_failure is None
-            and (known_baseline_failure or baseline_evidence.test_results == candidate_evidence.test_results)
+            and (known_baseline_failure or _comparable_test_results(baseline_evidence.test_results)
+                 == _comparable_test_results(candidate_evidence.test_results))
             and pit_ran_cleanly
             and not pit_regressed
             and goal_achieved
