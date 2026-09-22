@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -91,6 +92,38 @@ def done_ids() -> set[str]:
         # A conflicted or half-written file must not be read as "nothing is done" — that would
         # re-run the whole list. Treat it as unknown and let the caller stop.
         return set()
+
+
+def check_environment() -> None:
+    """Refuse to start without what the harness needs, instead of grading without it.
+
+    B-012's failure mode is the one this guards: a runner that comes up with no Maven on
+    PATH cannot launch it, the harness reports that as "compilation did not pass", and the
+    MCI is filed as ENVIRONMENT_NOT_READY — indistinguishable from a genuinely unbuildable
+    module and never retried, because an MCI counts as done once a result exists. A's own
+    69 re-grades come from the same shape of problem: a missing install gate rather than a
+    missing binary, recorded as a verdict either way.
+    """
+    if not shutil.which("mvn.cmd") and not shutil.which("mvn"):
+        sys.exit("mvn is not on PATH — refusing to start rather than grade without it")
+    # The gate's artifacts, not the gate's exit code: this is what `-pl <module> -am`
+    # resolves against, and its absence is what produced the null-scope verdicts.
+    installed = Path.home() / ".m2" / "repository" / "org" / "apache" / "cloudstack"
+    if not installed.is_dir() or not any(installed.iterdir()):
+        sys.exit(f"no CloudStack artifacts in {installed} — run mvn clean install first")
+    log(f"environment ok: mvn present, artifacts installed under {installed}")
+
+
+def maven_never_launched(result: dict) -> bool:
+    """True when the harness never got Maven to run, so its verdict describes nothing."""
+    harness = result.get("harness") or {}
+    for side in ("baseline", "candidate", "after"):
+        state = harness.get(side) or {}
+        for line in (state.get("diagnostics") or []):
+            text = str(line)
+            if "WinError 2" in text or "cannot find the file specified" in text.lower():
+                return True
+    return False
 
 
 def rerun_ids() -> list[str]:
@@ -205,6 +238,7 @@ def main() -> None:
     if not os.environ.get("OPENAI_API_KEY"):
         log("OPENAI_API_KEY is not set")
         sys.exit(2)
+    check_environment()
 
     service = DetectionService(REPO)
     _, raw = service.load_raw_detection(RUN_ID)
@@ -268,6 +302,17 @@ def main() -> None:
             continue
 
         elapsed = time.time() - item_started
+
+        if maven_never_launched(result):
+            # A broken invocation is not a verdict. Recording it would file an unbuildable
+            # -looking ENVIRONMENT_NOT_READY that nothing ever retries, because the worklist
+            # treats any existing result as done.
+            log(f"    QUARANTINED: Maven never launched for {mci_id}; not recording a verdict")
+            record_skip(mci_id, "maven never launched — quarantined, needs re-run")
+            git("add", "--", str(SKIPPED.relative_to(REPO)))
+            git("commit", "-q", "-m", f"Quarantine {mci_id}: Maven never launched")
+            continue
+
         entry = canonical_store.entry_from_agent_result(mci_id, result)
         classification = canonical_store.classify_agent_result(result)
         counts[classification] = counts.get(classification, 0) + 1
