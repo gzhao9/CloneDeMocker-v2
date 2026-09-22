@@ -1,15 +1,17 @@
 --- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
 +++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
-@@ -170,7 +170,7 @@
+@@ -170,17 +170,16 @@
          // make local mocks
          VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
          NicVO nic = mock(NicVO.class);
 -        NetworkVO network = mock(NetworkVO.class);
-+        NetworkVO network = createMockNetwork(guruName);
  
          // make sure that release dhcp will be called
          when(vm.getType()).thenReturn(Type.User);
-@@ -180,7 +180,6 @@
++        NetworkVO network = createMockNetwork(guruName);
+         when(testOrchestrator._networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)).thenReturn(true);
+         when(network.getTrafficType()).thenReturn(TrafficType.Guest);
+         when(network.getGuestType()).thenReturn(GuestType.Shared);
          when(testOrchestrator._nicDao.listByNetworkIdTypeAndGatewayAndBroadcastUri(nic.getNetworkId(), VirtualMachine.Type.User, nic.getIPv4Gateway(), nic.getBroadcastUri()))
                  .thenReturn(new ArrayList<NicVO>());
  
@@ -46,26 +48,28 @@
          when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
  
          testOrchestrator.removeNic(vm, nic);
-@@ -515,10 +512,9 @@
-     public void testDontReleaseNicWhenPreserveNicsSettingEnabled() {
-         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
-         NicVO nic = mock(NicVO.class);
--        NetworkVO network = mock(NetworkVO.class);
-+        NetworkVO network = createMockNetwork(guruName);
- 
-         when(vm.getType()).thenReturn(Type.User);
--        when(network.getGuruName()).thenReturn(guruName);
-         when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
- 
-         Long nicId = 1L;
-@@ -1073,4 +1069,10 @@
-         assertNotNull(result);
-         assertEquals(1, result.size());
-     }
+@@ -301,6 +298,12 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testConfigureNicProfileBasedOnRequestedIpTestRequestedIpIsNotValid() {
+         testConfigureNicProfileBasedOnRequestedIpTestRequestedIp("123");
++    }
 +
 +    private static NetworkVO createMockNetwork(String guruName) {
 +        NetworkVO network = mock(NetworkVO.class);
 +        when(network.getGuruName()).thenReturn(guruName);
 +        return network;
-+    }
- }
+     }
+ 
+     private void testConfigureNicProfileBasedOnRequestedIpTestRequestedIp(String requestedIpv4Address) {
+@@ -515,10 +518,9 @@
+     public void testDontReleaseNicWhenPreserveNicsSettingEnabled() {
+         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+         NicVO nic = mock(NicVO.class);
+-        NetworkVO network = mock(NetworkVO.class);
+ 
+         when(vm.getType()).thenReturn(Type.User);
+-        when(network.getGuruName()).thenReturn(guruName);
++        NetworkVO network = createMockNetwork(guruName);
+         when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+ 
+         Long nicId = 1L;
