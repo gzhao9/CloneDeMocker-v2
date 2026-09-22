@@ -1,0 +1,136 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
+@@ -716,13 +716,9 @@
+ 
+     @Test
+     public void createWebhookFilterResponseHandlesNullWebhookVO() {
+-        WebhookFilter webhookFilter = Mockito.mock(WebhookFilter.class);
++        WebhookFilter webhookFilter = MockWebhookFilterFactory.createMockWebhookFilter(WebhookFilter.Mode.Include, WebhookFilter.MatchType.Exact, "value");
+         Mockito.when(webhookFilter.getUuid()).thenReturn("filterUuid");
+         Mockito.when(webhookFilter.getWebhookId()).thenReturn(1L);
+-        Mockito.when(webhookFilter.getType()).thenReturn(WebhookFilter.Type.EventType);
+-        Mockito.when(webhookFilter.getMode()).thenReturn(WebhookFilter.Mode.Include);
+-        Mockito.when(webhookFilter.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+-        Mockito.when(webhookFilter.getValue()).thenReturn("value");
+         Mockito.when(webhookFilter.getCreated()).thenReturn(new Date(1000));
+ 
+         WebhookVO webhookVO = Mockito.mock(WebhookVO.class);
+@@ -745,13 +741,9 @@
+ 
+     @Test
+     public void createWebhookFilterResponseHandlesNullWebhookFromDao() {
+-        WebhookFilter webhookFilter = Mockito.mock(WebhookFilter.class);
++        WebhookFilter webhookFilter = MockWebhookFilterFactory.createMockWebhookFilter(WebhookFilter.Mode.Include, WebhookFilter.MatchType.Exact, "value");
+         Mockito.when(webhookFilter.getUuid()).thenReturn("filterUuid");
+         Mockito.when(webhookFilter.getWebhookId()).thenReturn(1L);
+-        Mockito.when(webhookFilter.getType()).thenReturn(WebhookFilter.Type.EventType);
+-        Mockito.when(webhookFilter.getMode()).thenReturn(WebhookFilter.Mode.Include);
+-        Mockito.when(webhookFilter.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+-        Mockito.when(webhookFilter.getValue()).thenReturn("value");
+         Mockito.when(webhookFilter.getCreated()).thenReturn(new Date(1000));
+ 
+         Mockito.when(webhookDao.findById(1L)).thenReturn(null);
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
+@@ -218,12 +218,7 @@
+     @Test
+     public void isEventMatchingFiltersReturnsFalseWhenEventMatchesExcludeFilter() {
+         Event event = Mockito.mock(Event.class);
+-        WebhookFilter excludeFilter = Mockito.mock(WebhookFilter.class);
+-
+-        Mockito.when(excludeFilter.getMode()).thenReturn(WebhookFilter.Mode.Exclude);
+-        Mockito.when(excludeFilter.getType()).thenReturn(WebhookFilter.Type.EventType);
+-        Mockito.when(excludeFilter.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+-        Mockito.when(excludeFilter.getValue()).thenReturn("USER.LOGIN");
++        WebhookFilter excludeFilter = MockWebhookFilterFactory.createMockWebhookFilter(WebhookFilter.Mode.Exclude, WebhookFilter.MatchType.Exact, "USER.LOGIN");
+         Mockito.when(event.getEventType()).thenReturn("USER.LOGIN");
+ 
+         List<WebhookFilter> filters = List.of(excludeFilter);
+@@ -236,12 +231,7 @@
+     @Test
+     public void isEventMatchingFiltersReturnsTrueWhenEventMatchesIncludeFilter() {
+         Event event = Mockito.mock(Event.class);
+-        WebhookFilter includeFilter = Mockito.mock(WebhookFilter.class);
+-
+-        Mockito.when(includeFilter.getMode()).thenReturn(WebhookFilter.Mode.Include);
+-        Mockito.when(includeFilter.getType()).thenReturn(WebhookFilter.Type.EventType);
+-        Mockito.when(includeFilter.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+-        Mockito.when(includeFilter.getValue()).thenReturn("USER.LOGIN");
++        WebhookFilter includeFilter = MockWebhookFilterFactory.createMockWebhookFilter(WebhookFilter.Mode.Include, WebhookFilter.MatchType.Exact, "USER.LOGIN");
+         Mockito.when(event.getEventType()).thenReturn("USER.LOGIN");
+ 
+         List<WebhookFilter> filters = List.of(includeFilter);
+@@ -254,12 +244,8 @@
+     @Test
+     public void isEventMatchingFiltersReturnsFalseWhenEventDoesNotMatchAnyIncludeFilter() {
+         Event event = Mockito.mock(Event.class);
+-        WebhookFilter includeFilter = Mockito.mock(WebhookFilter.class);
+-
+-        Mockito.when(includeFilter.getMode()).thenReturn(WebhookFilter.Mode.Include);
+-        Mockito.when(includeFilter.getType()).thenReturn(WebhookFilter.Type.EventType);
+-        Mockito.when(includeFilter.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+-        Mockito.when(includeFilter.getValue()).thenReturn("USER.LOGOUT");
++        WebhookFilter includeFilter = MockWebhookFilterFactory.createMockWebhookFilter(WebhookFilter.Mode.Include, WebhookFilter.MatchType.Exact, "USER.LOGOUT");
++
+         Mockito.when(event.getEventType()).thenReturn("USER.LOGIN");
+ 
+         List<WebhookFilter> filters = List.of(includeFilter);
+@@ -272,18 +258,8 @@
+     @Test
+     public void isEventMatchingFiltersReturnsTrueWhenEventMatchesAtLeastOneIncludeFilter() {
+         Event event = Mockito.mock(Event.class);
+-        WebhookFilter includeFilter1 = Mockito.mock(WebhookFilter.class);
+-        WebhookFilter includeFilter2 = Mockito.mock(WebhookFilter.class);
+-
+-        Mockito.when(includeFilter1.getMode()).thenReturn(WebhookFilter.Mode.Include);
+-        Mockito.when(includeFilter1.getType()).thenReturn(WebhookFilter.Type.EventType);
+-        Mockito.when(includeFilter1.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+-        Mockito.when(includeFilter1.getValue()).thenReturn("USER.LOGOUT");
+-
+-        Mockito.when(includeFilter2.getMode()).thenReturn(WebhookFilter.Mode.Include);
+-        Mockito.when(includeFilter2.getType()).thenReturn(WebhookFilter.Type.EventType);
+-        Mockito.when(includeFilter2.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+-        Mockito.when(includeFilter2.getValue()).thenReturn("USER.LOGIN");
++        WebhookFilter includeFilter1 = MockWebhookFilterFactory.createMockWebhookFilter(WebhookFilter.Mode.Include, WebhookFilter.MatchType.Exact, "USER.LOGOUT");
++        WebhookFilter includeFilter2 = MockWebhookFilterFactory.createMockWebhookFilter(WebhookFilter.Mode.Include, WebhookFilter.MatchType.Exact, "USER.LOGIN");
+ 
+         Mockito.when(event.getEventType()).thenReturn("USER.LOGIN");
+ 
+@@ -297,18 +273,8 @@
+     @Test
+     public void isEventMatchingFiltersReturnsFalseWhenEventMatchesExcludeFilterEvenWithIncludeFilters() {
+         Event event = Mockito.mock(Event.class);
+-        WebhookFilter excludeFilter = Mockito.mock(WebhookFilter.class);
+-        WebhookFilter includeFilter = Mockito.mock(WebhookFilter.class);
+-
+-        Mockito.when(includeFilter.getMode()).thenReturn(WebhookFilter.Mode.Include);
+-        Mockito.when(includeFilter.getType()).thenReturn(WebhookFilter.Type.EventType);
+-        Mockito.when(includeFilter.getMatchType()).thenReturn(WebhookFilter.MatchType.Prefix);
+-        Mockito.when(includeFilter.getValue()).thenReturn("USER.");
+-
+-        Mockito.when(excludeFilter.getMode()).thenReturn(WebhookFilter.Mode.Exclude);
+-        Mockito.when(excludeFilter.getType()).thenReturn(WebhookFilter.Type.EventType);
+-        Mockito.when(excludeFilter.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+-        Mockito.when(excludeFilter.getValue()).thenReturn("USER.LOGIN");
++        WebhookFilter excludeFilter = MockWebhookFilterFactory.createMockWebhookFilter(WebhookFilter.Mode.Exclude, WebhookFilter.MatchType.Exact, "USER.LOGIN");
++        WebhookFilter includeFilter = MockWebhookFilterFactory.createMockWebhookFilter(WebhookFilter.Mode.Include, WebhookFilter.MatchType.Prefix, "USER.");
+ 
+         Mockito.when(event.getEventType()).thenReturn("USER.LOGIN");
+ 
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/MockWebhookFilterFactory.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/MockWebhookFilterFactory.java
+@@ -0,0 +1,14 @@
++package org.apache.cloudstack.mom.webhook;
++
++import org.mockito.Mockito;
++
++public class MockWebhookFilterFactory {
++    public static WebhookFilter createMockWebhookFilter(WebhookFilter.Mode mode, WebhookFilter.MatchType matchType, String value) {
++        WebhookFilter webhookFilter = Mockito.mock(WebhookFilter.class);
++        Mockito.when(webhookFilter.getMatchType()).thenReturn(matchType);
++        Mockito.when(webhookFilter.getMode()).thenReturn(mode);
++        Mockito.when(webhookFilter.getType()).thenReturn(WebhookFilter.Type.EventType);
++        Mockito.when(webhookFilter.getValue()).thenReturn(value);
++        return webhookFilter;
++    }
++}
