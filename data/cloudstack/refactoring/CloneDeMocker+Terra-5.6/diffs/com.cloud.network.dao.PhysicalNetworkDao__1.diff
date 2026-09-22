@@ -1,0 +1,41 @@
+--- a/server/src/test/java/com/cloud/network/DedicateGuestVlanRangesTest.java
++++ b/server/src/test/java/com/cloud/network/DedicateGuestVlanRangesTest.java
+@@ -188,7 +188,7 @@
+         physicalNetwork.addIsolationMethod("VLAN");
+         AccountGuestVlanMapVO accountGuestVlanMapVO = new AccountGuestVlanMapVO(1L, 1L);
+ 
+-        when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
++        PhysicalNetworkDaoTestUtils.stubFindById(networkService._physicalNetworkDao, physicalNetwork);
+ 
+         when(networkService._dcVnetDao.listAllocatedVnetsInRange(anyLong(), anyLong(), anyInt(), anyInt())).thenReturn(null);
+ 
+--- a/server/src/test/java/com/cloud/network/UpdatePhysicalNetworkTest.java
++++ b/server/src/test/java/com/cloud/network/UpdatePhysicalNetworkTest.java
+@@ -57,7 +57,7 @@
+         TransactionLegacy txn = TransactionLegacy.open("updatePhysicalNetworkTest");
+         NetworkServiceImpl networkService = setUp();
+         existingRange.add("524");
+-        when(_physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetworkVO);
++        PhysicalNetworkDaoTestUtils.stubFindById(_physicalNetworkDao, physicalNetworkVO);
+         when(_datacenterDao.findById(anyLong())).thenReturn(datacentervo);
+         when(_physicalNetworkDao.update(anyLong(), any(physicalNetworkVO.getClass()))).thenReturn(true);
+         when(_datacenterVnetDao.listVnetsByPhysicalNetworkAndDataCenter(anyLong(), anyLong())).thenReturn(existingRange);
+--- a/server/src/test/java/com/cloud/network/PhysicalNetworkDaoTestUtils.java
++++ b/server/src/test/java/com/cloud/network/PhysicalNetworkDaoTestUtils.java
+@@ -0,0 +1,16 @@
++package com.cloud.network;
++
++import static org.mockito.Mockito.anyLong;
++import static org.mockito.Mockito.when;
++
++import com.cloud.network.dao.PhysicalNetworkDao;
++import com.cloud.network.dao.PhysicalNetworkVO;
++
++public final class PhysicalNetworkDaoTestUtils {
++    private PhysicalNetworkDaoTestUtils() {
++    }
++
++    public static void stubFindById(PhysicalNetworkDao physicalNetworkDao, PhysicalNetworkVO physicalNetwork) {
++        when(physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
++    }
++}

@@ -1,0 +1,55 @@
+--- a/engine/storage/volume/src/test/java/org/apache/cloudstack/storage/volume/VolumeServiceTest.java
++++ b/engine/storage/volume/src/test/java/org/apache/cloudstack/storage/volume/VolumeServiceTest.java
+@@ -178,8 +178,7 @@
+ 
+     @Test
+     public void validateCopyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigrationReturnTrueOrFalse() throws ExecutionException, InterruptedException{
+-        VolumeObject volumeObject = Mockito.mock(VolumeObject.class);
+-        Mockito.doReturn(new VolumeVO() {}).when(volumeObject).getVolume();
++        VolumeObject volumeObject = createMockVolumeObject(new VolumeVO() {});
+         volumeObject.configure(null, new VolumeVO() {});
+ 
+         Mockito.doNothing().when(snapshotManagerMock).copySnapshotPoliciesBetweenVolumes(Mockito.any(), Mockito.any());
+@@ -197,8 +196,7 @@
+     @Test (expected = Exception.class)
+     public void validateCopyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigrationThrowAnyOtherException() throws
+       ExecutionException, InterruptedException{
+-        VolumeObject volumeObject = Mockito.mock(VolumeObject.class);
+-        Mockito.doReturn(new VolumeVO() {}).when(volumeObject).getVolume();
++        VolumeObject volumeObject = createMockVolumeObject(new VolumeVO() {});
+ 
+         volumeServiceImplSpy.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(ObjectInDataStoreStateMachine.Event.DestroyRequested, null, volumeObject,
+           volumeObject, true);
+@@ -206,8 +204,7 @@
+ 
+     @Test
+     public void validateDestroySourceVolumeAfterMigrationReturnTrue() throws ExecutionException, InterruptedException{
+-        VolumeObject volumeObject = Mockito.mock(VolumeObject.class);
+-        Mockito.doReturn(new VolumeVO() {}).when(volumeObject).getVolume();
++        VolumeObject volumeObject = createMockVolumeObject(new VolumeVO() {});
+ 
+         Mockito.doReturn(true).when(volumeDaoMock).updateUuid(Mockito.anyLong(), Mockito.anyLong());
+         Mockito.doNothing().when(volumeServiceImplSpy).destroyVolume(Mockito.anyLong());
+@@ -225,8 +222,7 @@
+         VolumeVO vo = new VolumeVO() {};
+         vo.setPoolType(Storage.StoragePoolType.Filesystem);
+ 
+-        VolumeObject volumeObject = Mockito.mock(VolumeObject.class);
+-        Mockito.doReturn(vo).when(volumeObject).getVolume();
++        VolumeObject volumeObject = createMockVolumeObject(vo);
+         vo.setPoolId(1L);
+ 
+         List<Exception> exceptions = new ArrayList<>(Arrays.asList(new InterruptedException(), new ExecutionException() {}));
+@@ -352,6 +348,12 @@
+         volumeServiceImplSpy.validateChangeDiskOfferingEncryptionType(1L, 2L);
+     }
+ 
++    private static VolumeObject createMockVolumeObject(VolumeVO volume) {
++        VolumeObject volumeObject = Mockito.mock(VolumeObject.class);
++        Mockito.doReturn(volume).when(volumeObject).getVolume();
++        return volumeObject;
++    }
++
+     private void prepareOfferingsForEncryptionValidation(long diskOfferingId, boolean encryption) {
+         DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+ 

@@ -1,0 +1,89 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateCommandWrapperTest.java
+@@ -964,7 +964,7 @@
+ 
+         Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+         Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+-        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
++        libvirtComputingResourceMock = MockLibvirtComputingResource.createMockLibvirtComputingResource(virtualMachineTOMock, currentVmCpuShares);
+ 
+         String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+ 
+@@ -979,7 +979,7 @@
+ 
+         Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+         Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+-        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
++        libvirtComputingResourceMock = MockLibvirtComputingResource.createMockLibvirtComputingResource(virtualMachineTOMock, currentVmCpuShares);
+ 
+         String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+ 
+@@ -1003,7 +1003,7 @@
+ 
+         Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+         Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+-        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
++        libvirtComputingResourceMock = MockLibvirtComputingResource.createMockLibvirtComputingResource(virtualMachineTOMock, currentVmCpuShares);
+ 
+         String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+ 
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPrepareForMigrationCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPrepareForMigrationCommandWrapperTest.java
+@@ -26,7 +26,6 @@
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.mockito.Mock;
+-import org.mockito.Mockito;
+ import org.mockito.Spy;
+ import org.mockito.junit.MockitoJUnitRunner;
+ 
+@@ -66,7 +65,7 @@
+     @Test
+     public void createPrepareForMigrationAnswerTestVerifyThatCpuSharesIsSet() {
+         int cpuShares = 1000;
+-        Mockito.doReturn(cpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
++        libvirtComputingResourceMock = MockLibvirtComputingResource.createMockLibvirtComputingResource(virtualMachineTOMock, cpuShares);
+         PrepareForMigrationAnswer prepareForMigrationAnswer = libvirtPrepareForMigrationCommandWrapperSpy.createPrepareForMigrationAnswer(prepareForMigrationCommandMock,null,
+                 libvirtComputingResourceMock, virtualMachineTOMock);
+ 
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtScaleVmCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtScaleVmCommandWrapperTest.java
+@@ -217,8 +217,8 @@
+         int shares = vmTo.getCpus() * vmTo.getSpeed();
+ 
+         Mockito.doReturn(vmTo).when(scaleVmCommandMock).getVirtualMachine();
++        libvirtComputingResourceMock = MockLibvirtComputingResource.createMockLibvirtComputingResource(vmTo, shares);
+         Mockito.doReturn(libvirtUtilitiesHelperMock).when(libvirtComputingResourceMock).getLibvirtUtilitiesHelper();
+-        Mockito.doReturn(shares).when(libvirtComputingResourceMock).calculateCpuShares(vmTo);
+         Mockito.doThrow(libvirtException).when(libvirtUtilitiesHelperMock).getConnectionByVmName(Mockito.anyString());
+         Mockito.doReturn(errorMessage).when(libvirtException).getMessage();
+ 
+@@ -233,10 +233,10 @@
+     public void validateExecuteSuccessfully() throws LibvirtException {
+         int shares = vmTo.getCpus() * vmTo.getSpeed();
+ 
++        libvirtComputingResourceMock = MockLibvirtComputingResource.createMockLibvirtComputingResource(vmTo, shares);
+         Mockito.doReturn(vmTo).when(scaleVmCommandMock).getVirtualMachine();
+         Mockito.doReturn(libvirtUtilitiesHelperMock).when(libvirtComputingResourceMock).getLibvirtUtilitiesHelper();
+         Mockito.doReturn(connectMock).when(libvirtUtilitiesHelperMock).getConnectionByVmName(Mockito.anyString());
+-        Mockito.doReturn(shares).when(libvirtComputingResourceMock).calculateCpuShares(vmTo);
+         Mockito.doReturn(domainMock).when(connectMock).domainLookupByName(Mockito.anyString());
+         Mockito.doNothing().when(libvirtScaleVmCommandWrapperSpy).scaleMemory(Mockito.any(), Mockito.anyLong(), Mockito.anyString());
+         Mockito.doNothing().when(libvirtScaleVmCommandWrapperSpy).scaleVcpus(Mockito.any(), Mockito.anyInt(), Mockito.anyString());
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockLibvirtComputingResource.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockLibvirtComputingResource.java
+@@ -0,0 +1,14 @@
++package com.cloud.hypervisor.kvm.resource.wrapper;
++
++import com.cloud.agent.api.to.VirtualMachineTO;
++import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
++
++import org.mockito.Mockito;
++
++public class MockLibvirtComputingResource {
++    public static LibvirtComputingResource createMockLibvirtComputingResource(VirtualMachineTO virtualMachine, int cpuShares) {
++        LibvirtComputingResource libvirtComputingResourceMock = Mockito.mock(LibvirtComputingResource.class);
++        Mockito.doReturn(cpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachine);
++        return libvirtComputingResourceMock;
++    }
++}

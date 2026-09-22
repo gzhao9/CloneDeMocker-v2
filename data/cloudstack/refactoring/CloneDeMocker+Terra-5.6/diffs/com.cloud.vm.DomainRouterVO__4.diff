@@ -1,0 +1,55 @@
+--- a/server/src/test/java/org/apache/cloudstack/network/router/deployment/RouterDeploymentDefinitionTest.java
++++ b/server/src/test/java/org/apache/cloudstack/network/router/deployment/RouterDeploymentDefinitionTest.java
+@@ -83,6 +83,8 @@
+     @Mock
+     protected NetrisProviderDao netrisProviderDao;
+ 
++    private final DomainRouterVO mockDomainRouterVO1 = mock(DomainRouterVO.class);
++
+     protected RouterDeploymentDefinition deployment;
+ 
+ 
+@@ -354,8 +356,7 @@
+ 
+         // This list is not empty, so it will not add any for this pod, and continue with next pod
+         final List<DomainRouterVO> virtualRouters2 = new ArrayList<>();
+-        final DomainRouterVO domainRouterVO1 = mock(DomainRouterVO.class);
+-        virtualRouters2.add(domainRouterVO1);
++        virtualRouters2.add(mockDomainRouterVO1);
+         when(mockRouterDao.listByPodIdAndStates(POD_ID2,
+                 VirtualMachine.State.Starting, VirtualMachine.State.Running)).thenReturn(virtualRouters2);
+ 
+@@ -402,9 +403,8 @@
+ 
+         // This list is not empty, so it will not add any for this pod, and continue with next pod
+         final List<DomainRouterVO> virtualRouters2 = new ArrayList<>();
+-        final DomainRouterVO domainRouterVO1 = mock(DomainRouterVO.class);
+         final DomainRouterVO domainRouterVO2 = mock(DomainRouterVO.class);
+-        virtualRouters2.add(domainRouterVO1);
++        virtualRouters2.add(mockDomainRouterVO1);
+         virtualRouters2.add(domainRouterVO2);
+         when(mockRouterDao.listByPodIdAndStates(POD_ID2,
+                 VirtualMachine.State.Starting, VirtualMachine.State.Running)).thenReturn(virtualRouters2);
+@@ -722,19 +722,18 @@
+         final RouterDeploymentDefinition deploymentUT = spy(deployment);
+         doReturn(2).when(deploymentUT).getNumberOfRoutersToDeploy();
+ 
+-        final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
+         final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
+         when(mockNetworkHelper.deployRouter(deploymentUT, false))
+-        .thenReturn(routerVO1).thenReturn(routerVO2);
++        .thenReturn(mockDomainRouterVO1).thenReturn(routerVO2);
+         lenient().when(networkDetailsDao.findById(anyLong())).thenReturn(null);
+         // Execute
+         deploymentUT.deployAllVirtualRouters();
+ 
+         // Assert
+-        verify(mockRouterDao, times(1)).addRouterToGuestNetwork(routerVO1, mockNw);
++        verify(mockRouterDao, times(1)).addRouterToGuestNetwork(mockDomainRouterVO1, mockNw);
+         verify(mockRouterDao, times(1)).addRouterToGuestNetwork(routerVO2, mockNw);
+         assertEquals("First router to deploy was not added to list of available routers",
+-                routerVO1, deployment.routers.get(0));
++                mockDomainRouterVO1, deployment.routers.get(0));
+         assertEquals("Second router to deploy was not added to list of available routers",
+                 routerVO2, deployment.routers.get(1));
+     }
