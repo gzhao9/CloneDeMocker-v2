@@ -125,6 +125,15 @@ def clear_conflicts() -> None:
         git("add", "--", path)
 
 
+def _archived_ids() -> set[str]:
+    """Ids retired on purpose. Cheap to read; COLLAB_ARCHIVE.md itself stays write-only."""
+    path = REPO / "collab" / "archived-ids"
+    try:
+        return {line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()}
+    except OSError:
+        return set()
+
+
 def _merge_board() -> None:
     """Resolve a COLLAB.md conflict without discarding either side's entries.
 
@@ -141,10 +150,25 @@ def _merge_board() -> None:
     if not ours or not mine:
         git("checkout", "--ours", "--", "COLLAB.md")
         return
-    blocks = re.split(r"(?=^### \[B-)", mine, flags=re.M)
-    missing = [b for b in blocks
-               if b.startswith("### [B-")
-               and b.split("]")[0] + "]" not in ours]
+    # Split on EVERY entry boundary, not just B's. Splitting on "### [B-" alone makes each
+    # chunk run to the next B entry, so it carries any A or C entries that follow it -- and
+    # restoring one B block silently reinstated theirs too. A measured this: ACTIVE reached 11
+    # entries against a 6 cap with three ids duplicated, and the commit that reintroduced A-016
+    # was ours.
+    blocks = re.split(r"(?=^### \[)", mine, flags=re.M)
+    archived = _archived_ids()
+    missing = []
+    for b in blocks:
+        if not b.startswith("### [B-"):
+            continue
+        entry_id = b[5:b.find("]")]
+        if f"### [{entry_id}]" in ours:
+            continue
+        # Absent upstream has two causes a merge cannot tell apart: destroyed by a blanket
+        # conflict resolution, or deliberately archived. Only the first should be undone.
+        if entry_id in archived:
+            continue
+        missing.append(b)
     # Our own entries are not the only thing we write to the board: we also stamp recv-B and
     # read-by-B on *other agents'* entries. Restoring only "### [B-" blocks drops those, so a
     # peer keeps seeing an entry as unreceived and re-asks -- which happened three times before
