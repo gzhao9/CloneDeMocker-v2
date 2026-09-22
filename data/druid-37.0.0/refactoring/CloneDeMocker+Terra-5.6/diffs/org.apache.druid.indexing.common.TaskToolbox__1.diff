@@ -1,6 +1,6 @@
 --- a/indexing-service/src/test/java/org/apache/druid/indexing/common/task/AbstractTaskTest.java
 +++ b/indexing-service/src/test/java/org/apache/druid/indexing/common/task/AbstractTaskTest.java
-@@ -72,25 +72,18 @@
+@@ -72,25 +72,17 @@
      // impact to other totally unrelated tests.  Mockito needs to be completely erradicated from the codebase.  This
      // comment is here to either cause me to do it in this commit or just for posterity so that it is clear that it
      // should happen in the future.
@@ -12,8 +12,6 @@
 -
 -    TaskLogPusher pusher = mock(TaskLogPusher.class);
 -    when(toolbox.getTaskLogPusher()).thenReturn(pusher);
-+    DruidNode node = new DruidNode("foo", "foo", false, 1, 2, true, true);
-+
 +    TaskLogPusher pusher = mock(TaskLogPusher.class);
  
      TaskConfig config = mock(TaskConfig.class);
@@ -29,11 +27,12 @@
 +
 +    TaskActionClient taskActionClient = mock(TaskActionClient.class);
 +    when(taskActionClient.submit(any())).thenReturn(TaskConfig.class);
-+    TaskToolbox toolbox = createMockTaskToolbox(config, objectMapper, taskActionClient, node, pusher);
++
++    TaskToolbox toolbox = createMockTaskToolbox(objectMapper, config, taskActionClient, pusher);
      when(toolbox.getTaskReportFileWriter()).thenReturn(new SingleFileTaskReportFileWriter(temporaryFolder.newFile()));
  
  
-@@ -121,26 +114,19 @@
+@@ -121,25 +113,17 @@
    @Test
    public void testWithNoEncapsulatedTask() throws Exception
    {
@@ -45,8 +44,6 @@
 -
 -    TaskLogPusher pusher = mock(TaskLogPusher.class);
 -    when(toolbox.getTaskLogPusher()).thenReturn(pusher);
-+    DruidNode node = new DruidNode("foo", "foo", false, 1, 2, true, true);
-+
 +    TaskLogPusher pusher = mock(TaskLogPusher.class);
  
      TaskConfig config = mock(TaskConfig.class);
@@ -59,16 +56,15 @@
 -    TaskActionClient taskActionClient = mock(TaskActionClient.class);
 -    when(taskActionClient.submit(any())).thenReturn(TaskConfig.class);
 -    when(toolbox.getTaskActionClient()).thenReturn(taskActionClient);
--
 +
 +    TaskActionClient taskActionClient = mock(TaskActionClient.class);
 +    when(taskActionClient.submit(any())).thenReturn(TaskConfig.class);
 +
-+    TaskToolbox toolbox = createMockTaskToolbox(config, objectMapper, taskActionClient, node, pusher);
++    TaskToolbox toolbox = createMockTaskToolbox(objectMapper, config, taskActionClient, pusher);
+ 
  
      AbstractTask task = new NoopTask("myID", null, null, 1, 0, null)
-     {
-@@ -166,25 +152,18 @@
+@@ -166,25 +150,16 @@
    @Test
    public void testTaskFailureWithoutExceptionGetsReportedCorrectly() throws Exception
    {
@@ -80,8 +76,6 @@
 -
 -    TaskLogPusher pusher = mock(TaskLogPusher.class);
 -    when(toolbox.getTaskLogPusher()).thenReturn(pusher);
-+    DruidNode node = new DruidNode("foo", "foo", false, 1, 2, true, true);
-+
 +    TaskLogPusher pusher = mock(TaskLogPusher.class);
  
      TaskConfig config = mock(TaskConfig.class);
@@ -97,11 +91,11 @@
 +
 +    TaskActionClient taskActionClient = mock(TaskActionClient.class);
 +    when(taskActionClient.submit(any())).thenReturn(TaskConfig.class);
-+    TaskToolbox toolbox = createMockTaskToolbox(config, objectMapper, taskActionClient, node, pusher);
++    TaskToolbox toolbox = createMockTaskToolbox(objectMapper, config, taskActionClient, pusher);
      when(toolbox.getTaskReportFileWriter()).thenReturn(new SingleFileTaskReportFileWriter(temporaryFolder.newFile()));
  
      TaskStatus taskStatus = TaskStatus.failure("myId", "failed");
-@@ -242,25 +221,18 @@
+@@ -242,25 +217,16 @@
    @Test
    public void testSetupFailsGetsReportedCorrectly() throws Exception
    {
@@ -113,8 +107,6 @@
 -
 -    TaskLogPusher pusher = mock(TaskLogPusher.class);
 -    when(toolbox.getTaskLogPusher()).thenReturn(pusher);
-+    DruidNode node = new DruidNode("foo", "foo", false, 1, 2, true, true);
-+
 +    TaskLogPusher pusher = mock(TaskLogPusher.class);
  
      TaskConfig config = mock(TaskConfig.class);
@@ -130,30 +122,29 @@
 +
 +    TaskActionClient taskActionClient = mock(TaskActionClient.class);
 +    when(taskActionClient.submit(any())).thenReturn(TaskConfig.class);
-+    TaskToolbox toolbox = createMockTaskToolbox(config, objectMapper, taskActionClient, node, pusher);
++    TaskToolbox toolbox = createMockTaskToolbox(objectMapper, config, taskActionClient, pusher);
      AbstractTask task = new NoopTask("myID", null, null, 1, 0, null)
      {
        @Nullable
-@@ -324,4 +296,22 @@
+@@ -324,4 +290,21 @@
  
      Assert.assertNotSame(builder1, builder2);
    }
 +
 +  private static TaskToolbox createMockTaskToolbox(
-+      TaskConfig config,
 +      ObjectMapper objectMapper,
++      TaskConfig config,
 +      TaskActionClient taskActionClient,
-+      DruidNode node,
 +      TaskLogPusher pusher
 +  )
 +  {
-+    TaskToolbox toolbox = createMockTaskToolbox(
-+        config,
-+        objectMapper,
-+        taskActionClient,
-+        node,
-+        pusher
-+    );
++    TaskToolbox toolbox = mock(TaskToolbox.class);
++    when(toolbox.getAttemptId()).thenReturn("1");
++    when(toolbox.getTaskExecutorNode()).thenReturn(new DruidNode("foo", "foo", false, 1, 2, true, true));
++    when(toolbox.getTaskLogPusher()).thenReturn(pusher);
++    when(toolbox.getConfig()).thenReturn(config);
++    when(toolbox.getJsonMapper()).thenReturn(objectMapper);
++    when(toolbox.getTaskActionClient()).thenReturn(taskActionClient);
 +    return toolbox;
 +  }
  }
