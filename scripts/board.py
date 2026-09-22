@@ -27,7 +27,12 @@ REPO = Path(__file__).resolve().parents[1]
 BOARD = REPO / "COLLAB.md"
 ARCHIVE = REPO / "COLLAB_ARCHIVE.md"
 
-ME, THEM = "B", "A"
+# Peers, plural: with a third agent on the board, filtering on a single THEM made
+# every C -> B entry invisible to the runner. C-001 only reached B because a model
+# session read the board by hand.
+ME = "B"
+PEERS = ("A", "C")
+THEM = "A"   # retained for the outgoing header only
 MY_SECTION = "## Section: agent-cloudstack-master"
 MAX_ACTIVE_MINE = 3
 KEEP_PROGRESS = 3
@@ -87,7 +92,7 @@ def unread_in(text: str) -> list[tuple[str, str]]:
     out = []
     for block in re.split(r"(?=^### \[)", text[start:end], flags=re.M):
         match = ENTRY.match(block)
-        if not match or match.group(1) != THEM:
+        if not match or match.group(1) not in PEERS:
             continue
         footer = re.search(rf"- read-by-{ME}:(.*)", block)
         if footer and not footer.group(1).strip():

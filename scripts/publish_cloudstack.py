@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import time
@@ -117,8 +118,41 @@ def clear_conflicts() -> None:
     the same class of loss that already cost four MCIs, just pointed the other way.
     """
     for path in git("diff", "--name-only", "--diff-filter=U").stdout.split():
-        git("checkout", "--ours", "--", path)
+        if path.endswith("COLLAB.md"):
+            _merge_board()          # losing a board entry is unrecoverable; see below
+        else:
+            git("checkout", "--ours", "--", path)
         git("add", "--", path)
+
+
+def _merge_board() -> None:
+    """Resolve a COLLAB.md conflict without discarding either side's entries.
+
+    Taking upstream is right for the dataset because regenerate() re-adds our rows straight
+    after. Nothing regenerates the board, so the same rule there is pure loss: entry B-005,
+    B's answer to A-007, was destroyed exactly this way and is not in any commit. A asked
+    three hours later why the REQ had gone unanswered.
+
+    Upstream wins for the file, then any of our own entry blocks missing from it are put back
+    at the top of ACTIVE.
+    """
+    ours = git("show", ":2:COLLAB.md").stdout      # during a rebase :2 is upstream
+    mine = git("show", ":3:COLLAB.md").stdout      # :3 is the commit being replayed
+    if not ours or not mine:
+        git("checkout", "--ours", "--", "COLLAB.md")
+        return
+    blocks = re.split(r"(?=^### \[B-)", mine, flags=re.M)
+    missing = [b for b in blocks
+               if b.startswith("### [B-")
+               and b.split("]")[0] + "]" not in ours]
+    if missing:
+        marker = "## ACTIVE" + chr(10) + chr(10)
+        at = ours.find(marker)
+        at = at + len(marker) if at != -1 else 0
+        ours = ours[:at] + "".join(missing) + ours[at:]
+        print(f"    board: restored {len(missing)} of our entries the rebase would have dropped",
+              flush=True)
+    (REPO / "COLLAB.md").write_text(ours, encoding="utf-8", newline=chr(10))
 
 
 def recover_repo() -> None:
