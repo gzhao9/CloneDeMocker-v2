@@ -1,0 +1,67 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -1092,7 +1092,7 @@
+         List<UserVmJoinVO> userVms = List.of(userVm);
+         Mockito.when(userVmJoinDaoMock.searchByIds(anyLong())).thenReturn(userVms);
+         Mockito.when(networkDao.findById(anyLong())).thenReturn(networkVO);
+-        Mockito.when(accountDao.findById(anyLong())).thenReturn(accountVO);
++        AccountDaoMockFactory.stubFindById(accountDao, accountVO);
+         Mockito.when(domainDao.findById(anyLong())).thenReturn(domainVO);
+         Mockito.when(dcDao.findById(anyLong())).thenReturn(dataCenterVO);
+         Mockito.when(vpcDao.findById(anyLong())).thenReturn(vpcVO);
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -4695,7 +4695,7 @@
+     public void verifyVmLimits_fixedOffering_throwsException() {
+         when(userVmVoMock.getId()).thenReturn(1L);
+         when(userVmVoMock.getServiceOfferingId()).thenReturn(1L);
+-        when(accountDao.findById(anyLong())).thenReturn(callerAccount);
++        AccountDaoMockFactory.stubFindById(accountDao, callerAccount);
+         ServiceOfferingVO serviceOffering = getMockedServiceOffering(false, false);
+         when(_serviceOfferingDao.findById(anyLong())).thenReturn(serviceOffering);
+         when(_serviceOfferingDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(serviceOffering);
+@@ -4712,7 +4712,7 @@
+     public void verifyVmLimits_constrainedOffering_throwsException() {
+         when(userVmVoMock.getId()).thenReturn(1L);
+         when(userVmVoMock.getServiceOfferingId()).thenReturn(1L);
+-        when(accountDao.findById(anyLong())).thenReturn(callerAccount);
++        AccountDaoMockFactory.stubFindById(accountDao, callerAccount);
+         ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, false);
+         when(_serviceOfferingDao.findById(anyLong())).thenReturn(serviceOffering);
+         when(_serviceOfferingDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(serviceOffering);
+--- a/engine/orchestration/src/test/java/com/cloud/vm/AccountDaoMockFactory.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/AccountDaoMockFactory.java
+@@ -0,0 +1,15 @@
++package com.cloud.vm;
++
++import com.cloud.user.AccountVO;
++import com.cloud.user.dao.AccountDao;
++
++import org.mockito.Mockito;
++
++public class AccountDaoMockFactory {
++    private AccountDaoMockFactory() {
++    }
++
++    public static void stubFindById(final AccountDao accountDao, final AccountVO accountReturn) {
++        Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(accountReturn);
++    }
++}
+--- a/server/src/test/java/com/cloud/vm/AccountDaoMockFactory.java
++++ b/server/src/test/java/com/cloud/vm/AccountDaoMockFactory.java
+@@ -0,0 +1,15 @@
++package com.cloud.vm;
++
++import com.cloud.user.AccountVO;
++import com.cloud.user.dao.AccountDao;
++
++import org.mockito.Mockito;
++
++public class AccountDaoMockFactory {
++    private AccountDaoMockFactory() {
++    }
++
++    public static void stubFindById(final AccountDao accountDao, final AccountVO accountReturn) {
++        Mockito.when(accountDao.findById(Mockito.anyLong())).thenReturn(accountReturn);
++    }
++}
