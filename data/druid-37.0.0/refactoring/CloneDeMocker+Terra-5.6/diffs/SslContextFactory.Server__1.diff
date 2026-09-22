@@ -1,0 +1,96 @@
+--- a/server/src/test/java/org/apache/druid/server/initialization/jetty/JettyServerModuleTest.java
++++ b/server/src/test/java/org/apache/druid/server/initialization/jetty/JettyServerModuleTest.java
+@@ -33,6 +33,7 @@
+ import org.eclipse.jetty.util.ssl.SslContextFactory;
+ import org.eclipse.jetty.util.thread.QueuedThreadPool;
+ import org.junit.Assert;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.mockito.Mockito;
+ 
+@@ -41,6 +42,14 @@
+ 
+ public class JettyServerModuleTest
+ {
++  private SslContextFactory.Server customSslContextFactoryMock;
++
++  @Before
++  public void setUp()
++  {
++    customSslContextFactoryMock = Mockito.mock(SslContextFactory.Server.class);
++  }
++
+   @Test
+   public void testJettyServerModule()
+   {
+@@ -147,7 +156,6 @@
+     Mockito.when(injector.getInstance(JettyServerInitializer.class)).thenReturn(initializer);
+ 
+     // Create a custom SslContextFactory via binding
+-    SslContextFactory.Server customSslContextFactory = Mockito.mock(SslContextFactory.Server.class);
+ 
+     @SuppressWarnings("unchecked")
+     Binding<SslContextFactory.Server> sslContextFactoryBinding = Mockito.mock(Binding.class);
+@@ -155,7 +163,7 @@
+     Provider<SslContextFactory.Server> provider = Mockito.mock(Provider.class);
+ 
+     Mockito.when(sslContextFactoryBinding.getProvider()).thenReturn(provider);
+-    Mockito.when(provider.get()).thenReturn(customSslContextFactory);
++    Mockito.when(provider.get()).thenReturn(customSslContextFactoryMock);
+ 
+     Server server = JettyServerModule.makeAndInitializeServer(
+         injector,
+@@ -173,12 +181,12 @@
+     Mockito.verify(provider).get();
+ 
+     // Verify that TLS config was still applied because forceApplyConfig=true
+-    Mockito.verify(customSslContextFactory).setKeyStorePath(keystorePath);
+-    Mockito.verify(customSslContextFactory).setKeyStoreType("jks");
+-    Mockito.verify(customSslContextFactory).setKeyStorePassword("druid123");
+-    Mockito.verify(customSslContextFactory).setCertAlias("druid");
+-    Mockito.verify(customSslContextFactory).setExcludeCipherSuites("TLS_RSA_WITH_NULL_SHA256");
+-    Mockito.verify(customSslContextFactory).setExcludeProtocols("TLSv1", "TLSv1.1");
++    Mockito.verify(customSslContextFactoryMock).setKeyStorePath(keystorePath);
++    Mockito.verify(customSslContextFactoryMock).setKeyStoreType("jks");
++    Mockito.verify(customSslContextFactoryMock).setKeyStorePassword("druid123");
++    Mockito.verify(customSslContextFactoryMock).setCertAlias("druid");
++    Mockito.verify(customSslContextFactoryMock).setExcludeCipherSuites("TLS_RSA_WITH_NULL_SHA256");
++    Mockito.verify(customSslContextFactoryMock).setExcludeProtocols("TLSv1", "TLSv1.1");
+   }
+ 
+   @Test
+@@ -211,7 +219,6 @@
+     Mockito.when(injector.getInstance(JettyServerInitializer.class)).thenReturn(initializer);
+ 
+     // Create a custom SslContextFactory via binding
+-    SslContextFactory.Server customSslContextFactory = Mockito.mock(SslContextFactory.Server.class);
+ 
+     @SuppressWarnings("unchecked")
+     Binding<SslContextFactory.Server> sslContextFactoryBinding = Mockito.mock(Binding.class);
+@@ -219,7 +226,7 @@
+     Provider<SslContextFactory.Server> provider = Mockito.mock(Provider.class);
+ 
+     Mockito.when(sslContextFactoryBinding.getProvider()).thenReturn(provider);
+-    Mockito.when(provider.get()).thenReturn(customSslContextFactory);
++    Mockito.when(provider.get()).thenReturn(customSslContextFactoryMock);
+ 
+     Server server = JettyServerModule.makeAndInitializeServer(
+         injector,
+@@ -237,11 +244,11 @@
+     Mockito.verify(provider).get();
+ 
+     // Verify that TLS config was not still applied because forceApplyConfig=false
+-    Mockito.verify(customSslContextFactory, Mockito.never()).setKeyStorePath(keystorePath);
+-    Mockito.verify(customSslContextFactory, Mockito.never()).setKeyStoreType("jks");
+-    Mockito.verify(customSslContextFactory, Mockito.never()).setKeyStorePassword("druid123");
+-    Mockito.verify(customSslContextFactory, Mockito.never()).setCertAlias("druid");
+-    Mockito.verify(customSslContextFactory, Mockito.never()).setExcludeCipherSuites("TLS_RSA_WITH_NULL_SHA256");
+-    Mockito.verify(customSslContextFactory, Mockito.never()).setExcludeProtocols("TLSv1", "TLSv1.1");
++    Mockito.verify(customSslContextFactoryMock, Mockito.never()).setKeyStorePath(keystorePath);
++    Mockito.verify(customSslContextFactoryMock, Mockito.never()).setKeyStoreType("jks");
++    Mockito.verify(customSslContextFactoryMock, Mockito.never()).setKeyStorePassword("druid123");
++    Mockito.verify(customSslContextFactoryMock, Mockito.never()).setCertAlias("druid");
++    Mockito.verify(customSslContextFactoryMock, Mockito.never()).setExcludeCipherSuites("TLS_RSA_WITH_NULL_SHA256");
++    Mockito.verify(customSslContextFactoryMock, Mockito.never()).setExcludeProtocols("TLSv1", "TLSv1.1");
+   }
+ }
