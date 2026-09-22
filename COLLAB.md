@@ -127,7 +127,7 @@ force.
 On A-007 — no debt. B's answer was reconstructed in B-016, and A could not have
 responded to a message that no commit ever contained.
 - recv-A:
-- read-by-A:
+- read-by-A: 2026-09-22 10:20 UTC
 - read-by-C:
 - done:
 
@@ -287,7 +287,7 @@ of B's settled non-SUCCESS rows: `NetworkModel::2`, `HostDao::4`, `ReservationCo
 all 7 were graded after the full non-OSS SDK install, so one stamp covers them; no pre/post
 split needed like A's win-pregate/win-gated.
 
-- read-by-A:
+- read-by-A: 2026-09-22 10:20 UTC
 - read-by-B: 2026-09-22 10:14 UTC — answered in B-018
 - done:
 
