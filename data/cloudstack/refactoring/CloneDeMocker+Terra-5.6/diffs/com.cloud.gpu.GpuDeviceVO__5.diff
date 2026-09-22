@@ -1,0 +1,42 @@
+--- a/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
+@@ -193,6 +193,9 @@
+     private GpuDeviceVO mockGpuDevice;
+ 
+     @Mock
++    private GpuDeviceVO mockAdditionalDevice;
++
++    @Mock
+     private HostVO mockHost;
+ 
+     @Before
+@@ -770,8 +773,7 @@
+         VgpuProfile vgpuProfile = mock(VgpuProfile.class);
+         when(vgpuProfile.getId()).thenReturn(VGPU_PROFILE_ID);
+ 
+-        GpuDeviceVO additionalDevice = mock(GpuDeviceVO.class);
+-        List<GpuDeviceVO> availableDevices = List.of(mockGpuDevice, additionalDevice);
++        List<GpuDeviceVO> availableDevices = List.of(mockGpuDevice, mockAdditionalDevice);
+         when(gpuDeviceDao.listDevicesForAllocation(HOST_ID, VGPU_PROFILE_ID)).thenReturn(availableDevices);
+ 
+         boolean result = gpuService.isGPUDeviceAvailable(mockHost, VM_ID, vgpuProfile, 2);
+@@ -1449,8 +1451,7 @@
+         when(child1.getState()).thenReturn(GpuDevice.State.Error);
+         childDevices.add(child1);
+ 
+-        GpuDeviceVO child2 = mock(GpuDeviceVO.class);
+-        childDevices.add(child2);
++        childDevices.add(mockAdditionalDevice);
+ 
+         when(gpuDeviceDao.listByParentGpuDeviceId(PARENT_GPU_DEVICE_ID)).thenReturn(childDevices);
+         when(gpuDeviceDao.update(eq(PARENT_GPU_DEVICE_ID), any(GpuDeviceVO.class))).thenReturn(true);
+@@ -1480,8 +1481,7 @@
+         childDevices.add(child2);
+ 
+         // This child should not affect the final state since Error was found first
+-        GpuDeviceVO child3 = mock(GpuDeviceVO.class);
+-        childDevices.add(child3);
++        childDevices.add(mockAdditionalDevice);
+ 
+         when(gpuDeviceDao.listByParentGpuDeviceId(PARENT_GPU_DEVICE_ID)).thenReturn(childDevices);
+         when(gpuDeviceDao.update(eq(PARENT_GPU_DEVICE_ID), any(GpuDeviceVO.class))).thenReturn(true);
