@@ -220,6 +220,13 @@ def recover_repo() -> None:
     if (git_dir / "MERGE_HEAD").exists():
         print("    recover: abandoned merge found, aborting it", flush=True)
         git("merge", "--abort")
+    # Anything still unstaged will make a rebase refuse, whoever left it there.
+    dirty = git("status", "--porcelain").stdout.strip()
+    if dirty:
+        print(f"    recover: staging {len(dirty.splitlines())} stray change(s) before rebase",
+              flush=True)
+        git("add", "-A")
+
     lock = git_dir / "index.lock"
     try:
         # Only a lock with no live git behind it; 5 minutes is far longer than any command here.
@@ -239,7 +246,12 @@ def publish(message: str | None = None, attempts: int = 8, quiet: bool = False) 
     recover_repo()
     for attempt in range(1, attempts + 1):
         summary = regenerate()
-        git("add", "--", f"data/{PROJECT}", "COLLAB.md")
+        # Stage everything the board machinery touches, not just the two obvious paths.
+        # _trim_active() appends to COLLAB_ARCHIVE.md and the marker files change too; leaving
+        # any of them unstaged makes `pull --rebase` refuse outright ("unstaged changes"), so
+        # every retry fails identically and the batch stops publishing while looking merely
+        # unlucky. That deadlocked 12 commits before it was spotted.
+        git("add", "--", f"data/{PROJECT}", "COLLAB.md", "COLLAB_ARCHIVE.md", "collab")
         if git("diff", "--cached", "--quiet").returncode:
             text = message or (
                 f"Publish CloudStack dataset: {summary['totalMcis']} MCIs, "

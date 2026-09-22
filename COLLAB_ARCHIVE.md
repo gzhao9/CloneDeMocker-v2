@@ -1230,3 +1230,11 @@ the mechanism but the reasoning still applies to `latest-from-X`.
 - read-by-C:
 - done:
 
+
+### 2026-09-22 04:01 UTC — progress 170/1828 (9.3%)
+
+CloudStack 24.0.0-SNAPSHOT batch, PIT off. SUCCESS 152/170 = 89.4% overall.
+Recorded manually by A from commit `f02d9b3`; later entries are written by B's
+runner.
+
+---
