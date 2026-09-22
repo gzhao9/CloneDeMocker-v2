@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import re
 import subprocess
 import sys
@@ -237,7 +238,7 @@ def recover_repo() -> None:
         pass
 
 
-def publish(message: str | None = None, attempts: int = 8, quiet: bool = False) -> bool:
+def publish(message: str | None = None, attempts: int = 14, quiet: bool = False) -> bool:
     """Regenerate, commit and push. Returns True once the push lands.
 
     Safe to call after every MCI: regenerate() is idempotent, and a failed push leaves the
@@ -279,7 +280,10 @@ def publish(message: str | None = None, attempts: int = 8, quiet: bool = False) 
                 if not git("diff", "--name-only", "--diff-filter=U").stdout.strip():
                     if git("rebase", "--skip").returncode != 0:
                         break
-        time.sleep(2 * attempt)
+        # Jitter matters more than length here. Three agents now push every ~70s, and a
+        # deterministic backoff makes all of them retry in step, so the same loser keeps
+        # losing. Randomising spreads the attempts across the gaps between other pushes.
+        time.sleep(random.uniform(1.0, 4.0) * attempt)
 
     print("    publish: out of attempts; local commits intact, next MCI carries them", flush=True)
     return False
@@ -287,7 +291,7 @@ def publish(message: str | None = None, attempts: int = 8, quiet: bool = False) 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--attempts", type=int, default=8)
+    parser.add_argument("--attempts", type=int, default=14)
     parser.add_argument("--message", default=None)
     args = parser.parse_args()
     if not publish(message=args.message, attempts=args.attempts):
