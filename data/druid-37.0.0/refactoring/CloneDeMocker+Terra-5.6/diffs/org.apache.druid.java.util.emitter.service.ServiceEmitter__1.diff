@@ -1,0 +1,57 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/supervisor/autoscaler/CostBasedAutoScalerTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/supervisor/autoscaler/CostBasedAutoScalerTest.java
+@@ -49,6 +49,7 @@
+ public class CostBasedAutoScalerTest
+ {
+   private CostBasedAutoScaler autoScaler;
++  private ServiceEmitter serviceEmitter;
+ 
+   @Before
+   public void setUp()
+@@ -56,6 +57,7 @@
+     SupervisorSpec mockSupervisorSpec = Mockito.mock(SupervisorSpec.class);
+     SeekableStreamSupervisor mockSupervisor = Mockito.mock(SeekableStreamSupervisor.class);
+     ServiceEmitter mockEmitter = Mockito.mock(ServiceEmitter.class);
++    serviceEmitter = Mockito.mock(ServiceEmitter.class);
+     SeekableStreamSupervisorIOConfig mockIoConfig = Mockito.mock(SeekableStreamSupervisorIOConfig.class);
+ 
+     when(mockSupervisorSpec.getId()).thenReturn("test-supervisor");
+@@ -441,7 +443,6 @@
+   {
+     SupervisorSpec spec = Mockito.mock(SupervisorSpec.class);
+     SeekableStreamSupervisor supervisor = Mockito.mock(SeekableStreamSupervisor.class);
+-    ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+     SeekableStreamSupervisorIOConfig ioConfig = Mockito.mock(SeekableStreamSupervisorIOConfig.class);
+ 
+     when(spec.getId()).thenReturn("s-up");
+@@ -473,11 +474,11 @@
+ 
+     // computeTaskCountForRollover returns -1 when scaleDownDuringTaskRolloverOnly=false (default)
+     when(spec.isSuspended()).thenReturn(false);
+-    CostBasedAutoScaler scaler = new CostBasedAutoScaler(supervisor, cfgWithDefaults, spec, emitter);
++    CostBasedAutoScaler scaler = new CostBasedAutoScaler(supervisor, cfgWithDefaults, spec, serviceEmitter);
+     Assert.assertEquals(-1, scaler.computeTaskCountForRollover());
+ 
+     // computeTaskCountForRollover returns -1 when lastKnownMetrics is null (even with scaleDownDuringTaskRolloverOnly=true)
+-    CostBasedAutoScaler scalerWithRolloverOnly = new CostBasedAutoScaler(supervisor, cfgWithCustom, spec, emitter);
++    CostBasedAutoScaler scalerWithRolloverOnly = new CostBasedAutoScaler(supervisor, cfgWithCustom, spec, serviceEmitter);
+     Assert.assertEquals(-1, scalerWithRolloverOnly.computeTaskCountForRollover());
+   }
+ 
+@@ -486,7 +487,6 @@
+   {
+     SupervisorSpec spec = Mockito.mock(SupervisorSpec.class);
+     SeekableStreamSupervisor supervisor = Mockito.mock(SeekableStreamSupervisor.class);
+-    ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+     SeekableStreamSupervisorIOConfig ioConfig = Mockito.mock(SeekableStreamSupervisorIOConfig.class);
+ 
+     when(spec.getId()).thenReturn("test-supervisor");
+@@ -504,7 +504,7 @@
+                                                                 .taskCountMin(1)
+                                                                 .enableTaskAutoScaler(true)
+                                                                 .build();
+-    CostBasedAutoScaler scaler = new CostBasedAutoScaler(supervisor, config, spec, emitter);
++    CostBasedAutoScaler scaler = new CostBasedAutoScaler(supervisor, config, spec, serviceEmitter);
+ 
+     Assert.assertEquals(
+         "No scaling action should be requested when the moving average rate is unavailable",

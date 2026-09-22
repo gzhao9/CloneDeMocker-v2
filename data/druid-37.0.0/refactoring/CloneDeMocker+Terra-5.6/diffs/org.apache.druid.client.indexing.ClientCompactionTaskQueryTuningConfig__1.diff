@@ -1,0 +1,35 @@
+--- a/server/src/test/java/org/apache/druid/server/coordinator/duty/CompactSegmentsTest.java
++++ b/server/src/test/java/org/apache/druid/server/coordinator/duty/CompactSegmentsTest.java
+@@ -2038,10 +2038,7 @@
+     @Test
+     public void testIsParallelModeNonRangePartitionVaryingMaxNumConcurrentSubTasks()
+     {
+-      ClientCompactionTaskQueryTuningConfig tuningConfig = Mockito.mock(ClientCompactionTaskQueryTuningConfig.class);
+-      Mockito.when(tuningConfig.getPartitionsSpec()).thenReturn(Mockito.mock(PartitionsSpec.class));
+-
+-      Mockito.when(tuningConfig.getMaxNumConcurrentSubTasks()).thenReturn(null);
++      ClientCompactionTaskQueryTuningConfig tuningConfig = createMockTuningConfig(null);
+       Assert.assertFalse(CompactionSlotManager.isParallelMode(tuningConfig));
+ 
+       Mockito.when(tuningConfig.getMaxNumConcurrentSubTasks()).thenReturn(1);
+@@ -2079,10 +2076,18 @@
+     @Test
+     public void testFindMaxNumTaskSlotsUsedByOneCompactionTaskWhenIsSequentialMode()
+     {
++      ClientCompactionTaskQueryTuningConfig tuningConfig = createMockTuningConfig(1);
++      Assert.assertEquals(1, CompactionSlotManager.getMaxTaskSlotsForNativeCompactionTask(tuningConfig));
++    }
++
++    private static ClientCompactionTaskQueryTuningConfig createMockTuningConfig(
++        Integer maxNumConcurrentSubTasks
++    )
++    {
+       ClientCompactionTaskQueryTuningConfig tuningConfig = Mockito.mock(ClientCompactionTaskQueryTuningConfig.class);
+       Mockito.when(tuningConfig.getPartitionsSpec()).thenReturn(Mockito.mock(PartitionsSpec.class));
+-      Mockito.when(tuningConfig.getMaxNumConcurrentSubTasks()).thenReturn(1);
+-      Assert.assertEquals(1, CompactionSlotManager.getMaxTaskSlotsForNativeCompactionTask(tuningConfig));
++      Mockito.when(tuningConfig.getMaxNumConcurrentSubTasks()).thenReturn(maxNumConcurrentSubTasks);
++      return tuningConfig;
+     }
+   }
+ 

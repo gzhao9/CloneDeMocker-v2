@@ -708,7 +708,17 @@ class ProjectHarness:
             pit_command = [*prefix, "org.pitest:pitest-maven:mutationCoverage", "-DoutputFormats=XML"]
             if scope is not None and scope.test_classes:
                 pattern = ",".join(sorted(scope.test_classes))
+                # 与 Gradle 初始化脚本同一条规则：被变异的类取目标测试所在的包。不给的话 PIT 回落到
+                # groupId.*，-am 带上的每个上游模块都整包变异——dubbo 一个 MCI 变出 39118 个变异体，
+                # 99.7% 无覆盖，一侧跑 25 分钟，变异分数也被无关代码稀释到 0.002。
+                # The same rule as the Gradle init script: mutate the classes in the target tests'
+                # packages. Without it PIT falls back to groupId.* and mutates every upstream module
+                # -am pulls in — one dubbo MCI produced 39118 mutants, 99.7% uncovered, 25 minutes a
+                # side, with the score diluted to 0.002 by unrelated code.
+                packages = sorted({name.rsplit(".", 1)[0] + ".*" for name in scope.test_classes if "." in name})
                 pit_command.extend([f"-DtargetTests={pattern}", "-DfailWhenNoMutations=false"])
+                if packages:
+                    pit_command.append(f"-DtargetClasses={','.join(packages)}")
             return (
                 [*prefix, "-DskipTests", "test-compile"],
                 [*prefix, "test", *test_filter],

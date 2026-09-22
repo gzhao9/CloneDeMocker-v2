@@ -1,0 +1,40 @@
+--- a/multi-stage-query/src/test/java/org/apache/druid/msq/exec/ProcessingBuffersSetTest.java
++++ b/multi-stage-query/src/test/java/org/apache/druid/msq/exec/ProcessingBuffersSetTest.java
+@@ -106,11 +106,10 @@
+   {
+     // Create a mock StageDefinition and StageProcessor
+     final StageDefinition stageDef = Mockito.mock(StageDefinition.class);
+-    final StageProcessor<?, ?> stageProcessor = Mockito.mock(StageProcessor.class);
++    final StageProcessor<?, ?> stageProcessor = createMockStageProcessor(false);
+ 
+     // Configure mocks: processor factory does not use processing buffers
+     Mockito.when(stageDef.getProcessor()).thenReturn(stageProcessor);
+-    Mockito.when(stageProcessor.usesProcessingBuffers()).thenReturn(false);
+ 
+     // Create a ProcessingBuffersSet
+     final ProcessingBuffersSet buffersSet =
+@@ -128,11 +127,10 @@
+   {
+     // Create a mock StageDefinition and StageProcessor
+     final StageDefinition stageDef = Mockito.mock(StageDefinition.class);
+-    final StageProcessor<?, ?> stageProcessor = Mockito.mock(StageProcessor.class);
++    final StageProcessor<?, ?> stageProcessor = createMockStageProcessor(true);
+ 
+     // Configure mocks: processor factory does use processing buffers
+     Mockito.when(stageDef.getProcessor()).thenReturn(stageProcessor);
+-    Mockito.when(stageProcessor.usesProcessingBuffers()).thenReturn(true);
+ 
+     // Create a ProcessingBuffersSet
+     final ProcessingBuffersSet buffersSet =
+@@ -146,4 +144,11 @@
+     Assert.assertEquals(1024, buffers.getBufferPool().take().get().capacity());
+     Assert.assertThrows(NoSuchElementException.class, () -> buffers.getBufferPool().take());
+   }
++
++  private static StageProcessor<?, ?> createMockStageProcessor(final boolean usesProcessingBuffers)
++  {
++    final StageProcessor<?, ?> stageProcessor = Mockito.mock(StageProcessor.class);
++    Mockito.when(stageProcessor.usesProcessingBuffers()).thenReturn(usesProcessingBuffers);
++    return stageProcessor;
++  }
+ }
