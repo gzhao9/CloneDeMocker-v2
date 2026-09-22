@@ -86,12 +86,42 @@ def clear_conflicts() -> None:
         git("add", "--", path)
 
 
+def recover_repo() -> None:
+    """Clear a rebase/merge left half-finished by anyone, and a stale index lock.
+
+    The batch shares this working tree with whatever else touches the repo -- an agent
+    session running a manual publish, a git command interrupted when a session ends or a
+    token budget runs out. An abandoned rebase makes every later push fail, so the batch
+    would keep computing MCIs while silently publishing none of them. Clearing it here means
+    the unattended half recovers on its own instead of waiting for a human.
+
+    Aborting is safe because nothing of value lives in the working tree: the batch output is
+    the source of truth and regenerate() rebuilds data/ from it on the next line.
+    """
+    git_dir = REPO / ".git"
+    if (git_dir / "rebase-merge").exists() or (git_dir / "rebase-apply").exists():
+        print("    recover: abandoned rebase found, aborting it", flush=True)
+        git("rebase", "--abort")
+    if (git_dir / "MERGE_HEAD").exists():
+        print("    recover: abandoned merge found, aborting it", flush=True)
+        git("merge", "--abort")
+    lock = git_dir / "index.lock"
+    try:
+        # Only a lock with no live git behind it; 5 minutes is far longer than any command here.
+        if lock.exists() and time.time() - lock.stat().st_mtime > 300:
+            print("    recover: stale index.lock, removing", flush=True)
+            lock.unlink()
+    except OSError:
+        pass
+
+
 def publish(message: str | None = None, attempts: int = 8, quiet: bool = False) -> bool:
     """Regenerate, commit and push. Returns True once the push lands.
 
     Safe to call after every MCI: regenerate() is idempotent, and a failed push leaves the
     local commits intact for the next call to carry forward.
     """
+    recover_repo()
     for attempt in range(1, attempts + 1):
         summary = regenerate()
         git("add", "--", f"data/{PROJECT}", "COLLAB.md")
