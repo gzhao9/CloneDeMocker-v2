@@ -1,0 +1,50 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -1958,14 +1958,11 @@
+         BackupScheduleVO schedule2 = Mockito.mock(BackupScheduleVO.class);
+         List<BackupScheduleVO> schedules = List.of(schedule1, schedule2);
+ 
+-        SearchBuilder<BackupScheduleVO> searchBuilder = Mockito.mock(SearchBuilder.class);
+         SearchCriteria<BackupScheduleVO> searchCriteria = Mockito.mock(SearchCriteria.class);
+         BackupScheduleVO entity = Mockito.mock(BackupScheduleVO.class);
++        SearchBuilder<BackupScheduleVO> searchBuilder = createMockBackupScheduleSearchBuilder(searchCriteria, entity);
+ 
+         Mockito.when(backupScheduleDao.createSearchBuilder()).thenReturn(searchBuilder);
+-        Mockito.when(searchBuilder.entity()).thenReturn(entity);
+-        Mockito.when(searchBuilder.and(Mockito.anyString(), (Object) any(), Mockito.any())).thenReturn(searchBuilder);
+-        Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
+ 
+         Mockito.when(backupScheduleDao.searchAndCount(Mockito.any(), Mockito.any())).thenReturn(new Pair<>(schedules, schedules.size()));
+         List<BackupSchedule> result = backupManager.listBackupSchedules(cmd);
+@@ -1992,14 +1989,11 @@
+         BackupScheduleVO schedule = Mockito.mock(BackupScheduleVO.class);
+         List<BackupScheduleVO> schedules = List.of(schedule);
+ 
+-        SearchBuilder<BackupScheduleVO> searchBuilder = Mockito.mock(SearchBuilder.class);
+         SearchCriteria<BackupScheduleVO> searchCriteria = Mockito.mock(SearchCriteria.class);
+         BackupScheduleVO entity = Mockito.mock(BackupScheduleVO.class);
++        SearchBuilder<BackupScheduleVO> searchBuilder = createMockBackupScheduleSearchBuilder(searchCriteria, entity);
+ 
+         Mockito.when(backupScheduleDao.createSearchBuilder()).thenReturn(searchBuilder);
+-        Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
+-        Mockito.when(searchBuilder.entity()).thenReturn(entity);
+-        Mockito.when(searchBuilder.and(Mockito.anyString(), (Object) any(), Mockito.any())).thenReturn(searchBuilder);
+         Mockito.lenient().when(backupScheduleDao.search(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(schedules);
+ 
+         Mockito.doNothing().when(accountManager).buildACLSearchBuilder(Mockito.any(), Mockito.anyLong(), Mockito.anyBoolean(), Mockito.anyList(), Mockito.any());
+@@ -2616,6 +2610,15 @@
+             assertTrue(result.first().stream().anyMatch(o -> o.getName().equals("Global Offering")));
+             assertTrue(result.first().stream().anyMatch(o -> o.getName().equals("User Domain Offering")));
+         }
++    }
++
++    private static SearchBuilder<BackupScheduleVO> createMockBackupScheduleSearchBuilder(SearchCriteria<BackupScheduleVO> searchCriteria,
++            BackupScheduleVO entity) {
++        SearchBuilder<BackupScheduleVO> searchBuilder = Mockito.mock(SearchBuilder.class);
++        Mockito.when(searchBuilder.entity()).thenReturn(entity);
++        Mockito.when(searchBuilder.and(Mockito.anyString(), (Object) any(), Mockito.any())).thenReturn(searchBuilder);
++        Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
++        return searchBuilder;
+     }
+ 
+     private BackupOfferingVO createMockOffering(Long id, String name) {
