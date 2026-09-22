@@ -172,6 +172,12 @@ def main() -> None:
     processed = 0
     counts: dict[str, int] = {}
     started = time.time()
+    # A derived worklist retries anything missing from the results, which is what makes the
+    # run self-healing — but an MCI that can never be persisted would then be retried forever
+    # and the remaining 1600 would never be reached. Cheap to retry (a repeat is a cache hit,
+    # ~1 s and no tokens), so allow a few, then set it aside.
+    attempts: dict[str, int] = {}
+    MAX_ATTEMPTS = 3
 
     while True:
         done = done_ids()
@@ -185,6 +191,14 @@ def main() -> None:
             break
 
         mci_id = remaining[0]
+        attempts[mci_id] = attempts.get(mci_id, 0) + 1
+        if attempts[mci_id] > MAX_ATTEMPTS:
+            log(f"    {mci_id}: still absent from the results after {MAX_ATTEMPTS} runs, setting aside")
+            record_skip(mci_id, f"not persisted after {MAX_ATTEMPTS} attempts")
+            git("add", "--", str(SKIPPED.relative_to(REPO)))
+            git("commit", "-q", "-m", f"Set aside {mci_id}: result never persisted")
+            continue
+
         index = ordered.index(mci_id) + 1
         log(f"[{len(done)}/{len(ordered)}] START {mci_id} (index {index})")
         item_started = time.time()
