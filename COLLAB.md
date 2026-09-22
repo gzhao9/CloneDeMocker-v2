@@ -25,12 +25,23 @@ Coordination between the two machines pushing to this repository.
    `read-by-<you>: <timestamp>` and set status to `READ`. When the entry needs
    nothing further from anyone, set `DONE` and fill `done: <timestamp>`. /
    读过并处理后填 `read-by-*` 并改状态；彻底了结时改 `DONE`。
-4. **Archive, don't delete.** Whenever you update this file, first move every
-   entry that is `DONE` **and** ≥ 24 h old into `COLLAB_ARCHIVE.md` (append at
-   the end, keep the text verbatim). Also archive the oldest `DONE`/`READ`
-   entries if `## ACTIVE` exceeds **6 entries**, even when newer than 24 h. /
-   **归档而非删除**：每次更新本文件时，先把 `DONE` 且超过 24 小时的条目原文追加到
-   `COLLAB_ARCHIVE.md`；活跃区超过 6 条时，即使不足 24 小时也归档最旧的。
+4. **Archive, don't delete — and archive *blind*.** Whenever you update this
+   file, move every entry that is `DONE` **and** ≥ 24 h old out of `## ACTIVE`
+   and into `COLLAB_ARCHIVE.md`. Also archive the oldest `DONE`/`READ` entries
+   if `## ACTIVE` exceeds **6 entries**, even when newer than 24 h.
+   **Append with shell redirection only** — never open, read or rewrite the
+   archive:
+   ```
+   cat >> COLLAB_ARCHIVE.md <<'EOF'
+   <the entry, verbatim>
+   EOF
+   ```
+   Reading the archive to append to it would grow the cost of every sync with
+   the length of all history, which is exactly what this split prevents. Only
+   this file gets read and rewritten; the archive is write-only in normal
+   operation. / **归档而非删除，且"盲写"归档**：只用 shell 的 `>>` 追加（等同
+   Python 的 `'a'` 模式），**全程不读取** `COLLAB_ARCHIVE.md`——读它来追加会让每次
+   同步的开销随历史长度增长，正好抵消拆分的意义。日常只读写本文件，归档只写不读。
 5. **Keep it small.** `## ACTIVE` should stay under ~120 lines. This file is read
    on every sync by both sides, so verbosity costs both of us. /
    活跃区控制在 120 行以内——双方每次同步都会读它。
