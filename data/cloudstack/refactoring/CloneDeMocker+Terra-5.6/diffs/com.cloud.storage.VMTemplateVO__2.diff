@@ -1,0 +1,56 @@
+--- a/server/src/test/java/com/cloud/template/TemplateManagerImplTest.java
++++ b/server/src/test/java/com/cloud/template/TemplateManagerImplTest.java
+@@ -311,7 +311,7 @@
+         //In this Unit test all the conditions related to "force template delete flag" are tested.
+ 
+         DeleteTemplateCmd cmd = mock(DeleteTemplateCmd.class);
+-        VMTemplateVO template = mock(VMTemplateVO.class);
++        VMTemplateVO template = createMockVMTemplateVO(Storage.ImageFormat.VMDK);
+         TemplateAdapter templateAdapter = mock(TemplateAdapter.class);
+         TemplateProfile templateProfile = mock(TemplateProfile.class);
+ 
+@@ -324,7 +324,6 @@
+         when(cmd.getZoneId()).thenReturn(null);
+ 
+         when(template.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
+-        when(template.getFormat()).thenReturn(Storage.ImageFormat.VMDK);
+         templateManager.setTemplateAdapters(adapters);
+         when(templateAdapter.getName()).thenReturn(TemplateAdapter.TemplateAdapterType.Hypervisor.getName().toString());
+         when(templateAdapter.prepareDelete(any(DeleteTemplateCmd.class))).thenReturn(templateProfile);
+@@ -676,6 +675,12 @@
+         return adapter;
+     }
+ 
++    private static VMTemplateVO createMockVMTemplateVO(Storage.ImageFormat imageFormat) {
++        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
++        Mockito.when(vmTemplateVOMock.getFormat()).thenReturn(imageFormat);
++        return vmTemplateVOMock;
++    }
++
+     @Test
+     public void testRegisterTemplateValidatesUrlBeforeProbingSize() {
+         RegisterTemplateCmd cmd = Mockito.mock(RegisterTemplateCmd.class);
+@@ -825,9 +830,8 @@
+ 
+     @Test
+     public void verifyHeuristicRulesForZoneTestTemplateIsISOFormatShouldCheckForISOHeuristicType() {
+-        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+-
+-        Mockito.when(vmTemplateVOMock.getFormat()).thenReturn(Storage.ImageFormat.ISO);
++        VMTemplateVO vmTemplateVOMock = createMockVMTemplateVO(Storage.ImageFormat.ISO);
++
+         templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
+ 
+         Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.ISO, vmTemplateVOMock);
+@@ -835,9 +839,8 @@
+ 
+     @Test
+     public void verifyHeuristicRulesForZoneTestTemplateNotISOFormatShouldCheckForTemplateHeuristicType() {
+-        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+-
+-        Mockito.when(vmTemplateVOMock.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
++        VMTemplateVO vmTemplateVOMock = createMockVMTemplateVO(Storage.ImageFormat.QCOW2);
++
+         templateManager.verifyHeuristicRulesForZone(vmTemplateVOMock, 1L);
+ 
+         Mockito.verify(heuristicRuleHelperMock, Mockito.times(1)).getImageStoreIfThereIsHeuristicRule(1L, HeuristicType.TEMPLATE, vmTemplateVOMock);
