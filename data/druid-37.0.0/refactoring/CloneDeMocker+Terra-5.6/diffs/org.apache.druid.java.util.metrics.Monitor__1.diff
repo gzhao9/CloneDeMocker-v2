@@ -1,0 +1,100 @@
+--- a/processing/src/test/java/org/apache/druid/java/util/metrics/ClockDriftSafeMonitorSchedulerTest.java
++++ b/processing/src/test/java/org/apache/druid/java/util/metrics/ClockDriftSafeMonitorSchedulerTest.java
+@@ -58,6 +58,8 @@
+   private ExecutorService cronTaskRunner;
+   @Mock
+   private CronScheduler cronScheduler;
++  @Mock
++  private Monitor monitorMock;
+   private AutoCloseable mocks;
+ 
+   @Before
+@@ -151,7 +153,6 @@
+     }).when(cronScheduler).scheduleAtFixedRate(ArgumentMatchers.anyLong(), ArgumentMatchers.anyLong(),
+         ArgumentMatchers.any(), ArgumentMatchers.any(CronTask.class));
+ 
+-    Monitor monitor = Mockito.mock(Monitor.class);
+ 
+     DruidMonitorSchedulerConfig config = Mockito.mock(DruidMonitorSchedulerConfig.class);
+     Mockito.when(config.getEmissionDuration()).thenReturn(new org.joda.time.Duration(1000L));
+@@ -159,19 +160,19 @@
+     final MonitorScheduler scheduler = new ClockDriftSafeMonitorScheduler(
+         config,
+         Mockito.mock(ServiceEmitter.class),
+-        ImmutableList.of(monitor),
++        ImmutableList.of(monitorMock),
+         cronScheduler,
+         executor
+     );
+     scheduler.start();
+     latch.await(5, TimeUnit.SECONDS);
+ 
+-    Mockito.verify(monitor, Mockito.times(1)).start();
++    Mockito.verify(monitorMock, Mockito.times(1)).start();
+     Mockito.verify(cronScheduler, Mockito.times(1)).scheduleAtFixedRate(ArgumentMatchers.anyLong(),
+         ArgumentMatchers.anyLong(),
+         ArgumentMatchers.any(), ArgumentMatchers.any(CronTask.class));
+     Mockito.verify(executor, Mockito.times(2)).submit(ArgumentMatchers.any(Callable.class));
+-    Mockito.verify(monitor, Mockito.times(2)).monitor(ArgumentMatchers.any());
++    Mockito.verify(monitorMock, Mockito.times(2)).monitor(ArgumentMatchers.any());
+     scheduler.stop();
+   }
+   
+@@ -215,7 +216,6 @@
+     }).when(cronScheduler).scheduleAtFixedRate(ArgumentMatchers.anyLong(), ArgumentMatchers.anyLong(),
+         ArgumentMatchers.any(), ArgumentMatchers.any(CronTask.class));
+ 
+-    Monitor monitor = Mockito.mock(Monitor.class);
+ 
+     DruidMonitorSchedulerConfig config = Mockito.mock(DruidMonitorSchedulerConfig.class);
+     Mockito.when(config.getEmissionDuration()).thenReturn(new org.joda.time.Duration(1000L));
+@@ -223,20 +223,20 @@
+     final MonitorScheduler scheduler = new ClockDriftSafeMonitorScheduler(
+         config,
+         Mockito.mock(ServiceEmitter.class),
+-        ImmutableList.of(monitor),
++        ImmutableList.of(monitorMock),
+         cronScheduler,
+         executor
+     );
+     scheduler.start();
+     latch.await(5, TimeUnit.SECONDS);
+ 
+-    Mockito.verify(monitor, Mockito.times(1)).start();
++    Mockito.verify(monitorMock, Mockito.times(1)).start();
+     Mockito.verify(cronScheduler, Mockito.times(1)).scheduleAtFixedRate(ArgumentMatchers.anyLong(),
+         ArgumentMatchers.anyLong(),
+         ArgumentMatchers.any(), ArgumentMatchers.any(CronTask.class));
+     Mockito.verify(executor, Mockito.times(1)).submit(ArgumentMatchers.any(Callable.class));
+-    Mockito.verify(monitor, Mockito.times(2)).monitor(ArgumentMatchers.any());
+-    Mockito.verify(monitor, Mockito.times(1)).stop();
++    Mockito.verify(monitorMock, Mockito.times(2)).monitor(ArgumentMatchers.any());
++    Mockito.verify(monitorMock, Mockito.times(1)).stop();
+     scheduler.stop();
+   }
+   
+@@ -309,7 +309,6 @@
+   public void testStart_UnexpectedExceptionWhileScheduling() throws InterruptedException
+   {
+     ExecutorService executor = Mockito.mock(ExecutorService.class);
+-    Monitor monitor = Mockito.mock(Monitor.class);
+     DruidMonitorSchedulerConfig config = Mockito.mock(DruidMonitorSchedulerConfig.class);
+     Mockito.when(config.getEmissionDuration()).thenReturn(new org.joda.time.Duration(1000L));
+ 
+@@ -339,14 +338,14 @@
+     final MonitorScheduler scheduler = new ClockDriftSafeMonitorScheduler(
+         config,
+         Mockito.mock(ServiceEmitter.class),
+-        ImmutableList.of(monitor),
++        ImmutableList.of(monitorMock),
+         cronScheduler,
+         executor
+     );
+     scheduler.start();
+     latch.await(5, TimeUnit.SECONDS);
+ 
+-    Mockito.verify(monitor, Mockito.times(1)).start();
++    Mockito.verify(monitorMock, Mockito.times(1)).start();
+     Mockito.verify(cronScheduler, Mockito.times(1)).scheduleAtFixedRate(ArgumentMatchers.anyLong(),
+         ArgumentMatchers.anyLong(),
+         ArgumentMatchers.any(), ArgumentMatchers.any(CronTask.class));

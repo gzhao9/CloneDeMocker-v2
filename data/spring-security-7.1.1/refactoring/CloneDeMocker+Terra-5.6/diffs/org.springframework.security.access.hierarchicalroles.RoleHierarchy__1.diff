@@ -1,0 +1,50 @@
+--- a/core/src/test/java/org/springframework/security/authorization/AllAuthoritiesAuthorizationManagerTests.java
++++ b/core/src/test/java/org/springframework/security/authorization/AllAuthoritiesAuthorizationManagerTests.java
+@@ -128,7 +128,7 @@
+ 	@Test
+ 	void setRoleHierarchyThenUsesResult() {
+ 		Collection result = AuthorityUtils.createAuthorityList(ROLE_USER, ROLE_ADMIN);
+-		given(this.roleHierarchy.getReachableGrantedAuthorities(any())).willReturn(result);
++		this.roleHierarchy = createMockRoleHierarchy(result);
+ 		AllAuthoritiesAuthorizationManager<Object> manager = AllAuthoritiesAuthorizationManager
+ 			.hasAllAuthorities(ROLE_USER);
+ 		manager.setRoleHierarchy(this.roleHierarchy);
+--- a/core/src/test/java/org/springframework/security/authorization/AllAuthoritiesReactiveAuthorizationManagerTests.java
++++ b/core/src/test/java/org/springframework/security/authorization/AllAuthoritiesReactiveAuthorizationManagerTests.java
+@@ -133,7 +133,7 @@
+ 	@Test
+ 	void setRoleHierarchyThenUsesResult() {
+ 		Collection result = AuthorityUtils.createAuthorityList(ROLE_USER, ROLE_ADMIN);
+-		given(this.roleHierarchy.getReachableGrantedAuthorities(any())).willReturn(result);
++		this.roleHierarchy = createMockRoleHierarchy(result);
+ 		AllAuthoritiesReactiveAuthorizationManager<Object> manager = AllAuthoritiesReactiveAuthorizationManager
+ 			.hasAllAuthorities(ROLE_USER);
+ 		manager.setRoleHierarchy(this.roleHierarchy);
+--- a/core/src/test/java/org/springframework/security/authorization/MockRoleHierarchyWithReachableAuthorities.java
++++ b/core/src/test/java/org/springframework/security/authorization/MockRoleHierarchyWithReachableAuthorities.java
+@@ -0,0 +1,25 @@
++package org.springframework.security.authorization;
++
++import java.util.Collection;
++
++import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
++import org.springframework.security.core.GrantedAuthority;
++
++import org.mockito.Mockito;
++
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.BDDMockito.given;
++
++public final class MockRoleHierarchyWithReachableAuthorities {
++
++	private MockRoleHierarchyWithReachableAuthorities() {
++	}
++
++	public static RoleHierarchy createMockRoleHierarchy(
++			Collection<? extends GrantedAuthority> reachableGrantedAuthorities) {
++		RoleHierarchy roleHierarchy = Mockito.mock(RoleHierarchy.class);
++		given(roleHierarchy.getReachableGrantedAuthorities(any())).willReturn(reachableGrantedAuthorities);
++		return roleHierarchy;
++	}
++
++}

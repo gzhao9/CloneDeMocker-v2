@@ -1,0 +1,40 @@
+--- a/spring-integration-mqtt/src/test/java/org/springframework/integration/mqtt/MqttAdapterTests.java
++++ b/spring-integration-mqtt/src/test/java/org/springframework/integration/mqtt/MqttAdapterTests.java
+@@ -200,10 +200,8 @@
+ 	@Test
+ 	void testClientManagerIsNotConnectedAndClosedInHandler() throws Exception {
+ 		// given
+-		var clientManager = mock(Mqttv3ClientManager.class);
+-		when(clientManager.getConnectionInfo()).thenReturn(new MqttConnectOptions());
+ 		var client = mock(MqttAsyncClient.class);
+-		given(clientManager.getClient()).willReturn(client);
++		var clientManager = createMockClientManager(client);
+ 
+ 		var deliveryToken = mock(MqttDeliveryToken.class);
+ 		given(client.publish(anyString(), any(), any(), any())).willReturn(deliveryToken);
+@@ -229,10 +227,8 @@
+ 	@Test
+ 	void testClientManagerIsNotConnectedAndClosedInAdapter() throws Exception {
+ 		// given
+-		var clientManager = mock(Mqttv3ClientManager.class);
+-		when(clientManager.getConnectionInfo()).thenReturn(new MqttConnectOptions());
+ 		var client = mock(MqttAsyncClient.class);
+-		given(clientManager.getClient()).willReturn(client);
++		var clientManager = createMockClientManager(client);
+ 
+ 		var subscribeToken = mock(MqttToken.class);
+ 		given(subscribeToken.getGrantedQos()).willReturn(new int[] {2});
+@@ -534,6 +530,13 @@
+ 				.withMessage("The topic to subscribe cannot be empty string");
+ 	}
+ 
++	private static Mqttv3ClientManager createMockClientManager(MqttAsyncClient client) {
++		var clientManager = mock(Mqttv3ClientManager.class);
++		when(clientManager.getConnectionInfo()).thenReturn(new MqttConnectOptions());
++		given(clientManager.getClient()).willReturn(client);
++		return clientManager;
++	}
++
+ 	private MqttPahoMessageDrivenChannelAdapter buildAdapterIn(final IMqttAsyncClient client, Boolean cleanSession)
+ 			throws MqttException {
+ 

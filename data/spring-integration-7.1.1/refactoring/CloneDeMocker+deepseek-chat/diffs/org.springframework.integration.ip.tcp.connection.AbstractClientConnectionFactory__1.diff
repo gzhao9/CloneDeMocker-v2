@@ -1,0 +1,73 @@
+--- a/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/FailoverClientConnectionFactoryTests.java
++++ b/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/FailoverClientConnectionFactoryTests.java
+@@ -117,8 +117,8 @@
+ 	}
+ 
+ 	private void testRefreshShared(boolean closeOnRefresh, long interval) throws Exception {
+-		AbstractClientConnectionFactory factory1 = mock(AbstractClientConnectionFactory.class);
+-		AbstractClientConnectionFactory factory2 = mock(AbstractClientConnectionFactory.class);
++		AbstractClientConnectionFactory factory1 = createMockFactory2();
++		AbstractClientConnectionFactory factory2 = createMockFactory2();
+ 		List<AbstractClientConnectionFactory> factories = new ArrayList<>();
+ 		factories.add(factory1);
+ 		factories.add(factory2);
+@@ -134,8 +134,6 @@
+ 		else {
+ 			when(factory2.getConnection()).thenReturn(conn1);
+ 		}
+-		when(factory1.isActive()).thenReturn(true);
+-		when(factory2.isActive()).thenReturn(true);
+ 		FailoverClientConnectionFactory failoverFactory = new FailoverClientConnectionFactory(factories);
+ 		failoverFactory.setCloseOnRefresh(closeOnRefresh);
+ 		failoverFactory.start();
+@@ -259,15 +257,13 @@
+ 
+ 	@Test
+ 	public void testFailoverConnectNone() throws Exception {
+-		AbstractClientConnectionFactory factory1 = mock(AbstractClientConnectionFactory.class);
+-		AbstractClientConnectionFactory factory2 = mock(AbstractClientConnectionFactory.class);
++		AbstractClientConnectionFactory factory1 = createMockFactory2();
++		AbstractClientConnectionFactory factory2 = createMockFactory2();
+ 		List<AbstractClientConnectionFactory> factories = new ArrayList<>();
+ 		factories.add(factory1);
+ 		factories.add(factory2);
+ 		when(factory1.getConnection()).thenThrow(new UncheckedIOException(new IOException("fail")));
+ 		when(factory2.getConnection()).thenThrow(new UncheckedIOException(new IOException("fail")));
+-		when(factory1.isActive()).thenReturn(true);
+-		when(factory2.isActive()).thenReturn(true);
+ 		FailoverClientConnectionFactory failoverFactory = new FailoverClientConnectionFactory(factories);
+ 		failoverFactory.start();
+ 		GenericMessage<String> message = new GenericMessage<>("foo");
+@@ -277,8 +273,8 @@
+ 
+ 	@Test
+ 	public void testFailoverConnectToFirstAfterTriedAll() throws Exception {
+-		AbstractClientConnectionFactory factory1 = mock(AbstractClientConnectionFactory.class);
+-		AbstractClientConnectionFactory factory2 = mock(AbstractClientConnectionFactory.class);
++		AbstractClientConnectionFactory factory1 = createMockFactory2();
++		AbstractClientConnectionFactory factory2 = createMockFactory2();
+ 		List<AbstractClientConnectionFactory> factories = new ArrayList<>();
+ 		factories.add(factory1);
+ 		factories.add(factory2);
+@@ -289,8 +285,6 @@
+ 				.thenReturn(conn1);
+ 		when(factory2.getConnection())
+ 				.thenThrow(new UncheckedIOException(new IOException("fail")));
+-		when(factory1.isActive()).thenReturn(true);
+-		when(factory2.isActive()).thenReturn(true);
+ 		FailoverClientConnectionFactory failoverFactory = new FailoverClientConnectionFactory(factories);
+ 		failoverFactory.start();
+ 		GenericMessage<String> message = new GenericMessage<String>("foo");
+@@ -730,6 +724,12 @@
+ 		return factory;
+ 	}
+ 
++	private static AbstractClientConnectionFactory createMockFactory2() {
++		AbstractClientConnectionFactory factory2 = mock(AbstractClientConnectionFactory.class);
++		when(factory2.isActive()).thenReturn(true);
++		return factory2;
++	}
++
+ 	private static TcpNetServerConnectionFactory getTcpNetServerConnectionFactory(int port) {
+ 		TcpNetServerConnectionFactory result = new TcpNetServerConnectionFactory(port);
+ 		result.setTaskScheduler(new SimpleAsyncTaskScheduler());

@@ -34,6 +34,11 @@ _PROMPT_FILES = {
 }
 
 
+# 改变了 harness 对同一范围实际执行哪些测试的判断时递增，让之前记录的验证证据失效。
+# Bump when the harness changes which tests it actually runs for a given scope, so previously
+# recorded verification evidence expires.
+_HARNESS_REVISION = "2"
+
 _USAGE_FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_tokens", "total_tokens")
 
 
@@ -282,7 +287,7 @@ class RefactoringAgent:
         source_fingerprint = VerificationLedger.fingerprint(files)
         verification_reused: dict[str, str] = {}
         baseline_key = VerificationLedger.key(
-            "baseline", source_fingerprint, scope.describe(), run_pit, self._generation())
+            "baseline", source_fingerprint, scope.describe(), run_pit, self._verification_generation())
         recorded_baseline = ledger.read(baseline_key) if reuse_verification else None
 
         if baseline_evidence_override is not None:
@@ -480,7 +485,7 @@ class RefactoringAgent:
         # before, from a cache reuse or from resuming onto the same MCI.
         candidate_key = VerificationLedger.key(
             "candidate", source_fingerprint, scope.describe(), effective_run_pit,
-            self._generation(), VerificationLedger.fingerprint(replacements))
+            self._verification_generation(), VerificationLedger.fingerprint(replacements))
         recorded_candidate = ledger.read(candidate_key) if reuse_verification else None
         if recorded_candidate is not None:
             progress("CANDIDATE_REUSED", 82,
@@ -937,6 +942,20 @@ class RefactoringAgent:
             digest.update(name.encode("utf-8"))
             digest.update((_PROMPT_DIRECTORY / name).read_bytes())
         return digest.hexdigest()[:16]
+
+    @classmethod
+    def _verification_generation(cls) -> str:
+        """
+        verification ledger 的代际：提示词指纹加上 harness 修订号。harness 改变了"同一范围实际
+        跑哪些测试"时（例如长路径修复前，saml2 的 opensaml5Test 类被路由到 test 任务），旧证据
+        与新证据不再可比，必须失效；但提案缓存里模型的答案不受影响，所以不能动 _generation。
+        The verification ledger's generation: the prompt fingerprint plus the harness revision.
+        When the harness changes which tests actually run for the same scope (before the long-path
+        fix, saml2's opensaml5Test classes were routed to the test task), old and new evidence stop
+        being comparable and must expire; the model answers in the proposal cache are unaffected,
+        so _generation itself must not change.
+        """
+        return f"{cls._generation()}+{_HARNESS_REVISION}"
 
     def _read_cache(self, key: str) -> dict[str, Any] | None:
         path = self._cache_directory() / f"{key}.json"

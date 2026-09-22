@@ -1,30 +1,31 @@
 --- a/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/inbound/MessageSourceTests.java
 +++ b/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/inbound/MessageSourceTests.java
-@@ -367,6 +367,23 @@
+@@ -367,8 +367,7 @@
  	}
  
  	@SuppressWarnings({"rawtypes", "unchecked"})
-+	private static Consumer createMockConsumer(TopicPartition topicPartition) {
-+		Consumer consumer = mock(Consumer.class);
-+		AtomicReference<Set<TopicPartition>> paused = new AtomicReference<>(new HashSet<>());
-+		willAnswer(i -> {
-+			((ConsumerRebalanceListener) i.getArgument(1))
-+					.onPartitionsAssigned(Collections.singletonList(topicPartition));
-+			return null;
-+		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
-+		willAnswer(i -> {
-+			paused.set(new HashSet<>(i.getArgument(0)));
-+			return null;
-+		}).given(consumer).pause(anyCollection());
-+		willAnswer(i -> paused.get()).given(consumer).paused();
+-	@Test
+-	void testAckOutOfOrder() {
++	private static Consumer createMockConsumer() {
+ 		Consumer consumer = mock(Consumer.class);
+ 		TopicPartition topicPartition = new TopicPartition("foo", 0);
+ 		willAnswer(i -> {
+@@ -382,6 +381,14 @@
+ 			return null;
+ 		}).given(consumer).pause(anyCollection());
+ 		willAnswer(i -> paused.get()).given(consumer).paused();
 +		return consumer;
 +	}
 +
 +	@SuppressWarnings({"rawtypes", "unchecked"})
- 	@Test
- 	void testAckOutOfOrder() {
- 		Consumer consumer = mock(Consumer.class);
-@@ -465,19 +482,8 @@
++	@Test
++	void testAckOutOfOrder() {
++		Consumer consumer = createMockConsumer();
++		TopicPartition topicPartition = new TopicPartition("foo", 0);
+ 		Map<TopicPartition, List<ConsumerRecord>> records1 = new LinkedHashMap<>();
+ 		records1.put(topicPartition, Collections.singletonList(
+ 				new ConsumerRecord("foo", 0, 0L, 0L, TimestampType.NO_TIMESTAMP_TYPE, 0, 0, null, "foo",
+@@ -465,19 +472,8 @@
  	@SuppressWarnings({"rawtypes", "unchecked"})
  	@Test
  	void testNack() {
@@ -41,15 +42,16 @@
 -			return null;
 -		}).given(consumer).pause(anyCollection());
 -		willAnswer(i -> paused.get()).given(consumer).paused();
-+		Consumer consumer = createMockConsumer(topicPartition);
++		Consumer consumer = createMockConsumer();
  		Map<TopicPartition, List<ConsumerRecord>> records1 = new LinkedHashMap<>();
  		records1.put(topicPartition, Collections.singletonList(
  				new ConsumerRecord("foo", 0, 0L, 0L, TimestampType.NO_TIMESTAMP_TYPE, 0, 0, null, "foo",
-@@ -536,19 +542,8 @@
+@@ -536,19 +532,8 @@
  	@SuppressWarnings({"rawtypes", "unchecked"})
  	@Test
  	void testNackWithLaterInflight() {
 -		Consumer consumer = mock(Consumer.class);
++		Consumer consumer = createMockConsumer();
  		TopicPartition topicPartition = new TopicPartition("foo", 0);
 -		willAnswer(i -> {
 -			((ConsumerRebalanceListener) i.getArgument(1))
@@ -62,7 +64,6 @@
 -			return null;
 -		}).given(consumer).pause(anyCollection());
 -		willAnswer(i -> paused.get()).given(consumer).paused();
-+		Consumer consumer = createMockConsumer(topicPartition);
  		Map<TopicPartition, List<ConsumerRecord>> records1 = new LinkedHashMap<>();
  		records1.put(topicPartition, Collections.singletonList(
  				new ConsumerRecord("foo", 0, 0L, 0L, TimestampType.NO_TIMESTAMP_TYPE, 0, 0, null, "foo",

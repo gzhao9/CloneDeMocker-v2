@@ -1,0 +1,101 @@
+--- a/spring-integration-core/src/test/java/org/springframework/integration/config/GlobalChannelInterceptorProcessorTests.java
++++ b/spring-integration-core/src/test/java/org/springframework/integration/config/GlobalChannelInterceptorProcessorTests.java
+@@ -44,10 +44,13 @@
+ 
+ 	private ListableBeanFactory beanFactory;
+ 
++	private InterceptableChannel interceptableChannel;
++
+ 	@BeforeEach
+ 	public void setup() {
+ 		this.globalChannelInterceptorProcessor = new GlobalChannelInterceptorProcessor();
+ 		this.beanFactory = mock(ListableBeanFactory.class);
++		this.interceptableChannel = mock();
+ 		this.globalChannelInterceptorProcessor.setBeanFactory(this.beanFactory);
+ 	}
+ 
+@@ -70,10 +73,9 @@
+ 		GlobalChannelInterceptorWrapper globalChannelInterceptorWrapper =
+ 				new GlobalChannelInterceptorWrapper(channelInterceptor);
+ 
+-		InterceptableChannel channel = mock();
+ 
+ 		interceptors.put("Test-1", globalChannelInterceptorWrapper);
+-		channels.put("Test-1", channel);
++		channels.put("Test-1", interceptableChannel);
+ 		when(this.beanFactory.getBeansOfType(GlobalChannelInterceptorWrapper.class))
+ 				.thenReturn(interceptors);
+ 		when(this.beanFactory.getBeansOfType(InterceptableChannel.class))
+@@ -81,7 +83,7 @@
+ 
+ 		this.globalChannelInterceptorProcessor.afterSingletonsInstantiated();
+ 
+-		verify(channel)
++		verify(interceptableChannel)
+ 				.addInterceptor(channelInterceptor);
+ 	}
+ 
+@@ -93,18 +95,17 @@
+ 		GlobalChannelInterceptorWrapper globalChannelInterceptorWrapper =
+ 				new GlobalChannelInterceptorWrapper(channelInterceptor);
+ 
+-		InterceptableChannel channel = mock();
+ 
+ 		globalChannelInterceptorWrapper.setPatterns(new String[] {"Te*"});
+ 		interceptors.put("Test-1", globalChannelInterceptorWrapper);
+-		channels.put("Test-1", channel);
++		channels.put("Test-1", interceptableChannel);
+ 		when(this.beanFactory.getBeansOfType(GlobalChannelInterceptorWrapper.class))
+ 				.thenReturn(interceptors);
+ 		when(this.beanFactory.getBeansOfType(InterceptableChannel.class))
+ 				.thenReturn(channels);
+ 		this.globalChannelInterceptorProcessor.afterSingletonsInstantiated();
+ 
+-		verify(channel)
++		verify(interceptableChannel)
+ 				.addInterceptor(channelInterceptor);
+ 	}
+ 
+@@ -116,11 +117,10 @@
+ 		GlobalChannelInterceptorWrapper globalChannelInterceptorWrapper =
+ 				new GlobalChannelInterceptorWrapper(channelInterceptor);
+ 
+-		InterceptableChannel channel = mock();
+ 
+ 		globalChannelInterceptorWrapper.setPatterns(new String[] {"te*"});
+ 		interceptors.put("Test-1", globalChannelInterceptorWrapper);
+-		channels.put("Test-1", channel);
++		channels.put("Test-1", interceptableChannel);
+ 		when(this.beanFactory.getBeansOfType(GlobalChannelInterceptorWrapper.class))
+ 				.thenReturn(interceptors);
+ 		when(this.beanFactory.getBeansOfType(InterceptableChannel.class))
+@@ -128,7 +128,7 @@
+ 
+ 		this.globalChannelInterceptorProcessor.afterSingletonsInstantiated();
+ 
+-		verify(channel, never())
++		verify(interceptableChannel, never())
+ 				.addInterceptor(channelInterceptor);
+ 	}
+ 
+@@ -140,18 +140,17 @@
+ 		GlobalChannelInterceptorWrapper globalChannelInterceptorWrapper =
+ 				new GlobalChannelInterceptorWrapper(channelInterceptor);
+ 
+-		InterceptableChannel channel = mock();
+ 
+ 		globalChannelInterceptorWrapper.setPatterns(new String[] {"!te*", "!Te*"});
+ 		interceptors.put("Test-1", globalChannelInterceptorWrapper);
+-		channels.put("Test-1", channel);
++		channels.put("Test-1", interceptableChannel);
+ 		when(this.beanFactory.getBeansOfType(GlobalChannelInterceptorWrapper.class))
+ 				.thenReturn(interceptors);
+ 		when(this.beanFactory.getBeansOfType(InterceptableChannel.class))
+ 				.thenReturn(channels);
+ 		this.globalChannelInterceptorProcessor.afterSingletonsInstantiated();
+ 
+-		verify(channel, never())
++		verify(interceptableChannel, never())
+ 				.addInterceptor(channelInterceptor);
+ 	}
+ 

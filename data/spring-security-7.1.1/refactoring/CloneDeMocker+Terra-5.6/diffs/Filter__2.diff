@@ -1,0 +1,79 @@
+--- a/web/src/test/java/org/springframework/security/web/context/AbstractSecurityWebApplicationInitializerTests.java
++++ b/web/src/test/java/org/springframework/security/web/context/AbstractSecurityWebApplicationInitializerTests.java
+@@ -26,6 +26,7 @@
+ import jakarta.servlet.FilterRegistration;
+ import jakarta.servlet.ServletContext;
+ import jakarta.servlet.SessionTrackingMode;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.ArgumentCaptor;
+ 
+@@ -55,6 +56,13 @@
+ 	private static final EnumSet<DispatcherType> DEFAULT_DISPATCH = EnumSet.of(DispatcherType.REQUEST,
+ 			DispatcherType.ERROR, DispatcherType.ASYNC, DispatcherType.FORWARD, DispatcherType.INCLUDE);
+ 
++	private Filter filter2Mock;
++
++	@BeforeEach
++	void setUp() {
++		this.filter2Mock = mock(Filter.class);
++	}
++
+ 	@Test
+ 	public void onStartupWhenDefaultContextThenRegistersSpringSecurityFilterChain() {
+ 		ServletContext context = mock(ServletContext.class);
+@@ -153,17 +161,16 @@
+ 	@Test
+ 	public void onStartupWhenInsertFiltersThenInserted() {
+ 		Filter filter1 = mock(Filter.class);
+-		Filter filter2 = mock(Filter.class);
+ 		ServletContext context = mock(ServletContext.class);
+ 		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+ 		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+ 		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
+ 		given(context.addFilter(anyString(), eq(filter1))).willReturn(registration);
+-		given(context.addFilter(anyString(), eq(filter2))).willReturn(registration);
+-		new AbstractSecurityWebApplicationInitializer() {
+-			@Override
+-			protected void afterSpringSecurityFilterChain(ServletContext servletContext) {
+-				insertFilters(context, filter1, filter2);
++		given(context.addFilter(anyString(), eq(filter2Mock))).willReturn(registration);
++		new AbstractSecurityWebApplicationInitializer() {
++			@Override
++			protected void afterSpringSecurityFilterChain(ServletContext servletContext) {
++				insertFilters(context, filter1, filter2Mock);
+ 			}
+ 		}.onStartup(context);
+ 		assertProxyDefaults(proxyCaptor.getValue());
+@@ -171,7 +178,7 @@
+ 		verify(registration, times(3)).setAsyncSupported(true);
+ 		verifyNoAddListener(context);
+ 		verify(context).addFilter(anyString(), eq(filter1));
+-		verify(context).addFilter(anyString(), eq(filter2));
++		verify(context).addFilter(anyString(), eq(filter2Mock));
+ 	}
+ 
+ 	@Test
+@@ -235,17 +242,16 @@
+ 	@Test
+ 	public void onStartupWhenAppendFiltersThenAppended() {
+ 		Filter filter1 = mock(Filter.class);
+-		Filter filter2 = mock(Filter.class);
+ 		ServletContext context = mock(ServletContext.class);
+ 		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+ 		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+ 		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
+ 		given(context.addFilter(anyString(), eq(filter1))).willReturn(registration);
+-		given(context.addFilter(anyString(), eq(filter2))).willReturn(registration);
+-		new AbstractSecurityWebApplicationInitializer() {
+-			@Override
+-			protected void afterSpringSecurityFilterChain(ServletContext servletContext) {
+-				appendFilters(context, filter1, filter2);
++		given(context.addFilter(anyString(), eq(filter2Mock))).willReturn(registration);
++		new AbstractSecurityWebApplicationInitializer() {
++			@Override
++			protected void afterSpringSecurityFilterChain(ServletContext servletContext) {
++				appendFilters(context, filter1, filter2Mock);
+ 			}
+ 		}.onStartup(context);
+ 		verify(registration, times(1)).addMappingForUrlPatterns(DEFAULT_DISPATCH, false, "/*");

@@ -39,6 +39,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -85,6 +86,19 @@ def _remap_paths(value: Any, old_root: str, new_root: Path) -> Any:
     return value
 
 
+def _sync_git(message: str) -> None:
+    try:
+        subprocess.run(["git", "add", "data/"], cwd=REPOSITORY_ROOT, check=True)
+        status = subprocess.run(["git", "status", "--porcelain", "data/"], cwd=REPOSITORY_ROOT, capture_output=True, text=True)
+        if status.stdout.strip():
+            subprocess.run(["git", "commit", "-m", message], cwd=REPOSITORY_ROOT, check=True)
+            subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=REPOSITORY_ROOT, check=True)
+            subprocess.run(["git", "push", "origin", "main"], cwd=REPOSITORY_ROOT, check=True)
+            print(f"  [git] synced data: {message}", flush=True)
+    except Exception as error:  # noqa: BLE001
+        print(f"  [git] sync warning: {error}", flush=True)
+
+
 def run(args: argparse.Namespace) -> int:
     _load_env()
     import studio.server as server
@@ -125,6 +139,7 @@ def run(args: argparse.Namespace) -> int:
                                        "model": args.model, "runPit": bool(getattr(args, "run_pit", False)),
                                        "useMock": args.use_mock})["jobId"]
     reported: set[int] = set()
+    last_synced_count = 0
     started = time.time()
     while True:
         job = server.refactoring_status(job_id)
@@ -137,9 +152,12 @@ def run(args: argparse.Namespace) -> int:
             print(f"[{len(reported)}/{len(wanted)} {time.time() - started:5.0f}s] {label:28} {item['mciId']}", flush=True)
             if result and label != "SUCCESS":
                 print(f"    reason: {str(result.get('validationReason') or result.get('reason') or '')[:400]}", flush=True)
-        if reported:
+        if reported and len(reported) != last_synced_count:
+            last_synced_count = len(reported)
             try:
                 server.refactoring_export({"jobId": job_id, "runId": restored["runId"], "cctr": False})
+                if last_synced_count % 3 == 0:
+                    _sync_git(f"update data (batch PIT progress: {last_synced_count}/{len(wanted)})")
             except Exception as error:  # noqa: BLE001
                 # 中途导出失败不中断补跑，最后一次还会再导出；但要让人看见。
                 # A mid-run export failure does not stop the rerun, and the next poll exports again;
@@ -151,6 +169,7 @@ def run(args: argparse.Namespace) -> int:
 
     summary = server.refactoring_export({"jobId": job_id, "runId": restored["runId"], "cctr": True})
     print(f"written {summary.get('writtenThisCall')} -> {summary.get('directory')}", flush=True)
+    _sync_git(f"complete refactoring with PIT ({summary.get('writtenThisCall')})")
     return 0
 
 

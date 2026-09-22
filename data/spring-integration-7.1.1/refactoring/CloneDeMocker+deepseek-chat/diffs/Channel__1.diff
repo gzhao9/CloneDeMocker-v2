@@ -1,0 +1,82 @@
+--- a/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/config/AmqpOutboundChannelAdapterParserTests.java
++++ b/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/config/AmqpOutboundChannelAdapterParserTests.java
+@@ -25,6 +25,7 @@
+ 
+ import com.rabbitmq.client.AMQP.BasicProperties;
+ import com.rabbitmq.client.Channel;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.Mockito;
+ 
+@@ -97,6 +98,13 @@
+ 	@Qualifier("withCustomHeaderMapper.handler")
+ 	private MessageHandler amqpMessageHandlerWithCustomHeaderMapper;
+ 
++	private Channel channelMock;
++
++	@BeforeEach
++	public void setup() {
++		this.channelMock = mock();
++	}
++
+ 	@Test
+ 	public void verifyIdAsChannel() {
+ 		Object channel = context.getBean("rabbitOutbound");
+@@ -240,16 +248,15 @@
+ 	public void testInt2773UseDefaultAmqpTemplateExchangeAndRoutingLey() throws IOException {
+ 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
+ 		Connection mockConnection = mock();
+-		Channel mockChannel = mock();
+ 
+ 		when(connectionFactory.createConnection()).thenReturn(mockConnection);
+-		PublisherCallbackChannelImpl publisherCallbackChannel = new PublisherCallbackChannelImpl(mockChannel,
++		PublisherCallbackChannelImpl publisherCallbackChannel = new PublisherCallbackChannelImpl(channelMock,
+ 				mock(ExecutorService.class));
+ 		when(mockConnection.createChannel(false)).thenReturn(publisherCallbackChannel);
+ 
+ 		MessageChannel requestChannel = context.getBean("toRabbitOnlyWithTemplateChannel", MessageChannel.class);
+ 		requestChannel.send(MessageBuilder.withPayload("test").build());
+-		Mockito.verify(mockChannel, Mockito.times(1)).basicPublish(Mockito.eq("default.test.exchange"),
++		Mockito.verify(channelMock, Mockito.times(1)).basicPublish(Mockito.eq("default.test.exchange"),
+ 				Mockito.eq("default.routing.key"),
+ 				Mockito.anyBoolean(), Mockito.any(BasicProperties.class), Mockito.any(byte[].class));
+ 	}
+@@ -258,17 +265,16 @@
+ 	public void testInt2773WithDefaultAmqpTemplateExchangeAndRoutingKey() throws IOException {
+ 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
+ 		Connection mockConnection = mock();
+-		Channel mockChannel = mock();
+ 
+ 		when(connectionFactory.createConnection()).thenReturn(mockConnection);
+-		PublisherCallbackChannelImpl publisherCallbackChannel = new PublisherCallbackChannelImpl(mockChannel,
++		PublisherCallbackChannelImpl publisherCallbackChannel = new PublisherCallbackChannelImpl(channelMock,
+ 				mock(ExecutorService.class));
+ 		when(mockConnection.createChannel(false)).thenReturn(publisherCallbackChannel);
+ 
+ 		MessageChannel requestChannel = context.getBean("withDefaultAmqpTemplateExchangeAndRoutingKey",
+ 				MessageChannel.class);
+ 		requestChannel.send(MessageBuilder.withPayload("test").build());
+-		Mockito.verify(mockChannel, Mockito.times(1)).basicPublish(Mockito.eq(""), Mockito.eq(""),
++		Mockito.verify(channelMock, Mockito.times(1)).basicPublish(Mockito.eq(""), Mockito.eq(""),
+ 				Mockito.anyBoolean(), Mockito.any(BasicProperties.class), Mockito.any(byte[].class));
+ 	}
+ 
+@@ -276,16 +282,15 @@
+ 	public void testInt2773WithOverrideToDefaultAmqpTemplateExchangeAndRoutingLey() throws IOException {
+ 		ConnectionFactory connectionFactory = context.getBean(ConnectionFactory.class);
+ 		Connection mockConnection = mock();
+-		Channel mockChannel = mock();
+ 
+ 		when(connectionFactory.createConnection()).thenReturn(mockConnection);
+-		PublisherCallbackChannelImpl publisherCallbackChannel = new PublisherCallbackChannelImpl(mockChannel,
++		PublisherCallbackChannelImpl publisherCallbackChannel = new PublisherCallbackChannelImpl(channelMock,
+ 				mock(ExecutorService.class));
+ 		when(mockConnection.createChannel(false)).thenReturn(publisherCallbackChannel);
+ 
+ 		MessageChannel requestChannel = context.getBean("overrideTemplateAttributesToEmpty", MessageChannel.class);
+ 		requestChannel.send(MessageBuilder.withPayload("test").build());
+-		Mockito.verify(mockChannel, Mockito.times(1)).basicPublish(Mockito.eq(""), Mockito.eq(""),
++		Mockito.verify(channelMock, Mockito.times(1)).basicPublish(Mockito.eq(""), Mockito.eq(""),
+ 				Mockito.anyBoolean(), Mockito.any(BasicProperties.class), Mockito.any(byte[].class));
+ 	}
+ 

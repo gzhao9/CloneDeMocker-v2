@@ -1,0 +1,131 @@
+--- a/server/src/test/java/com/cloud/ha/HighAvailabilityManagerImplTest.java
++++ b/server/src/test/java/com/cloud/ha/HighAvailabilityManagerImplTest.java
+@@ -139,6 +139,8 @@
+ 
+     @Mock
+     private HaWorkVO mockWork;
++    @Mock
++    private ConfigKey<Boolean> vmHaEnabled;
+ 
+     HighAvailabilityManagerImpl highAvailabilityManager;
+     HighAvailabilityManagerImpl highAvailabilityManagerSpy;
+@@ -186,8 +188,7 @@
+         Mockito.when(_podDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostPodVO.class));
+         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
+ 
+         highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true, HighAvailabilityManager.ReasonType.HostDown);
+@@ -207,8 +208,7 @@
+         Mockito.when(hostVO.getHypervisorType()).thenReturn(HypervisorType.KVM);
+         Mockito.when(hostVO.getDataCenterId()).thenReturn(1L);
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(false);
+ 
+         highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true, HighAvailabilityManager.ReasonType.HostDown);
+@@ -240,8 +240,7 @@
+         Mockito.when(_haDao.findPreviousHA(Mockito.anyLong())).thenReturn(Arrays.asList(Mockito.mock(HaWorkVO.class)));
+         Mockito.when(_haDao.persist((HaWorkVO)Mockito.any())).thenReturn(Mockito.mock(HaWorkVO.class));
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
+ 
+         highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true, HighAvailabilityManager.ReasonType.HostDown);
+@@ -253,8 +252,7 @@
+         Mockito.when(vm.getId()).thenReturn(1L);
+         Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(false);
+ 
+         highAvailabilityManager.scheduleRestart(vm, true);
+@@ -280,8 +278,7 @@
+         Mockito.when(_haDao.hasBeenScheduled(vm.getId(), WorkType.Stop)).thenReturn(false);
+         Mockito.when(_haDao.persist((HaWorkVO)Mockito.any())).thenReturn(Mockito.mock(HaWorkVO.class));
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
+ 
+         assertTrue(highAvailabilityManager.scheduleStop(vm, 1L, WorkType.Stop));
+@@ -294,8 +291,7 @@
+         Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+         Mockito.when(_haDao.hasBeenScheduled(vm.getId(), WorkType.Stop)).thenReturn(false);
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(false);
+ 
+         assertFalse(highAvailabilityManager.scheduleStop(vm, 1L, WorkType.Stop));
+@@ -311,8 +307,7 @@
+         Mockito.when(vm.getHostId()).thenReturn(1L);
+         Mockito.when(_haDao.persist((HaWorkVO)Mockito.any())).thenReturn(Mockito.mock(HaWorkVO.class));
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
+ 
+         assertTrue(highAvailabilityManager.scheduleMigration(vm));
+@@ -324,8 +319,7 @@
+         Mockito.when(vm.getHostId()).thenReturn(1L);
+         Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(false);
+ 
+         assertFalse(highAvailabilityManager.scheduleMigration(vm));
+@@ -348,8 +342,7 @@
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+         Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(false);
+ 
+         assertFalse(highAvailabilityManager.scheduleDestroy(vm, 1L, HighAvailabilityManager.ReasonType.HostMaintenance));
+@@ -367,8 +360,7 @@
+         // Mock isAgentAlive to return host status as Down
+         Mockito.when(investigator.getHostAgentStatus(hostVO)).thenReturn(Status.Down);
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
+ 
+         assertTrue(highAvailabilityManager.investigate(1l) == Status.Down);
+@@ -385,8 +377,7 @@
+         investigators.add(investigator);
+         highAvailabilityManager.setInvestigators(investigators);
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
+ 
+         assertNull(highAvailabilityManager.investigate(1l));
+@@ -397,8 +388,7 @@
+         Mockito.when(_hostDao.findById(Mockito.anyLong())).thenReturn(hostVO);
+         Mockito.when(hostVO.getDataCenterId()).thenReturn(1L);
+ 
+-        ConfigKey<Boolean> haEnabled = Mockito.mock(ConfigKey.class);
+-        highAvailabilityManager.VmHaEnabled = haEnabled;
++        highAvailabilityManager.VmHaEnabled = vmHaEnabled;
+         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(false);
+ 
+         assertTrue(highAvailabilityManager.investigate(1L) == Status.Alert);

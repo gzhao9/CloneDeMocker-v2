@@ -46,6 +46,7 @@ from studio.harness import (ProjectHarness, ensure_pit_junit5_support, is_module
 from studio.model_provider import MockModelProvider  # noqa: E402
 from studio.refactoring_agent import RefactoringAgent, _workspace_root  # noqa: E402
 from validation.diff_utils import replay_replacements  # noqa: E402
+from validation.scoped_harness import ScopedProjectHarness  # noqa: E402
 
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
 USAGE_FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_tokens", "total_tokens")
@@ -406,6 +407,14 @@ def main() -> None:
                               "reuse an existing isolated copy (e.g. a previous run's printed sharedWorkspace) "
                               "instead of re-copying the project and cold-compiling again — saves time while "
                               "debugging; pair with reset_workspace.py to restore it manually when needed")
+    parser.add_argument("--scoped-validation", action="store_true", default=False,
+                        help="把编译/测试/PIT 限定到 MCI 涉及的模块（-pl <module> -am），而不是走全项目回归。"
+                             "默认的全项目回归是更强的验收门槛，但在 druid 这类测试套件极大的项目上会超时；"
+                             "用本开关时报告里的 validationScope 会记为 scoped-modules，结论需按此口径表述 / "
+                             "scope compile/test/PIT to the modules a MCI touches (-pl <module> -am) instead of a "
+                             "full-project regression. The full-project default is the stronger acceptance gate, but "
+                             "it times out on projects with very large suites such as druid; runs using this flag "
+                             "record validationScope=scoped-modules in the report and must be reported as such")
     args = parser.parse_args()
 
     load_env_file()
@@ -455,6 +464,7 @@ def main() -> None:
         "repairEnabled": args.repair,
         "replayedFrom": args.replay,
         "mavenRepoLocal": args.maven_repo_local,
+        "validationScope": "scoped-modules" if args.scoped_validation else "full-project",
         "totalMcis": len(instances),
         "pilotSize": len(pilot),
         "results": [],
@@ -496,13 +506,24 @@ def main() -> None:
             print("  ensuring PIT can run against JUnit 5 (pitest-junit5-plugin + matching junit-platform-launcher) ...")
             ensure_pit_junit5_support(workspace, args.maven_repo_local)
 
-        print("  [sanity check] full-project compile + test on unmodified copy (no PIT) ..."
+        # scoped 模式下基线也必须同口径收窄：否则这里仍走全项目回归，--scoped-validation 想
+        # 规避的超时会原样发生在基线这一步。取所有待试 MCI 的测试类与模块并集。
+        # Under scoped mode the baseline must narrow the same way: otherwise it still runs a
+        # full-project regression here and the very timeout --scoped-validation exists to avoid
+        # simply happens at the baseline instead. Uses the union over all piloted MCIs.
+        sanity_classes = sorted({name for _, classes, _ in runnable for name in classes})
+        sanity_modules = sorted({name for _, _, mods in runnable for name in mods})
+        sanity_harness = (ScopedProjectHarness(sanity_classes, sanity_modules, args.maven_repo_local)
+                          if args.scoped_validation and sanity_classes
+                          else ProjectHarness(args.maven_repo_local))
+        sanity_scope = f"modules {sanity_modules}" if args.scoped_validation and sanity_classes else "full-project"
+        print(f"  [sanity check] {sanity_scope} compile + test on unmodified copy (no PIT) ..."
               + (f" repoLocal={args.maven_repo_local}" if args.maven_repo_local else ""))
-        sanity = ProjectHarness(args.maven_repo_local).validate(workspace, run_pit=False).as_dict()
+        sanity = sanity_harness.validate(workspace, run_pit=False).as_dict()
         sanity_failure = verification_failure_reason(sanity, run_pit=False)
         if sanity_failure is not None:
-            print("  ABORT: unmodified project cannot complete full-project regression in the shared workspace / "
-                  "未修改的项目无法在共享副本中完成全项目回归")
+            print(f"  ABORT: unmodified project cannot complete {sanity_scope} regression in the shared workspace / "
+                  f"未修改的项目无法在共享副本中完成回归（范围：{sanity_scope}）")
             report["initialSanityCheck"] = sanity
             report["initialSanityFailure"] = sanity_failure
             report["sharedWorkspace"] = str(workspace)
@@ -525,8 +546,10 @@ def main() -> None:
         print(f"  - {mci_id}: {len(test_classes)} test class(es) -> {test_classes}")
         # Full-project regression is the acceptance gate. The selected classes remain an
         # explicit evidence requirement, so a green reactor cannot hide skipped targets.
-        mci_harness = ProjectHarness(args.maven_repo_local)
-        print(f"    [baseline] full-project compile + test" + (" + PIT" if args.run_pit else "") + " ...")
+        mci_harness = (ScopedProjectHarness(test_classes, modules, args.maven_repo_local)
+                       if args.scoped_validation else ProjectHarness(args.maven_repo_local))
+        scope_label = f"modules {modules}" if args.scoped_validation else "full-project"
+        print(f"    [baseline] {scope_label} compile + test" + (" + PIT" if args.run_pit else "") + " ...")
         pit_runs += 1
         before_state = mci_harness.validate(workspace, args.run_pit).as_dict()
         baseline_failure = verification_failure_reason(before_state, args.run_pit, test_classes)
@@ -578,7 +601,7 @@ def main() -> None:
         proposal_root = run.run_directory / "refactoring" / proposal_id
         write_diff(proposal_root, files, replacements)
 
-        print(f"    [after] full-project compile + test" + (" + PIT" if args.run_pit else "") + " ...")
+        print(f"    [after] {scope_label} compile + test" + (" + PIT" if args.run_pit else "") + " ...")
         pit_runs += 1
         after_state = mci_harness.validate(workspace, args.run_pit).as_dict()
         goal_achieved = RefactoringAgent._goal_check(selected, files, replacements)

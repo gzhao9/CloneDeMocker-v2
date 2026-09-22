@@ -1,0 +1,134 @@
+--- a/web/src/test/java/org/springframework/security/web/util/matcher/AndRequestMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/util/matcher/AndRequestMatcherTests.java
+@@ -92,37 +92,37 @@
+ 
+ 	@Test
+ 	public void matchesSingleTrue() {
+-		given(this.delegate.matches(this.request)).willReturn(true);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, true);
+ 		this.matcher = new AndRequestMatcher(this.delegate);
+ 		assertThat(this.matcher.matches(this.request)).isTrue();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiTrue() {
+-		given(this.delegate.matches(this.request)).willReturn(true);
+-		given(this.delegate2.matches(this.request)).willReturn(true);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, true);
++		this.delegate2 = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, true);
+ 		this.matcher = new AndRequestMatcher(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.request)).isTrue();
+ 	}
+ 
+ 	@Test
+ 	public void matchesSingleFalse() {
+-		given(this.delegate.matches(this.request)).willReturn(false);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, false);
+ 		this.matcher = new AndRequestMatcher(this.delegate);
+ 		assertThat(this.matcher.matches(this.request)).isFalse();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiBothFalse() {
+-		given(this.delegate.matches(this.request)).willReturn(false);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, false);
+ 		this.matcher = new AndRequestMatcher(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.request)).isFalse();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiSingleFalse() {
+-		given(this.delegate.matches(this.request)).willReturn(true);
+-		given(this.delegate2.matches(this.request)).willReturn(false);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, true);
++		this.delegate2 = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, false);
+ 		this.matcher = new AndRequestMatcher(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.request)).isFalse();
+ 	}
+--- a/web/src/test/java/org/springframework/security/web/util/matcher/NegatedRequestMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/util/matcher/NegatedRequestMatcherTests.java
+@@ -48,14 +48,14 @@
+ 
+ 	@Test
+ 	public void matchesDelegateFalse() {
+-		given(this.delegate.matches(this.request)).willReturn(false);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, false);
+ 		this.matcher = new NegatedRequestMatcher(this.delegate);
+ 		assertThat(this.matcher.matches(this.request)).isTrue();
+ 	}
+ 
+ 	@Test
+ 	public void matchesDelegateTrue() {
+-		given(this.delegate.matches(this.request)).willReturn(true);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, true);
+ 		this.matcher = new NegatedRequestMatcher(this.delegate);
+ 		assertThat(this.matcher.matches(this.request)).isFalse();
+ 	}
+--- a/web/src/test/java/org/springframework/security/web/util/matcher/OrRequestMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/util/matcher/OrRequestMatcherTests.java
+@@ -93,36 +93,36 @@
+ 
+ 	@Test
+ 	public void matchesSingleTrue() {
+-		given(this.delegate.matches(this.request)).willReturn(true);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, true);
+ 		this.matcher = new OrRequestMatcher(this.delegate);
+ 		assertThat(this.matcher.matches(this.request)).isTrue();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiTrue() {
+-		given(this.delegate.matches(this.request)).willReturn(true);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, true);
+ 		this.matcher = new OrRequestMatcher(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.request)).isTrue();
+ 	}
+ 
+ 	@Test
+ 	public void matchesSingleFalse() {
+-		given(this.delegate.matches(this.request)).willReturn(false);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, false);
+ 		this.matcher = new OrRequestMatcher(this.delegate);
+ 		assertThat(this.matcher.matches(this.request)).isFalse();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiBothFalse() {
+-		given(this.delegate.matches(this.request)).willReturn(false);
+-		given(this.delegate2.matches(this.request)).willReturn(false);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, false);
++		this.delegate2 = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, false);
+ 		this.matcher = new OrRequestMatcher(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.request)).isFalse();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiSingleFalse() {
+-		given(this.delegate.matches(this.request)).willReturn(true);
++		this.delegate = MockRequestMatcherWithMatchResult.createMockRequestMatcher(this.request, true);
+ 		this.matcher = new OrRequestMatcher(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.request)).isTrue();
+ 	}
+--- a/web/src/test/java/org/springframework/security/web/util/matcher/MockRequestMatcherWithMatchResult.java
++++ b/web/src/test/java/org/springframework/security/web/util/matcher/MockRequestMatcherWithMatchResult.java
+@@ -0,0 +1,20 @@
++package org.springframework.security.web.util.matcher;
++
++import jakarta.servlet.http.HttpServletRequest;
++
++import org.mockito.Mockito;
++
++import static org.mockito.BDDMockito.given;
++
++public final class MockRequestMatcherWithMatchResult {
++
++	private MockRequestMatcherWithMatchResult() {
++	}
++
++	public static RequestMatcher createMockRequestMatcher(HttpServletRequest request, boolean matches) {
++		RequestMatcher delegate = Mockito.mock(RequestMatcher.class);
++		given(delegate.matches(request)).willReturn(matches);
++		return delegate;
++	}
++
++}

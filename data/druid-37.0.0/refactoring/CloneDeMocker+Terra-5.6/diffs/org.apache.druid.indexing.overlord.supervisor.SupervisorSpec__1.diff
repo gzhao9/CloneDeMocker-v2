@@ -1,0 +1,57 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/supervisor/autoscaler/CostBasedAutoScalerTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/supervisor/autoscaler/CostBasedAutoScalerTest.java
+@@ -439,13 +439,11 @@
+   @Test
+   public void testComputeTaskCountForRolloverAndConfigProperties()
+   {
+-    SupervisorSpec spec = Mockito.mock(SupervisorSpec.class);
+     SeekableStreamSupervisor supervisor = Mockito.mock(SeekableStreamSupervisor.class);
+     ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+     SeekableStreamSupervisorIOConfig ioConfig = Mockito.mock(SeekableStreamSupervisorIOConfig.class);
+ 
+-    when(spec.getId()).thenReturn("s-up");
+-    when(spec.getDataSources()).thenReturn(List.of("test-datasource"));
++    SupervisorSpec spec = createMockSupervisorSpec("s-up");
+     when(supervisor.getIoConfig()).thenReturn(ioConfig);
+     when(ioConfig.getStream()).thenReturn("stream");
+ 
+@@ -472,7 +470,6 @@
+     Assert.assertTrue(cfgWithCustom.isScaleDownOnTaskRolloverOnly());
+ 
+     // computeTaskCountForRollover returns -1 when scaleDownDuringTaskRolloverOnly=false (default)
+-    when(spec.isSuspended()).thenReturn(false);
+     CostBasedAutoScaler scaler = new CostBasedAutoScaler(supervisor, cfgWithDefaults, spec, emitter);
+     Assert.assertEquals(-1, scaler.computeTaskCountForRollover());
+ 
+@@ -484,14 +481,11 @@
+   @Test
+   public void testScalingActionSkippedWhenMovingAverageRateUnavailable()
+   {
+-    SupervisorSpec spec = Mockito.mock(SupervisorSpec.class);
++    SupervisorSpec spec = createMockSupervisorSpec("test-supervisor");
+     SeekableStreamSupervisor supervisor = Mockito.mock(SeekableStreamSupervisor.class);
+     ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+     SeekableStreamSupervisorIOConfig ioConfig = Mockito.mock(SeekableStreamSupervisorIOConfig.class);
+ 
+-    when(spec.getId()).thenReturn("test-supervisor");
+-    when(spec.getDataSources()).thenReturn(List.of("test-datasource"));
+-    when(spec.isSuspended()).thenReturn(false);
+     when(supervisor.getIoConfig()).thenReturn(ioConfig);
+     when(ioConfig.getStream()).thenReturn("test-stream");
+     when(ioConfig.getTaskDuration()).thenReturn(Duration.standardHours(1));
+@@ -511,6 +505,15 @@
+         -1,
+         scaler.computeTaskCountForScaleAction()
+     );
++  }
++
++  private static SupervisorSpec createMockSupervisorSpec(String id)
++  {
++    SupervisorSpec spec = Mockito.mock(SupervisorSpec.class);
++    when(spec.getId()).thenReturn(id);
++    when(spec.getDataSources()).thenReturn(List.of("test-datasource"));
++    when(spec.isSuspended()).thenReturn(false);
++    return spec;
+   }
+ 
+   private CostMetrics createMetrics(

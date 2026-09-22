@@ -1,0 +1,103 @@
+--- a/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
++++ b/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
+@@ -708,6 +708,13 @@
+ 		reader.close();
+ 	}
+ 
++	private static SessionFactory<TestLsEntry> createMockSessionFactory(Session<TestLsEntry> session) {
++		@SuppressWarnings("unchecked")
++		SessionFactory<TestLsEntry> sessionFactory = mock(SessionFactory.class);
++		when(sessionFactory.getSession()).thenReturn(session);
++		return sessionFactory;
++	}
++
+ 	@Test
+ 	public void testGetTempFileDelete() {
+ 		@SuppressWarnings("unchecked")
+@@ -829,9 +836,8 @@
+ 	@Test
+ 	public void testPut() throws Exception {
+ 		@SuppressWarnings("unchecked")
+-		SessionFactory<TestLsEntry> sessionFactory = mock(SessionFactory.class);
+-		@SuppressWarnings("unchecked")
+ 		Session<TestLsEntry> session = mock(Session.class);
++		SessionFactory<TestLsEntry> sessionFactory = createMockSessionFactory(session);
+ 		RemoteFileTemplate<TestLsEntry> template = new RemoteFileTemplate<TestLsEntry>(sessionFactory) {
+ 
+ 			@Override
+@@ -849,7 +855,6 @@
+ 		handler.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+ 		handler.afterPropertiesSet();
+ 		gw.afterPropertiesSet();
+-		when(sessionFactory.getSession()).thenReturn(session);
+ 		Message<String> requestMessage = MessageBuilder.withPayload("hello")
+ 				.setHeader(FileHeaders.FILENAME, "bar.txt")
+ 				.build();
+@@ -864,9 +869,8 @@
+ 	@Test
+ 	public void testPutExists() throws Exception {
+ 		@SuppressWarnings("unchecked")
+-		SessionFactory<TestLsEntry> sessionFactory = mock(SessionFactory.class);
+-		@SuppressWarnings("unchecked")
+ 		Session<TestLsEntry> session = mock(Session.class);
++		SessionFactory<TestLsEntry> sessionFactory = createMockSessionFactory(session);
+ 		willReturn(Boolean.TRUE)
+ 				.given(session)
+ 				.exists(anyString());
+@@ -880,7 +884,6 @@
+ 		handler.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+ 		handler.afterPropertiesSet();
+ 		gw.afterPropertiesSet();
+-		when(sessionFactory.getSession()).thenReturn(session);
+ 		Message<String> requestMessage = MessageBuilder.withPayload("hello")
+ 				.setHeader(FileHeaders.FILENAME, "bar.txt")
+ 				.build();
+@@ -925,8 +928,8 @@
+ 	@Test
+ 	@SuppressWarnings("unchecked")
+ 	public void testPutExistsExpression() throws Exception {
+-		SessionFactory<TestLsEntry> sessionFactory = mock(SessionFactory.class);
+ 		Session<TestLsEntry> session = mock(Session.class);
++		SessionFactory<TestLsEntry> sessionFactory = createMockSessionFactory(session);
+ 		willReturn(Boolean.TRUE)
+ 				.given(session)
+ 				.exists(anyString());
+@@ -941,7 +944,6 @@
+ 		handler.afterPropertiesSet();
+ 		gw.afterPropertiesSet();
+ 		gw.setFileExistsModeExpressionString("headers[\"file.exists.mode\"]");
+-		when(sessionFactory.getSession()).thenReturn(session);
+ 		MessageBuilder<String> requestMessageBuilder = MessageBuilder.withPayload("hello")
+ 				.setHeader(FileHeaders.FILENAME, "bar.txt");
+ 
+@@ -988,15 +990,14 @@
+ 	@Test
+ 	@SuppressWarnings("unchecked")
+ 	public void testMput() throws Exception {
+-		SessionFactory<TestLsEntry> sessionFactory = mock(SessionFactory.class);
+ 		Session<TestLsEntry> session = mock(Session.class);
++		SessionFactory<TestLsEntry> sessionFactory = createMockSessionFactory(session);
+ 		RemoteFileTemplate<TestLsEntry> template = new RemoteFileTemplate<>(sessionFactory);
+ 		template.setRemoteDirectoryExpression(new LiteralExpression("foo/"));
+ 		template.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+ 		template.afterPropertiesSet();
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(template, "mput", "payload");
+ 		gw.afterPropertiesSet();
+-		when(sessionFactory.getSession()).thenReturn(session);
+ 		final AtomicReference<String> written = new AtomicReference<>();
+ 		doAnswer(invocation -> {
+ 			written.set(invocation.getArgument(1));
+@@ -1059,12 +1060,11 @@
+ 	@Test
+ 	@SuppressWarnings("unchecked")
+ 	public void testMputCollection() throws Exception {
+-		SessionFactory<TestLsEntry> sessionFactory = mock(SessionFactory.class);
+ 		Session<TestLsEntry> session = mock(Session.class);
++		SessionFactory<TestLsEntry> sessionFactory = createMockSessionFactory(session);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mput", "payload");
+ 		gw.setRemoteDirectoryExpression(new LiteralExpression("foo/"));
+ 		gw.afterPropertiesSet();
+-		when(sessionFactory.getSession()).thenReturn(session);
+ 		final AtomicReference<String> written = new AtomicReference<>();
+ 		doAnswer(invocation -> {
+ 			written.set(invocation.getArgument(1));

@@ -1,0 +1,81 @@
+--- a/server/src/test/java/com/cloud/network/guru/DirectNetworkGuruTest.java
++++ b/server/src/test/java/com/cloud/network/guru/DirectNetworkGuruTest.java
+@@ -31,7 +31,6 @@
+ import com.cloud.offering.NetworkOffering;
+ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+ import com.cloud.user.Account;
+-import com.cloud.utils.Pair;
+ import com.cloud.vm.NicProfile;
+ import org.junit.After;
+ import org.junit.Before;
+@@ -171,8 +170,7 @@
+     public void testUpdateNicProfile() {
+         NicProfile nicProfile = new NicProfile();
+         when(dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+-        when(networkModel.getNetworkIp4Dns(network, dc)).thenReturn(new Pair<>(ip4Dns[0], ip4Dns[1]));
+-        when(networkModel.getNetworkIp6Dns(network, dc)).thenReturn(new Pair<>(ip6Dns[0], ip6Dns[1]));
++        MockNetworkModel.configureNetworkDns(networkModel, network, dc, ip4Dns[0], ip4Dns[1], ip6Dns[0], ip6Dns[1]);
+         guru.updateNicProfile(nicProfile, network);
+         assertNotNull(nicProfile);
+         assertEquals(ip4Dns[0], nicProfile.getIPv4Dns1());
+@@ -186,8 +184,7 @@
+         NetworkProfile profile = new NetworkProfile(network);
+         when(dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+         when(networkModel.getNetwork(Mockito.anyLong())).thenReturn(network);
+-        when(networkModel.getNetworkIp4Dns(network, dc)).thenReturn(new Pair<>(ip4Dns[0], null));
+-        when(networkModel.getNetworkIp6Dns(network, dc)).thenReturn(new Pair<>(ip6Dns[0], null));
++        MockNetworkModel.configureNetworkDns(networkModel, network, dc, ip4Dns[0], null, ip6Dns[0], null);
+         guru.updateNetworkProfile(profile);
+         assertNotNull(profile);
+         assertEquals(ip4Dns[0], profile.getDns1());
+--- a/server/src/test/java/com/cloud/network/guru/ExternalGuestNetworkGuruTest.java
++++ b/server/src/test/java/com/cloud/network/guru/ExternalGuestNetworkGuruTest.java
+@@ -28,7 +28,6 @@
+ import com.cloud.network.dao.PhysicalNetworkVO;
+ import com.cloud.offering.NetworkOffering;
+ import com.cloud.user.Account;
+-import com.cloud.utils.Pair;
+ import com.cloud.vm.NicProfile;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+@@ -89,8 +88,7 @@
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+         Network network = Mockito.mock(Network.class);
+         Mockito.when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
+-        Mockito.when(networkModel.getNetworkIp4Dns(network, zone)).thenReturn(new Pair<>(ip4Dns[0], ip4Dns[1]));
+-        Mockito.when(networkModel.getNetworkIp6Dns(network, zone)).thenReturn(new Pair<>(ip6Dns[0], ip6Dns[1]));
++        MockNetworkModel.configureNetworkDns(networkModel, network, zone, ip4Dns[0], ip4Dns[1], ip6Dns[0], ip6Dns[1]);
+         guru.updateNicProfile(nicProfile, network);
+         assertNotNull(nicProfile);
+         assertEquals(ip4Dns[0], nicProfile.getIPv4Dns1());
+@@ -106,8 +104,7 @@
+         NetworkProfile profile = new NetworkProfile(network);
+         Mockito.when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
+         Mockito.when(networkModel.getNetwork(Mockito.anyLong())).thenReturn(network);
+-        Mockito.when(networkModel.getNetworkIp4Dns(network, zone)).thenReturn(new Pair<>(ip4Dns[0], null));
+-        Mockito.when(networkModel.getNetworkIp6Dns(network, zone)).thenReturn(new Pair<>(ip6Dns[0], null));
++        MockNetworkModel.configureNetworkDns(networkModel, network, zone, ip4Dns[0], null, ip6Dns[0], null);
+         guru.updateNetworkProfile(profile);
+         assertNotNull(profile);
+         assertEquals(ip4Dns[0], profile.getDns1());
+--- a/server/src/test/java/com/cloud/network/guru/MockNetworkModel.java
++++ b/server/src/test/java/com/cloud/network/guru/MockNetworkModel.java
+@@ -0,0 +1,18 @@
++package com.cloud.network.guru;
++
++import com.cloud.dc.DataCenterVO;
++import com.cloud.network.Network;
++import com.cloud.network.NetworkModel;
++import com.cloud.utils.Pair;
++import org.mockito.Mockito;
++
++public final class MockNetworkModel {
++    private MockNetworkModel() {
++    }
++
++    public static void configureNetworkDns(NetworkModel networkModel, Network network, DataCenterVO dataCenter,
++            String ip4Dns1, String ip4Dns2, String ip6Dns1, String ip6Dns2) {
++        Mockito.when(networkModel.getNetworkIp4Dns(network, dataCenter)).thenReturn(new Pair<>(ip4Dns1, ip4Dns2));
++        Mockito.when(networkModel.getNetworkIp6Dns(network, dataCenter)).thenReturn(new Pair<>(ip6Dns1, ip6Dns2));
++    }
++}

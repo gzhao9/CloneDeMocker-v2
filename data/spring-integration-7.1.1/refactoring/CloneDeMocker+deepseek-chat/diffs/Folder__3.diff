@@ -1,0 +1,46 @@
+--- a/spring-integration-mail/src/test/java/org/springframework/integration/mail/inbound/ImapMailReceiverTests.java
++++ b/spring-integration-mail/src/test/java/org/springframework/integration/mail/inbound/ImapMailReceiverTests.java
+@@ -675,12 +675,10 @@
+ 		for (int i = 0; i < 100; i++) {
+ 			final ImapMailReceiver receiver = new ImapMailReceiver("imap://foo");
+ 			Store store = mock(Store.class);
+-			Folder folder = mock(Folder.class);
++			Folder folder = createMockFolder();
+ 			given(folder.exists()).willReturn(true);
+-			given(folder.isOpen()).willReturn(true);
+ 			given(folder.search(Mockito.any())).willReturn(new Message[] {});
+ 			given(store.getFolder(Mockito.any(URLName.class))).willReturn(folder);
+-			given(folder.getPermanentFlags()).willReturn(new Flags(Flags.Flag.USER));
+ 
+ 			DirectFieldAccessor df = new DirectFieldAccessor(receiver);
+ 			df.setPropertyValue("store", store);
+@@ -754,14 +752,12 @@
+ 
+ 	private Folder testAttachmentsGuts(final ImapMailReceiver receiver) throws MessagingException, IOException {
+ 		Store store = mock(Store.class);
+-		Folder folder = mock(Folder.class);
++		Folder folder = createMockFolder();
+ 		given(folder.exists()).willReturn(true);
+-		given(folder.isOpen()).willReturn(true);
+ 
+ 		Message message = GreenMailUtil.newMimeMessage(new ClassPathResource("test.mail").getInputStream());
+ 		given(folder.search(Mockito.any())).willReturn(new Message[] {message});
+ 		given(store.getFolder(Mockito.any(URLName.class))).willReturn(folder);
+-		given(folder.getPermanentFlags()).willReturn(new Flags(Flags.Flag.USER));
+ 		DirectFieldAccessor df = new DirectFieldAccessor(receiver);
+ 		df.setPropertyValue("store", store);
+ 		receiver.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+@@ -990,6 +986,13 @@
+ 		return receiver;
+ 	}
+ 
++	private static Folder createMockFolder() {
++		Folder folder = mock(Folder.class);
++		given(folder.isOpen()).willReturn(true);
++		given(folder.getPermanentFlags()).willReturn(new Flags(Flags.Flag.USER));
++		return folder;
++	}
++
+ 	private static class ImapSearchLoggingHandler extends Handler {
+ 
+ 		private final List<String> searches = new ArrayList<>();

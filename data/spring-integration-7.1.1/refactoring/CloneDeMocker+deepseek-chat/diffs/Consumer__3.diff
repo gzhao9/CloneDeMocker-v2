@@ -19,15 +19,17 @@
  		willAnswer(invoc -> {
  			OffsetCommitCallback callback = invoc.getArgument(1);
  			callback.onComplete(null, null);
-@@ -367,6 +360,19 @@
+@@ -367,6 +360,21 @@
  	}
  
  	@SuppressWarnings({"rawtypes", "unchecked"})
 +	private static Consumer createMockConsumer(ArgumentCaptor<Collection<TopicPartition>> partitions) {
 +		Consumer consumer = mock(Consumer.class);
++		TopicPartition topicPartition = new TopicPartition("foo", 0);
++		List<TopicPartition> assigned = Collections.singletonList(topicPartition);
 +		willAnswer(i -> {
 +			((ConsumerRebalanceListener) i.getArgument(1))
-+					.onPartitionsAssigned(Collections.singletonList(new TopicPartition("foo", 0)));
++					.onPartitionsAssigned(assigned);
 +			return null;
 +		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
 +		willDoNothing().given(consumer).pause(partitions.capture());
@@ -39,7 +41,7 @@
  	@Test
  	void testAckOutOfOrder() {
  		Consumer consumer = mock(Consumer.class);
-@@ -708,17 +714,10 @@
+@@ -708,17 +716,10 @@
  	@SuppressWarnings({"rawtypes", "unchecked"})
  	@Test
  	void testAllowMulti() {
