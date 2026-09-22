@@ -1,0 +1,117 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -251,6 +251,8 @@
+     @Mock
+     private Account accountMock;
+     @Mock
++    private Account ownerMock;
++    @Mock
+     private VolumeDataStoreVO volumeDataStoreVoMock;
+     @Mock
+     private AsyncCallFuture<VolumeApiResult> asyncCallFutureVolumeapiResultMock;
+@@ -476,7 +478,6 @@
+ 
+     @Test
+     public void getCustomDiskOfferingIdForVolumeUploadReturnsDefaultOfferingWhenAccessibleAndEncryptionNotRequired() {
+-        Account owner = Mockito.mock(Account.class);
+         DataCenter zone = Mockito.mock(DataCenter.class);
+         DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+ 
+@@ -484,7 +485,7 @@
+         Mockito.when(defaultOffering.getId()).thenReturn(11L);
+         Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+ 
+-        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, false);
++        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(ownerMock, zone, false);
+ 
+         Assert.assertEquals(Long.valueOf(11L), result);
+         Mockito.verify(_diskOfferingDao, Mockito.never()).listCustomDiskOfferings();
+@@ -492,7 +493,6 @@
+ 
+     @Test
+     public void getCustomDiskOfferingIdForVolumeUploadReturnsDefaultOfferingWhenEncryptedOnlyAndDefaultOfferingIsEncrypted() {
+-        Account owner = Mockito.mock(Account.class);
+         DataCenter zone = Mockito.mock(DataCenter.class);
+         DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+ 
+@@ -502,7 +502,7 @@
+         Mockito.when(_diskOfferingDao.findById(12L)).thenReturn(defaultOffering);
+         Mockito.when(defaultOffering.getEncrypt()).thenReturn(true);
+ 
+-        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, true);
++        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(ownerMock, zone, true);
+ 
+         Assert.assertEquals(Long.valueOf(12L), result);
+         Mockito.verify(_diskOfferingDao, Mockito.never()).listCustomDiskOfferings();
+@@ -510,7 +510,6 @@
+ 
+     @Test
+     public void getCustomDiskOfferingIdForVolumeUploadFallsBackToEncryptedCustomOfferingWhenDefaultOfferingNotEncrypted() {
+-        Account owner = Mockito.mock(Account.class);
+         DataCenter zone = Mockito.mock(DataCenter.class);
+         DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+         DiskOfferingVO nonEncryptedOffering = Mockito.mock(DiskOfferingVO.class);
+@@ -527,16 +526,15 @@
+         Mockito.when(encryptedOffering.getId()).thenReturn(23L);
+         Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(nonEncryptedOffering, encryptedOffering));
+ 
+-        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, true);
++        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(ownerMock, zone, true);
+ 
+         Assert.assertEquals(Long.valueOf(23L), result);
+-        Mockito.verify(_configMgr).checkDiskOfferingAccess(owner, encryptedOffering, zone);
+-        Mockito.verify(_configMgr, Mockito.never()).checkDiskOfferingAccess(owner, nonEncryptedOffering, zone);
++        Mockito.verify(_configMgr).checkDiskOfferingAccess(ownerMock, encryptedOffering, zone);
++        Mockito.verify(_configMgr, Mockito.never()).checkDiskOfferingAccess(ownerMock, nonEncryptedOffering, zone);
+     }
+ 
+     @Test
+     public void getCustomDiskOfferingIdForVolumeUploadFallsBackWhenDefaultOfferingIsNotAccessible() {
+-        Account owner = Mockito.mock(Account.class);
+         DataCenter zone = Mockito.mock(DataCenter.class);
+         DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+         DiskOfferingVO deniedOffering = Mockito.mock(DiskOfferingVO.class);
+@@ -544,22 +542,21 @@
+ 
+         Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Active);
+         Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+-        Mockito.doThrow(new PermissionDeniedException("default denied")).when(_configMgr).checkDiskOfferingAccess(owner, defaultOffering, zone);
++        Mockito.doThrow(new PermissionDeniedException("default denied")).when(_configMgr).checkDiskOfferingAccess(ownerMock, defaultOffering, zone);
+ 
+         Mockito.when(allowedOffering.getId()).thenReturn(24L);
+         Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(deniedOffering, allowedOffering));
+-        Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(owner, deniedOffering, zone);
+-
+-        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, false);
++        Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(ownerMock, deniedOffering, zone);
++
++        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(ownerMock, zone, false);
+ 
+         Assert.assertEquals(Long.valueOf(24L), result);
+-        Mockito.verify(_configMgr).checkDiskOfferingAccess(owner, deniedOffering, zone);
+-        Mockito.verify(_configMgr).checkDiskOfferingAccess(owner, allowedOffering, zone);
++        Mockito.verify(_configMgr).checkDiskOfferingAccess(ownerMock, deniedOffering, zone);
++        Mockito.verify(_configMgr).checkDiskOfferingAccess(ownerMock, allowedOffering, zone);
+     }
+ 
+     @Test
+     public void getCustomDiskOfferingIdForVolumeUploadReturnsNullWhenNoAccessibleEligibleCustomOfferingExists() {
+-        Account owner = Mockito.mock(Account.class);
+         DataCenter zone = Mockito.mock(DataCenter.class);
+         DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+         DiskOfferingVO firstEncrypted = Mockito.mock(DiskOfferingVO.class);
+@@ -571,10 +568,10 @@
+         Mockito.when(firstEncrypted.getEncrypt()).thenReturn(true);
+         Mockito.when(secondEncrypted.getEncrypt()).thenReturn(true);
+         Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(firstEncrypted, secondEncrypted));
+-        Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(owner, firstEncrypted, zone);
+-        Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(owner, secondEncrypted, zone);
+-
+-        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, true);
++        Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(ownerMock, firstEncrypted, zone);
++        Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(ownerMock, secondEncrypted, zone);
++
++        Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(ownerMock, zone, true);
+ 
+         Assert.assertNull(result);
+     }
