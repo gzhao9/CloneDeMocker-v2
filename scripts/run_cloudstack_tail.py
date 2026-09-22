@@ -151,8 +151,19 @@ def record_skip(mci_id: str, reason: str) -> None:
     SKIPPED.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+# Identifies rows this machine produced. The host matters, not just the OS: A and B both
+# run Windows but were not the same environment — A graded ~80 MCIs with no install gate,
+# B ran for a minute with no Maven on PATH. Pooling those as one "windows" would hide
+# exactly the kind of difference this field exists to expose. The other agents also skip
+# rows carrying someone else's producedBy, so an unstamped row reads as unclaimed.
+PRODUCED_BY = "A"
+PLATFORM = "windows"
+HOST = "daynell-win-gated"
+
+
 def relayer(entry: dict, diff_source: Path | None) -> None:
     """Re-add this machine's entry on top of whatever the dataset currently holds."""
+    entry = {**entry, "producedBy": PRODUCED_BY, "platform": PLATFORM, "host": HOST}
     diff_lookup = {}
     if diff_source is not None and diff_source.is_file():
         diff_lookup[entry["mciId"]] = diff_source
