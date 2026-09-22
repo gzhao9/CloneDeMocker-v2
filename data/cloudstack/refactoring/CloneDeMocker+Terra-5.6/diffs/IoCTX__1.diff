@@ -1,0 +1,52 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/storage/KVMStorageProcessorTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/storage/KVMStorageProcessorTest.java
+@@ -102,6 +102,9 @@
+     Connect connectMock;
+ 
+     @Mock
++    private IoCTX rbdIoCtxMock;
++
++    @Mock
+     QemuImg qemuImgMock;
+ 
+     @Mock
+@@ -541,9 +544,8 @@
+     @Test
+     public void takeRbdVolumeSnapshotOfStoppedVmTestCreatesSnapshotExactlyOnce() throws Exception {
+         Rados radosMock = Mockito.mock(Rados.class);
+-        IoCTX ioCtxMock = Mockito.mock(IoCTX.class);
+         RbdImage rbdImageMock = Mockito.mock(RbdImage.class);
+-        KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, ioCtxMock);
++        KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, rbdIoCtxMock);
+ 
+         try (MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
+                 Mockito.doReturn(rbdImageMock).when(mock).open(RBD_IMAGE_NAME)))) {
+@@ -553,7 +555,7 @@
+             Assert.assertEquals(Long.valueOf(SNAPSHOT_SIZE), result);
+             Mockito.verify(rbdImageMock, Mockito.times(1)).snapCreate(SNAPSHOT_NAME);
+             Mockito.verify(rbd.constructed().get(0)).close(rbdImageMock);
+-            Mockito.verify(radosMock).ioCtxDestroy(ioCtxMock);
++            Mockito.verify(radosMock).ioCtxDestroy(rbdIoCtxMock);
+         }
+     }
+ 
+@@ -564,9 +566,8 @@
+     @Test
+     public void takeRbdVolumeSnapshotOfStoppedVmTestReleasesHandlesWhenSnapshotFails() throws Exception {
+         Rados radosMock = Mockito.mock(Rados.class);
+-        IoCTX ioCtxMock = Mockito.mock(IoCTX.class);
+         RbdImage rbdImageMock = Mockito.mock(RbdImage.class);
+-        KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, ioCtxMock);
++        KVMPhysicalDisk diskMock = prepareRbdSnapshotMocks(radosMock, rbdIoCtxMock);
+         Mockito.doThrow(new RbdException("Failed to create snapshot")).when(rbdImageMock).snapCreate(SNAPSHOT_NAME);
+ 
+         try (MockedConstruction<Rbd> rbd = Mockito.mockConstruction(Rbd.class, ((mock, context) ->
+@@ -576,7 +577,7 @@
+ 
+             Assert.assertNull(result);
+             Mockito.verify(rbd.constructed().get(0)).close(rbdImageMock);
+-            Mockito.verify(radosMock).ioCtxDestroy(ioCtxMock);
++            Mockito.verify(radosMock).ioCtxDestroy(rbdIoCtxMock);
+         }
+     }
+ 
