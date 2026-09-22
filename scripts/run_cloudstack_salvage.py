@@ -36,6 +36,7 @@ RESULTS = DATASET / "refactoring-results.json"
 CONFLICT_PATHS = ["refactoring-results.json", "refactoring-results.csv"]
 AGENT = "C"
 PLATFORM = "linux-aarch64"
+HOST = "gwz-pc"
 
 
 def log(message: str) -> None:
@@ -201,6 +202,7 @@ def main() -> None:
         entry = canonical_store.entry_from_agent_result(mci_id, result)
         entry["producedBy"] = AGENT
         entry["platform"] = PLATFORM
+        entry["host"] = HOST
 
         # Preserve previous failure note if applicable
         if prev_cls != "SUCCESS":
