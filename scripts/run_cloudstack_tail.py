@@ -106,6 +106,20 @@ def check_environment() -> None:
     """
     if not shutil.which("mvn.cmd") and not shutil.which("mvn"):
         sys.exit("mvn is not on PATH — refusing to start rather than grade without it")
+
+    # engine/schema runs a shell script from exec-maven-plugin during its test phase, so a
+    # Maven process without bash cannot get through it: the phase dies, the candidate run
+    # produces zero test results, and testStatus != PASSED is then classified
+    # FAILED_BEHAVIORAL_EQUIVALENCE — an environment fault wearing the label of a
+    # refactoring that changed behaviour. 61 of A's first 77 rows failed this way.
+    if not shutil.which("bash"):
+        for candidate in (Path(r"C:\Program Files\Git\usr\bin"), Path(r"C:\Program Files\Git\bin")):
+            if (candidate / "bash.exe").is_file():
+                os.environ["PATH"] = f"{candidate}{os.pathsep}{os.environ.get('PATH', '')}"
+                log(f"added {candidate} to PATH so Maven can run bash")
+                break
+    if not shutil.which("bash"):
+        sys.exit("bash is not on PATH — engine/schema's test phase needs it; refusing to start")
     # The gate's artifacts, not the gate's exit code: this is what `-pl <module> -am`
     # resolves against, and its absence is what produced the null-scope verdicts.
     installed = Path.home() / ".m2" / "repository" / "org" / "apache" / "cloudstack"
