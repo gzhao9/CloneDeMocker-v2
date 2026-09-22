@@ -110,8 +110,35 @@ def relayer(entry: dict, diff_source: Path | None) -> None:
                           harness=canonical_store.HARNESS_CLONEDEMOCKER, use_mock=False)
 
 
+def recover_repo() -> None:
+    """Clear a working tree left mid-operation by something other than this runner.
+
+    The failure this prevents is silent, which is what makes it the dangerous one: a
+    session interrupted mid-rebase leaves the tree in that state, every later push fails,
+    and the batch keeps computing MCIs while publishing none of them. Progress looks normal
+    until someone checks the remote. Safe to do unconditionally — the working tree holds
+    nothing this runner needs, since the dataset is rebuilt from the results file.
+    """
+    git_dir = REPO / ".git"
+    if (git_dir / "rebase-merge").exists() or (git_dir / "rebase-apply").exists():
+        log("    recover: aborting a rebase left in progress")
+        git("rebase", "--abort")
+    if (git_dir / "MERGE_HEAD").exists():
+        log("    recover: aborting a merge left in progress")
+        git("merge", "--abort")
+    lock = git_dir / "index.lock"
+    if lock.exists() and time.time() - lock.stat().st_mtime > 300:
+        # Older than any live git command; whoever held it is gone.
+        log("    recover: removing a stale index.lock")
+        try:
+            lock.unlink()
+        except OSError:
+            pass
+
+
 def sync(message: str, entry: dict, diff_source: Path | None, attempts: int = 5) -> bool:
     """Commit and push, surviving the other machine pushing to the same files."""
+    recover_repo()
     git("add", "--", f"data/{PROJECT}")
     if not git("diff", "--cached", "--quiet").returncode:
         return True
