@@ -1,0 +1,41 @@
+--- a/server/src/test/java/com/cloud/network/lb/LoadBalancingRulesManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/lb/LoadBalancingRulesManagerImplTest.java
+@@ -102,6 +102,9 @@
+     NetworkVO networkMock;
+ 
+     @Mock
++    private NetworkVO loadBalancerServiceProviderNetworkMock;
++
++    @Mock
+     VpcManager vpcManager;
+ 
+     @Spy
+@@ -143,12 +146,11 @@
+     @Test
+     public void testGetLoadBalancerServiceProvider() {
+         LoadBalancerVO loadBalancerMock = Mockito.mock(LoadBalancerVO.class);
+-        NetworkVO networkMock = Mockito.mock(NetworkVO.class);
+         List<Network.Provider> providers = Arrays.asList(Network.Provider.VirtualRouter);
+ 
+         when(loadBalancerMock.getNetworkId()).thenReturn(10L);
+-        when(_networkDao.findById(anyLong())).thenReturn(networkMock);
+-        when(_networkMgr.getProvidersForServiceInNetwork(networkMock, Network.Service.Lb)).thenReturn(providers);
++        when(_networkDao.findById(anyLong())).thenReturn(loadBalancerServiceProviderNetworkMock);
++        when(_networkMgr.getProvidersForServiceInNetwork(loadBalancerServiceProviderNetworkMock, Network.Service.Lb)).thenReturn(providers);
+ 
+         Network.Provider provider = lbr.getLoadBalancerServiceProvider(loadBalancerMock);
+ 
+@@ -158,10 +160,9 @@
+     @Test(expected = CloudRuntimeException.class)
+     public void testGetLoadBalancerServiceProviderFail() {
+         LoadBalancerVO loadBalancerMock = Mockito.mock(LoadBalancerVO.class);
+-        NetworkVO networkMock = Mockito.mock(NetworkVO.class);
+-
+-        when(_networkDao.findById(Mockito.any())).thenReturn(networkMock);
+-        when(_networkMgr.getProvidersForServiceInNetwork(networkMock, Network.Service.Lb)).thenReturn(new ArrayList<>());
++
++        when(_networkDao.findById(Mockito.any())).thenReturn(loadBalancerServiceProviderNetworkMock);
++        when(_networkMgr.getProvidersForServiceInNetwork(loadBalancerServiceProviderNetworkMock, Network.Service.Lb)).thenReturn(new ArrayList<>());
+ 
+         Network.Provider provider = lbr.getLoadBalancerServiceProvider(loadBalancerMock);
+     }
