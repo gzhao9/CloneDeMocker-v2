@@ -27,9 +27,10 @@ def _sync_git(message: str) -> None:
         status = subprocess.run(["git", "status", "--porcelain", "data/"], cwd=REPOSITORY_ROOT, capture_output=True, text=True)
         if status.stdout.strip():
             subprocess.run(["git", "commit", "-m", message], cwd=REPOSITORY_ROOT, check=True)
-            subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=REPOSITORY_ROOT, check=True)
-            subprocess.run(["git", "push", "origin", "main"], cwd=REPOSITORY_ROOT, check=True)
-            print(f"[WATCHER-GIT] Synced & pushed: {message}", flush=True)
+            # Remote upload paused per user request (Gitea bug handling):
+            # subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=REPOSITORY_ROOT, check=True)
+            # subprocess.run(["git", "push", "origin", "main"], cwd=REPOSITORY_ROOT, check=True)
+            print(f"[WATCHER-GIT] Synced locally (upload paused): {message}", flush=True)
         else:
             print("[WATCHER-GIT] Nothing new to commit.", flush=True)
     except Exception as error:
