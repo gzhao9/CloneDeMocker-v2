@@ -1,0 +1,43 @@
+--- a/server/src/test/java/com/cloud/network/lb/LoadBalancingRulesManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/lb/LoadBalancingRulesManagerImplTest.java
+@@ -142,11 +142,10 @@
+ 
+     @Test
+     public void testGetLoadBalancerServiceProvider() {
+-        LoadBalancerVO loadBalancerMock = Mockito.mock(LoadBalancerVO.class);
+         NetworkVO networkMock = Mockito.mock(NetworkVO.class);
+         List<Network.Provider> providers = Arrays.asList(Network.Provider.VirtualRouter);
+ 
+-        when(loadBalancerMock.getNetworkId()).thenReturn(10L);
++        LoadBalancerVO loadBalancerMock = createMockLoadBalancer(10L);
+         when(_networkDao.findById(anyLong())).thenReturn(networkMock);
+         when(_networkMgr.getProvidersForServiceInNetwork(networkMock, Network.Service.Lb)).thenReturn(providers);
+ 
+@@ -230,6 +229,12 @@
+         when(certMapRule.getId()).thenReturn(certMapRuleId);
+     }
+ 
++    private static LoadBalancerVO createMockLoadBalancer(long networkId) {
++        LoadBalancerVO loadBalancer = Mockito.mock(LoadBalancerVO.class);
++        when(loadBalancer.getNetworkId()).thenReturn(networkId);
++        return loadBalancer;
++    }
++
+     @Test
+     public void testUpdateLoadBalancerRule1() throws Exception {
+         setupUpdateLoadBalancerRule();
+@@ -324,13 +329,12 @@
+     @Test
+     public void testGetVmNicInLoadBalancerDefaultCase() {
+         UserVm userVm = Mockito.mock(UserVm.class);
+-        LoadBalancerVO loadBalancer = Mockito.mock(LoadBalancerVO.class);
++        LoadBalancerVO loadBalancer = createMockLoadBalancer(networkId);
+         Network loadBalancerNetwork = Mockito.mock(Network.class);
+         Account owner = Mockito.mock(Account.class);
+ 
+         when(vpcManager.isNetworkOnVpcEnabledConserveMode(Mockito.eq(loadBalancerNetwork))).thenReturn(false);
+ 
+-        when(loadBalancer.getNetworkId()).thenReturn(networkId);
+         Nic nic = Mockito.mock(Nic.class);
+         when(nic.getNetworkId()).thenReturn(networkId);
+         List<? extends Nic> nics = Collections.singletonList(nic);
