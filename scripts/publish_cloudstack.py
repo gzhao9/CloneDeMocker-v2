@@ -45,8 +45,36 @@ def git(*args: str, check: bool = False, timeout: int = 900) -> subprocess.Compl
         encoding="utf-8", errors="replace", check=check, timeout=timeout)
 
 
+AGENT = "B"
+PLATFORM = "windows"
+
+
+def _existing_results() -> dict:
+    """Whatever is currently on disk for this setup, or {} if there is none yet."""
+    label = canonical_store.setup_label(canonical_store.HARNESS_CLONEDEMOCKER, MODEL, False)
+    path = (canonical_store.setup_directory(REPO, PROJECT, label) / "refactoring-results.json")
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get("results", {})
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
 def regenerate() -> dict:
-    """Rebuild data/<project>/ from the batch output. Idempotent."""
+    """Rebuild this agent's entries in data/<project>/ from the batch output. Idempotent.
+
+    Every entry carries `producedBy` and `platform`, which A-008 requires of any agent
+    writing here: a third agent now retries failures on Linux, and re-running only the
+    failures on a friendlier platform raises the success rate by a procedure never applied
+    to the entries that already passed. That is only defensible if each result records where
+    it ran, so the mixed provenance can be reported rather than quietly inherited.
+
+    Crucially, an mciId whose stored entry was produced by someone else is left alone.
+    canonical_store.merge overwrites by mciId, and this function offers all ~224 of B's
+    entries on every push (roughly every two minutes) -- so without this guard B would revert
+    C's Linux retry of any MCI in B's own range within minutes of it landing, every time,
+    and C could never make progress on them.
+    """
+    stored = _existing_results()
     entries, diffs, counts = [], {}, Counter()
     for path in sorted(BATCH_DIR.glob("0*.json")):
         try:
@@ -56,14 +84,21 @@ def regenerate() -> dict:
         result = record.get("result")
         if not result:
             continue
-        entry = trim_entry(canonical_store.entry_from_agent_result(record["mciId"], result))
+        mci_id = record["mciId"]
+        owner = (stored.get(mci_id) or {}).get("producedBy")
+        if owner and owner != AGENT:
+            counts[stored[mci_id].get("classification", "?")] += 1
+            continue   # another agent's result for this MCI supersedes ours; do not revert it
+        entry = trim_entry(canonical_store.entry_from_agent_result(mci_id, result))
+        entry["producedBy"] = AGENT
+        entry["platform"] = PLATFORM
         entries.append(entry)
         counts[entry["classification"]] += 1
         proposal_id = result.get("proposalId")
         if proposal_id:
             diff = PROPOSALS / proposal_id / "changes.diff"
             if diff.is_file() and diff.stat().st_size:
-                diffs[record["mciId"]] = diff
+                diffs[mci_id] = diff
     summary = canonical_store.merge(
         project=PROJECT, repository_root=REPO, entries=entries, detection_source=None,
         diff_lookup=diffs, model=MODEL, harness=canonical_store.HARNESS_CLONEDEMOCKER,
