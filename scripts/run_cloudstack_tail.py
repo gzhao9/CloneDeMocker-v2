@@ -56,6 +56,12 @@ CONFLICT_PATHS = ["refactoring-results.json", "refactoring-results.csv"]
 # results and quietly overstate that category. Recorded here instead so the derived
 # worklist still advances past them and they stay auditable.
 SKIPPED = REPO / "validation/cloudstack_tail_skipped.json"
+# MCIs to run even though they already have a result. The derived worklist skips anything
+# present in the dataset, which is right in the normal case and wrong after a verdict is
+# invalidated — these 69 were graded before the mvn install gate existed, so their failures
+# describe this host rather than the subject. An id is removed from the file once its re-run
+# lands, so a restart resumes instead of repeating.
+RERUN = REPO / "validation/cloudstack_rerun_ids.txt"
 
 
 def log(message: str) -> None:
@@ -85,6 +91,18 @@ def done_ids() -> set[str]:
         # A conflicted or half-written file must not be read as "nothing is done" — that would
         # re-run the whole list. Treat it as unknown and let the caller stop.
         return set()
+
+
+def rerun_ids() -> list[str]:
+    try:
+        return [line.strip() for line in RERUN.read_text(encoding="utf-8").splitlines() if line.strip()]
+    except OSError:
+        return []
+
+
+def drop_rerun_id(mci_id: str) -> None:
+    remaining = [m for m in rerun_ids() if m != mci_id]
+    RERUN.write_text(("\n".join(remaining) + "\n") if remaining else "", encoding="utf-8")
 
 
 def skipped_ids() -> dict[str, str]:
@@ -212,12 +230,15 @@ def main() -> None:
             log("results file unreadable (conflict markers?) — stopping rather than re-running")
             break
         skipped = skipped_ids()
-        remaining = [m for m in reversed(ordered) if m not in done and m not in skipped]
+        forced = [m for m in rerun_ids() if m in by_id and m not in skipped]
+        remaining = forced + [m for m in reversed(ordered)
+                              if m not in done and m not in skipped and m not in forced]
         if not remaining:
             log(f"nothing left in the tail ({len(skipped)} skipped after tool errors)")
             break
 
         mci_id = remaining[0]
+        is_forced = mci_id in forced
         attempts[mci_id] = attempts.get(mci_id, 0) + 1
         if attempts[mci_id] > MAX_ATTEMPTS:
             log(f"    {mci_id}: still absent from the results after {MAX_ATTEMPTS} runs, setting aside")
@@ -260,7 +281,12 @@ def main() -> None:
                 diff_source = candidate
 
         relayer(entry, diff_source)
-        log(f"    {classification} {elapsed:.0f}s "
+        if is_forced:
+            # Retire it only once its replacement is in the dataset, so an interrupted
+            # re-run resumes rather than leaving the invalid verdict in place unnoticed.
+            drop_rerun_id(mci_id)
+            git("add", "--", str(RERUN.relative_to(REPO)))
+        log(f"    {'[regrade] ' if is_forced else ''}{classification} {elapsed:.0f}s "
             f"tokens={(result.get('usage') or {}).get('total_tokens', 0)}")
 
         if args.push:
