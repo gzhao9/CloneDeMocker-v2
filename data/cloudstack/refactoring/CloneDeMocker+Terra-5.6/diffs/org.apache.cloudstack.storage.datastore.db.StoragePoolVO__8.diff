@@ -1,0 +1,30 @@
+--- a/server/src/test/java/com/cloud/alert/AlertManagerImplTest.java
++++ b/server/src/test/java/com/cloud/alert/AlertManagerImplTest.java
+@@ -231,12 +231,11 @@
+     public void testRecalculateStorageCapacities() {
+         List<Long> mockPoolIds = List.of(101L, 102L, 103L);
+         Mockito.when(primaryDataStoreDao.listAllIds()).thenReturn(mockPoolIds);
+-        StoragePoolVO sharedPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO sharedPool = createMockNonSharedPool();
+         Mockito.when(sharedPool.isShared()).thenReturn(true);
+         Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(0))).thenReturn(sharedPool);
+         Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(1))).thenReturn(sharedPool);
+-        StoragePoolVO nonSharedPool = Mockito.mock(StoragePoolVO.class);
+-        Mockito.when(nonSharedPool.isShared()).thenReturn(false);
++        StoragePoolVO nonSharedPool = createMockNonSharedPool();
+         Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(2))).thenReturn(nonSharedPool);
+         Mockito.when(capacityManager.getAllocatedPoolCapacity(sharedPool, null)).thenReturn(10L);
+         Mockito.when(capacityManager.getAllocatedPoolCapacity(nonSharedPool, null)).thenReturn(20L);
+@@ -310,6 +309,12 @@
+         Mockito.verify(alertManagerImplMock, Mockito.never()).setupRepetitiveAlertTypes();
+     }
+ 
++    private static StoragePoolVO createMockNonSharedPool() {
++        StoragePoolVO nonSharedPool = Mockito.mock(StoragePoolVO.class);
++        Mockito.when(nonSharedPool.isShared()).thenReturn(false);
++        return nonSharedPool;
++    }
++
+     private void mockAllowedRepetitiveAlertTypesConfigKey(String value) {
+         ReflectionTestUtils.setField(AlertManager.AllowedRepetitiveAlertTypes, "_defaultValue", value);
+     }
