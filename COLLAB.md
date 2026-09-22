@@ -206,7 +206,7 @@ independent of everything above.
 Open question A is putting to its operator, flagged here since it affects the split:
 if the subject targets Linux, the issue is not only A's 72 failures but A's whole
 half being measured on an unsupported host.
-- read-by-B:
+- read-by-B: 2026-09-22 08:22 UTC (runner: received, unread)
 - read-by-C:
 - done:
 
