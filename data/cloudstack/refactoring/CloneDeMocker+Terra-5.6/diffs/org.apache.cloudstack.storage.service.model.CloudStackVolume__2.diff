@@ -1,0 +1,70 @@
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
+@@ -136,6 +136,12 @@
+         field.set(strategy, mockedField);
+     }
+ 
++    private static CloudStackVolume createMockCloudStackVolume(VolumeInfo volumeInfo) {
++        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
++        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
++        return cloudStackVolume;
++    }
++
+     private class TestableUnifiedNASStrategy extends UnifiedNASStrategy {
+         public TestableUnifiedNASStrategy(OntapStorage ontapStorage,
+                                           NASFeignClient nasFeignClient,
+@@ -516,12 +522,11 @@
+     // Test deleteCloudStackVolume - Success
+     @Test
+     public void testDeleteCloudStackVolume_Success() throws Exception {
+-        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+         VolumeInfo volumeInfo = mock(VolumeInfo.class);
++        CloudStackVolume cloudStackVolume = createMockCloudStackVolume(volumeInfo);
+         EndPoint endpoint = mock(EndPoint.class);
+         Answer answer = mock(Answer.class);
+ 
+-        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
+         when(epSelector.select(volumeInfo)).thenReturn(endpoint);
+         when(endpoint.sendMessage(any())).thenReturn(answer);
+         when(answer.getResult()).thenReturn(true);
+@@ -537,10 +542,9 @@
+     // Test deleteCloudStackVolume - Endpoint Not Found
+     @Test
+     public void testDeleteCloudStackVolume_EndpointNotFound() {
+-        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+         VolumeInfo volumeInfo = mock(VolumeInfo.class);
+-
+-        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
++        CloudStackVolume cloudStackVolume = createMockCloudStackVolume(volumeInfo);
++
+         when(epSelector.select(volumeInfo)).thenReturn(null);
+ 
+         assertThrows(CloudRuntimeException.class, () -> {
+@@ -551,12 +555,11 @@
+     // Test deleteCloudStackVolume - Answer Result False
+     @Test
+     public void testDeleteCloudStackVolume_AnswerResultFalse() throws Exception {
+-        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+         VolumeInfo volumeInfo = mock(VolumeInfo.class);
++        CloudStackVolume cloudStackVolume = createMockCloudStackVolume(volumeInfo);
+         EndPoint endpoint = mock(EndPoint.class);
+         Answer answer = mock(Answer.class);
+ 
+-        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
+         when(epSelector.select(volumeInfo)).thenReturn(endpoint);
+         when(endpoint.sendMessage(any())).thenReturn(answer);
+         when(answer.getResult()).thenReturn(false);
+@@ -570,11 +573,10 @@
+     // Test deleteCloudStackVolume - Answer is Null
+     @Test
+     public void testDeleteCloudStackVolume_AnswerNull() throws Exception {
+-        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+         VolumeInfo volumeInfo = mock(VolumeInfo.class);
+         EndPoint endpoint = mock(EndPoint.class);
+-
+-        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
++        CloudStackVolume cloudStackVolume = createMockCloudStackVolume(volumeInfo);
++
+         when(epSelector.select(volumeInfo)).thenReturn(endpoint);
+         when(endpoint.sendMessage(any())).thenReturn(null);
+ 
