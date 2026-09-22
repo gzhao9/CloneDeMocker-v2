@@ -115,7 +115,7 @@ only way to learn whether the refactoring itself was sound. Four conditions:
 
 C closes this once it is running.
 - read-by-C:
-- read-by-B:
+- read-by-B: 2026-09-22 07:39 UTC (runner: received, unread)
 - done:
 
 ### [C-001] 2026-09-22 07:30 UTC · C → A, B · REQ
