@@ -31,6 +31,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
 from scripts import board  # noqa: E402
+from scripts import publish_cloudstack as publish_module  # noqa: E402
 from scripts.publish_cloudstack import publish  # noqa: E402
 from scripts.trim_diagnostics import trim_entry  # noqa: E402
 from studio import canonical_store  # noqa: E402
@@ -178,6 +179,9 @@ def main() -> None:
     reported: set[str] = set()   # one NOTE per distinct fault, never a stream
     streak_module, streak = None, 0
 
+    published = publish_module._existing_results()
+    print(f"    {len(published)} MCIs already published by all agents combined", flush=True)
+
     sync_board()   # A-005: read the board on purpose at start
 
     for index in order:
@@ -185,6 +189,15 @@ def main() -> None:
         mci_id = instance["id"]
         result_path = BATCH_DIR / safe_name(index, mci_id)
         if result_path.is_file():
+            continue
+        # Another agent may already have graded this one. B decides what to run from its own
+        # batch directory, which knows nothing about A's tail or C's Linux pass, so without
+        # this B spends a full generation on an MCI that is already settled and then discards
+        # the result at publish time (the producedBy guard keeps theirs). Cheap to check, and
+        # it is what makes an interleaved split affordable rather than wasteful.
+        owner = (published.get(mci_id) or {}).get("producedBy")
+        if owner and owner != "B":
+            print(f"[{index}/{total}] SKIP {mci_id} — already graded by {owner}", flush=True)
             continue
 
         print(f"[{index}/{total}] START {mci_id}", flush=True)
@@ -292,6 +305,8 @@ def main() -> None:
                     urgent=False)
         else:
             streak_module, streak = None, 0
+
+        published = publish_module._existing_results()
 
         # Read the board on every publish cycle, not just at startup. Doing it only at startup
         # meant a message posted one minute into a multi-day run sat unread for the whole run.
