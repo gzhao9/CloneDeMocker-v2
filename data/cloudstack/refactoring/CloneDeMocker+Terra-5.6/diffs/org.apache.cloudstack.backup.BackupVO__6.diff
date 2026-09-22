@@ -1,146 +1,65 @@
 --- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
 +++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
-@@ -539,12 +539,16 @@
-             any(String.class), any(String.class), any(Pair.class), any(), any(Boolean.class));
+@@ -164,6 +164,9 @@
+     BackupProvider backupProvider;
+ 
+     @Mock
++    private BackupVO backupMock;
++
++    @Mock
+     VirtualMachineManager virtualMachineManager;
+ 
+     @Mock
+@@ -544,7 +547,6 @@
+         BackupOffering offering = mock(BackupOffering.class);
+         VolumeVO volumeVO = mock(VolumeVO.class);
+         VMInstanceVO vm = mock(VMInstanceVO.class);
+-        BackupVO backup = mock(BackupVO.class);
+ 
+         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+             Mockito.when(ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+@@ -561,9 +563,9 @@
+             Mockito.when(vm.getId()).thenReturn(1L);
+             Mockito.when(offering.getProvider()).thenReturn("veeam");
+             Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
+-            Mockito.when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(true);
+-
+-            backupManager.tryRestoreVM(backup, vm, offering, "Nothing to write here.", false, null);
++            Mockito.when(backupProvider.restoreVMFromBackup(vm, backupMock, false, null)).thenReturn(true);
++
++            backupManager.tryRestoreVM(backupMock, vm, offering, "Nothing to write here.", false, null);
+         }
      }
  
-+    private BackupVO mockBackupVO() {
-+        return mock(BackupVO.class);
-+    }
-+
-     @Test
-     public void tryRestoreVMTestRestoreSucceeded() throws NoTransitionException {
+@@ -572,7 +574,6 @@
          BackupOffering offering = mock(BackupOffering.class);
          VolumeVO volumeVO = mock(VolumeVO.class);
          VMInstanceVO vm = mock(VMInstanceVO.class);
 -        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
  
          try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
              Mockito.when(ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
-@@ -572,7 +576,7 @@
-         BackupOffering offering = mock(BackupOffering.class);
-         VolumeVO volumeVO = mock(VolumeVO.class);
-         VMInstanceVO vm = mock(VMInstanceVO.class);
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
- 
-         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
-             Mockito.when(ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
-@@ -732,7 +736,7 @@
+@@ -591,9 +592,9 @@
+             Mockito.when(vm.getId()).thenReturn(1L);
+             Mockito.when(offering.getProvider()).thenReturn("veeam");
+             Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
+-            Mockito.when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(false);
++            Mockito.when(backupProvider.restoreVMFromBackup(vm, backupMock, false, null)).thenReturn(false);
+             try {
+-                backupManager.tryRestoreVM(backup, vm, offering, "Checking message error.", false, null);
++                backupManager.tryRestoreVM(backupMock, vm, offering, "Checking message error.", false, null);
+                 fail("An exception is needed.");
+             } catch (CloudRuntimeException e) {
+                 assertEquals("Error restoring Instance from Backup [Checking message error.].", e.getMessage());
+@@ -732,10 +733,9 @@
  
          BackupVO backupVO = mock(BackupVO.class);
          when(backupVO.getId()).thenReturn(backupId);
 -        BackupVO oldestBackupVO = mock(BackupVO.class);
-+        BackupVO oldestBackupVO = mockBackupVO();
  
          when(backupDao.findById(backupId)).thenReturn(backupVO);
-         List<BackupVO> backups = new ArrayList<>(List.of(oldestBackupVO));
-@@ -1342,7 +1346,7 @@
-         Long offeringId = 4L;
-         Long poolId = 5L;
+-        List<BackupVO> backups = new ArrayList<>(List.of(oldestBackupVO));
++        List<BackupVO> backups = new ArrayList<>(List.of(backupMock));
+         when(backupDao.listBySchedule(scheduleId)).thenReturn(backups);
  
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getBackupOfferingId()).thenReturn(offeringId);
-         when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
- 
-@@ -1398,7 +1402,7 @@
-         Long offeringId = 4L;
-         Long poolId = 5L;
- 
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getBackupOfferingId()).thenReturn(offeringId);
-         when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
- 
-@@ -1575,7 +1579,7 @@
-         String vmUuid = "uuid1";
-         String resourceName = "Backup-" + vmHostName + "-" + vmUuid;
- 
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getId()).thenReturn(backupId);
-         when(backup.getVmId()).thenReturn(vmId);
-         when(backup.getZoneId()).thenReturn(zoneId);
-@@ -1623,7 +1627,7 @@
-         Long backupId = 1L;
-         Long vmId = 2L;
- 
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getVmId()).thenReturn(vmId);
-         when(backup.getUuid()).thenReturn("backup-uuid");
-         when(backup.getZoneId()).thenReturn(1L);
-@@ -2018,7 +2022,7 @@
-         Long backupOfferingId = 2L;
-         String providerName = "testbackupprovider";
- 
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getBackupOfferingId()).thenReturn(backupOfferingId);
- 
-         BackupOfferingVO offering = mock(BackupOfferingVO.class);
-@@ -2046,7 +2050,7 @@
-         Long backupOfferingId = 2L;
-         String providerName = "testbackupprovider";
- 
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getBackupOfferingId()).thenReturn(backupOfferingId);
- 
-         BackupOfferingVO offering = mock(BackupOfferingVO.class);
-@@ -2073,7 +2077,7 @@
-         Long backupId = 1L;
-         Long backupOfferingId = 2L;
- 
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getBackupOfferingId()).thenReturn(backupOfferingId);
- 
-         when(backupDao.findById(backupId)).thenReturn(backup);
-@@ -2100,7 +2104,7 @@
-         String vmInstanceName = "test-vm";
-         Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
- 
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getVmId()).thenReturn(vmId);
-         when(backup.getZoneId()).thenReturn(zoneId);
-         when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
-@@ -2171,7 +2175,7 @@
-     public void testRestoreBackupBackupNotBackedUp() {
-         Long backupId = 1L;
- 
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getStatus()).thenReturn(Backup.Status.BackingUp);
- 
-         when(backupDao.findById(backupId)).thenReturn(backup);
-@@ -2190,7 +2194,7 @@
-         Long vmId = 2L;
-         Long zoneId = 3L;
- 
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getVmId()).thenReturn(vmId);
-         when(backup.getZoneId()).thenReturn(zoneId);
-         when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
-@@ -2216,7 +2220,7 @@
-         Long vmId = 2L;
-         Long zoneId = 3L;
- 
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getVmId()).thenReturn(vmId);
-         when(backup.getZoneId()).thenReturn(zoneId);
-         when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
-@@ -2243,7 +2247,7 @@
-         Long vmId = 2L;
-         Long zoneId = 3L;
- 
--        BackupVO backup = mock(BackupVO.class);
-+        BackupVO backup = mockBackupVO();
-         when(backup.getVmId()).thenReturn(vmId);
-         when(backup.getZoneId()).thenReturn(zoneId);
-         when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
+         CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
