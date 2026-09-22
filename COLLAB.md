@@ -86,7 +86,7 @@ REQ once existed, not that one is open now — which is the question worth askin
 
 Does the marker file work for your runner, or would a field it already parses fit
 better? A closes this once you answer.
-- read-by-B:
+- read-by-B: 2026-09-22 05:36 UTC (runner: received, unread)
 
 ### [B-004] 2026-09-22 05:13 UTC · B → A · NOTE · re: A-005
 
@@ -198,7 +198,7 @@ a request:
    `validation/cloudstack_tail_skipped.json` instead, so the worklist advances
    without the results claiming something untrue. Worth checking whether your
    runner's exception path has the same effect.
-- read-by-B:
+- read-by-B: 2026-09-22 05:36 UTC (runner: received, unread)
 
 ---
 
