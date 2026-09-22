@@ -1,0 +1,129 @@
+--- a/server/src/test/java/com/cloud/storage/ClvmPoolManagerTest.java
++++ b/server/src/test/java/com/cloud/storage/ClvmPoolManagerTest.java
+@@ -163,8 +163,7 @@
+ 
+     @Test
+     public void testTransferClvmVolumeLock_Success() throws AgentUnavailableException, OperationTimedoutException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        when(pool.getPath()).thenReturn("/" + VG_NAME);
++        StoragePoolVO pool = MockStoragePoolTestHelper.createMockStoragePool("/" + VG_NAME);
+ 
+         HostVO sourceHost = Mockito.mock(HostVO.class);
+         when(sourceHost.getStatus()).thenReturn(Status.Up);
+@@ -193,8 +192,7 @@
+ 
+     @Test
+     public void testTransferClvmVolumeLock_SameHost() throws AgentUnavailableException, OperationTimedoutException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        when(pool.getPath()).thenReturn("/" + VG_NAME);
++        StoragePoolVO pool = MockStoragePoolTestHelper.createMockStoragePool("/" + VG_NAME);
+ 
+         Answer activateAnswer = new Answer(null, true, null);
+         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(activateAnswer);
+@@ -208,8 +206,7 @@
+ 
+     @Test
+     public void testTransferClvmVolumeLock_ActivationFails() throws AgentUnavailableException, OperationTimedoutException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        when(pool.getPath()).thenReturn(VG_NAME);
++        StoragePoolVO pool = MockStoragePoolTestHelper.createMockStoragePool(VG_NAME);
+ 
+         Answer activateAnswer = new Answer(null, false, "Activation failed");
+         when(agentMgr.send(eq(HOST_ID_1), any(ClvmLockTransferCommand.class))).thenReturn(activateAnswer);
+@@ -222,8 +219,7 @@
+ 
+     @Test
+     public void testTransferClvmVolumeLock_AgentUnavailable() throws AgentUnavailableException, OperationTimedoutException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        when(pool.getPath()).thenReturn(VG_NAME);
++        StoragePoolVO pool = MockStoragePoolTestHelper.createMockStoragePool(VG_NAME);
+ 
+         when(agentMgr.send(anyLong(), any(ClvmLockTransferCommand.class)))
+                 .thenThrow(new AgentUnavailableException("Agent unavailable", HOST_ID_2));
+@@ -650,8 +646,7 @@
+      */
+     @Test
+     public void testQueryCurrentLockHolder_FastPath_HitOnDbHost() throws AgentUnavailableException, OperationTimedoutException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        when(pool.getPath()).thenReturn(VG_NAME);
++        StoragePoolVO pool = MockStoragePoolTestHelper.createMockStoragePool(VG_NAME);
+ 
+         VolumeDetailVO detail = new VolumeDetailVO();
+         detail.setValue(String.valueOf(HOST_ID_1));
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -2434,8 +2434,8 @@
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO volumePool = MockStoragePoolTestHelper.createMockStoragePool("/vg1");
++        StoragePoolVO vmPool = MockStoragePoolTestHelper.createMockStoragePool("/vg1");
+ 
+         Long volumePoolId = 100L;
+         Long vmPoolId = 200L;
+@@ -2447,8 +2447,6 @@
+ 
+         Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+         Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+-        Mockito.when(volumePool.getPath()).thenReturn("/vg1");
+-        Mockito.when(vmPool.getPath()).thenReturn("/vg1");
+ 
+         Mockito.when(volumeServiceMock.isLightweightMigrationNeeded(
+                 Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM,
+@@ -2468,8 +2466,8 @@
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO volumePool = MockStoragePoolTestHelper.createMockStoragePool("/vg1");
++        StoragePoolVO vmPool = MockStoragePoolTestHelper.createMockStoragePool("/vg2");
+ 
+         Long volumePoolId = 100L;
+         Long vmPoolId = 200L;
+@@ -2481,8 +2479,6 @@
+ 
+         Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+         Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+-        Mockito.when(volumePool.getPath()).thenReturn("/vg1");
+-        Mockito.when(vmPool.getPath()).thenReturn("/vg2");
+ 
+         Mockito.when(volumeServiceMock.isLightweightMigrationNeeded(
+                 Storage.StoragePoolType.CLVM, Storage.StoragePoolType.CLVM,
+@@ -2500,8 +2496,8 @@
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO volumePool = MockStoragePoolTestHelper.createMockStoragePool("/vg1");
++        StoragePoolVO vmPool = MockStoragePoolTestHelper.createMockStoragePool("/vg1");
+ 
+         Long volumePoolId = 100L;
+         Long vmPoolId = 200L;
+@@ -2513,8 +2509,6 @@
+ 
+         Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+         Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+-        Mockito.when(volumePool.getPath()).thenReturn("/vg1");
+-        Mockito.when(vmPool.getPath()).thenReturn("/vg1");
+ 
+         Mockito.when(volumeServiceMock.isLightweightMigrationNeeded(
+                 Storage.StoragePoolType.CLVM_NG, Storage.StoragePoolType.CLVM_NG,
+--- a/server/src/test/java/com/cloud/storage/MockStoragePoolTestHelper.java
++++ b/server/src/test/java/com/cloud/storage/MockStoragePoolTestHelper.java
+@@ -0,0 +1,12 @@
++package com.cloud.storage;
++
++import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
++import org.mockito.Mockito;
++
++public class MockStoragePoolTestHelper {
++    public static StoragePoolVO createMockStoragePool(String path) {
++        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
++        Mockito.when(pool.getPath()).thenReturn(path);
++        return pool;
++    }
++}
