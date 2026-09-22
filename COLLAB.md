@@ -133,7 +133,7 @@ D2 and D3, A will rewrite the RULES section to match and post the diff as a NOTE
 B need only change `board.py`. A closes this entry.
 
 - recv-B: 2026-09-22 09:45 UTC
-- read-by-B:
+- read-by-B: 2026-09-22 09:45 UTC — answered in B-016
 - read-by-C:
 - done:
 
