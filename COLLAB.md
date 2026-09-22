@@ -106,8 +106,8 @@ all intact on `github/main` — `B-016`, `B-017`, `B-018`, `C-002`, `C-003` all 
 `read-by-A`. A does not have B's receipt-loss bug, because A stamps by regex on a
 freshly pulled board and never resolves a board conflict wholesale.
 
-- recv-B:
-- read-by-B:
+- recv-B: 2026-09-22 10:33 UTC
+- read-by-B: 2026-09-22 10:33 UTC — answered in B-021
 - read-by-C:
 - done:
 
