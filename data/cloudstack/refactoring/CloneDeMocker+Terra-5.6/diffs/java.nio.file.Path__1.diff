@@ -1,0 +1,31 @@
+--- a/services/secondary-storage/server/src/test/java/org/apache/cloudstack/storage/resource/NfsSecondaryStorageResourceTest.java
++++ b/services/secondary-storage/server/src/test/java/org/apache/cloudstack/storage/resource/NfsSecondaryStorageResourceTest.java
+@@ -164,12 +164,8 @@
+         Mockito.when(object.getPath()).thenReturn(dir + File.separator + fileName);
+         QuerySnapshotZoneCopyCommand cmd = Mockito.mock(QuerySnapshotZoneCopyCommand.class);
+         Mockito.when(cmd.getSnapshot()).thenReturn(object);
+-        Path p1 = Mockito.mock(Path.class);
+-        Mockito.when(p1.getFileName()).thenReturn(p1);
+-        Mockito.when(p1.toString()).thenReturn(fileName + ".vmdk");
+-        Path p2 = Mockito.mock(Path.class);
+-        Mockito.when(p2.getFileName()).thenReturn(p2);
+-        Mockito.when(p2.toString()).thenReturn(fileName + ".ovf");
++        Path p1 = createMockPath(fileName + ".vmdk");
++        Path p2 = createMockPath(fileName + ".ovf");
+         Stream<Path> paths = Stream.of(p1, p2);
+         try (MockedStatic<Files> files = Mockito.mockStatic(Files.class)) {
+             files.when(() -> Files.list(Mockito.any(Path.class))).thenReturn(paths);
+@@ -189,6 +185,13 @@
+         String fullUrl = String.format("%s://%s/upload/%s", PROTOCOL, HOSTNAME, UUID);
+         String data = String.format("%s%s%s", METADATA, fullUrl, TIMEOUT);
+         encryptionUtilMock.when(() -> EncryptionUtil.generateSignature(data, PSK)).thenReturn(EXPECTED_SIGNATURE);
++    }
++
++    private static Path createMockPath(String toStringReturn) {
++        Path pathMock = Mockito.mock(Path.class);
++        Mockito.when(pathMock.getFileName()).thenReturn(pathMock);
++        Mockito.when(pathMock.toString()).thenReturn(toStringReturn);
++        return pathMock;
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
