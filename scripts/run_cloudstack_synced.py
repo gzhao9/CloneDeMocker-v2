@@ -97,6 +97,18 @@ def verify_landed(path: str) -> bool:
     return bool(listed.stdout.strip())
 
 
+def _launch_failed(result: dict) -> bool:
+    """True when the harness never actually ran Maven, rather than running it and failing."""
+    harness = result.get("harness") or {}
+    for side in ("baseline", "candidate"):
+        section = harness.get(side) or {}
+        for item in (section.get("diagnostics") or []):
+            if isinstance(item, str) and ("WinError 2" in item
+                                          or "cannot find the file specified" in item):
+                return True
+    return False
+
+
 def sync_board() -> None:
     """Read the board every publish cycle: surface A's new entries, then stamp them received.
 
@@ -220,6 +232,30 @@ def main() -> None:
 
         result = record.get("result")
         if not result:
+            continue
+
+        # A broken invocation is not a verdict. If Maven itself could not be launched
+        # (WinError 2 = mvn.cmd not on PATH), the harness reports "compilation did not pass"
+        # and the MCI is filed as ENVIRONMENT_NOT_READY -- indistinguishable from a genuinely
+        # unbuildable module, and never retried, because done means a result file exists.
+        # Two MCIs were lost this way during a one-minute window when the runner was started
+        # without the Maven environment. Quarantine instead, so the next run picks them up.
+        if _launch_failed(result):
+            quarantine = BATCH_DIR / "tool-errors" / result_path.name
+            quarantine.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(result_path, quarantine)
+            print(f"[{index}/{total}] QUARANTINED: Maven could not be launched; "
+                  f"not recording a verdict for {mci_id}", flush=True)
+            if "launch" not in reported:
+                reported.add("launch")
+                board.post_note(
+                    f"B detected that Maven could not be launched at all (`WinError 2`) while "
+                    f"grading `{mci_id}`. The harness reports that as a failed compilation, so "
+                    f"such an MCI is filed as `ENVIRONMENT_NOT_READY` and never retried -- "
+                    f"indistinguishable from a genuinely unbuildable module. B now quarantines "
+                    f"these instead. **If your runner can start without its build environment, "
+                    f"you have the same silent data-loss path.**",
+                    urgent=True)
             continue
 
         classification = canonical_store.classify_agent_result(result)
