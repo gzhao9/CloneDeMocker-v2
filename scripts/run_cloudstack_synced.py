@@ -30,6 +30,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
+from scripts.publish_cloudstack import publish  # noqa: E402
 from scripts.trim_diagnostics import trim_entry  # noqa: E402
 from studio import canonical_store  # noqa: E402
 from studio.detection_service import DetectionService  # noqa: E402
@@ -73,31 +74,17 @@ def push_with_rebase(message: str, paths: list[str], attempts: int = 6,
     single push publishes the whole run at once. This is the mode to use while the other agent
     is still force-pushing main, since anything pushed into that would be silently destroyed.
     """
-    git("add", "--", *paths, check=False)
-    if not git("diff", "--cached", "--quiet", check=False).returncode:
-        return True  # nothing staged
-    git("commit", "-q", "-m", message, check=False)
-
     if not push:
+        git("add", "--", *paths, check=False)
+        if not git("diff", "--cached", "--quiet", check=False).returncode:
+            return True  # nothing staged
+        git("commit", "-q", "-m", message, check=False)
         return True
 
-    for attempt in range(1, attempts + 1):
-        if git("push", "origin", "main", check=False, timeout=900).returncode == 0:
-            return True
-        pull = git("pull", "--rebase", "origin", "main", check=False, timeout=900)
-        if pull.returncode != 0:
-            # A genuine content conflict: keep our side for the data files we own, then carry on.
-            git("rebase", "--abort", check=False)
-            git("fetch", "origin", "main", check=False)
-            merge = git("merge", "-X", "ours", "origin/main", "-m",
-                        "Merge teammate's work (keeping our dataset side)", check=False)
-            if merge.returncode != 0:
-                git("merge", "--abort", check=False)
-                print(f"    push: unresolved conflict on attempt {attempt}", flush=True)
-                time.sleep(10)
-        time.sleep(3 * attempt)
-    print("    push: giving up for now; next MCI will carry it forward", flush=True)
-    return False
+    # publish() regenerates the dataset from the batch output after any rebase, so the published
+    # counts never depend on which side a conflict on the generated results file resolved to.
+    # Picking a side here is what silently dropped four MCIs earlier in this run.
+    return publish(message=message, attempts=attempts, quiet=False)
 
 
 def verify_landed(path: str) -> bool:

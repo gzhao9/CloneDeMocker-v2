@@ -78,29 +78,32 @@ def clear_conflicts() -> None:
         git("add", "--", path)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--attempts", type=int, default=8)
-    args = parser.parse_args()
+def publish(message: str | None = None, attempts: int = 8, quiet: bool = False) -> bool:
+    """Regenerate, commit and push. Returns True once the push lands.
 
-    for attempt in range(1, args.attempts + 1):
+    Safe to call after every MCI: regenerate() is idempotent, and a failed push leaves the
+    local commits intact for the next call to carry forward.
+    """
+    for attempt in range(1, attempts + 1):
         summary = regenerate()
         git("add", "--", f"data/{PROJECT}", "COLLAB.md")
         if git("diff", "--cached", "--quiet").returncode:
-            git("commit", "-q", "-m",
+            text = message or (
                 f"Publish CloudStack dataset: {summary['totalMcis']} MCIs, "
-                f"{summary['successes']} SUCCESS ({summary['successRate']:.1%})\n\n"
-                f"Regenerated from the batch output so the count is independent of how any\n"
-                f"rebase conflict on the generated results file happened to resolve.\n\n"
+                f"{summary['successes']} SUCCESS ({summary['successRate']:.1%})")
+            git("commit", "-q", "-m",
+                f"{text}\n\nRegenerated from the batch output so the count is independent of how\n"
+                f"any rebase conflict on the generated results file happened to resolve.\n\n"
                 f"Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>")
 
         if git("push", "origin", "main").returncode == 0:
-            print(f"pushed on attempt {attempt}: {summary['totalMcis']} MCIs, "
-                  f"{summary['successes']} SUCCESS ({summary['successRate']:.1%})")
-            print(f"  {summary['counts']}")
-            return
+            if not quiet:
+                print(f"    pushed (attempt {attempt}): {summary['totalMcis']} MCIs, "
+                      f"{summary['successes']} SUCCESS ({summary['successRate']:.1%})", flush=True)
+            return True
 
-        print(f"attempt {attempt}: push rejected, rebasing onto teammate's work", flush=True)
+        if not quiet:
+            print(f"    attempt {attempt}: rejected, rebasing onto teammate's work", flush=True)
         if git("pull", "--rebase", "origin", "main").returncode != 0:
             for _ in range(20):
                 clear_conflicts()
@@ -113,8 +116,17 @@ def main() -> None:
                         break
         time.sleep(2 * attempt)
 
-    print("could not publish within the attempt budget; local commits are intact", flush=True)
-    sys.exit(1)
+    print("    publish: out of attempts; local commits intact, next MCI carries them", flush=True)
+    return False
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--attempts", type=int, default=8)
+    parser.add_argument("--message", default=None)
+    args = parser.parse_args()
+    if not publish(message=args.message, attempts=args.attempts):
+        sys.exit(1)
 
 
 if __name__ == "__main__":
