@@ -86,6 +86,9 @@ def recover_repo() -> None:
             pass
 
 
+BATCH_SIZE = 20
+
+
 def sync(message: str, entry: dict, diff_source: Path | None, attempts: int = 5) -> bool:
     """Commit and push, surviving other agents pushing to the same files."""
     recover_repo()
@@ -128,6 +131,58 @@ def sync(message: str, entry: dict, diff_source: Path | None, attempts: int = 5)
     return False
 
 
+def sync_batch(pending: list[tuple[dict, Path | None]], message: str, attempts: int = 5) -> bool:
+    """Commit+push a whole batch at once, surviving push races.
+
+    Per A's diagnosis of Phase 3's push starvation: pushing every item makes every
+    conflict replay a growing stack of local commits against upstream traffic moving
+    faster than the rebase can complete. Accumulating BATCH_SIZE items into one commit
+    turns 173 races into ~9, and on conflict re-applies every entry in `pending` (not
+    just the most recent), which is what actually avoids the single-entry-reapply data
+    loss that hit the per-item version.
+    """
+    if not pending:
+        return True
+    recover_repo()
+    git("add", "--", f"data/{PROJECT}")
+    if not git("diff", "--cached", "--quiet").returncode:
+        log("sync_batch: no changes to commit in data/cloudstack")
+        return True
+
+    git("commit", "-q", "-m", message)
+
+    for attempt in range(1, attempts + 1):
+        push_res = git("push", REMOTE, "main")
+        if push_res.returncode == 0:
+            log(f"sync_batch: successfully pushed {len(pending)} rows to {REMOTE}/main")
+            return True
+
+        log(f"sync_batch: push rejected (attempt {attempt}/{attempts}), rebasing against upstream...")
+        pull = git("pull", "--rebase", REMOTE, "main")
+        if pull.returncode != 0:
+            for name in CONFLICT_PATHS:
+                git("checkout", "--ours", "--", str((DATASET / name).relative_to(REPO)))
+                git("add", "--", str((DATASET / name).relative_to(REPO)))
+            cont = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--continue"],
+                                  cwd=REPO, text=True, capture_output=True, timeout=300)
+            if cont.returncode != 0:
+                git("rebase", "--abort")
+                log(f"sync_batch: rebase unresolved on attempt {attempt}, retrying after backoff")
+                time.sleep(5 * attempt)
+                continue
+
+        # Re-apply every entry in this batch, not just the last one.
+        for entry, diff_source in pending:
+            relayer(entry, diff_source)
+        git("add", "--", f"data/{PROJECT}")
+        if git("diff", "--cached", "--quiet").returncode:
+            git("commit", "-q", "-m", f"Re-apply {len(pending)} rows by C after rebase")
+        time.sleep(2 * attempt)
+
+    log("sync_batch: push attempts exhausted; next cycle will carry it forward")
+    return False
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="CloudStack MCI Salvage Runner by C (Remedy)")
     parser.add_argument("--ids-file", default="validation/cloudstack_salvage_targets_7.txt",
@@ -165,6 +220,7 @@ def main() -> None:
 
     processed = 0
     salvaged_count = 0
+    pending: list[tuple[dict, Path | None]] = []
 
     for mci_id in target_ids:
         if args.stop_after and processed >= args.stop_after:
@@ -226,14 +282,15 @@ def main() -> None:
 
         if classification == "SUCCESS":
             salvaged_count += 1
-            commit_msg = f"C: salvage {mci_id} (SUCCESS on linux-aarch64, was {prev_cls})"
-        else:
-            commit_msg = f"C: retry {mci_id} ({classification} on linux-aarch64, was {prev_cls})"
-
-        if not args.no_push:
-            sync(commit_msg, entry, diff_source)
-
+        pending.append((entry, diff_source))
         processed += 1
+
+        if not args.no_push and (len(pending) >= BATCH_SIZE or processed == len(target_ids)):
+            batch_success = sum(1 for e, _ in pending if e.get("classification") == "SUCCESS")
+            commit_msg = (f"C: salvage batch of {len(pending)} on linux-aarch64 "
+                          f"({batch_success}/{len(pending)} SUCCESS)")
+            sync_batch(pending, commit_msg)
+            pending = []
 
     log(f"Batch completed: {processed} processed, {salvaged_count} successfully salvaged into SUCCESS!")
 
