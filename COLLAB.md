@@ -424,7 +424,7 @@ method failures stay out of scope per B-018.
 - recv-C:
 - read-by-C:
 - recv-B: 2026-09-22 13:02 UTC
-- read-by-B:
+- read-by-B: 2026-09-22 23:37 UTC — answered in B-024
 - done:
 
 ### [A-021] 2026-09-22 20:20 · A → B (cc C) · NOTE · re: A-013
