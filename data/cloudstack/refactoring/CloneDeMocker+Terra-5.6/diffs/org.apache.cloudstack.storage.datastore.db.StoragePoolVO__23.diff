@@ -1,0 +1,127 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -1787,12 +1787,11 @@
+             DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+             Mockito.when(_diskOfferingDao.findById(1L)).thenReturn(diskOffering);
+ 
+-            StoragePoolVO srcStoragePoolVOMock = Mockito.mock(StoragePoolVO.class);
+             PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);
+ 
+             Mockito.when(vol.getPassphraseId()).thenReturn(1L);
++            StoragePoolVO srcStoragePoolVOMock = createMockStoragePool(Storage.StoragePoolType.PowerFlex);
+             Mockito.when(primaryDataStoreDaoMock.findById(1L)).thenReturn(srcStoragePoolVOMock);
+-            Mockito.when(srcStoragePoolVOMock.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
+             Mockito.when(dataStoreMgr.getDataStore(2L, DataStoreRole.Primary)).thenReturn( dataStore);
+             Pair<Boolean, String> checkResult = new Pair<>(true, "success");
+             Mockito.doReturn(checkResult).when(storageMgr).checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(any(), any());
+@@ -2218,8 +2217,7 @@
+         VolumeVO existingVolume = Mockito.mock(VolumeVO.class);
+         Mockito.when(existingVolume.getState()).thenReturn(Volume.State.Ready);
+         when(existingVolume.getPoolId()).thenReturn(1L);
+-        StoragePoolVO destPrimaryStorage = Mockito.mock(StoragePoolVO.class);
+-        Mockito.when(destPrimaryStorage.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        StoragePoolVO destPrimaryStorage = createMockStoragePool(Storage.StoragePoolType.NetworkFilesystem);
+         Mockito.when(primaryDataStoreDaoMock.findById(1L)).thenReturn(destPrimaryStorage);
+         VolumeInfo newVolumeOnPrimaryStorage = Mockito.mock(VolumeInfo.class);
+         try {
+@@ -2533,7 +2531,7 @@
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+         StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO vmPool = createMockStoragePool(Storage.StoragePoolType.CLVM);
+ 
+         Long volumePoolId = 100L;
+         Long vmPoolId = 100L; // Same pool
+@@ -2545,7 +2543,6 @@
+         Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+         Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+ 
+-        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+         Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+ 
+         Mockito.when(volumeServiceMock.isLockTransferRequired(
+@@ -2568,7 +2565,7 @@
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+         StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO vmPool = createMockStoragePool(Storage.StoragePoolType.CLVM);
+ 
+         Long volumePoolId = 100L;
+         Long vmPoolId = 100L;
+@@ -2580,7 +2577,6 @@
+         Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+         Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+ 
+-        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+         Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+ 
+         Mockito.when(volumeServiceMock.isLockTransferRequired(
+@@ -2599,8 +2595,8 @@
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO volumePool = createMockStoragePool(Storage.StoragePoolType.CLVM);
++        StoragePoolVO vmPool = createMockStoragePool(Storage.StoragePoolType.CLVM);
+ 
+         Long volumePoolId = 100L;
+         Long vmPoolId = 200L; // Different pool
+@@ -2612,8 +2608,6 @@
+         Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+         Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+ 
+-        Mockito.when(volumePool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+-        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+         Mockito.when(volumePool.getId()).thenReturn(volumePoolId);
+         Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+ 
+@@ -2634,7 +2628,7 @@
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+         StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO vmPool = createMockStoragePool(Storage.StoragePoolType.CLVM);
+ 
+         Long volumePoolId = 100L;
+         Long vmPoolId = 100L;
+@@ -2646,7 +2640,6 @@
+         Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+         Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+ 
+-        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+         Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+ 
+         boolean result = invokePrivateMethod("isClvmLockTransferRequired",
+@@ -2674,7 +2667,7 @@
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+         StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+-        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO vmPool = createMockStoragePool(Storage.StoragePoolType.CLVM);
+ 
+         Long volumePoolId = 100L;
+         Long vmPoolId = 100L;
+@@ -2687,7 +2680,6 @@
+         Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
+         Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+ 
+-        Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+         Mockito.when(vmPool.getId()).thenReturn(vmPoolId);
+ 
+         Mockito.when(volumeServiceMock.isLockTransferRequired(
+@@ -2704,6 +2696,12 @@
+                 eq(volumePoolId), eq(vmPoolId), eq(lastHostId));
+     }
+ 
++
++    private static StoragePoolVO createMockStoragePool(Storage.StoragePoolType poolType) {
++        StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
++        Mockito.when(vmPool.getPoolType()).thenReturn(poolType);
++        return vmPool;
++    }
+ 
+     private <T> T invokePrivateMethod(String methodName, Class<?>[] paramTypes, Object... params) {
+         try {
