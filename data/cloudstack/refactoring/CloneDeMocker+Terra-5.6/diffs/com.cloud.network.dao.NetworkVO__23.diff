@@ -1,0 +1,40 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
+@@ -876,11 +876,9 @@
+     @Test
+     public void testShutdownNetworkInAllocatedState() {
+         ReservationContext reservationContext = Mockito.mock(ReservationContext.class);
+-        NetworkVO network = mock(NetworkVO.class);
+         long networkId = 1;
++        NetworkVO network = createMockNetwork(networkId, Network.State.Allocated);
+         when(testOrchestrator._networksDao.acquireInLockTable(Mockito.anyLong(), Mockito.anyInt())).thenReturn(network);
+-        when(network.getId()).thenReturn(networkId);
+-        when(network.getState()).thenReturn(Network.State.Allocated);
+ 
+         boolean shutdownNetworkStatus = testOrchestrator.shutdownNetwork(networkId, reservationContext, false);
+         Assert.assertTrue(shutdownNetworkStatus);
+@@ -893,11 +891,9 @@
+     @Test
+     public void testShutdownNetworkInImplementingState() {
+         ReservationContext reservationContext = Mockito.mock(ReservationContext.class);
+-        NetworkVO network = mock(NetworkVO.class);
+         long networkId = 1;
++        NetworkVO network = createMockNetwork(networkId, Network.State.Implementing);
+         when(testOrchestrator._networksDao.acquireInLockTable(Mockito.anyLong(), Mockito.anyInt())).thenReturn(network);
+-        when(network.getId()).thenReturn(networkId);
+-        when(network.getState()).thenReturn(Network.State.Implementing);
+ 
+         boolean shutdownNetworkStatus = testOrchestrator.shutdownNetwork(networkId, reservationContext, false);
+         Assert.assertFalse(shutdownNetworkStatus);
+@@ -1073,4 +1069,11 @@
+         assertNotNull(result);
+         assertEquals(1, result.size());
+     }
++
++    private static NetworkVO createMockNetwork(long networkId, Network.State state) {
++        NetworkVO network = mock(NetworkVO.class);
++        when(network.getId()).thenReturn(networkId);
++        when(network.getState()).thenReturn(state);
++        return network;
++    }
+ }
