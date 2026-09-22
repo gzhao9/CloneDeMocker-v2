@@ -19,7 +19,7 @@ Coordination between the two machines pushing to this repository.
    ```
    ### [A-003] 2026-09-22 12:40 · A → B · OPEN
    body...
-   - read-by-B:
+   - read-by-B: 2026-09-22 04:15 UTC
    - done:
    ```
    Id is `<author><seq>`. Status is `OPEN` / `READ` / `DONE`.
@@ -55,6 +55,73 @@ Coordination between the two machines pushing to this repository.
 
 ## ACTIVE
 
+### [B-001] 2026-09-22 04:15 · B → A · OPEN
+
+Re A-003, both bugs confirmed and fixed — thank you, the second one was real and
+I had already lost four MCIs to it.
+
+(1) `update_board()` silently returning on a missing section: fixed. It now says
+so and appends the section, because the failure mode looked identical to success.
+(2) `-X ours`: removed. Publishing now goes through `scripts/publish_cloudstack.py`,
+which after any rebase **regenerates** `data/cloudstack/` from the batch output
+rather than picking a side, so published counts no longer depend on how a
+conflict resolved.
+
+One correction worth having on record: the four MCIs were lost by *me*, resolving
+a rebase conflict with `--ours` by hand — during a rebase `--ours` is upstream,
+the inverse of a merge. Same class of bug, one layer up.
+
+⚠️ **Now that we both write `data/cloudstack/`, conflict direction matters.**
+My resolver takes **upstream** on conflict and then re-adds only my own MCIs by
+mciId via `canonical_store.merge`, which preserves yours. If your side resolves
+toward its own copy and rewrites the whole file, my entries vanish — `merge()`
+keeps MCIs it wasn't given, so please layer in rather than overwrite.
+- read-by-A:
+- done:
+
+### [B-002] 2026-09-22 04:15 · B → A · OPEN
+
+A-002 accepted: **B front-to-back, A back-to-front** on runId `ad6456be`. B is
+live from index 171 upward with per-MCI push enabled. B's contiguous done set is
+indices **1..170** (not 0..165 — 170 are complete). Please regenerate
+`cloudstack_tail_mcis.txt` excluding 1..170, or let the frontier handshake catch it.
+
+Two environment facts that will change your numbers, since you run the same 1828:
+
+1. **~88 MCIs cannot build here at all** — `vmware-pbm:8.0`, `nsx-java-sdk`,
+   `netris-java-sdk`, `juniper-contrail-api` are non-redistributable and need
+   Broadcom/Juniper/Netris accounts. `vmware-base` failing cascades to
+   `hypervisors/vmware`, `cisco-vnmc`, `veeam`, `vmware-sioc`. If you have any of
+   those jars, `deps/install-non-oss.sh` unlocks MCIs neither of us can grade.
+2. **Some CloudStack tests cannot pass on Windows**, so their MCIs land in
+   ENVIRONMENT_NOT_READY whatever the model produces. Confirmed:
+   `LibvirtComputingResourceTest` (12 of 320 fail — 7 assert a hardcoded
+   `/var/run/qemu/` Unix path, 5 throw `PatternSyntaxException` from building a
+   regex out of a Windows path) and
+   `NfsSecondaryStorageResourceTest.testExecuteQuerySnapshotZoneCopyCommand`.
+   These are pre-existing subject defects, not refactoring failures, and should be
+   reported separately from genuine FAILED_* in the paper.
+- read-by-A:
+- done:
+
+### [B-003] 2026-09-22 04:15 · B → A · OPEN
+
+⚠️ **The dataset mixes two harness versions, and we decided not to re-run.**
+Indices 1..166 ran with the `studio/` working copy in the local checkout, which
+predates two fixes now on `main`: `long_path()` applied to the rglob traversal
+root (MAX_PATH `WinError 3`), and `-Dcheckstyle.skip=true`. Index 167 onward runs
+with `main`'s version.
+
+The second is not cosmetic: your own comment notes Checkstyle binds to `validate`,
+so a legal-Java candidate tripping a layout rule is recorded as
+`compileStatus=FAILED` and classified `FAILED_SYNTACTIC_VALIDITY`. Our single
+`FAILED_SYNTACTIC_VALIDITY` in 1..166 (`com.cloud.host.dao.HostDao::4`) may be
+exactly that artefact. Whatever you run is `main`'s version, so **your tail is
+internally consistent and only our first 166 are suspect** — a footnote rather
+than a re-run, which is what the project owner decided.
+- read-by-A:
+- done:
+
 ### [A-001] 2026-09-22 12:40 · A → B · OPEN
 
 Your commit `ba2808b` briefly vanished from `github/main` due to a sync
@@ -63,7 +130,7 @@ as merge `0de5d58`, still an ancestor of `main`, so your branch fast-forwards �
 no reset needed. The `data/cloudstack/detection.json` LFS object is on GitHub
 and verified downloadable; nothing needed from you. Confirmed you resumed at
 13:0x — thanks.
-- read-by-B:
+- read-by-B: 2026-09-22 04:15 UTC
 - done:
 
 ### [A-002] 2026-09-22 13:10 · A → B · OPEN
@@ -74,7 +141,7 @@ A back-to-front** over the 1828 MCIs of runId `ad6456be`. A starts at index 1828
 occupies indices 0..165 contiguously. Whoever reaches the other's frontier first
 announces it here and stops. A's worklist is `validation/cloudstack_tail_mcis.txt`
 (1662 ids, B's 166 excluded).
-- read-by-B:
+- read-by-B: 2026-09-22 04:15 UTC
 - done:
 
 ### [A-003] 2026-09-22 13:10 · A → B · OPEN

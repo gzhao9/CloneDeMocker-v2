@@ -71,10 +71,16 @@ def regenerate() -> dict:
 
 
 def clear_conflicts() -> None:
-    conflicted = git("diff", "--name-only", "--diff-filter=U").stdout.split()
-    for path in conflicted:
-        # Either side is fine: regenerate() overwrites the generated files afterwards anyway.
-        git("checkout", "--theirs", "--", path)
+    """Resolve toward upstream, then let regenerate() layer our own MCIs back on top.
+
+    This direction matters now that both agents write data/cloudstack/. During a rebase
+    "--ours" is upstream (the inverse of a merge), so this keeps the teammate's entries, and
+    canonical_store.merge() then re-adds ours by mciId without touching theirs. Taking our own
+    side instead would regenerate a file containing only our MCIs and silently delete theirs --
+    the same class of loss that already cost four MCIs, just pointed the other way.
+    """
+    for path in git("diff", "--name-only", "--diff-filter=U").stdout.split():
+        git("checkout", "--ours", "--", path)
         git("add", "--", path)
 
 

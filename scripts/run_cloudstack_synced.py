@@ -97,10 +97,16 @@ def update_board(done: int, total: int, counts: dict[str, int], started: float) 
     """Prepend a dated progress entry to our own section. Only our section is touched, so the
     teammate's edits to theirs never conflict with ours."""
     if not BOARD.is_file():
+        print("    board: COLLAB.md missing, skipping progress entry", flush=True)
         return
     text = BOARD.read_text(encoding="utf-8")
     if SECTION not in text:
-        return
+        # Returning quietly here meant every board update was silently dropped for as long as
+        # the section was absent (it was, after main was rewritten) -- the failure looked
+        # exactly like success. Say so, and append the section so the next update lands.
+        print(f"    board: {SECTION!r} absent, appending it", flush=True)
+        text = text.rstrip() + f"\n\n---\n\n{SECTION}\n\n"
+        BOARD.write_text(text, encoding="utf-8", newline="\n")
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     success = counts.get("SUCCESS", 0)
     graded = sum(v for k, v in counts.items() if k != "ENVIRONMENT_NOT_READY")
