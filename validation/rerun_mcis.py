@@ -92,8 +92,11 @@ def _sync_git(message: str) -> None:
         status = subprocess.run(["git", "status", "--porcelain", "data/"], cwd=REPOSITORY_ROOT, capture_output=True, text=True)
         if status.stdout.strip():
             subprocess.run(["git", "commit", "-m", message], cwd=REPOSITORY_ROOT, check=True)
-            subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=REPOSITORY_ROOT, check=True)
-            subprocess.run(["git", "push", "origin", "main"], cwd=REPOSITORY_ROOT, check=True)
+            # github, not origin: the local Gitea mirrored to GitHub by force-pushing, which
+            # discarded commits the other machine had pushed straight to GitHub. GitHub is now
+            # the single remote both machines share; see COLLAB.md.
+            subprocess.run(["git", "pull", "--rebase", "github", "main"], cwd=REPOSITORY_ROOT, check=True)
+            subprocess.run(["git", "push", "github", "main"], cwd=REPOSITORY_ROOT, check=True)
             print(f"  [git] synced data: {message}", flush=True)
     except Exception as error:  # noqa: BLE001
         print(f"  [git] sync warning: {error}", flush=True)
