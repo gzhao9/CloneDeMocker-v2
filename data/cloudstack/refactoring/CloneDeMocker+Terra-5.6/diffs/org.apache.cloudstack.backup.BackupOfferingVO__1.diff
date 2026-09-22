@@ -1,0 +1,62 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -2655,8 +2655,7 @@
+         when(backupOfferingDao.findById(sourceOfferingId)).thenReturn(sourceOffering);
+         when(backupOfferingDao.findByName(cmd.getName(), zoneId)).thenReturn(null);
+ 
+-        BackupOfferingVO savedOffering = Mockito.mock(BackupOfferingVO.class);
+-        when(savedOffering.getId()).thenReturn(savedOfferingId);
++        BackupOfferingVO savedOffering = MockBackupOfferingWithId.createMockBackupOfferingVO(savedOfferingId);
+         when(backupOfferingDao.persist(any(BackupOfferingVO.class))).thenReturn(savedOffering);
+ 
+         DomainVO domain = Mockito.mock(DomainVO.class);
+@@ -2703,8 +2702,7 @@
+         when(backupOfferingDao.findById(sourceOfferingId)).thenReturn(sourceOffering);
+         when(backupOfferingDao.findByName(cmd.getName(), zoneId)).thenReturn(null);
+ 
+-        BackupOfferingVO savedOffering = Mockito.mock(BackupOfferingVO.class);
+-        when(savedOffering.getId()).thenReturn(savedOfferingId);
++        BackupOfferingVO savedOffering = MockBackupOfferingWithId.createMockBackupOfferingVO(savedOfferingId);
+         when(backupOfferingDao.persist(any(BackupOfferingVO.class))).thenReturn(savedOffering);
+ 
+         // domain handling
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupRepositoryServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupRepositoryServiceImplTest.java
+@@ -163,8 +163,8 @@
+         when(repositoryVO.getZoneId()).thenReturn(zoneId);
+         when(repositoryVO.getId()).thenReturn(1L);
+ 
++        offeringVO = MockBackupOfferingWithId.createMockBackupOfferingVO(backupOfferingId);
+         when(backupOfferingDao.findByExternalId("repo-uuid", zoneId)).thenReturn(offeringVO);
+-        when(offeringVO.getId()).thenReturn(backupOfferingId);
+ 
+         when(backupDao.listByOfferingId(backupOfferingId)).thenReturn(new ArrayList<>());
+ 
+@@ -202,8 +202,8 @@
+         when(repositoryVO.getUuid()).thenReturn("repo-uuid");
+         when(repositoryVO.getZoneId()).thenReturn(zoneId);
+ 
++        offeringVO = MockBackupOfferingWithId.createMockBackupOfferingVO(backupOfferingId);
+         when(backupOfferingDao.findByExternalId("repo-uuid", zoneId)).thenReturn(offeringVO);
+-        when(offeringVO.getId()).thenReturn(backupOfferingId);
+ 
+         List<Backup> backups = Arrays.asList(backupVO);
+         when(backupDao.listByOfferingId(backupOfferingId)).thenReturn(backups);
+--- a/server/src/test/java/org/apache/cloudstack/backup/MockBackupOfferingWithId.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/MockBackupOfferingWithId.java
+@@ -0,0 +1,15 @@
++package org.apache.cloudstack.backup;
++
++import static org.mockito.Mockito.when;
++
++import org.apache.cloudstack.backup.BackupOfferingVO;
++import org.mockito.Mockito;
++
++public class MockBackupOfferingWithId {
++
++    public static BackupOfferingVO createMockBackupOfferingVO(Long id) {
++        BackupOfferingVO offeringVO = Mockito.mock(BackupOfferingVO.class);
++        when(offeringVO.getId()).thenReturn(id);
++        return offeringVO;
++    }
++}
