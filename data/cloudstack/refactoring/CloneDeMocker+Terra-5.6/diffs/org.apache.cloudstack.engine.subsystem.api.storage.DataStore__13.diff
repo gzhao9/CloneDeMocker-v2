@@ -1,0 +1,43 @@
+--- a/plugins/storage/volume/linstor/src/test/java/org/apache/cloudstack/storage/datastore/driver/LinstorPrimaryDataStoreDriverImplTest.java
++++ b/plugins/storage/volume/linstor/src/test/java/org/apache/cloudstack/storage/datastore/driver/LinstorPrimaryDataStoreDriverImplTest.java
+@@ -177,21 +177,26 @@
+ 
+     @Test
+     public void testCanCopySnapshotToVolumeRejectsImageDest() {
++        DataStore primaryStore = createMockPrimaryStore();
++
++        DataStore imageStore = createMockPrimaryStore();
++        when(imageStore.getRole()).thenReturn(DataStoreRole.Image);
++
++        SnapshotInfo snapshot = mock(SnapshotInfo.class);
++        when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
++        when(snapshot.getDataStore()).thenReturn(primaryStore);
++
++        VolumeInfo volume = mock(VolumeInfo.class);
++        when(volume.getType()).thenReturn(DataObjectType.VOLUME);
++        when(volume.getDataStore()).thenReturn(imageStore);
++
++        Assert.assertFalse("canCopy should return false when destination is Image store",
++                linstorPrimaryDataStoreDriver.canCopy(snapshot, volume));
++    }
++
++    private static DataStore createMockPrimaryStore() {
+         DataStore primaryStore = mock(DataStore.class);
+         when(primaryStore.getRole()).thenReturn(DataStoreRole.Primary);
+-
+-        DataStore imageStore = mock(DataStore.class);
+-        when(imageStore.getRole()).thenReturn(DataStoreRole.Image);
+-
+-        SnapshotInfo snapshot = mock(SnapshotInfo.class);
+-        when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
+-        when(snapshot.getDataStore()).thenReturn(primaryStore);
+-
+-        VolumeInfo volume = mock(VolumeInfo.class);
+-        when(volume.getType()).thenReturn(DataObjectType.VOLUME);
+-        when(volume.getDataStore()).thenReturn(imageStore);
+-
+-        Assert.assertFalse("canCopy should return false when destination is Image store",
+-                linstorPrimaryDataStoreDriver.canCopy(snapshot, volume));
++        return primaryStore;
+     }
+ }
