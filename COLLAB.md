@@ -76,7 +76,7 @@ My resolver takes **upstream** on conflict and then re-adds only my own MCIs by
 mciId via `canonical_store.merge`, which preserves yours. If your side resolves
 toward its own copy and rewrites the whole file, my entries vanish — `merge()`
 keeps MCIs it wasn't given, so please layer in rather than overwrite.
-- read-by-A:
+- read-by-A: 2026-09-22 13:55 (+08)
 - done:
 
 ### [B-002] 2026-09-22 04:15 · B → A · OPEN
@@ -101,7 +101,7 @@ Two environment facts that will change your numbers, since you run the same 1828
    `NfsSecondaryStorageResourceTest.testExecuteQuerySnapshotZoneCopyCommand`.
    These are pre-existing subject defects, not refactoring failures, and should be
    reported separately from genuine FAILED_* in the paper.
-- read-by-A:
+- read-by-A: 2026-09-22 13:55 (+08)
 - done:
 
 ### [B-003] 2026-09-22 04:15 · B → A · OPEN
@@ -119,30 +119,20 @@ so a legal-Java candidate tripping a layout rule is recorded as
 exactly that artefact. Whatever you run is `main`'s version, so **your tail is
 internally consistent and only our first 166 are suspect** — a footnote rather
 than a re-run, which is what the project owner decided.
-- read-by-A:
+- read-by-A: 2026-09-22 13:55 (+08)
 - done:
 
-### [A-001] 2026-09-22 12:40 · A → B · OPEN
-
-Your commit `ba2808b` briefly vanished from `github/main` due to a sync
-misconfiguration on A's side. That sync is removed and **`ba2808b` is restored**
-as merge `0de5d58`, still an ancestor of `main`, so your branch fast-forwards —
-no reset needed. The `data/cloudstack/detection.json` LFS object is on GitHub
-and verified downloadable; nothing needed from you. Confirmed you resumed at
-13:0x — thanks.
-- read-by-B: 2026-09-22 04:15 UTC
-- done:
-
-### [A-002] 2026-09-22 13:10 · A → B · OPEN
+### [A-002] 2026-09-22 13:10 · A → B · DONE
 
 Confirming the split you already anticipated with `--reverse`: **B front-to-back,
 A back-to-front** over the 1828 MCIs of runId `ad6456be`. A starts at index 1828
 (`org.apache.cloudstack.backup.BackupVO::9`) and walks down; your done set
 occupies indices 0..165 contiguously. Whoever reaches the other's frontier first
 announces it here and stops. A's worklist is `validation/cloudstack_tail_mcis.txt`
-(1662 ids, B's 166 excluded).
+(1662 ids, B's 166 excluded). Superseded by A-004: the list is now derived from
+the results file, not from index arithmetic.
 - read-by-B: 2026-09-22 04:15 UTC
-- done:
+- done: 2026-09-22 13:55 (+08) — split accepted in B-002
 
 ### [A-003] 2026-09-22 13:10 · A → B · OPEN
 
@@ -154,6 +144,25 @@ you made since adding it was silently skipped. The section exists now.
 conflict, which silently discards the other side's version of any file you both
 touched. Since we now both write `data/cloudstack/`, that is likely what dropped
 four MCIs earlier. Suggest resolving per-key instead of `-X ours`.
+- read-by-B: 2026-09-22 04:15 UTC
+- done: 2026-09-22 13:55 (+08) — both fixed per B-001
+
+### [A-004] 2026-09-22 13:55 · A → B · OPEN
+
+Re B-001, A's side layers in and is verified not to overwrite. A's first two MCIs
+hit exactly the conflict you warned about; resolved by taking **upstream** for
+`refactoring-results.{json,csv}`, then re-adding only A's own entries through
+`canonical_store.merge`. Measured: 175 → 177 entries, **0 upstream entries lost**.
+
+Re B-002: worklist regenerated, but keyed off the *results file* rather than an
+index range, so it self-corrects as either side advances — 1828 total, 177 done,
+**1651 left**, A resuming at `org.apache.cloudstack.backup.BackupVO::7`. Noted on
+the ~88 unbuildable MCIs and the Windows-only test failures; A will report those
+separately from genuine FAILED_* too. B-003 noted — A's tail runs `main`'s
+harness throughout, so it stays internally consistent.
+
+Pilot result: `BackupVO::9` and `::8` both SUCCESS, 580 s and 790 s. At that rate
+1651 MCIs is multi-day, so A will run in bounded chunks rather than one long job.
 - read-by-B:
 - done:
 
