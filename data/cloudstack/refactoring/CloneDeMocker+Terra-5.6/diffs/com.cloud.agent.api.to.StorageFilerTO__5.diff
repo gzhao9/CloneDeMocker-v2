@@ -1,0 +1,83 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckAndRepairVolumeCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckAndRepairVolumeCommandWrapperTest.java
+@@ -62,14 +62,12 @@
+         CheckAndRepairVolumeCommand cmd = Mockito.mock(CheckAndRepairVolumeCommand.class);
+         when(cmd.getPath()).thenReturn("cbac516a-0f1f-4559-921c-1a7c6c408ccf");
+         when(cmd.getRepair()).thenReturn(null);
+-        StorageFilerTO spool = Mockito.mock(StorageFilerTO.class);
++        StorageFilerTO spool = MockStorageFilerTO.createMockStorageFilerTO(Storage.StoragePoolType.PowerFlex, "b6be258b-42b8-49a4-ad51-3634ef8ff76a");
+         when(cmd.getPool()).thenReturn(spool);
+ 
+         KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+         KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+-        when(spool.getType()).thenReturn(Storage.StoragePoolType.PowerFlex);
+-        when(spool.getUuid()).thenReturn("b6be258b-42b8-49a4-ad51-3634ef8ff76a");
+         when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.PowerFlex, "b6be258b-42b8-49a4-ad51-3634ef8ff76a")).thenReturn(pool);
+ 
+         KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtModifyStoragePoolCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtModifyStoragePoolCommandWrapperTest.java
+@@ -229,12 +229,11 @@
+ 
+     @Test
+     public void testDeleteClvmStoragePoolSuccess() {
++        storageFilerTO = MockStorageFilerTO.createMockStorageFilerTO(StoragePoolType.CLVM, "pool-uuid");
++
+         when(command.getAdd()).thenReturn(false);
+         when(command.getPool()).thenReturn(storageFilerTO);
+         when(command.getDetails()).thenReturn(null);
+-
+-        when(storageFilerTO.getUuid()).thenReturn("pool-uuid");
+-        when(storageFilerTO.getType()).thenReturn(StoragePoolType.CLVM);
+ 
+         when(storagePoolManager.deleteStoragePool(StoragePoolType.CLVM, "pool-uuid", null))
+             .thenReturn(true);
+@@ -247,12 +246,11 @@
+ 
+     @Test
+     public void testDeleteClvmNgStoragePoolSuccess() {
++        storageFilerTO = MockStorageFilerTO.createMockStorageFilerTO(StoragePoolType.CLVM_NG, "pool-uuid");
++
+         when(command.getAdd()).thenReturn(false);
+         when(command.getPool()).thenReturn(storageFilerTO);
+         when(command.getDetails()).thenReturn(null);
+-
+-        when(storageFilerTO.getUuid()).thenReturn("pool-uuid");
+-        when(storageFilerTO.getType()).thenReturn(StoragePoolType.CLVM_NG);
+ 
+         when(storagePoolManager.deleteStoragePool(StoragePoolType.CLVM_NG, "pool-uuid", null))
+             .thenReturn(true);
+@@ -266,11 +264,9 @@
+     @Test
+     public void testDeleteClvmStoragePoolFailure() {
+         when(command.getAdd()).thenReturn(false);
+-        when(command.getPool()).thenReturn(storageFilerTO);
+-        when(command.getDetails()).thenReturn(null);
+-
+-        when(storageFilerTO.getUuid()).thenReturn("pool-uuid");
+-        when(storageFilerTO.getType()).thenReturn(StoragePoolType.CLVM);
++        storageFilerTO = MockStorageFilerTO.createMockStorageFilerTO(StoragePoolType.CLVM, "pool-uuid");
++        when(command.getPool()).thenReturn(storageFilerTO);
++        when(command.getDetails()).thenReturn(null);
+ 
+         when(storagePoolManager.deleteStoragePool(StoragePoolType.CLVM, "pool-uuid", null))
+             .thenReturn(false);
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockStorageFilerTO.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockStorageFilerTO.java
+@@ -0,0 +1,15 @@
++package com.cloud.hypervisor.kvm.resource.wrapper;
++
++import org.mockito.Mockito;
++
++import com.cloud.agent.api.to.StorageFilerTO;
++import com.cloud.storage.Storage;
++
++public class MockStorageFilerTO {
++    public static StorageFilerTO createMockStorageFilerTO(Storage.StoragePoolType storagePoolType, String uuid) {
++        StorageFilerTO storageFilerTO = Mockito.mock(StorageFilerTO.class);
++        Mockito.when(storageFilerTO.getType()).thenReturn(storagePoolType);
++        Mockito.when(storageFilerTO.getUuid()).thenReturn(uuid);
++        return storageFilerTO;
++    }
++}
