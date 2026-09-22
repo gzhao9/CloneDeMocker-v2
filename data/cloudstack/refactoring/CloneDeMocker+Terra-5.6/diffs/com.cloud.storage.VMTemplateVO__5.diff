@@ -1,0 +1,60 @@
+--- a/server/src/test/java/com/cloud/template/TemplateManagerImplTest.java
++++ b/server/src/test/java/com/cloud/template/TemplateManagerImplTest.java
+@@ -259,6 +259,9 @@
+     @Mock
+     private UserDataVO userDataMock;
+ 
++    @Mock
++    private VMTemplateVO templateMock;
++
+     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
+         AtomicInteger ai = new AtomicInteger(0);
+         public CustomThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
+@@ -448,13 +451,12 @@
+ 
+     @Test
+     public void testTemplateScheduledForDownloadInDisabledPool() {
+-        VMTemplateVO mockTemplate = mock(VMTemplateVO.class);
+         StoragePoolVO mockPool = mock(StoragePoolVO.class);
+         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
+         VMTemplateStoragePoolVO mockTemplateStore = mock(VMTemplateStoragePoolVO.class);
+ 
+         when(mockPool.getStatus()).thenReturn(StoragePoolStatus.Disabled);
+-        when(vmTemplateDao.findById(anyLong())).thenReturn(mockTemplate);
++        when(vmTemplateDao.findById(anyLong())).thenReturn(templateMock);
+         when(primaryDataStoreDao.findById(anyLong())).thenReturn(mockPool);
+ 
+         ExecutorService preloadExecutor = new CustomThreadPoolExecutor(8, 8, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue(),
+@@ -561,14 +563,13 @@
+         when(cmd.getUserdataId()).thenReturn(2L);
+         when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
+ 
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+-        when(vmTemplateDao.findById(anyLong())).thenReturn(template);
++        when(vmTemplateDao.findById(anyLong())).thenReturn(templateMock);
+ 
+         when(userDataDaoMock.findById(anyLong())).thenReturn(userDataMock);
+ 
+         VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);
+ 
+-        Assert.assertEquals(template, resultTemplate);
++        Assert.assertEquals(templateMock, resultTemplate);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+@@ -579,7 +580,6 @@
+         when(cmd.getUserdataId()).thenReturn(2L);
+         when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
+ 
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+ 
+         templateManager.linkUserDataToTemplate(cmd);
+     }
+@@ -592,7 +592,6 @@
+         when(cmd.getUserdataId()).thenReturn(2L);
+         when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
+ 
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+ 
+         templateManager.linkUserDataToTemplate(cmd);
+     }
