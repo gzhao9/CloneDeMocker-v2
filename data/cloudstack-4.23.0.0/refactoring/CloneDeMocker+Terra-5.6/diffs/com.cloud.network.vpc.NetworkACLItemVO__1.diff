@@ -1,0 +1,37 @@
+--- a/server/src/test/java/com/cloud/network/vpc/NetworkACLServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/vpc/NetworkACLServiceImplTest.java
+@@ -180,6 +180,12 @@
+         createNetworkACLItemTestForNumberAndExecuteTest(10);
+     }
+ 
++    private static NetworkACLItemVO createMockNetworkAclItemVo(Long aclId) {
++        NetworkACLItemVO networkAclItemVoMock = Mockito.mock(NetworkACLItemVO.class);
++        Mockito.when(networkAclItemVoMock.getAclId()).thenReturn(aclId);
++        return networkAclItemVoMock;
++    }
++
+     private void createNetworkACLItemTestForNumberAndExecuteTest(Integer number) {
+         Mockito.when(createNetworkAclCmdMock.getNumber()).thenReturn(number);
+         Mockito.when(vpcDaoMock.findById(anyLong())).thenReturn(vpcVOMock);
+@@ -720,7 +726,7 @@
+ 
+     @Test
+     public void updateNetworkACLItemTest() throws ResourceUnavailableException {
+-        Mockito.when(networkAclItemVoMock.getAclId()).thenReturn(networkAclMockId);
++        networkAclItemVoMock = createMockNetworkAclItemVo(networkAclMockId);
+         Mockito.when(vpcDaoMock.findById(anyLong())).thenReturn(vpcVOMock);
+         Mockito.when(entityManagerMock.findById(any(), anyLong())).thenReturn(dataCenterVO);
+         Mockito.when(nsxProviderDao.findByZoneId(anyLong())).thenReturn(null);
+@@ -1196,8 +1202,10 @@
+ 
+     @Test
+     public void validateMoveAclRulesDataTestSuccesfullExecution() {
+-        Mockito.when(nextAclRuleMock.getAclId()).thenReturn(networkAclMockId);
+-        Mockito.when(previousAclRuleMock.getAclId()).thenReturn(networkAclMockId);
++        nextAclRuleMock = createMockNetworkAclItemVo(networkAclMockId);
++        previousAclRuleMock = createMockNetworkAclItemVo(networkAclMockId);
++        Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclServiceImpl).moveRuleBetweenAclRules(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyList(),
++                Mockito.eq(previousAclRuleMock), Mockito.eq(nextAclRuleMock));
+ 
+         CallContext callContextMock = Mockito.mock(CallContext.class);
+         Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
