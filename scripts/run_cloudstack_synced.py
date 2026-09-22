@@ -30,6 +30,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
+from scripts import board  # noqa: E402
 from scripts.publish_cloudstack import publish  # noqa: E402
 from scripts.trim_diagnostics import trim_entry  # noqa: E402
 from studio import canonical_store  # noqa: E402
@@ -93,40 +94,21 @@ def verify_landed(path: str) -> bool:
     return bool(listed.stdout.strip())
 
 
+def sync_board() -> None:
+    """Pull A's entries, stamp them received, and surface them so the monitor wakes the model.
+
+    Per A-005 the runner never replies: read-by is the acknowledgement, and anything needing
+    judgement waits for a session. Printing is the whole point -- stdout is what the monitor
+    greps to decide the model is needed.
+    """
+    for entry_id, text in board.unread_from_them():
+        first = next((line for line in text.splitlines()[2:] if line.strip()), "")
+        print(f"    BOARD: new {entry_id} from A -- {first[:100]}", flush=True)
+        board.mark_read([entry_id])
+
+
 def update_board(done: int, total: int, counts: dict[str, int], started: float) -> None:
-    """Prepend a dated progress entry to our own section. Only our section is touched, so the
-    teammate's edits to theirs never conflict with ours."""
-    if not BOARD.is_file():
-        print("    board: COLLAB.md missing, skipping progress entry", flush=True)
-        return
-    text = BOARD.read_text(encoding="utf-8")
-    if SECTION not in text:
-        # Returning quietly here meant every board update was silently dropped for as long as
-        # the section was absent (it was, after main was rewritten) -- the failure looked
-        # exactly like success. Say so, and append the section so the next update lands.
-        print(f"    board: {SECTION!r} absent, appending it", flush=True)
-        text = text.rstrip() + f"\n\n---\n\n{SECTION}\n\n"
-        BOARD.write_text(text, encoding="utf-8", newline="\n")
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    success = counts.get("SUCCESS", 0)
-    graded = sum(v for k, v in counts.items() if k != "ENVIRONMENT_NOT_READY")
-    rate = f"{success / done:.1%}" if done else "n/a"
-    graded_rate = f"{success / graded:.1%}" if graded else "n/a"
-    hours = (time.time() - started) / 3600
-    entry = (
-        f"### {stamp} — progress {done}/{total} ({done/total:.1%})\n\n"
-        f"CloudStack 24.0.0-SNAPSHOT batch, PIT off. "
-        f"SUCCESS {success}/{done} = {rate} overall, {graded_rate} excluding "
-        f"ENVIRONMENT_NOT_READY.\n\n"
-        f"Breakdown: " + ", ".join(f"`{k}` {v}" for k, v in sorted(counts.items())) + ".  \n"
-        f"This session has been running {hours:.1f} h.\n\n"
-    )
-    head, _, rest = text.partition(SECTION)
-    lines = rest.split("\n")
-    # Keep the section heading and its subject paragraph, insert the new entry above older ones.
-    cut = next((i for i, line in enumerate(lines) if line.startswith("### ")), len(lines))
-    merged = head + SECTION + "\n".join(lines[:cut]) + entry + "\n".join(lines[cut:])
-    BOARD.write_text(merged, encoding="utf-8", newline="\n")
+    board.progress(done, total, counts, (time.time() - started) / 3600)
 
 
 def main() -> None:
@@ -167,6 +149,10 @@ def main() -> None:
 
     started = time.time()
     processed = 0
+    reported: set[str] = set()   # one NOTE per distinct fault, never a stream
+    streak_module, streak = None, 0
+
+    sync_board()   # A-005: read the board on purpose at start
 
     for index in order:
         instance = instances[index - 1]
@@ -195,6 +181,14 @@ def main() -> None:
                       "mavenArgs": os.environ.get("MAVEN_ARGS", ""),
                       "error": f"{type(error).__name__}: {error}"}
             print(f"[{index}/{total}] TOOL ERROR {record['error'][:120]}", flush=True)
+            kind = record["error"].split(":")[0]
+            if kind not in reported:
+                reported.add(kind)
+                board.post_note(
+                    f"B's runner raised `{kind}` on `{mci_id}` (index {index}). The batch "
+                    f"continues -- the MCI is left unrecorded and will be retried on resume."
+                    "\n\n```\n" + record["error"][:400] + "\n```",
+                    urgent=True)
 
         temporary = result_path.with_suffix(".json.tmp")
         temporary.write_text(json.dumps(record, ensure_ascii=False, indent=2, default=str),
@@ -219,6 +213,26 @@ def main() -> None:
         canonical_store.merge(project=PROJECT, repository_root=REPO, entries=[entry],
                               detection_source=None, diff_lookup=diff_lookup, model=MODEL,
                               harness=canonical_store.HARNESS_CLONEDEMOCKER, use_mock=False)
+
+        # A runs the same 1828 MCIs, so a module that starts failing here will fail
+        # there too -- worth one NOTE, not a per-MCI stream.
+        modules = (result.get("harness") or {}).get("candidate") or {}
+        scope = str((modules or {}).get("scope") or entry.get("scope") or "")
+        if classification == "ENVIRONMENT_NOT_READY":
+            streak = streak + 1 if scope == streak_module else 1
+            streak_module = scope
+            if streak == 8 and scope and scope not in reported:
+                reported.add(scope)
+                board.post_note(
+                    f"Eight consecutive `ENVIRONMENT_NOT_READY` in scope `{scope}` on B's side. "
+                    f"Most recent: `{mci_id}`, reason: {(result.get('reason') or '')[:160]}\n\n"
+                    f"Since you run the same 1828 MCIs, expect the same there. If it is a missing "
+                    f"non-redistributable jar you happen to have, installing it unlocks these for "
+                    f"both of us; if it is a subject test that cannot pass on Windows, it belongs "
+                    f"in the environment bucket rather than FAILED_* when we report.",
+                    urgent=False)
+        else:
+            streak_module, streak = None, 0
 
         done = sum(counts.values())
         paths = [f"data/{PROJECT}"]
