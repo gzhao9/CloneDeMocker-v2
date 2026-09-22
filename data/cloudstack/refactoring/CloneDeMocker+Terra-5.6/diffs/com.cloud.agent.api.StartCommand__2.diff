@@ -1,0 +1,48 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -193,6 +193,8 @@
+     private VMInstanceVO vmInstanceMock;
+     @Mock
+     private VmWorkJobDao _workJobDao;
++    @Mock
++    private StartCommand startCommand;
+ 
+     private long vmInstanceVoMockId = 1L;
+ 
+@@ -1469,20 +1471,18 @@
+     public void updateStartCommandWithExternalDetails_nonExternalHypervisor_noAction() {
+         Host host = mock(Host.class);
+         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        StartCommand command = mock(StartCommand.class);
+ 
+         when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+ 
+-        virtualMachineManagerImpl.updateStartCommandWithExternalDetails(host, vmTO, command);
+-
+-        verify(command, never()).setExternalDetails(any());
++        virtualMachineManagerImpl.updateStartCommandWithExternalDetails(host, vmTO, startCommand);
++
++        verify(startCommand, never()).setExternalDetails(any());
+     }
+ 
+     @Test
+     public void updateStartCommandWithExternalDetails_externalHypervisor_setsExternalDetails() {
+         Host host = mock(Host.class);
+         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        StartCommand command = mock(StartCommand.class);
+         NicTO nic = mock(NicTO.class);
+ 
+         when(host.getHypervisorType()).thenReturn(HypervisorType.External);
+@@ -1492,9 +1492,9 @@
+         when(networkService.getNicVlanValueForExternalVm(nic)).thenReturn("segmentName");
+         when(extensionsManager.getExternalAccessDetails(eq(host), any())).thenReturn(new HashMap<>());
+ 
+-        virtualMachineManagerImpl.updateStartCommandWithExternalDetails(host, vmTO, command);
+-
+-        verify(command).setExternalDetails(any());
++        virtualMachineManagerImpl.updateStartCommandWithExternalDetails(host, vmTO, startCommand);
++
++        verify(startCommand).setExternalDetails(any());
+     }
+ 
+     @Test

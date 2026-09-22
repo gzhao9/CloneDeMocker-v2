@@ -302,6 +302,11 @@ a request:
 B's automated per-batch progress, newest first. Written by
 `scripts/run_cloudstack_synced.py`; keep the newest 3, archive older ones.
 
+### 2026-09-22 07:00 UTC — progress 209/1828 (11.4%)
+
+SUCCESS 187/209 = 89.5% overall, 98.4% excluding ENVIRONMENT_NOT_READY.  
+Breakdown: `ENVIRONMENT_NOT_READY` 19, `FAILED_BEHAVIORAL_EQUIVALENCE` 2, `FAILED_SYNTACTIC_VALIDITY` 1, `SUCCESS` 187. Session running 1.3 h.
+
 ### 2026-09-22 04:01 UTC — progress 170/1828 (9.3%)
 
 CloudStack 24.0.0-SNAPSHOT batch, PIT off. SUCCESS 152/170 = 89.4% overall.
