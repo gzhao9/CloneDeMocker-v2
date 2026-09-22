@@ -1,0 +1,65 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -164,6 +164,9 @@
+     BackupProvider backupProvider;
+ 
+     @Mock
++    private BackupVO backupMock;
++
++    @Mock
+     VirtualMachineManager virtualMachineManager;
+ 
+     @Mock
+@@ -544,7 +547,6 @@
+         BackupOffering offering = mock(BackupOffering.class);
+         VolumeVO volumeVO = mock(VolumeVO.class);
+         VMInstanceVO vm = mock(VMInstanceVO.class);
+-        BackupVO backup = mock(BackupVO.class);
+ 
+         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+             Mockito.when(ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+@@ -561,9 +563,9 @@
+             Mockito.when(vm.getId()).thenReturn(1L);
+             Mockito.when(offering.getProvider()).thenReturn("veeam");
+             Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
+-            Mockito.when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(true);
+-
+-            backupManager.tryRestoreVM(backup, vm, offering, "Nothing to write here.", false, null);
++            Mockito.when(backupProvider.restoreVMFromBackup(vm, backupMock, false, null)).thenReturn(true);
++
++            backupManager.tryRestoreVM(backupMock, vm, offering, "Nothing to write here.", false, null);
+         }
+     }
+ 
+@@ -572,7 +574,6 @@
+         BackupOffering offering = mock(BackupOffering.class);
+         VolumeVO volumeVO = mock(VolumeVO.class);
+         VMInstanceVO vm = mock(VMInstanceVO.class);
+-        BackupVO backup = mock(BackupVO.class);
+ 
+         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+             Mockito.when(ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+@@ -591,9 +592,9 @@
+             Mockito.when(vm.getId()).thenReturn(1L);
+             Mockito.when(offering.getProvider()).thenReturn("veeam");
+             Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
+-            Mockito.when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(false);
++            Mockito.when(backupProvider.restoreVMFromBackup(vm, backupMock, false, null)).thenReturn(false);
+             try {
+-                backupManager.tryRestoreVM(backup, vm, offering, "Checking message error.", false, null);
++                backupManager.tryRestoreVM(backupMock, vm, offering, "Checking message error.", false, null);
+                 fail("An exception is needed.");
+             } catch (CloudRuntimeException e) {
+                 assertEquals("Error restoring Instance from Backup [Checking message error.].", e.getMessage());
+@@ -732,10 +733,9 @@
+ 
+         BackupVO backupVO = mock(BackupVO.class);
+         when(backupVO.getId()).thenReturn(backupId);
+-        BackupVO oldestBackupVO = mock(BackupVO.class);
+ 
+         when(backupDao.findById(backupId)).thenReturn(backupVO);
+-        List<BackupVO> backups = new ArrayList<>(List.of(oldestBackupVO));
++        List<BackupVO> backups = new ArrayList<>(List.of(backupMock));
+         when(backupDao.listBySchedule(scheduleId)).thenReturn(backups);
+ 
+         CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
