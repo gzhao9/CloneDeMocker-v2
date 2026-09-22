@@ -60,8 +60,11 @@ def safe_name(index: int, mci_id: str) -> str:
 
 def git(*args: str, check: bool = True, timeout: int = 600) -> subprocess.CompletedProcess:
     command = ["git", "-c", f"user.name={GIT_NAME}", "-c", f"user.email={GIT_EMAIL}", *args]
+    # encoding is explicit: text=True decodes with the locale codec, which is GBK on this
+    # host, and COLLAB.md is UTF-8 -- `git show origin/main:COLLAB.md` would raise
+    # UnicodeDecodeError and kill the board sync.
     return subprocess.run(command, cwd=REPO, text=True, capture_output=True,
-                          check=check, timeout=timeout)
+                          encoding="utf-8", errors="replace", check=check, timeout=timeout)
 
 
 def push_with_rebase(message: str, paths: list[str], attempts: int = 6,
@@ -95,16 +98,27 @@ def verify_landed(path: str) -> bool:
 
 
 def sync_board() -> None:
-    """Pull A's entries, stamp them received, and surface them so the monitor wakes the model.
+    """Read the board every publish cycle: surface A's new entries, then stamp them received.
 
-    Per A-005 the runner never replies: read-by is the acknowledgement, and anything needing
-    judgement waits for a session. Printing is the whole point -- stdout is what the monitor
-    greps to decide the model is needed.
+    Detection reads origin's copy rather than ours, because ours only catches up when a push
+    races and forces a rebase -- on a quiet stretch our copy can be hours stale, which is
+    exactly when a message would sit unseen. Printing is the point: stdout is what the
+    session's watcher greps to decide a human-or-model reply is needed.
+
+    Per A-005 the runner never replies. Stamping says received, not understood.
     """
-    for entry_id, text in board.unread_from_them():
-        first = next((line for line in text.splitlines()[2:] if line.strip()), "")
-        print(f"    BOARD: new {entry_id} from A -- {first[:100]}", flush=True)
-        board.mark_read([entry_id])
+    git("fetch", "-q", "origin", "main", check=False, timeout=120)
+    upstream = git("show", "origin/main:COLLAB.md", check=False, timeout=60).stdout
+    theirs = {eid for eid, _ in board.unread_in(upstream)} if upstream else set()
+    mine = {eid for eid, _ in board.unread_from_them()}
+
+    for entry_id in sorted(theirs | mine):
+        body = board.entry_text(upstream, entry_id) or board.entry_text(board._read(), entry_id)
+        first = next((line for line in body.splitlines()[2:] if line.strip()), "") if body else ""
+        print(f"    BOARD: unread {entry_id} from A -- {first[:110]}", flush=True)
+    # Only entries already in our copy can be stamped; the rest get stamped once a rebase
+    # brings them in, and stay printed until then so they are not silently lost.
+    board.mark_read(sorted(mine))
 
 
 def update_board(done: int, total: int, counts: dict[str, int], started: float) -> None:
@@ -190,10 +204,19 @@ def main() -> None:
                     "\n\n```\n" + record["error"][:400] + "\n```",
                     urgent=True)
 
-        temporary = result_path.with_suffix(".json.tmp")
+        # A tool exception is not a verdict about the MCI, so its record must not land in the
+        # batch directory: "done" is "a file exists here", so writing it there would retire the
+        # MCI permanently -- absent from the dataset and never retried on resume, invisible in
+        # both directions. It goes to tool-errors/ instead, where it stays auditable and the
+        # MCI is simply picked up again next run. (Raised by A-006, which flagged the mirror
+        # image of this on their side: a placeholder result reported as MODEL_DECLINED.)
+        target = result_path if record.get("result") else (
+            BATCH_DIR / "tool-errors" / result_path.name)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        temporary = target.with_suffix(".json.tmp")
         temporary.write_text(json.dumps(record, ensure_ascii=False, indent=2, default=str),
                              encoding="utf-8")
-        os.replace(temporary, result_path)
+        os.replace(temporary, target)
 
         result = record.get("result")
         if not result:
@@ -234,8 +257,12 @@ def main() -> None:
         else:
             streak_module, streak = None, 0
 
+        # Read the board on every publish cycle, not just at startup. Doing it only at startup
+        # meant a message posted one minute into a multi-day run sat unread for the whole run.
+        sync_board()
+
         done = sum(counts.values())
-        paths = [f"data/{PROJECT}"]
+        paths = [f"data/{PROJECT}", "COLLAB.md"]
         if args.board_every and processed % args.board_every == 0:
             update_board(done, total, counts, started)
             paths.append("COLLAB.md")

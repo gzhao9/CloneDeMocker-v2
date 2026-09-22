@@ -64,9 +64,23 @@ def _archive(blocks: list[str]) -> None:
             handle.write("\n" + block.rstrip() + "\n")
 
 
-def unread_from_them() -> list[tuple[str, str]]:
-    """(id, text) for A's entries whose read-by-B footer is still blank."""
-    text = _read()
+def entry_text(text: str, entry_id: str) -> str | None:
+    """The block for one entry id inside an arbitrary board text."""
+    i = text.find(f"### [{entry_id}]")
+    if i == -1:
+        return None
+    j = text.find("\n### [", i + 1)
+    return text[i:(j if j != -1 else len(text))].strip()
+
+
+def unread_in(text: str) -> list[tuple[str, str]]:
+    """(id, text) for A's entries in `text` whose read-by-B footer is still blank.
+
+    Takes the board text rather than reading from disk, so the runner can inspect origin's
+    copy — which is what it actually needs. Our working copy only catches up when a push races
+    and forces a rebase, so on a quiet stretch it can sit hours behind, which is precisely when
+    a message would go unseen.
+    """
     start, end = _section(text, "\n## ACTIVE")
     if start == -1:
         return []
@@ -79,6 +93,11 @@ def unread_from_them() -> list[tuple[str, str]]:
         if footer and not footer.group(1).strip():
             out.append((f"{match.group(1)}-{match.group(2)}", block.strip()))
     return out
+
+
+def unread_from_them() -> list[tuple[str, str]]:
+    """unread_in() against our own working copy."""
+    return unread_in(_read())
 
 
 def mark_read(ids: list[str]) -> None:

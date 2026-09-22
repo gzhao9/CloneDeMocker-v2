@@ -38,9 +38,11 @@ GIT_EMAIL = "lixinyi0823@gmail.com"
 
 
 def git(*args: str, check: bool = False, timeout: int = 900) -> subprocess.CompletedProcess:
+    # See run_cloudstack_synced.git(): the locale codec here is GBK and the repo is UTF-8.
     return subprocess.run(
         ["git", "-c", f"user.name={GIT_NAME}", "-c", f"user.email={GIT_EMAIL}", *args],
-        cwd=REPO, text=True, capture_output=True, check=check, timeout=timeout)
+        cwd=REPO, text=True, capture_output=True,
+        encoding="utf-8", errors="replace", check=check, timeout=timeout)
 
 
 def regenerate() -> dict:
