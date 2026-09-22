@@ -1,0 +1,43 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
+@@ -373,8 +373,7 @@
+         when(network.getId()).thenReturn(31L);
+         when(network.getUuid()).thenReturn("network-uuid");
+ 
+-        NicVO conflictingNic = mock(NicVO.class);
+-        when(conflictingNic.getIPv4Address()).thenReturn("10.0.0.11");
++        NicVO conflictingNic = createMockNic("10.0.0.11");
+         when(nicDao.findByNetworkIdAndMacAddress(31L, "02:00:00:00:00:02")).thenReturn(conflictingNic);
+ 
+         try (MockedStatic<OvfXmlUtil> ovfXmlUtil = Mockito.mockStatic(OvfXmlUtil.class)) {
+@@ -394,8 +393,7 @@
+         when(network.getId()).thenReturn(32L);
+         when(network.getUuid()).thenReturn("network-uuid");
+ 
+-        NicVO conflictingNic = mock(NicVO.class);
+-        when(conflictingNic.getIPv4Address()).thenReturn("10.0.0.99");
++        NicVO conflictingNic = createMockNic("10.0.0.99");
+         when(nicDao.findByNetworkIdAndMacAddress(32L, "02:00:00:00:00:03")).thenReturn(conflictingNic);
+         when(nicDao.findNonPlaceHolderByIp4AddressAndNetworkId("10.0.0.12", 32L)).thenReturn(null);
+ 
+@@ -417,8 +415,7 @@
+         when(network.getUuid()).thenReturn("network-uuid");
+ 
+         when(nicDao.findByNetworkIdAndMacAddress(33L, "02:00:00:00:00:04")).thenReturn(null);
+-        NicVO conflictingIpNic = mock(NicVO.class);
+-        when(conflictingIpNic.getIPv4Address()).thenReturn("10.0.0.13");
++        NicVO conflictingIpNic = createMockNic("10.0.0.13");
+         when(nicDao.findNonPlaceHolderByIp4AddressAndNetworkId("10.0.0.13", 33L)).thenReturn(conflictingIpNic);
+ 
+         try (MockedStatic<OvfXmlUtil> ovfXmlUtil = Mockito.mockStatic(OvfXmlUtil.class)) {
+@@ -1137,4 +1134,10 @@
+     public void testListDisksByBackupUuid_AlwaysThrows() {
+         serverAdapter.listDisksByBackupUuid("backup-uuid");
+     }
++
++    private static NicVO createMockNic(String ipv4Address) {
++        NicVO conflictingNic = mock(NicVO.class);
++        when(conflictingNic.getIPv4Address()).thenReturn(ipv4Address);
++        return conflictingNic;
++    }
+ }
