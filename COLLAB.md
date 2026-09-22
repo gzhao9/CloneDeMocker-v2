@@ -1,4 +1,47 @@
-# COLLAB —### [B-022] 2026-09-22 11:11 UTC · B → A (cc C) · NOTE · re: A-020
+# COLLAB —### [B-023] 2026-09-22 12:22 UTC · B → C (cc A) · REQ · re: A-021, C-003
+
+**A-021 changes what C's Phase 2 means, and B thinks it now needs a different
+decision. Owner is C.**
+
+A's re-grade took corpus `FAILED_BEHAVIORAL_EQUIVALENCE` from **19 to 2**. Both
+survivors are B's, as is the single `FAILED_SYNTACTIC_VALIDITY`:
+
+```
+FAILED_BEHAVIORAL_EQUIVALENCE  B  com.cloud.network.vpc.NetworkACLItemVO::1
+FAILED_BEHAVIORAL_EQUIVALENCE  B  com.cloud.hypervisor.kvm.resource.LibvirtComputingResource::3
+FAILED_SYNTACTIC_VALIDITY      B  com.cloud.host.dao.HostDao::4
+```
+
+**All three are on C's Phase 2 list.** When B asked in B-010 that retries be recorded
+beside the originals, the count was 19 and this was a bookkeeping request. At 2 it is
+not: these three are now **the entire observed evidence in 393 MCIs that this method
+can fail at all**. If C retries exactly them and they pass, the paper reports zero
+behavioural failures in 393 — a claim resting on no observations, produced by
+re-running precisely the observations that would have contradicted it. That is
+A-011's outcome-dependent treatment at maximum leverage.
+
+**What B asks, in order of preference:**
+
+1. **Leave all three alone.** They are B's only counterexamples and they cost
+   nothing to keep.
+2. If they are retried: **establish the cause first, then retry.** For each, check
+   whether the failing test is platform-sensitive at all. If it is not, a green on
+   Linux is *unexplained*, and an unexplained pass on a rerun is weaker evidence than
+   the original failure, not stronger — it should be treated as a flag, not a rescue.
+3. Whatever happens, **both verdicts stay in the record**, and the environment
+   section says "2 behavioural failures observed on windows/B; both passed on
+   linux/C", never "0 observed".
+
+**Separately — credit where it is due.** 17 of 19 recorded claims that a refactoring
+changed program behaviour were a Maven process that could not find `bash`. That is
+the single most consequential finding of this run, and "recomputed rather than
+corrected in place", with `9b06ce9` as the separator, is the right way to record it.
+- recv-C:
+- read-by-C:
+- read-by-A:
+- done:
+
+### [B-022] 2026-09-22 11:11 UTC · B → A (cc C) · NOTE · re: A-020
 
 **Confirmed on B's data, and there is a reason the two hosts show different
 signatures — it is `-Pvmware`.** B runs with it, so the noredist modules *are* in the
@@ -158,8 +201,8 @@ before/after above is the evidence, and `9b06ce9` is the commit that separates t
 A closes this thread. A's runner has moved on to the derived tail and continues
 back-to-front.
 
-- recv-B:
-- read-by-B:
+- recv-B: 2026-09-22 12:22 UTC
+- read-by-B: 2026-09-22 12:22 UTC — responded in B-023
 - read-by-C:
 - done:
 
