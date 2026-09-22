@@ -1,0 +1,104 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
+@@ -112,6 +112,7 @@
+     private String dhcpProvider = "VirtualRouter";
+     private NetworkGuru guru = mock(NetworkGuru.class);
+     private NetworkExtensionElement networkExtensionElement;
++    private DataCenter mockedDataCenter;
+ 
+     NetworkOfferingVO networkOffering = mock(NetworkOfferingVO.class);
+ 
+@@ -126,6 +127,7 @@
+     @Before
+     public void setUp() {
+         // make class-scope mocks
++        mockedDataCenter = Mockito.mock(DataCenter.class);
+         testOrchestrator._nicDao = mock(NicDao.class);
+         testOrchestrator._networksDao = mock(NetworkDao.class);
+         testOrchestrator._networkModel = mock(NetworkModel.class);
+@@ -773,10 +775,9 @@
+     @Test
+     public void testGetGuestIpForNicImportL2Network() {
+         Network network = Mockito.mock(Network.class);
+-        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+         Mockito.when(network.getGuestType()).thenReturn(GuestType.L2);
+-        Assert.assertNull(testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses));
++        Assert.assertNull(testOrchestrator.getSelectedIpForNicImport(network, mockedDataCenter, ipAddresses));
+     }
+ 
+     @Test
+@@ -909,7 +910,6 @@
+ 
+     @Test(expected = InsufficientVirtualNetworkCapacityException.class)
+     public void testImportNicAcquireGuestIPFailed() throws Exception {
+-        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         VirtualMachine vm = mock(VirtualMachine.class);
+         Network network = Mockito.mock(Network.class);
+         Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
+@@ -919,16 +919,15 @@
+         Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+         String ipAddress = "10.1.10.10";
+         Mockito.when(ipAddresses.getIp4Address()).thenReturn(ipAddress);
+-        Mockito.when(testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses)).thenReturn(null);
++        Mockito.when(testOrchestrator.getSelectedIpForNicImport(network, mockedDataCenter, ipAddresses)).thenReturn(null);
+         Mockito.when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
+         String macAddress = "02:01:01:82:00:01";
+         int deviceId = 0;
+-        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
++        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, mockedDataCenter, false);
+     }
+ 
+     @Test(expected = InsufficientVirtualNetworkCapacityException.class)
+     public void testImportNicAutoAcquireGuestIPFailed() throws Exception {
+-        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         VirtualMachine vm = mock(VirtualMachine.class);
+         Network network = Mockito.mock(Network.class);
+         Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
+@@ -938,16 +937,15 @@
+         Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+         String ipAddress = "auto";
+         Mockito.when(ipAddresses.getIp4Address()).thenReturn(ipAddress);
+-        Mockito.when(testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses)).thenReturn(null);
++        Mockito.when(testOrchestrator.getSelectedIpForNicImport(network, mockedDataCenter, ipAddresses)).thenReturn(null);
+         Mockito.when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
+         String macAddress = "02:01:01:82:00:01";
+         int deviceId = 0;
+-        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
++        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, mockedDataCenter, false);
+     }
+ 
+     @Test
+     public void testImportNicNoIP4Address() throws Exception {
+-        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         Long vmId = 1L;
+         Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+         VirtualMachine vm = mock(VirtualMachine.class);
+@@ -969,7 +967,7 @@
+         Mockito.when(testOrchestrator._networkModel.getNetworkTag(hypervisorType, network)).thenReturn("testtag");
+         try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
+             transactionMocked.when(() -> Transaction.execute(any(TransactionCallback.class))).thenReturn(nic);
+-            Pair<NicProfile, Integer> nicProfileIntegerPair = testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
++            Pair<NicProfile, Integer> nicProfileIntegerPair = testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, mockedDataCenter, false);
+             verify(testOrchestrator._networkModel, times(1)).getNetworkRate(networkId, vmId);
+             verify(testOrchestrator._networkModel, times(1)).isSecurityGroupSupportedInNetwork(network);
+             verify(testOrchestrator._networkModel, times(1)).getNetworkTag(Hypervisor.HypervisorType.KVM, network);
+@@ -984,7 +982,6 @@
+ 
+     @Test
+     public void testImportNicWithIP4Address() throws Exception {
+-        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         Long vmId = 1L;
+         Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+         VirtualMachine vm = mock(VirtualMachine.class);
+@@ -1007,8 +1004,8 @@
+         Mockito.when(testOrchestrator._networkModel.getNetworkTag(hypervisorType, network)).thenReturn("testtag");
+         try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
+             transactionMocked.when(() -> Transaction.execute(any(TransactionCallback.class))).thenReturn(nic);
+-            Pair<NicProfile, Integer> nicProfileIntegerPair = testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
+-            verify(testOrchestrator, times(1)).getSelectedIpForNicImport(network, dataCenter, ipAddresses);
++            Pair<NicProfile, Integer> nicProfileIntegerPair = testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, mockedDataCenter, false);
++            verify(testOrchestrator, times(1)).getSelectedIpForNicImport(network, mockedDataCenter, ipAddresses);
+             verify(testOrchestrator._networkModel, times(1)).getNetworkRate(networkId, vmId);
+             verify(testOrchestrator._networkModel, times(1)).isSecurityGroupSupportedInNetwork(network);
+             verify(testOrchestrator._networkModel, times(1)).getNetworkTag(Hypervisor.HypervisorType.KVM, network);
