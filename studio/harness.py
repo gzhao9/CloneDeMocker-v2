@@ -5,6 +5,7 @@ from enum import StrEnum
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 import time
 import xml.etree.ElementTree as ET
@@ -332,6 +333,29 @@ class ProjectHarness:
     def _maven_repo_args(self) -> list[str]:
         return [f"-Dmaven.repo.local={self.maven_repo_local}"] if self.maven_repo_local else []
 
+    @staticmethod
+    def _extra_maven_args() -> list[str]:
+        """Host-specific Maven arguments, from CLONEDEMOCKER_MAVEN_ARGS.
+
+        CloudStack gates vmware-base and the vmware/veeam/nsx/netris/cisco-vnmc/
+        juniper-contrail/tungsten plugins behind a profile activated by the property
+        `noredist` merely being set. Nothing here ever set it, so those modules were
+        absent from the reactor on every host and their MCIs failed in seconds with
+        "Could not find the selected project in the reactor" — recorded as
+        ENVIRONMENT_NOT_READY with nothing pointing at the cause. A host holding the
+        non-redistributable SDKs sets CLONEDEMOCKER_MAVEN_ARGS=-Dnoredist and can grade
+        them; a host without them leaves it unset and keeps failing fast, which is the
+        honest outcome there.
+
+        Empty by default, so this changes nothing for a host that does not opt in.
+        Whatever is passed appears in the recorded `commands`, so the run's evidence
+        shows the arguments that actually reached Maven. That last property is the point:
+        MAVEN_ARGS in run_cloudstack_synced.py is only ever written into a progress
+        record and never reaches Maven, which left one worker believing for hours that it
+        ran with `-Dexec.skip=true -Pvmware` when neither flag had any effect.
+        """
+        return shlex.split(os.environ.get("CLONEDEMOCKER_MAVEN_ARGS", ""))
+
     def _scope_args(self, root: Path, scope: BuildScope | None) -> list[str]:
         """
         把构建限定到这次改动真正涉及的模块。
@@ -443,7 +467,7 @@ class ProjectHarness:
                 str(root / "mvnw") if (root / "mvnw").is_file() else ("mvn.cmd" if os.name == "nt" else "mvn")
             )
             command = [executable, *self._maven_repo_args(), *self._english_output_args(),
-                       *self._style_check_skip_args()]
+                       *self._style_check_skip_args(), *self._extra_maven_args()]
             if module_list:
                 command.extend(["-pl", ",".join(module_list), "-am"])
             command.extend([
@@ -727,7 +751,7 @@ class ProjectHarness:
             repo_args = self._maven_repo_args()
             style_check_skip_args = self._style_check_skip_args()
             prefix = [executable, *repo_args, *self._english_output_args(), *style_check_skip_args,
-                      *self._scope_args(root, scope)]
+                      *self._extra_maven_args(), *self._scope_args(root, scope)]
             test_filter = self._test_filter_args(scope)
             pit_command = [*prefix, "org.pitest:pitest-maven:mutationCoverage", "-DoutputFormats=XML"]
             if scope is not None and scope.test_classes:
