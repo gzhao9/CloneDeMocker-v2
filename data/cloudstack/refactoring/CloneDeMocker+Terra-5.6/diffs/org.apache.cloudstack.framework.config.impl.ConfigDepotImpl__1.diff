@@ -1,0 +1,39 @@
+--- a/server/src/test/java/com/cloud/hypervisor/KVMGuruTest.java
++++ b/server/src/test/java/com/cloud/hypervisor/KVMGuruTest.java
+@@ -193,10 +193,7 @@
+     public void getVmMaxMemoryTestConsiderKvmMemoryDynamicScalingCapacitySettingWhenItIsGreaterThanZero() {
+         int maxMemoryConfigValue = 64;
+ 
+-        ConfigDepotImpl configDepotMock = Mockito.mock(ConfigDepotImpl.class);
+-        ConfigKey.init(configDepotMock);
+-        Mockito.when(configDepotMock.getConfigStringValue(Mockito.any(), Mockito.any(), Mockito.any()))
+-                .thenReturn(String.valueOf(maxMemoryConfigValue));
++        ConfigDepotImpl configDepotMock = createMockConfigDepot(String.valueOf(maxMemoryConfigValue));
+ 
+         long result = guru.getVmMaxMemory(serviceOfferingVoMock, "Vm description", 1L, 1L);
+         ConfigKey.init(null);
+@@ -214,10 +211,7 @@
+     @Test
+     public void getVmMaxCpuCoresTestConsiderKvmCpuDynamicScalingCapacitySettingWhenItIsGreaterThanZero() {
+         int maxCpuCoresConfig = 16;
+-        ConfigDepotImpl configDepotMock = Mockito.mock(ConfigDepotImpl.class);
+-        ConfigKey.init(configDepotMock);
+-        Mockito.when(configDepotMock.getConfigStringValue(Mockito.any(), Mockito.any(), Mockito.any()))
+-                .thenReturn(String.valueOf(maxCpuCoresConfig));
++        ConfigDepotImpl configDepotMock = createMockConfigDepot(String.valueOf(maxCpuCoresConfig));
+ 
+         long result = guru.getVmMaxCpuCores(serviceOfferingVoMock, "Vm description", 1, 1L);
+         ConfigKey.init(null);
+@@ -499,4 +493,12 @@
+         Double actualQuota = guru.getCpuQuotaPercentage(vmSpeed, hostSpeed);
+         Assert.assertNull(actualQuota);
+     }
++
++    private static ConfigDepotImpl createMockConfigDepot(String configStringValue) {
++        ConfigDepotImpl configDepotMock = Mockito.mock(ConfigDepotImpl.class);
++        ConfigKey.init(configDepotMock);
++        Mockito.when(configDepotMock.getConfigStringValue(Mockito.any(), Mockito.any(), Mockito.any()))
++                .thenReturn(configStringValue);
++        return configDepotMock;
++    }
+ }
