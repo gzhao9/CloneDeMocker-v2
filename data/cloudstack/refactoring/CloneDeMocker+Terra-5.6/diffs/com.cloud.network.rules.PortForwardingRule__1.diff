@@ -1,0 +1,77 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -498,14 +498,13 @@
+     public void applyPFRulesAddRuleSuccessTest() {
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+-        PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
++        PortForwardingRule portForwardingRule = createMockPortForwardingRule(FirewallRule.State.Add);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         UserVm userVm = mock(UserVm.class);
+         Nic nic = mock(Nic.class);
+         TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(true);
+         List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
+ 
+-        when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Add);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddressVO);
+         when(ApiDBUtils.findUserVmById(anyLong())).thenReturn(userVm);
+@@ -519,14 +518,13 @@
+     public void applyPFRulesAddRuleFailTest() {
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+-        PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
++        PortForwardingRule portForwardingRule = createMockPortForwardingRule(FirewallRule.State.Add);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         UserVm userVm = mock(UserVm.class);
+         Nic nic = mock(Nic.class);
+         TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(false);
+         List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
+ 
+-        when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Add);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddressVO);
+         when(ApiDBUtils.findUserVmById(anyLong())).thenReturn(userVm);
+@@ -540,14 +538,13 @@
+     public void applyPFRulesRevokeRuleSuccessTest() {
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+-        PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
++        PortForwardingRule portForwardingRule = createMockPortForwardingRule(FirewallRule.State.Revoke);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         UserVm userVm = mock(UserVm.class);
+         Nic nic = mock(Nic.class);
+         TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(true);
+         List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
+ 
+-        when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Revoke);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddressVO);
+         when(ApiDBUtils.findUserVmById(anyLong())).thenReturn(userVm);
+@@ -561,14 +558,13 @@
+     public void applyPFRulesRevokeRuleFailTest() {
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+-        PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
++        PortForwardingRule portForwardingRule = createMockPortForwardingRule(FirewallRule.State.Revoke);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         UserVm userVm = mock(UserVm.class);
+         Nic nic = mock(Nic.class);
+         TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(false);
+         List<PortForwardingRule> portForwardingRuleList = List.of(portForwardingRule);
+ 
+-        when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Revoke);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddressVO);
+         when(ApiDBUtils.findUserVmById(anyLong())).thenReturn(userVm);
+@@ -962,4 +958,10 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    private static PortForwardingRule createMockPortForwardingRule(FirewallRule.State state) {
++        PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
++        when(portForwardingRule.getState()).thenReturn(state);
++        return portForwardingRule;
++    }
+ }

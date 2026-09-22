@@ -1,0 +1,105 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -273,6 +273,8 @@
+     DataCenterDao dataCenterDao;
+     @Mock
+     IpAddressManager ipAddressManager;
++    @Mock
++    private PortType sharedPortType;
+ 
+     TungstenServiceImpl tungstenService;
+ 
+@@ -896,7 +898,6 @@
+         ActionListType actionListType = mock(ActionListType.class);
+         AddressType addressType = mock(AddressType.class);
+         SubnetType subnetType = mock(SubnetType.class);
+-        PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenPolicyRuleCommand.class), anyLong())).thenReturn(addTungstenPolicyRuleAnswer);
+@@ -910,9 +911,9 @@
+         when(actionListType.getSimpleAction()).thenReturn("pass");
+         when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
+         when(addressType.getSubnet()).thenReturn(subnetType);
+-        when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
++        when(policyRuleType.getSrcPorts()).thenReturn(List.of(sharedPortType));
+         when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
+-        when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
++        when(policyRuleType.getDstPorts()).thenReturn(List.of(sharedPortType));
+ 
+         try (MockedConstruction<AddTungstenPolicyRuleCommand> ignored =
+                      Mockito.mockConstruction(AddTungstenPolicyRuleCommand.class, (mock, context) -> {
+@@ -1003,7 +1004,6 @@
+         ActionListType actionListType = mock(ActionListType.class);
+         AddressType addressType = mock(AddressType.class);
+         SubnetType subnetType = mock(SubnetType.class);
+-        PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+@@ -1016,9 +1016,9 @@
+         when(actionListType.getSimpleAction()).thenReturn("pass");
+         when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
+         when(addressType.getSubnet()).thenReturn(subnetType);
+-        when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
++        when(policyRuleType.getSrcPorts()).thenReturn(List.of(sharedPortType));
+         when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
+-        when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
++        when(policyRuleType.getDstPorts()).thenReturn(List.of(sharedPortType));
+ 
+         assertNotNull(tungstenService.listTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
+     }
+@@ -1032,7 +1032,6 @@
+         ActionListType actionListType = mock(ActionListType.class);
+         AddressType addressType = mock(AddressType.class);
+         SubnetType subnetType = mock(SubnetType.class);
+-        PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+@@ -1045,9 +1044,9 @@
+         when(actionListType.getSimpleAction()).thenReturn("pass");
+         when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
+         when(addressType.getSubnet()).thenReturn(subnetType);
+-        when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
++        when(policyRuleType.getSrcPorts()).thenReturn(List.of(sharedPortType));
+         when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
+-        when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
++        when(policyRuleType.getDstPorts()).thenReturn(List.of(sharedPortType));
+ 
+         assertNotNull(tungstenService.listTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", null));
+     }
+@@ -1270,7 +1269,6 @@
+         ServiceGroup serviceGroup = mock(ServiceGroup.class);
+         FirewallServiceGroupType firewallServiceGroupType = mock(FirewallServiceGroupType.class);
+         FirewallServiceType firewallServiceType = mock(FirewallServiceType.class);
+-        PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+@@ -1278,7 +1276,7 @@
+         when(createTungstenServiceGroupAnswer.getApiObjectBase()).thenReturn(serviceGroup);
+         when(serviceGroup.getFirewallServiceList()).thenReturn(firewallServiceGroupType);
+         when(firewallServiceGroupType.getFirewallService()).thenReturn(List.of(firewallServiceType));
+-        when(firewallServiceType.getDstPorts()).thenReturn(portType);
++        when(firewallServiceType.getDstPorts()).thenReturn(sharedPortType);
+ 
+         assertNotNull(tungstenService.createTungstenServiceGroup(1L, "test", "tcp", 80, 80));
+     }
+@@ -1436,7 +1434,6 @@
+         ServiceGroup serviceGroup = mock(ServiceGroup.class);
+         FirewallServiceGroupType firewallServiceGroupType = mock(FirewallServiceGroupType.class);
+         FirewallServiceType firewallServiceType = mock(FirewallServiceType.class);
+-        PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+@@ -1444,7 +1441,7 @@
+         doReturn(List.of(serviceGroup)).when(listTungstenServiceGroupAnswer).getApiObjectBaseList();
+         when(serviceGroup.getFirewallServiceList()).thenReturn(firewallServiceGroupType);
+         when(firewallServiceGroupType.getFirewallService()).thenReturn(List.of(firewallServiceType));
+-        when(firewallServiceType.getDstPorts()).thenReturn(portType);
++        when(firewallServiceType.getDstPorts()).thenReturn(sharedPortType);
+ 
+         assertNotNull(tungstenService.listTungstenServiceGroup(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }

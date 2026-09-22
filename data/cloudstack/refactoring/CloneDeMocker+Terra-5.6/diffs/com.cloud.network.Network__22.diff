@@ -1,0 +1,126 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
+@@ -112,6 +112,7 @@
+     private String dhcpProvider = "VirtualRouter";
+     private NetworkGuru guru = mock(NetworkGuru.class);
+     private NetworkExtensionElement networkExtensionElement;
++    private Network networkMock;
+ 
+     NetworkOfferingVO networkOffering = mock(NetworkOfferingVO.class);
+ 
+@@ -126,6 +127,7 @@
+     @Before
+     public void setUp() {
+         // make class-scope mocks
++        networkMock = mock(Network.class);
+         testOrchestrator._nicDao = mock(NicDao.class);
+         testOrchestrator._networksDao = mock(NetworkDao.class);
+         testOrchestrator._networkModel = mock(NetworkModel.class);
+@@ -262,28 +264,26 @@
+ 
+     @Test
+     public void testConfigureNicProfileBasedOnRequestedIpTestMacNull() {
+-        Network network = mock(Network.class);
+         NicProfile requestedNicProfile = new NicProfile();
+         NicProfile nicProfile = Mockito.spy(new NicProfile());
+ 
+         configureTestConfigureNicProfileBasedOnRequestedIpTests(nicProfile, 0l, false, IPAddressVO.State.Free, "192.168.100.1", "255.255.255.0", "00-88-14-4D-4C-FB",
+                 requestedNicProfile, null, "192.168.100.150");
+ 
+-        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
++        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, networkMock);
+ 
+         verifyAndAssert("192.168.100.150", "192.168.100.1", "255.255.255.0", nicProfile, 1, 1);
+     }
+ 
+     @Test
+     public void testConfigureNicProfileBasedOnRequestedIpTestNicProfileMacNotNull() {
+-        Network network = mock(Network.class);
+         NicProfile requestedNicProfile = new NicProfile();
+         NicProfile nicProfile = Mockito.spy(new NicProfile());
+ 
+         configureTestConfigureNicProfileBasedOnRequestedIpTests(nicProfile, 0l, false, IPAddressVO.State.Free, "192.168.100.1", "255.255.255.0", "00-88-14-4D-4C-FB",
+                 requestedNicProfile, "00-88-14-4D-4C-FB", "192.168.100.150");
+ 
+-        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
++        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, networkMock);
+ 
+         verifyAndAssert("192.168.100.150", "192.168.100.1", "255.255.255.0", nicProfile, 1, 0);
+     }
+@@ -304,13 +304,12 @@
+     }
+ 
+     private void testConfigureNicProfileBasedOnRequestedIpTestRequestedIp(String requestedIpv4Address) {
+-        Network network = mock(Network.class);
+         NicProfile requestedNicProfile = new NicProfile();
+         NicProfile nicProfile = Mockito.spy(new NicProfile());
+ 
+         configureTestConfigureNicProfileBasedOnRequestedIpTests(nicProfile, 0l, false, IPAddressVO.State.Free, "192.168.100.1", "255.255.255.0", "00-88-14-4D-4C-FB",
+                 requestedNicProfile, null, requestedIpv4Address);
+-        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
++        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, networkMock);
+ 
+         verifyAndAssert(null, null, null, nicProfile, 0, 0);
+     }
+@@ -331,13 +330,12 @@
+     }
+ 
+     private void testConfigureNicProfileBasedOnRequestedIpTestGateway(String ipv4Gateway) {
+-        Network network = mock(Network.class);
+         NicProfile requestedNicProfile = new NicProfile();
+         NicProfile nicProfile = Mockito.spy(new NicProfile());
+ 
+         configureTestConfigureNicProfileBasedOnRequestedIpTests(nicProfile, 0l, false, IPAddressVO.State.Free, ipv4Gateway, "255.255.255.0", "00-88-14-4D-4C-FB",
+                 requestedNicProfile, "00-88-14-4D-4C-FB", "192.168.100.150");
+-        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
++        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, networkMock);
+         verifyAndAssert(null, null, null, nicProfile, 1, 0);
+     }
+ 
+@@ -357,19 +355,17 @@
+     }
+ 
+     private void testConfigureNicProfileBasedOnRequestedIpTestNetmask(String ipv4Netmask) {
+-        Network network = mock(Network.class);
+         NicProfile requestedNicProfile = new NicProfile();
+         NicProfile nicProfile = Mockito.spy(new NicProfile());
+ 
+         configureTestConfigureNicProfileBasedOnRequestedIpTests(nicProfile, 0l, false, IPAddressVO.State.Free, "192.168.100.1", ipv4Netmask, "00-88-14-4D-4C-FB",
+                 requestedNicProfile, "00-88-14-4D-4C-FB", "192.168.100.150");
+-        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
++        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, networkMock);
+         verifyAndAssert(null, null, null, nicProfile, 1, 0);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testConfigureNicProfileBasedOnRequestedIpTestIPAddressVONull() {
+-        Network network = mock(Network.class);
+         NicProfile requestedNicProfile = new NicProfile();
+         NicProfile nicProfile = Mockito.spy(new NicProfile());
+ 
+@@ -377,7 +373,7 @@
+                 requestedNicProfile, "00-88-14-4D-4C-FB", "192.168.100.150");
+         when(testOrchestrator._vlanDao.findByNetworkIdAndIpv4(Mockito.anyLong(), Mockito.anyString())).thenReturn(null);
+ 
+-        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
++        testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, networkMock);
+         verifyAndAssert(null, null, null, nicProfile, 0, 0);
+     }
+ 
+@@ -750,7 +746,6 @@
+ 
+     @Test
+     public void testGetNetworkGatewayAndNetmaskForNicImportBasicZone() {
+-        Network network = Mockito.mock(Network.class);
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         IPAddressVO ipAddressVO = Mockito.mock(IPAddressVO.class);
+         String ipAddress = "172.1.1.10";
+@@ -764,7 +759,7 @@
+         Mockito.when(ipAddressVO.getVlanId()).thenReturn(1L);
+         Mockito.when(testOrchestrator._vlanDao.findById(1L)).thenReturn(vlan);
+         Mockito.when(testOrchestrator._ipAddressDao.findByIp(ipAddress)).thenReturn(ipAddressVO);
+-        Pair<String, String> pair = testOrchestrator.getNetworkGatewayAndNetmaskForNicImport(network, dataCenter, ipAddress);
++        Pair<String, String> pair = testOrchestrator.getNetworkGatewayAndNetmaskForNicImport(networkMock, dataCenter, ipAddress);
+         Assert.assertNotNull(pair);
+         Assert.assertEquals(defaultNetworkGateway, pair.first());
+         Assert.assertEquals(defaultNetworkNetmask, pair.second());

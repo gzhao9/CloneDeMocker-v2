@@ -1,0 +1,94 @@
+--- a/plugins/kms/pkcs11/src/test/java/org/apache/cloudstack/kms/provider/pkcs11/PKCS11HSMProviderTest.java
++++ b/plugins/kms/pkcs11/src/test/java/org/apache/cloudstack/kms/provider/pkcs11/PKCS11HSMProviderTest.java
+@@ -120,17 +120,11 @@
+     @Test
+     public void testLoadProfileConfig_DecryptsSensitiveValues() {
+         // Setup: Profile details with encrypted pin
+-        HSMProfileDetailsVO detail1 = mock(HSMProfileDetailsVO.class);
+-        when(detail1.getName()).thenReturn("library");
+-        when(detail1.getValue()).thenReturn("/path/to/lib.so");
+-
+-        HSMProfileDetailsVO detail2 = mock(HSMProfileDetailsVO.class);
+-        when(detail2.getName()).thenReturn("pin");
+-        when(detail2.getValue()).thenReturn("ENC(encrypted_pin)");
+-
+-        HSMProfileDetailsVO detail3 = mock(HSMProfileDetailsVO.class);
+-        when(detail3.getName()).thenReturn("slot");
+-        when(detail3.getValue()).thenReturn("0");
++        HSMProfileDetailsVO detail1 = createMockHsmProfileDetails("library", "/path/to/lib.so");
++
++        HSMProfileDetailsVO detail2 = createMockHsmProfileDetails("pin", "ENC(encrypted_pin)");
++
++        HSMProfileDetailsVO detail3 = createMockHsmProfileDetails("slot", "0");
+ 
+         when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(
+                 Arrays.asList(detail1, detail2, detail3));
+@@ -214,15 +208,9 @@
+     @Test
+     public void testGetSessionPool_CreatesPoolForNewProfile() {
+         // Setup
+-        HSMProfileDetailsVO libraryDetail = mock(HSMProfileDetailsVO.class);
+-        when(libraryDetail.getName()).thenReturn("library");
+-        when(libraryDetail.getValue()).thenReturn("/path/to/lib.so");
+-        HSMProfileDetailsVO slotDetail = mock(HSMProfileDetailsVO.class);
+-        when(slotDetail.getName()).thenReturn("slot");
+-        when(slotDetail.getValue()).thenReturn("1");
+-        HSMProfileDetailsVO pinDetail = mock(HSMProfileDetailsVO.class);
+-        when(pinDetail.getName()).thenReturn("pin");
+-        when(pinDetail.getValue()).thenReturn("1234");
++        HSMProfileDetailsVO libraryDetail = createMockHsmProfileDetails("library", "/path/to/lib.so");
++        HSMProfileDetailsVO slotDetail = createMockHsmProfileDetails("slot", "1");
++        HSMProfileDetailsVO pinDetail = createMockHsmProfileDetails("pin", "1234");
+         when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(
+                 Arrays.asList(libraryDetail, slotDetail, pinDetail));
+ 
+@@ -240,15 +228,9 @@
+     @Test
+     public void testGetSessionPool_ReusesPoolForSameProfile() {
+         // Setup
+-        HSMProfileDetailsVO libraryDetail = mock(HSMProfileDetailsVO.class);
+-        when(libraryDetail.getName()).thenReturn("library");
+-        when(libraryDetail.getValue()).thenReturn("/path/to/lib.so");
+-        HSMProfileDetailsVO slotDetail = mock(HSMProfileDetailsVO.class);
+-        when(slotDetail.getName()).thenReturn("slot");
+-        when(slotDetail.getValue()).thenReturn("1");
+-        HSMProfileDetailsVO pinDetail = mock(HSMProfileDetailsVO.class);
+-        when(pinDetail.getName()).thenReturn("pin");
+-        when(pinDetail.getValue()).thenReturn("1234");
++        HSMProfileDetailsVO libraryDetail = createMockHsmProfileDetails("library", "/path/to/lib.so");
++        HSMProfileDetailsVO slotDetail = createMockHsmProfileDetails("slot", "1");
++        HSMProfileDetailsVO pinDetail = createMockHsmProfileDetails("pin", "1234");
+         when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(
+                 Arrays.asList(libraryDetail, slotDetail, pinDetail));
+ 
+@@ -266,15 +248,9 @@
+     @Test
+     public void testInvalidateProfileCache_ForcesFreshPool() {
+         // Setup
+-        HSMProfileDetailsVO libraryDetail = mock(HSMProfileDetailsVO.class);
+-        when(libraryDetail.getName()).thenReturn("library");
+-        when(libraryDetail.getValue()).thenReturn("/path/to/lib.so");
+-        HSMProfileDetailsVO slotDetail = mock(HSMProfileDetailsVO.class);
+-        when(slotDetail.getName()).thenReturn("slot");
+-        when(slotDetail.getValue()).thenReturn("1");
+-        HSMProfileDetailsVO pinDetail = mock(HSMProfileDetailsVO.class);
+-        when(pinDetail.getName()).thenReturn("pin");
+-        when(pinDetail.getValue()).thenReturn("1234");
++        HSMProfileDetailsVO libraryDetail = createMockHsmProfileDetails("library", "/path/to/lib.so");
++        HSMProfileDetailsVO slotDetail = createMockHsmProfileDetails("slot", "1");
++        HSMProfileDetailsVO pinDetail = createMockHsmProfileDetails("pin", "1234");
+         when(hsmProfileDetailsDao.listByProfileId(testProfileId)).thenReturn(
+                 Arrays.asList(libraryDetail, slotDetail, pinDetail));
+ 
+@@ -291,4 +267,11 @@
+         // Config is reloaded for each freshly-built pool (twice total)
+         verify(hsmProfileDetailsDao, times(2)).listByProfileId(testProfileId);
+     }
++
++    private static HSMProfileDetailsVO createMockHsmProfileDetails(String name, String value) {
++        HSMProfileDetailsVO libraryDetail = mock(HSMProfileDetailsVO.class);
++        when(libraryDetail.getName()).thenReturn(name);
++        when(libraryDetail.getValue()).thenReturn(value);
++        return libraryDetail;
++    }
+ }

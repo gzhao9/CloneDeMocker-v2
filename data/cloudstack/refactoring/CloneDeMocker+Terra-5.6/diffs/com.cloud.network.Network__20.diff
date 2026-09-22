@@ -1,0 +1,93 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
+@@ -600,6 +600,12 @@
+ 
+         Assert.assertEquals(expectedIsolation, resultUri.getScheme());
+         Assert.assertEquals(expectedUri, resultUri.toString());
++    }
++
++    private static Network createMockNetwork(GuestType guestType) {
++        Network network = Mockito.mock(Network.class);
++        Mockito.when(network.getGuestType()).thenReturn(guestType);
++        return network;
+     }
+ 
+     private NicProfile prepareMocksAndRunPrepareNic(VirtualMachine.Type vmType, boolean isDefaultNic, boolean isVpcRouter, boolean routerResourceHasCustomDns) {
+@@ -772,19 +778,17 @@
+ 
+     @Test
+     public void testGetGuestIpForNicImportL2Network() {
+-        Network network = Mockito.mock(Network.class);
++        Network network = createMockNetwork(GuestType.L2);
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+-        Mockito.when(network.getGuestType()).thenReturn(GuestType.L2);
+         Assert.assertNull(testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses));
+     }
+ 
+     @Test
+     public void testGetGuestIpForNicImportAdvancedZone() {
+-        Network network = Mockito.mock(Network.class);
++        Network network = createMockNetwork(GuestType.Isolated);
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+-        Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
+         Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+         String ipAddress = "10.1.10.10";
+         Mockito.when(ipAddresses.getIp4Address()).thenReturn(ipAddress);
+@@ -795,10 +799,9 @@
+ 
+     @Test
+     public void testGetGuestIpForNicImportBasicZoneAutomaticIP() {
+-        Network network = Mockito.mock(Network.class);
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+-        Mockito.when(network.getGuestType()).thenReturn(GuestType.Shared);
++        Network network = createMockNetwork(GuestType.Shared);
+         Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+         long networkId = 1L;
+         long dataCenterId = 1L;
+@@ -817,10 +820,9 @@
+ 
+     @Test
+     public void testGetGuestIpForNicImportBasicZoneManualIP() {
+-        Network network = Mockito.mock(Network.class);
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+-        Mockito.when(network.getGuestType()).thenReturn(GuestType.Shared);
++        Network network = createMockNetwork(GuestType.Shared);
+         Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+         long networkId = 1L;
+         long dataCenterId = 1L;
+@@ -840,10 +842,9 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testGetGuestIpForNicImportBasicUsedIP() {
+-        Network network = Mockito.mock(Network.class);
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+-        Mockito.when(network.getGuestType()).thenReturn(GuestType.Shared);
++        Network network = createMockNetwork(GuestType.Shared);
+         Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+         long networkId = 1L;
+         long dataCenterId = 1L;
+@@ -911,8 +912,7 @@
+     public void testImportNicAcquireGuestIPFailed() throws Exception {
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         VirtualMachine vm = mock(VirtualMachine.class);
+-        Network network = Mockito.mock(Network.class);
+-        Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
++        Network network = createMockNetwork(GuestType.Isolated);
+         Mockito.when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+         long dataCenterId = 1L;
+         Mockito.when(network.getDataCenterId()).thenReturn(dataCenterId);
+@@ -930,8 +930,7 @@
+     public void testImportNicAutoAcquireGuestIPFailed() throws Exception {
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+         VirtualMachine vm = mock(VirtualMachine.class);
+-        Network network = Mockito.mock(Network.class);
+-        Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
++        Network network = createMockNetwork(GuestType.Isolated);
+         Mockito.when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+         long dataCenterId = 1L;
+         Mockito.when(network.getDataCenterId()).thenReturn(dataCenterId);

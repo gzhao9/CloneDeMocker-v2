@@ -1,0 +1,336 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -130,6 +130,8 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class TungstenElementTest {
+     @Mock
++    private Network networkMock;
++    @Mock
+     TungstenFabricUtils tungstenFabricUtils;
+     @Mock
+     NetworkModel networkModel;
+@@ -233,27 +235,24 @@
+ 
+     @Test
+     public void canHandleSuccessTest() {
+-        Network network = mock(Network.class);
+         Network.Service service = mock(Network.Service.class);
+ 
+         when(networkModel.isProviderForNetwork(any(), anyLong())).thenReturn(true);
+ 
+-        assertTrue(tungstenElement.canHandle(network, service));
++        assertTrue(tungstenElement.canHandle(networkMock, service));
+     }
+ 
+     @Test
+     public void canHandleFailTest() {
+-        Network network = mock(Network.class);
+         Network.Service service = mock(Network.Service.class);
+ 
+         when(networkModel.isProviderForNetwork(any(), anyLong())).thenReturn(false);
+ 
+-        assertFalse(tungstenElement.canHandle(network, service));
++        assertFalse(tungstenElement.canHandle(networkMock, service));
+     }
+ 
+     @Test
+     public void applyStaticNatsAddRuleSuccessTest() {
+-        Network network = mock(Network.class);
+         StaticNatImpl staticNat = mock(StaticNatImpl.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+@@ -269,12 +268,11 @@
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(tungstenFabricUtils.sendTungstenCommand(any(AssignTungstenFloatingIpCommand.class), anyLong())).thenReturn(assignFloatingIpAnswer);
+ 
+-        assertTrue(tungstenElement.applyStaticNats(network, staticNatList));
++        assertTrue(tungstenElement.applyStaticNats(networkMock, staticNatList));
+     }
+ 
+     @Test
+     public void applyStaticNatsAddRuleFailTest() {
+-        Network network = mock(Network.class);
+         StaticNatImpl staticNat = mock(StaticNatImpl.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+@@ -290,12 +288,11 @@
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(tungstenFabricUtils.sendTungstenCommand(any(AssignTungstenFloatingIpCommand.class), anyLong())).thenReturn(assignFloatingIpAnswer);
+ 
+-        assertFalse(tungstenElement.applyStaticNats(network, staticNatList));
++        assertFalse(tungstenElement.applyStaticNats(networkMock, staticNatList));
+     }
+ 
+     @Test
+     public void applyStaticNatsRevokeRuleSuccessTest() {
+-        Network network = mock(Network.class);
+         StaticNatImpl staticNat = mock(StaticNatImpl.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+@@ -311,12 +308,11 @@
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ReleaseTungstenFloatingIpCommand.class), anyLong())).thenReturn(releaseFloatingIpAnswer);
+ 
+-        assertTrue(tungstenElement.applyStaticNats(network, staticNatList));
++        assertTrue(tungstenElement.applyStaticNats(networkMock, staticNatList));
+     }
+ 
+     @Test
+     public void applyStaticNatsRevokeRuleFailTest() {
+-        Network network = mock(Network.class);
+         StaticNatImpl staticNat = mock(StaticNatImpl.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+@@ -332,13 +328,12 @@
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ReleaseTungstenFloatingIpCommand.class), anyLong())).thenReturn(releaseFloatingIpAnswer);
+ 
+-        assertFalse(tungstenElement.applyStaticNats(network, staticNatList));
++        assertFalse(tungstenElement.applyStaticNats(networkMock, staticNatList));
+     }
+ 
+     @Test
+     public void applyLBRulesAddRuleSuccessTest() {
+         User caller = mock(User.class);
+-        Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         Ip ip = mock(Ip.class);
+         LoadBalancingRule loadBalancingRule1 = mock(LoadBalancingRule.class);
+@@ -389,12 +384,11 @@
+         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerHealthMonitorCommand.class), anyLong())).thenReturn(updateTungstenHealthMonitorAnswer);
+ 
+-        assertTrue(tungstenElement.applyLBRules(network, loadBalancingRuleList1));
++        assertTrue(tungstenElement.applyLBRules(networkMock, loadBalancingRuleList1));
+     }
+ 
+     @Test
+     public void applyLBRulesAddRuleFailTest() {
+-        Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         Ip ip = mock(Ip.class);
+         LoadBalancingRule loadBalancingRule1 = mock(LoadBalancingRule.class);
+@@ -436,12 +430,11 @@
+         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerHealthMonitorCommand.class), anyLong())).thenReturn(updateTungstenHealthMonitorAnswer);
+ 
+-        assertFalse(tungstenElement.applyLBRules(network, loadBalancingRuleList1));
++        assertFalse(tungstenElement.applyLBRules(networkMock, loadBalancingRuleList1));
+     }
+ 
+     @Test
+     public void applyLBRulesRevokeRuleFailTest() {
+-        Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         Ip ip1 = mock(Ip.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+@@ -464,12 +457,11 @@
+         when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(),anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
+         when(tungstenGuestNetworkIpAddressDao.remove(anyLong())).thenReturn(false);
+ 
+-        assertFalse(tungstenElement.applyLBRules(network, loadBalancingRuleList1));
++        assertFalse(tungstenElement.applyLBRules(networkMock, loadBalancingRuleList1));
+     }
+ 
+     @Test
+     public void applyLBRulesRevokeRuleSuccessTest() {
+-        Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         Ip ip = mock(Ip.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+@@ -491,12 +483,11 @@
+         when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
+         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList);
+ 
+-        assertTrue(tungstenElement.applyLBRules(network, loadBalancingRuleList));
++        assertTrue(tungstenElement.applyLBRules(networkMock, loadBalancingRuleList));
+     }
+ 
+     @Test
+     public void applyPFRulesAddRuleSuccessTest() {
+-        Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+@@ -512,12 +503,11 @@
+         when(networkModel.getNicInNetwork(anyLong(), anyLong())).thenReturn(nic);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenPortForwardingCommand.class), anyLong())).thenReturn(applyTungstenPortForwardingAnswer);
+ 
+-        assertTrue(tungstenElement.applyPFRules(network, portForwardingRuleList));
++        assertTrue(tungstenElement.applyPFRules(networkMock, portForwardingRuleList));
+     }
+ 
+     @Test
+     public void applyPFRulesAddRuleFailTest() {
+-        Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+@@ -533,12 +523,11 @@
+         when(networkModel.getNicInNetwork(anyLong(), anyLong())).thenReturn(nic);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenPortForwardingCommand.class), anyLong())).thenReturn(applyTungstenPortForwardingAnswer);
+ 
+-        assertFalse(tungstenElement.applyPFRules(network, portForwardingRuleList));
++        assertFalse(tungstenElement.applyPFRules(networkMock, portForwardingRuleList));
+     }
+ 
+     @Test
+     public void applyPFRulesRevokeRuleSuccessTest() {
+-        Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+@@ -554,7 +543,7 @@
+         when(networkModel.getNicInNetwork(anyLong(), anyLong())).thenReturn(nic);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenPortForwardingCommand.class), anyLong())).thenReturn(applyTungstenPortForwardingAnswer);
+ 
+-        assertTrue(tungstenElement.applyPFRules(network, portForwardingRuleList));
++        assertTrue(tungstenElement.applyPFRules(networkMock, portForwardingRuleList));
+     }
+ 
+     @Test
+@@ -580,7 +569,6 @@
+ 
+     @Test
+     public void preparePublicNetworkTest() throws ConcurrentOperationException {
+-        Network network = mock(Network.class);
+         NicProfile nicProfile = new NicProfile();
+         VirtualMachineProfile virtualMachineProfile = mock(VirtualMachineProfile.class);
+         DeployDestination deployDestination = mock(DeployDestination.class);
+@@ -592,7 +580,7 @@
+         TungstenAnswer createTungstenNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         nicProfile.setIPv4Address("192.168.100.100");
+-        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
++        when(networkMock.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(createTungstenVMAnswer);
+@@ -600,7 +588,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(createTungstenNetworkPolicyAnswer);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
+ 
+-        assertTrue(tungstenElement.prepare(network, nicProfile, virtualMachineProfile, deployDestination, reservationContext));
++        assertTrue(tungstenElement.prepare(networkMock, nicProfile, virtualMachineProfile, deployDestination, reservationContext));
+         assertEquals(Nic.ReservationStrategy.Create, nicProfile.getReservationStrategy());
+         assertEquals(Networks.BroadcastDomainType.TUNGSTEN, nicProfile.getBroadcastType());
+         assertEquals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"), nicProfile.getBroadCastUri());
+@@ -730,7 +718,6 @@
+     public void destroyTest() throws ConcurrentOperationException, ResourceUnavailableException {
+         IPAddressVO ipAddressVO1 = mock(IPAddressVO.class);
+         IPAddressVO ipAddressVO2 = mock(IPAddressVO.class);
+-        Network network = mock(Network.class);
+         ReservationContext reservationContext = mock(ReservationContext.class);
+         List<IPAddressVO> ipAddressVOList = Arrays.asList(ipAddressVO1, ipAddressVO2);
+         TungstenAnswer tungstenDeleteFIPAnswer = MockTungstenAnswerFactory.get(true);
+@@ -740,7 +727,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenFloatingIpCommand.class), anyLong())).thenReturn(tungstenDeleteFIPAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(tungstenDeleteNPAnswer);
+ 
+-        assertTrue(tungstenElement.destroy(network, reservationContext));
++        assertTrue(tungstenElement.destroy(networkMock, reservationContext));
+     }
+ 
+     @Test
+@@ -760,7 +747,6 @@
+         PhysicalNetworkVO physicalNetworkVO = mock(PhysicalNetworkVO.class);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+-        Network publicNetwork = mock(Network.class);
+         VlanVO vlanVO1 = mock(VlanVO.class);
+         VlanVO vlanVO2 = mock(VlanVO.class);
+         List<VlanVO> vlanVOList = Arrays.asList(vlanVO1, vlanVO2);
+@@ -771,7 +757,7 @@
+         when(physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetworkVO);
+         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+-        when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
++        when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(networkMock);
+         when(vlanDao.listVlansByNetworkIdIncludingRemoved(anyLong())).thenReturn(vlanVOList);
+         when(hostPodDao.listByDataCenterId(anyLong())).thenReturn(hostPodVOList);
+ 
+@@ -843,7 +829,6 @@
+ 
+     @Test
+     public void applyFWRulesWithAddIngressRuleTest() throws ResourceUnavailableException {
+-        Network network = mock(Network.class);
+         FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
+         Network publicNetwork = mock(Network.class);
+         TungstenAnswer createNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+@@ -862,12 +847,11 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(createNetworkPolicyAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(applyNetworkPolicyAnswer);
+ 
+-        assertTrue(tungstenElement.applyFWRules(network, List.of(firewallRuleVO)));
++        assertTrue(tungstenElement.applyFWRules(networkMock, List.of(firewallRuleVO)));
+     }
+ 
+     @Test
+     public void applyFWRulesWithRevokeRuleTest() throws ResourceUnavailableException {
+-        Network network = mock(Network.class);
+         FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
+         Network publicNetwork = mock(Network.class);
+         TungstenAnswer deleteNetworkPolicyAnswer = mock(TungstenAnswer.class);
+@@ -878,7 +862,7 @@
+         when(firewallRuleVO.getTrafficType()).thenReturn(FirewallRule.TrafficType.Ingress);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteNetworkPolicyAnswer);
+ 
+-        assertTrue(tungstenElement.applyFWRules(network, List.of(firewallRuleVO)));
++        assertTrue(tungstenElement.applyFWRules(networkMock, List.of(firewallRuleVO)));
+     }
+ 
+     @Test
+@@ -910,7 +894,6 @@
+     @Test
+     public void prepareMigrationTest() {
+         NicProfile nic = mock(NicProfile.class);
+-        Network network = mock(Network.class);
+         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+         DeployDestination dest = mock(DeployDestination.class);
+         ReservationContext context = mock(ReservationContext.class);
+@@ -919,18 +902,17 @@
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         when(vm.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
+-        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
++        when(networkMock.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(tungstenAnswer);
+ 
+-        assertTrue(tungstenElement.prepareMigration(nic, network, vm, dest, context));
++        assertTrue(tungstenElement.prepareMigration(nic, networkMock, vm, dest, context));
+     }
+ 
+     @Test
+     public void rollbackMigration() {
+         NicProfile nic = mock(NicProfile.class);
+-        Network network = mock(Network.class);
+         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+         ReservationContext src = mock(ReservationContext.class);
+         ReservationContext dest = mock(ReservationContext.class);
+@@ -941,14 +923,13 @@
+         when(vm.getVirtualMachine()).thenReturn(virtualMachine);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+ 
+-        tungstenElement.rollbackMigration(nic, network, vm, src, dest);
++        tungstenElement.rollbackMigration(nic, networkMock, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
+ 
+     @Test
+     public void commitMigration() {
+         NicProfile nic = mock(NicProfile.class);
+-        Network network = mock(Network.class);
+         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+         ReservationContext src = mock(ReservationContext.class);
+         ReservationContext dest = mock(ReservationContext.class);
+@@ -959,7 +940,7 @@
+         when(vm.getVirtualMachine()).thenReturn(virtualMachine);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+ 
+-        tungstenElement.commitMigration(nic, network, vm, src, dest);
++        tungstenElement.commitMigration(nic, networkMock, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
+ }

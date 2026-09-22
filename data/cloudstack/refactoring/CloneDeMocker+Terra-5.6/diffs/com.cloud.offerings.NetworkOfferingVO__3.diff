@@ -1,0 +1,142 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerCloneIntegrationTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerCloneIntegrationTest.java
+@@ -766,12 +766,7 @@
+     public void testCloneNetworkOfferingInheritsAllPropertiesFromSource() {
+         Long sourceId = 1L;
+ 
+-        NetworkOfferingVO sourceOffering = mock(NetworkOfferingVO.class);
+-        when(sourceOffering.getId()).thenReturn(sourceId);
+-        when(sourceOffering.getName()).thenReturn("source-network-offering");
+-        when(sourceOffering.getDisplayText()).thenReturn("Source Network Offering");
+-        when(sourceOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+-        when(sourceOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
++        NetworkOfferingVO sourceOffering = createMockNetworkOffering(sourceId, Network.GuestType.Isolated);
+         when(sourceOffering.getAvailability()).thenReturn(NetworkOffering.Availability.Optional);
+         when(sourceOffering.getState()).thenReturn(NetworkOffering.State.Enabled);
+         when(sourceOffering.isDefault()).thenReturn(false);
+@@ -810,12 +805,7 @@
+     public void testCloneNetworkOfferingOverridesDisplayText() {
+         Long sourceId = 1L;
+ 
+-        NetworkOfferingVO sourceOffering = mock(NetworkOfferingVO.class);
+-        when(sourceOffering.getId()).thenReturn(sourceId);
+-        when(sourceOffering.getName()).thenReturn("source-network-offering");
+-        when(sourceOffering.getDisplayText()).thenReturn("Source Network Offering");
+-        when(sourceOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+-        when(sourceOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
++        NetworkOfferingVO sourceOffering = createMockNetworkOffering(sourceId, Network.GuestType.Isolated);
+ 
+         CloneNetworkOfferingCmd cmd = mock(CloneNetworkOfferingCmd.class);
+         when(cmd.getSourceOfferingId()).thenReturn(sourceId);
+@@ -847,12 +837,7 @@
+     public void testCloneNetworkOfferingHandlesAddServices() {
+         Long sourceId = 1L;
+ 
+-        NetworkOfferingVO sourceOffering = mock(NetworkOfferingVO.class);
+-        when(sourceOffering.getId()).thenReturn(sourceId);
+-        when(sourceOffering.getName()).thenReturn("source-network-offering");
+-        when(sourceOffering.getDisplayText()).thenReturn("Source Network Offering");
+-        when(sourceOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+-        when(sourceOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
++        NetworkOfferingVO sourceOffering = createMockNetworkOffering(sourceId, Network.GuestType.Isolated);
+ 
+         CloneNetworkOfferingCmd cmd = mock(CloneNetworkOfferingCmd.class);
+         when(cmd.getSourceOfferingId()).thenReturn(sourceId);
+@@ -891,12 +876,7 @@
+     public void testCloneNetworkOfferingHandlesDropServices() {
+         Long sourceId = 1L;
+ 
+-        NetworkOfferingVO sourceOffering = mock(NetworkOfferingVO.class);
+-        when(sourceOffering.getId()).thenReturn(sourceId);
+-        when(sourceOffering.getName()).thenReturn("source-network-offering");
+-        when(sourceOffering.getDisplayText()).thenReturn("Source Network Offering");
+-        when(sourceOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+-        when(sourceOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
++        NetworkOfferingVO sourceOffering = createMockNetworkOffering(sourceId, Network.GuestType.Isolated);
+ 
+         CloneNetworkOfferingCmd cmd = mock(CloneNetworkOfferingCmd.class);
+         when(cmd.getSourceOfferingId()).thenReturn(sourceId);
+@@ -938,12 +918,7 @@
+     public void testCloneNetworkOfferingOverridesSupportedServices() {
+         Long sourceId = 1L;
+ 
+-        NetworkOfferingVO sourceOffering = mock(NetworkOfferingVO.class);
+-        when(sourceOffering.getId()).thenReturn(sourceId);
+-        when(sourceOffering.getName()).thenReturn("source-network-offering");
+-        when(sourceOffering.getDisplayText()).thenReturn("Source Network Offering");
+-        when(sourceOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+-        when(sourceOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
++        NetworkOfferingVO sourceOffering = createMockNetworkOffering(sourceId, Network.GuestType.Isolated);
+ 
+         CloneNetworkOfferingCmd cmd = mock(CloneNetworkOfferingCmd.class);
+         when(cmd.getSourceOfferingId()).thenReturn(sourceId);
+@@ -1018,37 +993,42 @@
+     public void testCloneNetworkOfferingInheritsAvailability() {
+         Long sourceId = 1L;
+ 
++        NetworkOfferingVO sourceOffering = createMockNetworkOffering(sourceId, Network.GuestType.Isolated);
++        when(sourceOffering.getAvailability()).thenReturn(NetworkOffering.Availability.Required);
++
++        CloneNetworkOfferingCmd cmd = mock(CloneNetworkOfferingCmd.class);
++        when(cmd.getSourceOfferingId()).thenReturn(sourceId);
++        when(cmd.getNetworkOfferingName()).thenReturn("cloned-network-offering");
++        when(cmd.getAvailability()).thenReturn(null); // Should inherit
++
++        when(networkOfferingDao.findById(sourceId)).thenReturn(sourceOffering);
++        when(networkOfferingDao.findByUniqueName("cloned-network-offering")).thenReturn(null);
++
++        Map<Network.Service, java.util.Set<Network.Provider>> serviceProviderMap = new HashMap<>();
++        when(configurationManager._networkModel.getNetworkOfferingServiceProvidersMap(sourceId))
++            .thenReturn(serviceProviderMap);
++
++        NetworkOfferingVO clonedOffering = mock(NetworkOfferingVO.class);
++        when(clonedOffering.getId()).thenReturn(2L);
++        when(clonedOffering.getName()).thenReturn("cloned-network-offering");
++        when(clonedOffering.getAvailability()).thenReturn(NetworkOffering.Availability.Required);
++
++        Mockito.doReturn(clonedOffering).when(configurationManager).createNetworkOffering(any());
++
++        NetworkOffering result = configurationManager.cloneNetworkOffering(cmd);
++
++        Assert.assertNotNull("Cloned network offering should not be null", result);
++        Assert.assertEquals("Should inherit availability", NetworkOffering.Availability.Required, result.getAvailability());
++        verify(networkOfferingDao).findById(sourceId);
++    }
++
++    private static NetworkOfferingVO createMockNetworkOffering(Long sourceId, Network.GuestType guestType) {
+         NetworkOfferingVO sourceOffering = mock(NetworkOfferingVO.class);
+         when(sourceOffering.getId()).thenReturn(sourceId);
+         when(sourceOffering.getName()).thenReturn("source-network-offering");
+         when(sourceOffering.getDisplayText()).thenReturn("Source Network Offering");
+-        when(sourceOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
++        when(sourceOffering.getGuestType()).thenReturn(guestType);
+         when(sourceOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+-        when(sourceOffering.getAvailability()).thenReturn(NetworkOffering.Availability.Required);
+-
+-        CloneNetworkOfferingCmd cmd = mock(CloneNetworkOfferingCmd.class);
+-        when(cmd.getSourceOfferingId()).thenReturn(sourceId);
+-        when(cmd.getNetworkOfferingName()).thenReturn("cloned-network-offering");
+-        when(cmd.getAvailability()).thenReturn(null); // Should inherit
+-
+-        when(networkOfferingDao.findById(sourceId)).thenReturn(sourceOffering);
+-        when(networkOfferingDao.findByUniqueName("cloned-network-offering")).thenReturn(null);
+-
+-        Map<Network.Service, java.util.Set<Network.Provider>> serviceProviderMap = new HashMap<>();
+-        when(configurationManager._networkModel.getNetworkOfferingServiceProvidersMap(sourceId))
+-            .thenReturn(serviceProviderMap);
+-
+-        NetworkOfferingVO clonedOffering = mock(NetworkOfferingVO.class);
+-        when(clonedOffering.getId()).thenReturn(2L);
+-        when(clonedOffering.getName()).thenReturn("cloned-network-offering");
+-        when(clonedOffering.getAvailability()).thenReturn(NetworkOffering.Availability.Required);
+-
+-        Mockito.doReturn(clonedOffering).when(configurationManager).createNetworkOffering(any());
+-
+-        NetworkOffering result = configurationManager.cloneNetworkOffering(cmd);
+-
+-        Assert.assertNotNull("Cloned network offering should not be null", result);
+-        Assert.assertEquals("Should inherit availability", NetworkOffering.Availability.Required, result.getAvailability());
+-        verify(networkOfferingDao).findById(sourceId);
++        return sourceOffering;
+     }
+ }

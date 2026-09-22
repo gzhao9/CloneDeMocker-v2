@@ -1,0 +1,55 @@
+--- a/server/src/test/java/com/cloud/resourcelimit/ResourceLimitManagerImplTest.java
++++ b/server/src/test/java/com/cloud/resourcelimit/ResourceLimitManagerImplTest.java
+@@ -285,11 +285,9 @@
+     @Test
+     public void testCheckVmResourceLimit() {
+         List<Reserver> reservations = new ArrayList<>();
+-        ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
+         VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
++        ServiceOffering serviceOffering = createMockServiceOffering(2, 256);
+         Mockito.when(serviceOffering.getHostTag()).thenReturn(hostTags.get(0));
+-        Mockito.when(serviceOffering.getCpu()).thenReturn(2);
+-        Mockito.when(serviceOffering.getRamSize()).thenReturn(256);
+         Mockito.when(template.getTemplateTag()).thenReturn(hostTags.get(0));
+         Account account = Mockito.mock(Account.class);
+         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+@@ -976,6 +974,13 @@
+                 Mockito.anyLong(), Mockito.any(Resource.ResourceType.class), Mockito.anyString(), Mockito.anyLong());
+     }
+ 
++    private static ServiceOffering createMockServiceOffering(int cpu, int memory) {
++        ServiceOffering offering = Mockito.mock(ServiceOffering.class);
++        Mockito.when(offering.getCpu()).thenReturn(cpu);
++        Mockito.when(offering.getRamSize()).thenReturn(memory);
++        return offering;
++    }
++
+     @Test
+     public void testCheckVolumeResourceCount() throws ResourceAllocationException {
+         List<Reserver> reservations = new ArrayList<>();
+@@ -1103,11 +1108,9 @@
+                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
+                         Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
+         mockIncrementResourceCountWithTag();
+-        ServiceOffering offering = Mockito.mock(ServiceOffering.class);
+         int cpu = 1;
+-        Mockito.when(offering.getCpu()).thenReturn(cpu);
+         int memory = 1024;
+-        Mockito.when(offering.getRamSize()).thenReturn(memory);
++        ServiceOffering offering = createMockServiceOffering(cpu, memory);
+         resourceLimitManager.incrementVmResourceCount(accountId, false,
+                 offering, Mockito.mock(VirtualMachineTemplate.class), null);
+         Mockito.verify(resourceLimitManager, Mockito.times(1)).incrementResourceCountWithTag(
+@@ -1138,11 +1141,9 @@
+                 .getResourceLimitHostTagsForResourceCountOperation(Mockito.anyBoolean(),
+                         Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.any());
+         mockDecrementResourceCountWithTag();
+-        ServiceOffering offering = Mockito.mock(ServiceOffering.class);
+         int cpu = 1;
+-        Mockito.when(offering.getCpu()).thenReturn(cpu);
+         int memory = 1024;
+-        Mockito.when(offering.getRamSize()).thenReturn(memory);
++        ServiceOffering offering = createMockServiceOffering(cpu, memory);
+         resourceLimitManager.decrementVmResourceCount(accountId, false,
+                 offering, Mockito.mock(VirtualMachineTemplate.class), null);
+         Mockito.verify(resourceLimitManager, Mockito.times(1)).decrementResourceCountWithTag(

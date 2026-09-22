@@ -1,0 +1,112 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -1013,7 +1013,7 @@
+         Mockito.when(volumeDaoMock.findReadyRootVolumesByInstance(vmId)).thenReturn(null);
+         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+         Mockito.when(vm.getId()).thenReturn(templateId);
+-        Mockito.when(templateDao.findById(templateId)).thenReturn(template);
++        MockVMTemplateDao.mockFindById(templateDao, templateId, template);
+         virtualMachineManagerImpl.checkIfTemplateNeededForCreatingVmVolumes(vm);
+     }
+ 
+@@ -1029,7 +1029,7 @@
+         Mockito.when(volumeDaoMock.findReadyRootVolumesByInstance(vmId)).thenReturn(new ArrayList<>());
+         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+         Mockito.when(template.getId()).thenReturn(templateId);
+-        Mockito.when(templateDao.findById(templateId)).thenReturn(template);
++        MockVMTemplateDao.mockFindById(templateDao, templateId, template);
+         Mockito.when(templateZoneDao.findByZoneTemplate(dcId, templateId)).thenReturn(Mockito.mock(VMTemplateZoneVO.class));
+         virtualMachineManagerImpl.checkIfTemplateNeededForCreatingVmVolumes(vm);
+     }
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -1684,7 +1684,7 @@
+         when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+ 
+         VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+-        when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
++        MockVMTemplateDao.mockFindById(templateDao, currentTemplateId, currentTemplate);
+         when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(new ArrayList<>());
+ 
+         userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+@@ -1706,7 +1706,7 @@
+ 
+         VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+         when(currentTemplate.isDeployAsIs()).thenReturn(false);
+-        when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
++        MockVMTemplateDao.mockFindById(templateDao, currentTemplateId, currentTemplate);
+         List<VolumeVO> volumes = new ArrayList<>();
+         VolumeVO rootVolume1 = Mockito.mock(VolumeVO.class);
+         volumes.add(rootVolume1);
+@@ -1731,7 +1731,7 @@
+         when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+ 
+         VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+-        when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
++        MockVMTemplateDao.mockFindById(templateDao, currentTemplateId, currentTemplate);
+         List<VolumeVO> volumes = new ArrayList<>();
+         VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+         volumes.add(rootVolumeOfVm);
+@@ -3536,7 +3536,7 @@
+         when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+         VMTemplateVO template = mock(VMTemplateVO.class);
+         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+-        when(templateDao.findById(templateId)).thenReturn(template);
++        MockVMTemplateDao.mockFindById(templateDao, templateId, template);
+         VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+         Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+@@ -4266,7 +4266,7 @@
+         when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+         VMTemplateVO template = mock(VMTemplateVO.class);
+         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+-        when(templateDao.findById(templateId)).thenReturn(template);
++        MockVMTemplateDao.mockFindById(templateDao, templateId, template);
+ 
+         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+         VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+@@ -4330,7 +4330,7 @@
+         when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+         VMTemplateVO template = mock(VMTemplateVO.class);
+         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+-        when(templateDao.findById(templateId)).thenReturn(template);
++        MockVMTemplateDao.mockFindById(templateDao, templateId, template);
+ 
+         DiskOfferingVO overrideDiskOffering = mock(DiskOfferingVO.class);
+         when(overrideDiskOffering.isComputeOnly()).thenReturn(true);
+--- a/engine/orchestration/src/test/java/com/cloud/vm/MockVMTemplateDao.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/MockVMTemplateDao.java
+@@ -0,0 +1,15 @@
++package com.cloud.vm;
++
++import org.mockito.Mockito;
++
++import com.cloud.storage.VMTemplateVO;
++import com.cloud.storage.dao.VMTemplateDao;
++
++public final class MockVMTemplateDao {
++    private MockVMTemplateDao() {
++    }
++
++    public static void mockFindById(VMTemplateDao templateDao, long templateId, VMTemplateVO template) {
++        Mockito.when(templateDao.findById(templateId)).thenReturn(template);
++    }
++}
+--- a/server/src/test/java/com/cloud/vm/MockVMTemplateDao.java
++++ b/server/src/test/java/com/cloud/vm/MockVMTemplateDao.java
+@@ -0,0 +1,15 @@
++package com.cloud.vm;
++
++import org.mockito.Mockito;
++
++import com.cloud.storage.VMTemplateVO;
++import com.cloud.storage.dao.VMTemplateDao;
++
++public final class MockVMTemplateDao {
++    private MockVMTemplateDao() {
++    }
++
++    public static void mockFindById(VMTemplateDao templateDao, long templateId, VMTemplateVO template) {
++        Mockito.when(templateDao.findById(templateId)).thenReturn(template);
++    }
++}
