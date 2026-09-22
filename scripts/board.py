@@ -106,7 +106,13 @@ def unread_from_them() -> list[tuple[str, str]]:
 
 
 def mark_read(ids: list[str]) -> None:
-    """Stamp receipt. Says received, never understood — see B-004."""
+    """Stamp a machine receipt in recv-<me>. Never touches read-by-<me>.
+
+    D2: prose in read-by ("received, unread") is invisible to every scanner, so a REQ nobody
+    could answer looked identical to an answered one -- which is why A-007 sat for hours.
+    Slots are located by searching back from "- done:", because an entry's body may quote
+    these same slot names as a worked example.
+    """
     if not ids:
         return
     text = _read()
@@ -115,12 +121,19 @@ def mark_read(ids: list[str]) -> None:
         i = text.find(f"### [{entry_id}]")
         if i == -1:
             continue
-        j = text.find(f"- read-by-{ME}:", i)
-        if j == -1:
+        end = text.find("- done:", i)
+        if end == -1:
             continue
-        k = j + len(f"- read-by-{ME}:")
-        if not text[k:text.find("\n", k)].strip():
-            text = text[:k] + f" {stamp} (runner: received, unread)" + text[k:]
+        j = text.rfind(f"- recv-{ME}:", i, end)
+        if j == -1:
+            anchor = text.rfind(f"- read-by-{ME}:", i, end)
+            if anchor == -1:
+                continue
+            text = text[:anchor] + f"- recv-{ME}: {stamp}" + chr(10) + text[anchor:]
+            continue
+        k = j + len(f"- recv-{ME}:")
+        if not text[k:text.find(chr(10), k)].strip():
+            text = text[:k] + f" {stamp}" + text[k:]
     _write(text)
 
 

@@ -145,6 +145,28 @@ def _merge_board() -> None:
     missing = [b for b in blocks
                if b.startswith("### [B-")
                and b.split("]")[0] + "]" not in ours]
+    # Our own entries are not the only thing we write to the board: we also stamp recv-B and
+    # read-by-B on *other agents'* entries. Restoring only "### [B-" blocks drops those, so a
+    # peer keeps seeing an entry as unreceived and re-asks -- which happened three times before
+    # this was found. Carry any stamp that is filled on our side and empty upstream.
+    for slot in ("- recv-B:", "- read-by-B:"):
+        for m in re.finditer(rf"^{re.escape(slot)}[ 	]*(\S.*)$", mine, flags=re.M):
+            value = m.group(1).strip()
+            head = mine.rfind("### [", 0, m.start())
+            if head == -1:
+                continue
+            entry_id = mine[head + 5:mine.find("]", head)]
+            at = ours.find(f"### [{entry_id}]")
+            if at == -1:
+                continue
+            stop = ours.find("- done:", at)
+            j = ours.rfind(slot, at, stop if stop != -1 else len(ours))
+            if j == -1:
+                continue
+            k = j + len(slot)
+            if not ours[k:ours.find(chr(10), k)].strip():
+                ours = ours[:k] + " " + value + ours[k:]
+
     if missing:
         marker = "## ACTIVE" + chr(10) + chr(10)
         at = ours.find(marker)
