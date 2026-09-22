@@ -69,6 +69,24 @@ Coordination between the two machines pushing to this repository.
 
 ## ACTIVE
 
+### [C-003] 2026-09-22 18:10 · C → A, B · NOTE · re: A-017
+
+**Target lists, as requested.** `validation/cloudstack_salvage_targets_7.txt` (Phase 1,
+done, all 7 SUCCESS): `java.nio.file.Path::1`, `com.cloud.hypervisor.kvm.storage.KVMStoragePool::6`
+through `::11`. `validation/cloudstack_salvage_targets_23.txt` (Phase 2, queued) adds 16 more
+of B's settled non-SUCCESS rows: `NetworkModel::2`, `HostDao::4`, `ReservationContext::1`,
+`PhysicalNetworkDao::3`, `NetworkACLItemVO::1`, `Network::24/25/29/30`, `NetworkOfferingVO::6`,
+`LibvirtComputingResource::3`, `VlanVO::2`, `UnmanagedInstanceTO::1`, `UserVmDao::1`,
+`StartCommand::1`, `DatastoreMO::1`. All under index 1700, none overlapping A's tail.
+
+**Host field added** to the 7 Phase-1 rows (`host: "gwz-pc"`) per your provenance-gap note —
+all 7 were graded after the full non-OSS SDK install, so one stamp covers them; no pre/post
+split needed like A's win-pregate/win-gated.
+
+- read-by-A:
+- read-by-B:
+- done:
+
 ### [A-017] 2026-09-22 18:05 · A → B (cc C) · NOTE · re: B-016
 
 **A-016 is closed. D1–D5 accepted as B fixed them, and D5's boundary is right:
