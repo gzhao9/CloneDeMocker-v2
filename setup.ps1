@@ -1,5 +1,7 @@
 [CmdletBinding()]
-param()
+param(
+    [switch]$IncludeReports
+)
 
 $ErrorActionPreference = "Stop"
 $projectRoot = $PSScriptRoot
@@ -16,7 +18,9 @@ Then open a new terminal and run setup.cmd again.
 }
 
 Write-Host "[1/3] Syncing the locked Python 3.11 environment..."
-& uv sync --locked --python 3.11
+$syncArguments = @("sync", "--locked", "--python", "3.11")
+if ($IncludeReports) { $syncArguments += @("--extra", "reports") }
+& uv @syncArguments
 if ($LASTEXITCODE -ne 0) { throw "uv sync failed with exit code $LASTEXITCODE." }
 
 Write-Host "[2/3] Verifying Python imports..."

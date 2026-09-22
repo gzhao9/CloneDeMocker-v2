@@ -84,6 +84,14 @@ The launchers read `.env` from this repository or its parent without replacing v
 - `.python-version` selects Python 3.11 consistently across machines.
 - `studio/requirements.txt` is a compatibility list for tools that cannot consume `pyproject.toml`; it is not the recommended install path.
 
+The Web UI does not need plotting dependencies. To run scripts under `validation/report_builders/`, install the locked `reports` extra:
+
+```powershell
+.\setup.cmd -IncludeReports
+```
+
+On macOS/Linux, use `bash setup.sh --reports`.
+
 When adding or upgrading a dependency:
 
 ```powershell

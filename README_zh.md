@@ -95,6 +95,14 @@ OPENAI_API_KEY=your-key
 - `.python-version`：团队统一的 Python 3.11 选择。
 - `studio/requirements.txt`：只为无法读取 `pyproject.toml` 的工具保留，不是推荐安装入口。
 
+只使用 Web UI 不需要报告绘图依赖。需要运行 `validation/report_builders/` 时执行：
+
+```powershell
+.\setup.cmd -IncludeReports
+```
+
+macOS/Linux 使用 `bash setup.sh --reports`。
+
 新增或升级依赖时：
 
 ```powershell

@@ -6,6 +6,14 @@ export UV_CACHE_DIR="$SCRIPT_DIR/.uv-cache"
 export UV_PYTHON_INSTALL_DIR="$SCRIPT_DIR/.uv-python"
 cd "$SCRIPT_DIR"
 
+SYNC_ARGS=(sync --locked --python 3.11)
+if [ "${1:-}" = "--reports" ]; then
+    SYNC_ARGS+=(--extra reports)
+elif [ "$#" -gt 0 ]; then
+    echo "Usage: bash setup.sh [--reports]" >&2
+    exit 2
+fi
+
 if ! command -v uv >/dev/null 2>&1; then
     cat >&2 <<'EOF'
 uv is required but was not found.
@@ -16,7 +24,7 @@ EOF
 fi
 
 echo "[1/3] Syncing the locked Python 3.11 environment..."
-uv sync --locked --python 3.11
+uv "${SYNC_ARGS[@]}"
 
 echo "[2/3] Verifying Python imports..."
 uv run --locked --python 3.11 python -c "import openai, tree_sitter, tree_sitter_java; print('Python dependencies: OK')"
