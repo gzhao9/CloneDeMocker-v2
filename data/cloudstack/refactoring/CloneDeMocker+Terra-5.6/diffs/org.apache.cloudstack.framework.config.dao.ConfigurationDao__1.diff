@@ -1,0 +1,48 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -383,7 +383,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkLoadbalancerCommand.class), anyLong())).thenReturn(createTungstenNetworkLoadbalancerAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerPoolCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerPoolAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerMemberCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerMemberAnswer);
+-        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("enabled");
++        MockConfigurationDao.stubGetValue(configDao, Config.NetworkLBHaproxyStatsVisbility.key(), "enabled");
+         when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
+         when(EncryptionUtil.generateSignature(anyString(), anyString())).thenReturn("generatedString");
+         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
+@@ -432,7 +432,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkLoadbalancerCommand.class), anyLong())).thenReturn(createTungstenNetworkLoadbalancerAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerPoolCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerPoolAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerMemberCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerMemberAnswer);
+-        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("disabled");
++        MockConfigurationDao.stubGetValue(configDao, Config.NetworkLBHaproxyStatsVisbility.key(), "disabled");
+         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerHealthMonitorCommand.class), anyLong())).thenReturn(updateTungstenHealthMonitorAnswer);
+ 
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -665,7 +665,7 @@
+         when(agentMgr.easySend(anyLong(), any(UpdateTungstenLoadbalancerSslCommand.class))).thenReturn(updateTungstenLoadbalancerSslAnswer);
+         when(updateTungstenLoadbalancerStatsAnswer.getResult()).thenReturn(true);
+         when(updateTungstenLoadbalancerSslAnswer.getResult()).thenReturn(true);
+-        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("enabled");
++        MockConfigurationDao.stubGetValue(configDao, Config.NetworkLBHaproxyStatsVisbility.key(), "enabled");
+         when(fwRulesDao.listByIpAndPurposeAndNotRevoked(anyLong(), eq(FirewallRule.Purpose.LoadBalancing))).thenReturn(List.of(firewallRuleVO));
+         when(lbCertMapDao.findByLbRuleId(anyLong())).thenReturn(loadBalancerCertMapVO);
+         when(entityMgr.findById(eq(SslCertVO.class), anyLong())).thenReturn(sslCertVO);
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockConfigurationDao.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockConfigurationDao.java
+@@ -0,0 +1,14 @@
++package org.apache.cloudstack.network.tungsten.service;
++
++import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
++import org.mockito.Mockito;
++
++public final class MockConfigurationDao {
++
++    private MockConfigurationDao() {
++    }
++
++    public static void stubGetValue(ConfigurationDao configDao, String key, String value) {
++        Mockito.when(configDao.getValue(key)).thenReturn(value);
++    }
++}
