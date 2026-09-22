@@ -1,85 +1,43 @@
 --- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
 +++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
-@@ -195,6 +195,10 @@
+@@ -194,6 +194,8 @@
+     @Mock
      private ManagementServerHostDao managementServerHostDao;
      @Mock
++    private ManagementServerHostVO managementServerHost;
++    @Mock
      private ClusterManager clusterManager;
-+
-+    private ManagementServerHostVO createManagementServerHost() {
-+        return mock(ManagementServerHostVO.class);
-+    }
      @Mock
      private AlertManager alertManager;
-     @Mock
-@@ -256,7 +260,7 @@
+@@ -256,8 +258,7 @@
          Extension ext = mock(Extension.class);
          Answer[] answers = new Answer[]{new Answer(mock(PrepareExtensionPathCommand.class), true, "ok")};
          String json = GsonHelper.getGson().toJson(answers);
 -        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
-+        ManagementServerHostVO msHost = createManagementServerHost();
-         Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, msHost, "op");
+-        Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, msHost, "op");
++        Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, managementServerHost, "op");
          assertTrue(result.first());
          assertEquals("ok", result.second());
-@@ -267,7 +271,7 @@
+     }
+@@ -267,8 +268,7 @@
          Extension ext = mock(Extension.class);
          Answer[] answers = new Answer[]{new Answer(mock(PrepareExtensionPathCommand.class), false, "fail")};
          String json = GsonHelper.getGson().toJson(answers);
 -        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
-+        ManagementServerHostVO msHost = createManagementServerHost();
-         Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, msHost, "op");
+-        Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, msHost, "op");
++        Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, managementServerHost, "op");
          assertFalse(result.first());
          assertEquals("fail", result.second());
-@@ -276,7 +280,7 @@
-     @Test
-     public void prepareExtensionPathOnMSPeerReturnsTrueOnSuccess() {
-         Extension ext = mock(Extension.class);
--        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
-+        ManagementServerHostVO msHost = createManagementServerHost();
-         when(msHost.getMsid()).thenReturn(1L);
-         when(clusterManager.execute(anyString(), anyLong(), anyString(), eq(true)))
-                 .thenReturn("answer");
-@@ -295,7 +299,7 @@
-     @Test
-     public void cleanupExtensionFilesOnMSPeerReturnsTrueOnSuccess() {
-         Extension ext = mock(Extension.class);
--        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
-+        ManagementServerHostVO msHost = createManagementServerHost();
-         when(msHost.getMsid()).thenReturn(1L);
-         when(clusterManager.execute(anyString(), anyLong(), anyString(), eq(true)))
-                 .thenReturn("answer");
-@@ -611,7 +615,7 @@
+     }
+@@ -611,9 +611,8 @@
          when(ext.getRelativePath()).thenReturn("entry.sh");
          when(externalProvisioner.getChecksumForExtensionPath("ext", "entry.sh")).thenReturn("checksum123");
          when(extensionDao.createForUpdate(anyLong())).thenReturn(ext);
 -        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
-+        ManagementServerHostVO msHost = createManagementServerHost();
-         doReturn(new Pair<>(true, "checksum123")).when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, msHost);
-         extensionsManager.checkExtensionPathState(ext, Collections.singletonList(msHost));
+-        doReturn(new Pair<>(true, "checksum123")).when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, msHost);
+-        extensionsManager.checkExtensionPathState(ext, Collections.singletonList(msHost));
++        doReturn(new Pair<>(true, "checksum123")).when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, managementServerHost);
++        extensionsManager.checkExtensionPathState(ext, Collections.singletonList(managementServerHost));
          verify(extensionsManager).updateExtensionPathReady(ext, true);
-@@ -623,7 +627,7 @@
-         when(ext.getName()).thenReturn("ext");
-         when(ext.getRelativePath()).thenReturn("entry.sh");
-         when(externalProvisioner.getChecksumForExtensionPath("ext", "entry.sh")).thenReturn("checksum123");
--        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
-+        ManagementServerHostVO msHost = createManagementServerHost();
-         when(msHost.getMsid()).thenReturn(1L);
-         doReturn(new Pair<>(true, "checksum456")).when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, msHost);
-         extensionsManager.checkExtensionPathState(ext, Collections.singletonList(msHost));
-@@ -637,7 +641,7 @@
-         when(ext.getRelativePath()).thenReturn("entry.sh");
-         when(externalProvisioner.getChecksumForExtensionPath("ext", "entry.sh")).thenReturn("checksum123");
+     }
  
--        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
-+        ManagementServerHostVO msHost = createManagementServerHost();
-         when(msHost.getMsid()).thenReturn(1L);
-         doReturn(new Pair<>(false, null)).when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, msHost);
- 
-@@ -763,7 +767,7 @@
-         when(ext.getRelativePath()).thenReturn("entry.sh");
-         when(ext.isPathReady()).thenReturn(true);
- 
--        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
-+        ManagementServerHostVO msHost = createManagementServerHost();
-         when(msHost.getMsid()).thenReturn(101L);
- 
-         when(managementServerHostDao.listBy(any())).thenReturn(Collections.singletonList(msHost));
