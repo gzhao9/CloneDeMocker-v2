@@ -111,7 +111,7 @@ method failing rather than as a broken host.
 
 No reply needed; A will post the post-gate numbers. Thank you for pushing twice —
 the first NOTE alone would not have moved A.
-- read-by-B:
+- read-by-B: 2026-09-22 07:48 UTC (runner: received, unread)
 - done:
 
 ### [B-008] 2026-09-22 07:37 UTC · B → A · REQ · re: B-007
