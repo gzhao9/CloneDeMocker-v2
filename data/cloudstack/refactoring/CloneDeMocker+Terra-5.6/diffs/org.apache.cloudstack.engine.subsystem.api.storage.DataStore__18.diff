@@ -1,0 +1,79 @@
+--- a/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerImplTest.java
+@@ -303,8 +303,7 @@
+         Mockito.when(ref.getRole()).thenReturn(DataStoreRole.Image);
+         List<SnapshotDataStoreVO> snapshotStoreList = List.of(Mockito.mock(SnapshotDataStoreVO.class), ref);
+         Mockito.when(dataStoreManager.getStoreZoneId(storeId, DataStoreRole.Image)).thenReturn(zoneId);
+-        DataStore store = Mockito.mock(DataStore.class);
+-        Mockito.when(store.getId()).thenReturn(storeId);
++        DataStore store = MockDataStoreWithId.createMockDataStore(storeId);
+         Mockito.when(dataStoreManager.getDataStore(storeId, DataStoreRole.Image)).thenReturn(store);
+         Mockito.when(snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image)).thenReturn(snapshotStoreList);
+         Mockito.when(snapshotFactory.getSnapshot(Mockito.anyLong(), Mockito.any())).thenReturn(Mockito.mock(SnapshotInfo.class));
+@@ -620,12 +619,11 @@
+     @Test
+     public void testRemoveClvmPrimarySnapshotStoreRefIfNeeded_ClvmPool() {
+         SnapshotInfo snapshot = Mockito.mock(SnapshotInfo.class);
+-        DataStore dataStore = Mockito.mock(DataStore.class);
++        DataStore dataStore = MockDataStoreWithId.createMockDataStore(2L);
+         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+ 
+         Mockito.when(snapshot.getDataStore()).thenReturn(dataStore);
+         Mockito.when(snapshot.getId()).thenReturn(1L);
+-        Mockito.when(dataStore.getId()).thenReturn(2L);
+         Mockito.when(dataStore.getRole()).thenReturn(DataStoreRole.Primary);
+         Mockito.when(primaryDataStoreDao.findById(2L)).thenReturn(pool);
+         Mockito.when(pool.getPoolType()).thenReturn(StoragePoolType.CLVM);
+@@ -638,12 +636,11 @@
+     @Test
+     public void testRemoveClvmPrimarySnapshotStoreRefIfNeeded_ClvmNgPool() {
+         SnapshotInfo snapshot = Mockito.mock(SnapshotInfo.class);
+-        DataStore dataStore = Mockito.mock(DataStore.class);
++        DataStore dataStore = MockDataStoreWithId.createMockDataStore(4L);
+         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+ 
+         Mockito.when(snapshot.getDataStore()).thenReturn(dataStore);
+         Mockito.when(snapshot.getId()).thenReturn(3L);
+-        Mockito.when(dataStore.getId()).thenReturn(4L);
+         Mockito.when(dataStore.getRole()).thenReturn(DataStoreRole.Primary);
+         Mockito.when(primaryDataStoreDao.findById(4L)).thenReturn(pool);
+         Mockito.when(pool.getPoolType()).thenReturn(StoragePoolType.CLVM_NG);
+@@ -656,11 +653,10 @@
+     @Test
+     public void testRemoveClvmPrimarySnapshotStoreRefIfNeeded_NonClvmPool() {
+         SnapshotInfo snapshot = Mockito.mock(SnapshotInfo.class);
+-        DataStore dataStore = Mockito.mock(DataStore.class);
++        DataStore dataStore = MockDataStoreWithId.createMockDataStore(5L);
+         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+ 
+         Mockito.when(snapshot.getDataStore()).thenReturn(dataStore);
+-        Mockito.when(dataStore.getId()).thenReturn(5L);
+         Mockito.when(primaryDataStoreDao.findById(5L)).thenReturn(pool);
+         Mockito.when(pool.getPoolType()).thenReturn(StoragePoolType.NetworkFilesystem);
+ 
+--- a/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerTest.java
++++ b/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerTest.java
+@@ -381,6 +381,8 @@
+         when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+         when(_vmSnapshotDao.findById(nullable(Long.class))).thenReturn(vmSnapshotMock);
+         when(snapshotFactory.getSnapshot(nullable(Long.class), nullable(DataStore.class))).thenReturn(snapshotInfoMock);
++        storeMock = MockDataStoreWithId.createMockDataStore(TEST_STORAGE_POOL_ID);
++        when(volumeInfoMock.getDataStore()).thenReturn(storeMock);
+         when(storeMock.create(snapshotInfoMock)).thenReturn(snapshotInfoMock);
+         when(snapshotStoreDao.findByStoreSnapshot(nullable(DataStoreRole.class), nullable(Long.class), nullable(Long.class))).thenReturn(snapshotStoreMock);
+         when(snapshotStoreDao.update(nullable(Long.class), nullable(SnapshotDataStoreVO.class))).thenReturn(true);
+--- a/server/src/test/java/com/cloud/storage/snapshot/MockDataStoreWithId.java
++++ b/server/src/test/java/com/cloud/storage/snapshot/MockDataStoreWithId.java
+@@ -0,0 +1,12 @@
++package com.cloud.storage.snapshot;
++
++import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
++import org.mockito.Mockito;
++
++public class MockDataStoreWithId {
++    public static DataStore createMockDataStore(long dataStoreId) {
++        DataStore dataStore = Mockito.mock(DataStore.class);
++        Mockito.when(dataStore.getId()).thenReturn(dataStoreId);
++        return dataStore;
++    }
++}
