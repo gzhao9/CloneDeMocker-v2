@@ -171,6 +171,8 @@ def record_skip(mci_id: str, reason: str) -> None:
 # exactly the kind of difference this field exists to expose. The other agents also skip
 # rows carrying someone else's producedBy, so an unstamped row reads as unclaimed.
 PRODUCED_BY = "A"
+# Rows per push. One-per-MCI starved the slowest of three workers off the branch entirely.
+BATCH_PUSH = 25
 PLATFORM = "windows"
 HOST = "daynell-win-gated"
 
@@ -212,8 +214,14 @@ def recover_repo() -> None:
             pass
 
 
-def sync(message: str, entry: dict, diff_source: Path | None, attempts: int = 5) -> bool:
-    """Commit and push, surviving the other machine pushing to the same files."""
+def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5) -> bool:
+    """Commit and push a batch, surviving the other machines pushing to the same files.
+
+    Takes the whole batch rather than one entry because the re-apply below has to restore
+    every row this push carries. Re-applying only the latest would silently drop the other
+    twenty-four each time a rebase resolves toward upstream -- the same single-entry-reapply
+    fault that has already cost this project data twice.
+    """
     recover_repo()
     git("add", "--", f"data/{PROJECT}")
     if not git("diff", "--cached", "--quiet").returncode:
@@ -242,11 +250,13 @@ def sync(message: str, entry: dict, diff_source: Path | None, attempts: int = 5)
                 time.sleep(5 * attempt)
                 continue
 
-        # Whether the rebase was clean or resolved toward upstream, re-apply our own entry.
-        relayer(entry, diff_source)
+        # Whether the rebase was clean or resolved toward upstream, re-apply every row in
+        # this batch -- not just the last one.
+        for pending_entry, pending_diff in batch:
+            relayer(pending_entry, pending_diff)
         git("add", "--", f"data/{PROJECT}")
         if git("diff", "--cached", "--quiet").returncode:
-            git("commit", "-q", "-m", f"Re-apply {entry['mciId']} after rebase")
+            git("commit", "-q", "-m", f"Re-apply {len(batch)} MCIs after rebase")
         time.sleep(2 * attempt)
 
     log("    sync: giving up for now; the next MCI carries it forward")
@@ -274,6 +284,7 @@ def main() -> None:
 
     log(f"tail runner: {len(ordered)} MCIs total, walking back to front")
     processed = 0
+    pending: list[tuple[dict, Path | None]] = []
     counts: dict[str, int] = {}
     started = time.time()
     # A derived worklist retries anything missing from the results, which is what makes the
@@ -359,13 +370,27 @@ def main() -> None:
         log(f"    {'[regrade] ' if is_forced else ''}{classification} {elapsed:.0f}s "
             f"tokens={(result.get('usage') or {}).get('total_tokens', 0)}")
 
-        if args.push:
-            sync(f"sync completed MCI {mci_id} ({classification}) to CloudStack "
-                 f"24.0.0-SNAPSHOT dataset", entry, diff_source)
+        # Publish in batches rather than per MCI. Three workers pushing every row against a
+        # 32 MB results file made 142 commits in two hours, and the worker that never won a
+        # rebase simply starved -- C sat 57 commits ahead and 580 behind, its results correct
+        # but unpublished. Batching trades a crash window (up to BATCH_PUSH rows still local)
+        # for contention every worker shares; the rows are on disk either way, and the next
+        # sync commits `data/cloudstack` wholesale, so an interrupted batch is carried by the
+        # following one rather than lost.
+        pending.append((entry, diff_source))
+        if args.push and len(pending) >= BATCH_PUSH:
+            sync(f"sync {len(pending)} completed MCIs to CloudStack 24.0.0-SNAPSHOT dataset",
+                 pending)
+            pending.clear()
 
         if args.stop_after and processed >= args.stop_after:
             log(f"stopping after {processed} as requested")
             break
+
+    if args.push and pending:
+        sync(f"sync {len(pending)} completed MCIs to CloudStack 24.0.0-SNAPSHOT dataset",
+             pending)
+        pending.clear()
 
     hours = (time.time() - started) / 3600
     log(f"session done: {processed} MCIs in {hours:.1f} h; {counts}")
