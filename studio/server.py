@@ -146,6 +146,34 @@ def start_refactoring(payload: dict) -> dict[str, str]:
                         )
                 with REFACTOR_JOBS_LOCK:
                     REFACTOR_JOBS[job_id]["completed"] = index + 1
+                # 每完成一个 MCI 就增量写入 data/。长批次可能运行数小时，不能把所有结果都
+                # 押在最后一次手动点击上；同一个 mciId 的重复导出是覆盖式、可安全重试的。
+                # Persist after every MCI. A long batch can run for hours, so durable data must
+                # not depend on one final manual click. Re-exporting the same mciId is an
+                # idempotent replacement and is safe to retry.
+                try:
+                    export_summary = refactoring_export({
+                        "jobId": job_id, "runId": payload.get("runId", ""), "cctr": False,
+                    })
+                    with REFACTOR_JOBS_LOCK:
+                        REFACTOR_JOBS[job_id]["export"] = export_summary
+                        REFACTOR_JOBS[job_id].pop("exportError", None)
+                except Exception as export_error:
+                    with REFACTOR_JOBS_LOCK:
+                        REFACTOR_JOBS[job_id]["exportError"] = str(export_error)
+            # 批次结束后再算一次 CCTR；逐项保存时跳过它，避免每个 MCI 都重复分析整份数据。
+            # Compute CCTR once at the end; per-item saves skip it to avoid re-analyzing the
+            # full dataset after every MCI.
+            try:
+                export_summary = refactoring_export({
+                    "jobId": job_id, "runId": payload.get("runId", ""), "cctr": True,
+                })
+                with REFACTOR_JOBS_LOCK:
+                    REFACTOR_JOBS[job_id]["export"] = export_summary
+                    REFACTOR_JOBS[job_id].pop("exportError", None)
+            except Exception as export_error:
+                with REFACTOR_JOBS_LOCK:
+                    REFACTOR_JOBS[job_id]["exportError"] = str(export_error)
             with REFACTOR_JOBS_LOCK:
                 REFACTOR_JOBS[job_id]["state"] = "COMPLETED"
         except Exception as error:

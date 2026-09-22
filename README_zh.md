@@ -71,6 +71,12 @@ bash start-ui.sh
 
 启动脚本每次都会快速检查锁文件和环境；依赖已经同步时不会重复下载安装。
 
+完整的下载清单和可执行检查方法见 [ENVIRONMENT_CHECKLIST_zh.md](ENVIRONMENT_CHECKLIST_zh.md)。安装后可直接运行：
+
+```powershell
+.\check-env.cmd
+```
+
 ## 基本使用流程
 
 1. 打开 Web UI，选择需要分析的 Java 项目根目录。
@@ -79,6 +85,10 @@ bash start-ui.sh
 4. 选择候选项并生成重构方案。
 5. 查看统一或双栏 Diff。
 6. 通过编译、测试与可选的 PIT 验证后，再决定采纳或丢弃。
+
+每完成一个 MCI，结果都会增量保存到 `data/<project>/refactoring/<setup>/`；“报告存入
+data/”按钮是可重复执行的补救入口。PIT 的完整原始证据也可以回放并保存到 `data/`。目录结构、
+PIT 命令和验收命令见 [ENVIRONMENT_CHECKLIST_zh.md](ENVIRONMENT_CHECKLIST_zh.md)。
 
 初次体验建议启用 UI 中的 Debug/Mock 模式，它不会调用外部大模型。使用真实模型时，在仓库根目录创建不会被 Git 提交的 `.env`：
 

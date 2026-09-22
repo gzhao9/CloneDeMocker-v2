@@ -150,6 +150,8 @@ const I18N = {
     btn_accept: "Apply Verified Refactoring",
     btn_export_data: "Save report to data/",
     export_done: "Merged into data/{project}/refactoring/{setup}: {written} MCI(s) written this time, {total} stored in total, {ok} successful.",
+    auto_save_done: "Results were saved automatically to data/{project}/refactoring/{setup}.",
+    auto_save_failed: "Automatic save to data/ failed: {error}. Use Save report to data/ to retry.",
     export_none: "This batch produced no results to export.",
     export_cctr_ok: " CCTR computed over {n} test method(s).",
     export_cctr_failed: " CCTR could not be computed; the data itself was written (see console).",
@@ -346,6 +348,8 @@ const I18N = {
     btn_accept: "应用已验证的重构",
     btn_export_data: "报告存入 data/",
     export_done: "已并入 data/{project}/refactoring/{setup}：本次写入 {written} 个 MCI，累计 {total} 个，成功 {ok} 个。",
+    auto_save_done: "结果已自动保存到 data/{project}/refactoring/{setup}。",
+    auto_save_failed: "自动保存到 data/ 失败：{error}。请点击“报告存入 data/”重试。",
     export_none: "这一批没有可导出的结果。",
     export_cctr_ok: " CCTR 已覆盖 {n} 个测试方法。",
     export_cctr_failed: " CCTR 未能计算，但数据本身已写入（详见控制台）。",
@@ -1571,7 +1575,19 @@ async function collectRefactoringResults(jobId) {
     .filter((entry) => entry.result || entry.error);
   state.activeAgentResult = 0;
   renderProposalQueue();
-  status(t("status_refactor_done"), "var(--status-ready)");
+  if (job.exportError) {
+    const message = t("auto_save_failed").replace("{error}", job.exportError);
+    status(message, "var(--status-error)");
+    toast(message);
+  } else {
+    status(t("status_refactor_done"), "var(--status-ready)");
+    const saved = job.export || {};
+    if (saved.project && (saved.setupDirectory || saved.setup)) {
+      toast(t("auto_save_done")
+        .replace("{project}", saved.project)
+        .replace("{setup}", saved.setupDirectory || saved.setup), false);
+    }
+  }
 }
 
 // 返回 true 表示继续跑。选择"清除缓存重新生成"时会真的把条目删掉，而不只是这一次

@@ -60,6 +60,13 @@ If an archive or shared filesystem removed executable permissions, run `bash sta
 
 The launcher performs a fast lock and environment check on every run. An already-synchronized environment is not downloaded again.
 
+For the complete download list and a machine-readable readiness check, see
+[ENVIRONMENT_CHECKLIST.md](ENVIRONMENT_CHECKLIST.md). After setup, run:
+
+```powershell
+.\check-env.cmd
+```
+
 ## Basic workflow
 
 1. Open the Web UI and select a Java project root.
@@ -68,6 +75,11 @@ The launcher performs a fast lock and environment check on every run. An already
 4. Select a candidate and generate a refactoring proposal.
 5. Review its unified or side-by-side diff.
 6. After compilation, tests, and optional PIT validation pass, accept or discard it.
+
+Every completed MCI is saved incrementally under `data/<project>/refactoring/<setup>/`; the
+manual **Save report to data/** action is an idempotent retry. Full PIT evidence can also be
+replayed into `data/`. See [ENVIRONMENT_CHECKLIST.md](ENVIRONMENT_CHECKLIST.md) for the exact
+layout, PIT command, and verification command.
 
 For a first run, enable Debug/Mock mode in the UI; it does not call an external model. For a real model, create a Git-ignored `.env` in the repository root:
 

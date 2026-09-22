@@ -27,7 +27,9 @@ class ServerJobTest(unittest.TestCase):
     def test_refactoring_job_processes_each_mci_and_exposes_progress(self):
         fake = FakeRefactoring()
         payload = {"runId": "run", "selectedMciIds": ["A::1", "B::1"], "maxRetries": 0}
-        with patch.object(server, "REFACTORING", fake):
+        export_summary = {"setupDirectory": "test-setup", "writtenThisCall": 2}
+        with patch.object(server, "REFACTORING", fake), \
+                patch.object(server, "refactoring_export", return_value=export_summary) as export:
             job_id = server.start_refactoring(payload)["jobId"]
             deadline = time.time() + 2
             while time.time() < deadline:
@@ -41,6 +43,11 @@ class ServerJobTest(unittest.TestCase):
         self.assertEqual(["A::1", "B::1"], [call["selected_mci_ids"][0] for call in fake.calls])
         self.assertTrue(all(item["percent"] == 100 for item in job["items"]))
         self.assertTrue(all(item["state"] == "COMPLETED" for item in job["items"]))
+        self.assertEqual(export_summary, job["export"])
+        self.assertNotIn("exportError", job)
+        self.assertEqual(3, export.call_count)  # after each MCI, then once more for CCTR
+        self.assertEqual([False, False, True],
+                         [call.args[0]["cctr"] for call in export.call_args_list])
 
 
 if __name__ == "__main__":
