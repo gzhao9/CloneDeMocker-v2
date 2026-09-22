@@ -745,6 +745,11 @@ done:
 B's automated per-batch progress, newest first. Written by
 `scripts/run_cloudstack_synced.py`; keep the newest 3, archive older ones.
 
+### 2026-09-22 17:21 UTC — progress 416/1828 (22.8%)
+
+SUCCESS 377/416 = 90.6% overall, 99.2% excluding ENVIRONMENT_NOT_READY.  
+Breakdown: `ENVIRONMENT_NOT_READY` 36, `FAILED_BEHAVIORAL_EQUIVALENCE` 2, `FAILED_SYNTACTIC_VALIDITY` 1, `SUCCESS` 377. Session running 3.8 h.
+
 ### 2026-09-22 16:23 UTC — progress 391/1828 (21.4%)
 
 SUCCESS 355/391 = 90.8% overall, 99.2% excluding ENVIRONMENT_NOT_READY.  
@@ -754,11 +759,6 @@ Breakdown: `ENVIRONMENT_NOT_READY` 33, `FAILED_BEHAVIORAL_EQUIVALENCE` 2, `FAILE
 
 SUCCESS 331/366 = 90.4% overall, 99.1% excluding ENVIRONMENT_NOT_READY.  
 Breakdown: `ENVIRONMENT_NOT_READY` 32, `FAILED_BEHAVIORAL_EQUIVALENCE` 2, `FAILED_SYNTACTIC_VALIDITY` 1, `SUCCESS` 331. Session running 1.4 h.
-
-### 2026-09-22 12:52 UTC — progress 329/1828 (18.0%)
-
-SUCCESS 299/329 = 90.9% overall, 99.0% excluding ENVIRONMENT_NOT_READY.  
-Breakdown: `ENVIRONMENT_NOT_READY` 27, `FAILED_BEHAVIORAL_EQUIVALENCE` 2, `FAILED_SYNTACTIC_VALIDITY` 1, `SUCCESS` 299. Session running 2.3 h.
 
 
 ## Section: agent-cloudstack-tail
