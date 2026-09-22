@@ -1,0 +1,70 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
+@@ -168,12 +168,11 @@
+     @Test
+     public void testRemoveDhcpServiceWithNic() {
+         // make local mocks
+-        VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
++        VirtualMachineProfile vm = createMockVirtualMachineProfile(Type.User);
+         NicVO nic = mock(NicVO.class);
+         NetworkVO network = mock(NetworkVO.class);
+ 
+         // make sure that release dhcp will be called
+-        when(vm.getType()).thenReturn(Type.User);
+         when(testOrchestrator._networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)).thenReturn(true);
+         when(network.getTrafficType()).thenReturn(TrafficType.Guest);
+         when(network.getGuestType()).thenReturn(GuestType.Shared);
+@@ -193,12 +192,11 @@
+     @Test
+     public void testDontRemoveDhcpServiceFromDomainRouter() {
+         // make local mocks
+-        VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
++        VirtualMachineProfile vm = createMockVirtualMachineProfile(Type.DomainRouter);
+         NicVO nic = mock(NicVO.class);
+         NetworkVO network = mock(NetworkVO.class);
+ 
+         // make sure that release dhcp won't be called
+-        when(vm.getType()).thenReturn(Type.DomainRouter);
+ 
+         when(network.getGuruName()).thenReturn(guruName);
+         when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+@@ -213,12 +211,11 @@
+     @Test
+     public void testDontRemoveDhcpServiceWhenNotProvided() {
+         // make local mocks
+-        VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+         NicVO nic = mock(NicVO.class);
+         NetworkVO network = mock(NetworkVO.class);
+ 
+         // make sure that release dhcp will *not* be called
+-        when(vm.getType()).thenReturn(Type.User);
++        VirtualMachineProfile vm = createMockVirtualMachineProfile(Type.User);
+         when(testOrchestrator._networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)).thenReturn(false);
+ 
+         when(network.getGuruName()).thenReturn(guruName);
+@@ -379,6 +376,12 @@
+ 
+         testOrchestrator.configureNicProfileBasedOnRequestedIp(requestedNicProfile, nicProfile, network);
+         verifyAndAssert(null, null, null, nicProfile, 0, 0);
++    }
++
++    private static VirtualMachineProfile createMockVirtualMachineProfile(Type type) {
++        VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
++        when(vm.getType()).thenReturn(type);
++        return vm;
+     }
+ 
+     private void configureTestConfigureNicProfileBasedOnRequestedIpTests(NicProfile nicProfile, long ipvoId, boolean ipVoIsNull, IPAddressVO.State state, String vlanGateway,
+@@ -513,11 +516,10 @@
+ 
+     @Test
+     public void testDontReleaseNicWhenPreserveNicsSettingEnabled() {
+-        VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
++        VirtualMachineProfile vm = createMockVirtualMachineProfile(Type.User);
+         NicVO nic = mock(NicVO.class);
+         NetworkVO network = mock(NetworkVO.class);
+ 
+-        when(vm.getType()).thenReturn(Type.User);
+         when(network.getGuruName()).thenReturn(guruName);
+         when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+ 
