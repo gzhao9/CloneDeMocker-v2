@@ -1,0 +1,47 @@
+--- a/server/src/test/java/com/cloud/network/lb/AssignLoadBalancerTest.java
++++ b/server/src/test/java/com/cloud/network/lb/AssignLoadBalancerTest.java
+@@ -138,13 +138,12 @@
+ 
+         Map<Long, List<String>> emptyMap = new HashMap<Long, List<String>>();
+ 
+-        LoadBalancerDao lbdao = Mockito.mock(LoadBalancerDao.class);
++        LoadBalancerDao lbdao = createMockLoadBalancerDao();
+         _lbMgr._lbDao =  lbdao;
+ 
+         AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
+         _lbMgr._autoScaleVmGroupDao = autoScaleVmGroupDao;
+ 
+-        when(lbdao.findById(anyLong())).thenReturn(Mockito.mock(LoadBalancerVO.class));
+         when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
+ 
+         _lbMgr.assignToLoadBalancer(1L, null, emptyMap, null, false);
+@@ -165,7 +164,7 @@
+         LoadBalancerVO lbVO = new LoadBalancerVO("1", "L1", "Lbrule", 1, 22, 22, "rb", 204, 0, 0, "tcp", null);
+         UserVmVO vm = new UserVmVO(2L, "test", "test", 101L, Hypervisor.HypervisorType.Any, 21L, false, false, domainId, 200L, 1, 5L, "", 1L, null, "test");
+ 
+-        LoadBalancerDao lbDao = Mockito.mock(LoadBalancerDao.class);
++        LoadBalancerDao lbDao = createMockLoadBalancerDao();
+         LoadBalancerVMMapDao lb2VmMapDao = Mockito.mock(LoadBalancerVMMapDao.class);
+         UserVmDao userVmDao = Mockito.mock(UserVmDao.class);
+         AccountDao accountDao = Mockito.mock(AccountDao.class);
+@@ -186,7 +185,6 @@
+         _lbMgr._autoScaleVmGroupDao = autoScaleVmGroupDao;
+         _lbMgr._vpcMgr = vpcMgr;
+ 
+-        when(lbDao.findById(anyLong())).thenReturn(Mockito.mock(LoadBalancerVO.class));
+         when(userVmDao.findById(anyLong())).thenReturn(vm);
+         when(lb2VmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(_lbvmMapList);
+         when(accountDao.findById(anyLong())).thenReturn(Mockito.mock(AccountVO.class));
+@@ -300,6 +298,12 @@
+         _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, null, false);
+     }
+ 
++    private static LoadBalancerDao createMockLoadBalancerDao() {
++        LoadBalancerDao lbDao = Mockito.mock(LoadBalancerDao.class);
++        when(lbDao.findById(anyLong())).thenReturn(Mockito.mock(LoadBalancerVO.class));
++        return lbDao;
++    }
++
+     @After
+     public void tearDown() {
+         CallContext.unregister();
