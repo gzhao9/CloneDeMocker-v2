@@ -1,0 +1,119 @@
+--- a/plugins/network-elements/juniper-contrail/src/test/java/org/apache/cloudstack/network/contrail/model/InstanceIpModelTest.java
++++ b/plugins/network-elements/juniper-contrail/src/test/java/org/apache/cloudstack/network/contrail/model/InstanceIpModelTest.java
+@@ -47,11 +47,9 @@
+     @Test
+     public void testCreateInstanceIp() throws IOException {
+ 
+-        ContrailManagerImpl contrailMgr = mock(ContrailManagerImpl.class);
+         ModelController controller = mock(ModelController.class);
+         ApiConnector api = new ApiConnectorMock(null, 0);
+         when(controller.getApiAccessor()).thenReturn(api);
+-        when(controller.getManager()).thenReturn(contrailMgr);
+ 
+         // Create Virtual-Network (VN)
+         NetworkVO network = MockNetworkVO.getNetwork(Network.State.Implemented);
+@@ -59,8 +57,8 @@
+         when(networkDao.findById(anyLong())).thenReturn(network);
+         when(controller.getNetworkDao()).thenReturn(networkDao);
+ 
+-        when(contrailMgr.getCanonicalName(network)).thenReturn("testnetwork");
+-        when(contrailMgr.getProjectId(network.getDomainId(), network.getAccountId())).thenReturn("testProjectId");
++        ContrailManagerImpl contrailMgr = MockContrailManagerImpl.createMockContrailManager(network);
++        when(controller.getManager()).thenReturn(contrailMgr);
+ 
+         VirtualNetworkModel vnModel = new VirtualNetworkModel(network, UUID.randomUUID().toString(), "test",
+                 TrafficType.Guest);
+--- a/plugins/network-elements/juniper-contrail/src/test/java/org/apache/cloudstack/network/contrail/model/VirtualMachineModelTest.java
++++ b/plugins/network-elements/juniper-contrail/src/test/java/org/apache/cloudstack/network/contrail/model/VirtualMachineModelTest.java
+@@ -69,17 +69,15 @@
+     public void testCreateVirtualMachine() throws IOException {
+ 
+         String uuid = UUID.randomUUID().toString();
+-        ContrailManagerImpl contrailMgr = mock(ContrailManagerImpl.class);
++
++        // Create Virtual-Network (VN)
++        NetworkVO network = MockNetworkVO.getNetwork(Network.State.Allocated);
++
++        ContrailManagerImpl contrailMgr = MockContrailManagerImpl.createMockContrailManager(network);
+         ModelController controller = mock(ModelController.class);
+         ApiConnector api = new ApiConnectorMock(null, 0);
+         when(controller.getManager()).thenReturn(contrailMgr);
+         when(controller.getApiAccessor()).thenReturn(api);
+-
+-        // Create Virtual-Network (VN)
+-        NetworkVO network = MockNetworkVO.getNetwork(Network.State.Allocated);
+-
+-        when(contrailMgr.getCanonicalName(network)).thenReturn("testnetwork");
+-        when(contrailMgr.getProjectId(network.getDomainId(), network.getAccountId())).thenReturn("testProjectId");
+ 
+         // Create Virtual-Machine (VM)
+         VMInstanceVO vm = mock(VMInstanceVO.class);
+--- a/plugins/network-elements/juniper-contrail/src/test/java/org/apache/cloudstack/network/contrail/model/VirtualNetworkModelTest.java
++++ b/plugins/network-elements/juniper-contrail/src/test/java/org/apache/cloudstack/network/contrail/model/VirtualNetworkModelTest.java
+@@ -153,17 +153,13 @@
+     public void testCreateVirtualNetwork() throws IOException {
+ 
+         String uuid = UUID.randomUUID().toString();
+-        ContrailManagerImpl contrailMgr = mock(ContrailManagerImpl.class);
++        // Create Virtual-Network (VN)
++        NetworkVO network = MockNetworkVO.getNetwork(State.Allocated);
++        ContrailManagerImpl contrailMgr = MockContrailManagerImpl.createMockContrailManager(network);
+         ModelController controller = mock(ModelController.class);
+         ApiConnector api = new ApiConnectorMock(null, 0);
+         when(controller.getManager()).thenReturn(contrailMgr);
+         when(controller.getApiAccessor()).thenReturn(api);
+-
+-        // Create Virtual-Network (VN)
+-        NetworkVO network = MockNetworkVO.getNetwork(State.Allocated);
+-
+-        when(contrailMgr.getCanonicalName(network)).thenReturn("testnetwork");
+-        when(contrailMgr.getProjectId(network.getDomainId(), network.getAccountId())).thenReturn("testProjectId");
+ 
+         VirtualNetworkModel vnModel = new VirtualNetworkModel(network, uuid, "testnetwork", TrafficType.Guest);
+ 
+--- a/plugins/network-elements/juniper-contrail/src/test/java/org/apache/cloudstack/network/contrail/model/VMInterfaceModelTest.java
++++ b/plugins/network-elements/juniper-contrail/src/test/java/org/apache/cloudstack/network/contrail/model/VMInterfaceModelTest.java
+@@ -49,10 +49,8 @@
+     public void testCreateVMInterface() throws IOException {
+ 
+         String uuid;
+-        ContrailManagerImpl contrailMgr = mock(ContrailManagerImpl.class);
+         ModelController controller = mock(ModelController.class);
+         ApiConnector api = new ApiConnectorMock(null, 0);
+-        when(controller.getManager()).thenReturn(contrailMgr);
+         when(controller.getApiAccessor()).thenReturn(api);
+ 
+         // Create Virtual-Network (VN)
+@@ -61,8 +59,8 @@
+         when(networkDao.findById(anyLong())).thenReturn(network);
+         when(controller.getNetworkDao()).thenReturn(networkDao);
+ 
+-        when(contrailMgr.getCanonicalName(network)).thenReturn("testnetwork");
+-        when(contrailMgr.getProjectId(network.getDomainId(), network.getAccountId())).thenReturn("testProjectId");
++        ContrailManagerImpl contrailMgr = MockContrailManagerImpl.createMockContrailManager(network);
++        when(controller.getManager()).thenReturn(contrailMgr);
+ 
+         VirtualNetworkModel vnModel = new VirtualNetworkModel(network, UUID.randomUUID().toString(),
+                 "test", TrafficType.Guest);
+--- a/plugins/network-elements/juniper-contrail/src/test/java/org/apache/cloudstack/network/contrail/model/MockContrailManagerImpl.java
++++ b/plugins/network-elements/juniper-contrail/src/test/java/org/apache/cloudstack/network/contrail/model/MockContrailManagerImpl.java
+@@ -0,0 +1,19 @@
++package org.apache.cloudstack.network.contrail.model;
++
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++import java.io.IOException;
++
++import com.cloud.network.dao.NetworkVO;
++import org.apache.cloudstack.network.contrail.management.ContrailManagerImpl;
++
++public class MockContrailManagerImpl {
++
++    public static ContrailManagerImpl createMockContrailManager(NetworkVO network) throws IOException {
++        ContrailManagerImpl contrailMgr = mock(ContrailManagerImpl.class);
++        when(contrailMgr.getCanonicalName(network)).thenReturn("testnetwork");
++        when(contrailMgr.getProjectId(network.getDomainId(), network.getAccountId())).thenReturn("testProjectId");
++        return contrailMgr;
++    }
++}

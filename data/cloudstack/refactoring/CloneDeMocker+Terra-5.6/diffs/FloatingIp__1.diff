@@ -1,0 +1,64 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
+@@ -189,6 +189,8 @@
+ 
+     AutoCloseable closeable;
+ 
++    private FloatingIp floatingIpMock;
++
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
+@@ -196,6 +198,7 @@
+         tungstenResource.tungstenApi = tungstenApi;
+         ReflectionTestUtils.setField(tungstenResource, "vrouterPort", "9091");
+         tungstenVRouterApiMocked = Mockito.mockStatic(TungstenVRouterApi.class);
++        floatingIpMock = mock(FloatingIp.class);
+ 
+         Project project = mock(Project.class);
+         when(project.getUuid()).thenReturn("065eab99-b819-4f3f-8e97-99c2ab22e6ed");
+@@ -406,14 +409,13 @@
+     public void executeRequestCreateTungstenFloatingIpCommandTest() {
+         TungstenCommand command = new CreateTungstenFloatingIpCommand("projectFqn",
+             "ac617be6-bf80-4086-9d6a-c05ff78e2264", "fip", "fi", "192.168.1.100");
+-        FloatingIp floatingIp = mock(FloatingIp.class);
+ 
+         when(tungstenApi.createTungstenFloatingIp(anyString(), anyString(), anyString(), anyString(),
+-            anyString())).thenReturn(floatingIp);
+-
+-        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+-        assertTrue(answer.getResult());
+-        assertEquals(floatingIp, answer.getApiObjectBase());
++            anyString())).thenReturn(floatingIpMock);
++
++        TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
++        assertTrue(answer.getResult());
++        assertEquals(floatingIpMock, answer.getApiObjectBase());
+     }
+ 
+     @Test
+@@ -470,12 +472,11 @@
+             "fi");
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         FloatingIpPool floatingIpPool = mock(FloatingIpPool.class);
+-        FloatingIp floatingIp = mock(FloatingIp.class);
+ 
+         when(tungstenApi.getTungstenObject(eq(VirtualNetwork.class), anyString())).thenReturn(virtualNetwork);
+         when(tungstenApi.getTungstenObjectByName(eq(FloatingIpPool.class), any(), anyString())).thenReturn(
+             floatingIpPool);
+-        when(tungstenApi.getTungstenObjectByName(eq(FloatingIp.class), any(), anyString())).thenReturn(floatingIp);
++        when(tungstenApi.getTungstenObjectByName(eq(FloatingIp.class), any(), anyString())).thenReturn(floatingIpMock);
+         when(tungstenApi.deleteTungstenObject(any(FloatingIp.class))).thenReturn(true);
+ 
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+@@ -532,9 +533,8 @@
+     @Test
+     public void executeRequestGetTungstenFloatingIpsCommandTest() {
+         TungstenCommand command = new GetTungstenFloatingIpsCommand("b604c7f7-1dbc-42d8-bceb-2c0898034a7a", "fip");
+-        FloatingIp floatingIp1 = mock(FloatingIp.class);
+         FloatingIp floatingIp2 = mock(FloatingIp.class);
+-        List<? extends ApiObjectBase> floatingIpList = Arrays.asList(floatingIp1, floatingIp2);
++        List<? extends ApiObjectBase> floatingIpList = Arrays.asList(floatingIpMock, floatingIp2);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         FloatingIpPool floatingIpPool = mock(FloatingIpPool.class);
+ 

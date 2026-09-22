@@ -1,0 +1,110 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -769,7 +769,7 @@
+         List<HostPodVO> hostPodVOList = Arrays.asList(hostPodVO1, hostPodVO2);
+ 
+         when(physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetworkVO);
+-        when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
++        tungstenProviderDao = MockTungstenProviderDao.createMockTungstenProviderDao(tungstenProviderVO);
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+         when(vlanDao.listVlansByNetworkIdIncludingRemoved(anyLong())).thenReturn(vlanVOList);
+@@ -791,7 +791,7 @@
+         NetworkVO network = mock(NetworkVO.class);
+ 
+         when(hostVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+-        when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProvider);
++        tungstenProviderDao = MockTungstenProviderDao.createMockTungstenProviderDao(tungstenProvider);
+         when(hostVO.getPublicIpAddress()).thenReturn("192.168.100.100");
+         when(tungstenProvider.getGateway()).thenReturn("192.168.100.100");
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+@@ -810,7 +810,7 @@
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(hostVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+-        when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProvider);
++        tungstenProviderDao = MockTungstenProviderDao.createMockTungstenProviderDao(tungstenProvider);
+         when(hostVO.getPublicIpAddress()).thenReturn("192.168.100.100");
+         when(tungstenProvider.getGateway()).thenReturn("192.168.100.100");
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenFabricUtilsTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenFabricUtilsTest.java
+@@ -66,7 +66,7 @@
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenCommand tungstenCommand = mock(TungstenCommand.class);
+ 
+-        when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
++        tungstenProviderDao = MockTungstenProviderDao.createMockTungstenProviderDao(tungstenProviderVO);
+         when(agentMgr.easySend(anyLong(), any(TungstenCommand.class))).thenReturn(tungstenAnswer);
+ 
+         assertEquals(tungstenAnswer, tungstenFabricUtils.sendTungstenCommand(tungstenCommand, anyLong()));
+@@ -84,7 +84,7 @@
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         TungstenCommand tungstenCommand = mock(TungstenCommand.class);
+ 
+-        when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
++        tungstenProviderDao = MockTungstenProviderDao.createMockTungstenProviderDao(tungstenProviderVO);
+ 
+         tungstenFabricUtils.sendTungstenCommand(tungstenCommand, anyLong());
+     }
+@@ -95,7 +95,7 @@
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(false);
+         TungstenCommand tungstenCommand = mock(TungstenCommand.class);
+ 
+-        when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
++        tungstenProviderDao = MockTungstenProviderDao.createMockTungstenProviderDao(tungstenProviderVO);
+         when(agentMgr.easySend(anyLong(), any(TungstenCommand.class))).thenReturn(tungstenAnswer);
+ 
+         tungstenFabricUtils.sendTungstenCommand(tungstenCommand, anyLong());
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
+@@ -455,7 +455,7 @@
+ 
+         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+         when(networkDetailsDao.findDetail(anyLong(), anyString())).thenReturn(networkDetailVO);
+-        when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
++        tungstenProviderDao = MockTungstenProviderDao.createMockTungstenProviderDao(tungstenProviderVO);
+         when(hostDao.findByPublicIp(any())).thenReturn(hostVO);
+ 
+         guru.trash(network, offering);
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenProviderServiceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenProviderServiceTest.java
+@@ -123,7 +123,7 @@
+     public void listTungstenProviderWithZoneIdTest() {
+         TungstenProviderVO tungstenProviderVO = Mockito.mock(TungstenProviderVO.class);
+ 
+-        when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
++        tungstenProviderDao = MockTungstenProviderDao.createMockTungstenProviderDao(tungstenProviderVO);
+ 
+         List<BaseResponse> baseResponseList = tungstenProviderService.listTungstenProvider(1L);
+         assertEquals(1, baseResponseList.size());
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -1519,7 +1519,7 @@
+         when(vlan.getVlanGateway()).thenReturn("192.168.100.1");
+         when(vlan.getIp6Gateway()).thenReturn("fd00::1");
+         when(networkDetailsDao.persist(any(NetworkDetailVO.class))).thenReturn(networkDetailVO);
+-        when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
++        tungstenProviderDao = MockTungstenProviderDao.createMockTungstenProviderDao(tungstenProviderVO);
+         when(hostDao.findByPublicIp(anyString())).thenReturn(hostVO);
+         when(agentMgr.easySend(anyLong(), any(SetupTungstenVRouterCommand.class))).thenReturn(answer);
+         when(answer.getResult()).thenReturn(true);
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockTungstenProviderDao.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockTungstenProviderDao.java
+@@ -0,0 +1,16 @@
++package org.apache.cloudstack.network.tungsten.service;
++
++import static org.mockito.ArgumentMatchers.anyLong;
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++import com.cloud.network.dao.TungstenProviderDao;
++import com.cloud.network.element.TungstenProviderVO;
++
++public class MockTungstenProviderDao {
++    public static TungstenProviderDao createMockTungstenProviderDao(TungstenProviderVO tungstenProviderVO) {
++        TungstenProviderDao tungstenProviderDao = mock(TungstenProviderDao.class);
++        when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
++        return tungstenProviderDao;
++    }
++}

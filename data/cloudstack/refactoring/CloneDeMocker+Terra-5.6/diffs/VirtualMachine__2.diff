@@ -1,0 +1,110 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
+@@ -189,6 +189,8 @@
+ 
+     AutoCloseable closeable;
+ 
++    VirtualMachine virtualMachineMock;
++
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
+@@ -196,6 +198,7 @@
+         tungstenResource.tungstenApi = tungstenApi;
+         ReflectionTestUtils.setField(tungstenResource, "vrouterPort", "9091");
+         tungstenVRouterApiMocked = Mockito.mockStatic(TungstenVRouterApi.class);
++        virtualMachineMock = mock(VirtualMachine.class);
+ 
+         Project project = mock(Project.class);
+         when(project.getUuid()).thenReturn("065eab99-b819-4f3f-8e97-99c2ab22e6ed");
+@@ -306,13 +309,12 @@
+             "fe832e34-1bbb-4f0b-9ced-0e7ae2218598", 1L, "192.168.100.1", "fd00::1", "1e:00:d2:00:00:06", "guest",
+             "guest", "10.1.1.100", "10.1.1.1", true);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+-        VirtualMachine virtualMachine = mock(VirtualMachine.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         InstanceIp instanceIp = mock(InstanceIp.class);
+ 
+         when(virtualMachineInterface.getUuid()).thenReturn("b604c7f7-1dbc-42d8-bceb-2c0898034a7a");
+         when(tungstenApi.getTungstenObject(eq(VirtualNetwork.class), anyString())).thenReturn(virtualNetwork);
+-        when(tungstenApi.createTungstenVirtualMachine(anyString(), anyString())).thenReturn(virtualMachine);
++        when(tungstenApi.createTungstenVirtualMachine(anyString(), anyString())).thenReturn(virtualMachineMock);
+         when(tungstenApi.createTungstenVmInterface(anyString(), anyString(), anyString(), anyString(), anyString(),
+             anyString(), anyString(), anyBoolean())).thenReturn(virtualMachineInterface);
+         when(tungstenApi.createTungstenInstanceIp(anyString(), anyString(), anyString(), anyString())).thenReturn(
+@@ -323,7 +325,7 @@
+ 
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+-        assertEquals(virtualMachine, answer.getApiObjectBase());
++        assertEquals(virtualMachineMock, answer.getApiObjectBase());
+     }
+ 
+     @Test
+@@ -988,9 +990,8 @@
+     @Test
+     public void executeRequestListTungstenVmCommandTest() {
+         TungstenCommand command = new ListTungstenVmCommand("projectFqn", "ca86c658-1096-11ec-82a8-0242ac130003");
+-        VirtualMachine virtualMachine1 = mock(VirtualMachine.class);
+         VirtualMachine virtualMachine2 = mock(VirtualMachine.class);
+-        Answer<List<ApiObjectBase>> virtualMachinesAnswer = setupApiObjectBaseListAnswer(virtualMachine1, virtualMachine2);
++        Answer<List<ApiObjectBase>> virtualMachinesAnswer = setupApiObjectBaseListAnswer(virtualMachineMock, virtualMachine2);
+         when(tungstenApi.listTungstenVm(anyString(), anyString())).thenAnswer(virtualMachinesAnswer);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+@@ -1014,9 +1015,8 @@
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+         VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+-        VirtualMachine virtualMachine1 = mock(VirtualMachine.class);
+         VirtualMachine virtualMachine2 = mock(VirtualMachine.class);
+-        Answer<List<ApiObjectBase>> virtualMachinesAnswer = setupApiObjectBaseListAnswer(virtualMachine1, virtualMachine2);
++        Answer<List<ApiObjectBase>> virtualMachinesAnswer = setupApiObjectBaseListAnswer(virtualMachineMock, virtualMachine2);
+         VirtualMachineInterface virtualMachineInterface1 = mock(VirtualMachineInterface.class);
+         VirtualMachineInterface virtualMachineInterface2 = mock(VirtualMachineInterface.class);
+         Answer<List<ApiObjectBase>> virtualMachineInterfacesAnswer = setupApiObjectBaseListAnswer(virtualMachineInterface1, virtualMachineInterface2);
+@@ -1071,12 +1071,11 @@
+         , "92e989bb-325e-4c16-9d32-ad89166feeab");
+         Tag tag = mock(Tag.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+-        VirtualMachine virtualMachine = mock(VirtualMachine.class);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+         doReturn(List.of(tag)).when(tungstenApi).listTungstenTag(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+         doReturn(List.of(virtualNetwork)).when(tungstenApi).getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList());
+-        doReturn(List.of(virtualMachine)).when(tungstenApi).getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList());
++        doReturn(List.of(virtualMachineMock)).when(tungstenApi).getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList());
+         doReturn(List.of(virtualMachineInterface)).when(tungstenApi).getBackRefFromVirtualMachineInterface(eq(VirtualMachineInterface.class), anyList());
+         doReturn(List.of(networkPolicy)).when(tungstenApi).getBackRefFromNetworkPolicy(eq(NetworkPolicy.class), anyList());
+ 
+@@ -1084,7 +1083,7 @@
+         assertTrue(answer.getResult());
+         TungstenTag tungstenTag = (TungstenTag) answer.getTungstenModelList().get(0);
+         assertEquals(virtualNetwork, tungstenTag.getVirtualNetworkList().get(0));
+-        assertEquals(virtualMachine, tungstenTag.getVirtualMachineList().get(0));
++        assertEquals(virtualMachineMock, tungstenTag.getVirtualMachineList().get(0));
+         assertEquals(virtualMachineInterface, tungstenTag.getVirtualMachineInterfaceList().get(0));
+         assertEquals(networkPolicy, tungstenTag.getNetworkPolicyList().get(0));
+     }
+@@ -1109,9 +1108,8 @@
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+         VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+-        VirtualMachine virtualMachine1 = mock(VirtualMachine.class);
+         VirtualMachine virtualMachine2 = mock(VirtualMachine.class);
+-        Answer<List<ApiObjectBase>> virtualMachinesAnswer = setupApiObjectBaseListAnswer(virtualMachine1, virtualMachine2);
++        Answer<List<ApiObjectBase>> virtualMachinesAnswer = setupApiObjectBaseListAnswer(virtualMachineMock, virtualMachine2);
+         VirtualMachineInterface virtualMachineInterface1 = mock(VirtualMachineInterface.class);
+         VirtualMachineInterface virtualMachineInterface2 = mock(VirtualMachineInterface.class);
+         Answer<List<ApiObjectBase>> virtualMachineInterfacesAnswer = setupApiObjectBaseListAnswer(virtualMachineInterface1, virtualMachineInterface2);
+@@ -1160,9 +1158,8 @@
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+         VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+-        VirtualMachine virtualMachine1 = mock(VirtualMachine.class);
+         VirtualMachine virtualMachine2 = mock(VirtualMachine.class);
+-        Answer<List<ApiObjectBase>> virtualMachinesAnswer = setupApiObjectBaseListAnswer(virtualMachine1, virtualMachine2);
++        Answer<List<ApiObjectBase>> virtualMachinesAnswer = setupApiObjectBaseListAnswer(virtualMachineMock, virtualMachine2);
+         VirtualMachineInterface virtualMachineInterface1 = mock(VirtualMachineInterface.class);
+         VirtualMachineInterface virtualMachineInterface2 = mock(VirtualMachineInterface.class);
+         Answer<List<ApiObjectBase>> virtualMachineInterfacesAnswer = setupApiObjectBaseListAnswer(virtualMachineInterface1, virtualMachineInterface2);

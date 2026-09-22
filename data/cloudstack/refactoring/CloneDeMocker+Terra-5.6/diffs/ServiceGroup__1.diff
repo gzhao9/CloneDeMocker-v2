@@ -1,16 +1,24 @@
 --- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
 +++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
-@@ -183,6 +183,9 @@
-     @Mock
-     TungstenApi tungstenApi;
+@@ -189,6 +189,8 @@
  
-+    @Mock
+     AutoCloseable closeable;
+ 
 +    private ServiceGroup serviceGroupMock;
 +
-     TungstenResource tungstenResource;
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
+@@ -196,6 +198,8 @@
+         tungstenResource.tungstenApi = tungstenApi;
+         ReflectionTestUtils.setField(tungstenResource, "vrouterPort", "9091");
+         tungstenVRouterApiMocked = Mockito.mockStatic(TungstenVRouterApi.class);
++
++        serviceGroupMock = mock(ServiceGroup.class);
  
-     MockedStatic<TungstenVRouterApi> tungstenVRouterApiMocked;
-@@ -1221,8 +1224,7 @@
+         Project project = mock(Project.class);
+         when(project.getUuid()).thenReturn("065eab99-b819-4f3f-8e97-99c2ab22e6ed");
+@@ -1221,8 +1225,7 @@
      @Test
      public void executeRequestCreateTungstenServiceGroupCommandTest() {
          TungstenCommand command = new CreateTungstenServiceGroupCommand("serviceGroupName", "tcp", 80, 90);
@@ -20,7 +28,7 @@
          TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
          assertTrue(answer.getResult());
          assertNotNull(answer.getApiObjectBase());
-@@ -1279,9 +1281,8 @@
+@@ -1279,9 +1282,8 @@
      @Test
      public void executeRequestListTungstenServiceGroupCommandTest() {
          TungstenCommand command = new ListTungstenServiceGroupCommand("d64e6082-10b3-11ec-82a8-0242ac130003");
@@ -31,7 +39,7 @@
          when(tungstenApi.listTungstenServiceGroup(anyString())).thenAnswer(serviceGroupsAnswer);
          TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
          assertTrue(answer.getResult());
-@@ -1333,8 +1334,7 @@
+@@ -1333,8 +1335,7 @@
      @Test
      public void executeRequestDeleteTungstenServiceGroupCommandTest() {
          TungstenCommand command = new DeleteTungstenServiceGroupCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003");
