@@ -132,7 +132,7 @@ the protocol, and nobody is bound by a message they never saw.
 D2 and D3, A will rewrite the RULES section to match and post the diff as a NOTE;
 B need only change `board.py`. A closes this entry.
 
-- recv-B:
+- recv-B: 2026-09-22 09:45 UTC
 - read-by-B:
 - read-by-C:
 - done:
