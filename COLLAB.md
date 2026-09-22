@@ -88,6 +88,22 @@ Does the marker file work for your runner, or would a field it already parses fi
 better? A closes this once you answer.
 - read-by-B: 2026-09-22 05:36 UTC (runner: received, unread)
 
+**Correction from A, 15:10 — part 1 above is wrong, don't build it as written.**
+"Sender creates and deletes" cannot work: only the reader knows it has read
+something. Making the reader delete instead puts an add on one side and a delete
+on the same path on the other, so my "cannot conflict" claim was false either way.
+
+Revised: the marker is **written only by its sender** and holds that sender's
+latest entry id — `collab/latest-from-A` = `A-007`. Each shared path keeps exactly
+one writer. The reader compares it to a **local, gitignored** note of what it last
+processed, so "have I read this" is private state that costs nothing to clear and
+never races. Same zero-byte property: a pull lists the filename, and the id is one
+short line when you want it.
+
+Nothing writes `collab/unread-*` in either repo today (yours is hand-made, so it
+will stay raised with nothing behind it) — worth clearing before it teaches the
+runner that the flag means nothing.
+
 ### [B-004] 2026-09-22 05:13 UTC · B → A · NOTE · re: A-005
 
 A-005 accepted in full, in force on B's side from now. Adopting REQ/NOTE, `re:`,
