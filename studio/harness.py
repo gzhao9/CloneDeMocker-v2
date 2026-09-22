@@ -280,7 +280,14 @@ def _report_files(root: Path, *patterns: str) -> list[Path]:
     prefix it cannot be opened, so tests that did run produced no readable result and were
     classified as an unready environment.
     """
-    return [long_path(path) for pattern in patterns for path in root.rglob(pattern)]
+    # 前缀必须加在遍历起点上，而不是只加在结果上：rglob 下探时 os.scandir 走的是起点路径，
+    # 裸起点一旦碰到超过 MAX_PATH 的中间目录（如 protobuf-maven-plugin 解包出的 archives/
+    # <artifact>-<40 位哈希>/...）就抛 WinError 3，根本轮不到结果被加上前缀。
+    # The prefix belongs on the traversal root, not only on the results: rglob descends via
+    # os.scandir on the root's own path, so a bare root raises WinError 3 on any intermediate
+    # directory past MAX_PATH (e.g. protobuf-maven-plugin's unpacked archives/<artifact>-<40-char
+    # hash>/...) long before any result could be prefixed.
+    return [long_path(path) for pattern in patterns for path in long_path(root).rglob(pattern)]
 
 
 def is_module_directory(directory: Path) -> bool:
@@ -368,7 +375,12 @@ class ProjectHarness:
         consumed = self._test_jar_artifacts.get(key)
         if consumed is None:
             consumed = set()
-            for pom in root.rglob("pom.xml"):
+            # 同 _report_files：前缀加在遍历起点。下面的 "target" 过滤只能丢弃已产出的结果，
+            # 挡不住 rglob 先下探进 target/ 里超过 MAX_PATH 的构建产物目录。
+            # As in _report_files, the prefix goes on the traversal root: the "target" filter below
+            # only discards yielded results, it cannot stop rglob from first descending into the
+            # past-MAX_PATH build output directories under target/.
+            for pom in long_path(root).rglob("pom.xml"):
                 if "target" in pom.parts:
                     continue
                 try:
@@ -514,8 +526,20 @@ class ProjectHarness:
         standard toggles are skipped here, in the same spirit as -DskipTests — this only
         affects this isolated verification run, and isn't a statement that code style
         doesn't matter in general.
+
+        Checkstyle 出于同一理由一并关掉。它同样是风格检查，但绑定在 validate 阶段，失败会让
+        整条命令在编译开始之前就退出。druid 用的是 Checkstyle 而非 Spotless，一个合法 Java
+        的候选补丁仅因 EmptyLineSeparator 之类的排版规则就会被记成 compileStatus=FAILED，
+        进而分类为 FAILED_SYNTACTIC_VALIDITY——把"排版不合项目口味"统计成了"编译不过"，
+        会系统性低估这类项目的重构成功率。
+        Checkstyle is disabled for the same reason. It is equally a style check, but it binds to
+        the validate phase, so a failure aborts the command before compilation even begins. Druid
+        uses Checkstyle rather than Spotless, and a legal-Java candidate that merely trips a layout
+        rule such as EmptyLineSeparator would be recorded as compileStatus=FAILED and classified
+        FAILED_SYNTACTIC_VALIDITY — counting "not to the project's formatting taste" as "does not
+        compile", which systematically understates the refactoring success rate on such projects.
         """
-        return ["-Dspotless.check.skip=true", "-Dspotless.apply.skip=true"]
+        return ["-Dspotless.check.skip=true", "-Dspotless.apply.skip=true", "-Dcheckstyle.skip=true"]
 
     def validate(self, project_root: Path, run_pit: bool = False,
                  progress_callback: Callable[[str, int, str], None] | None = None,

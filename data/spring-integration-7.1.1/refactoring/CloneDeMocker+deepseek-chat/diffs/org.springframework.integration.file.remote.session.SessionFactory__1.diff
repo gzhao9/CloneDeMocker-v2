@@ -220,11 +220,10 @@
  		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
  		gw.setFileExistsModeExpressionString("headers[\"file.exists.mode\"]");
  
-@@ -655,6 +665,57 @@
+@@ -655,6 +665,56 @@
  		FileOutputStream fos = new FileOutputStream(outFile);
  		fos.write("foo".getBytes());
  		fos.close();
-+
 +		// default (null)
 +		MessageBuilder<File> out;
 +
@@ -278,7 +277,7 @@
  		when(sessionFactory.getSession()).thenReturn(new TestSession() {
  
  			@Override
-@@ -665,67 +726,6 @@
+@@ -665,67 +725,6 @@
  			}
  
  			@Override
@@ -346,7 +345,7 @@
  			public void read(String source, OutputStream outputStream) {
  				throw new RuntimeException("test remove .writing");
  			}
-@@ -744,16 +744,10 @@
+@@ -744,16 +743,10 @@
  
  	@Test
  	public void testGet_P() throws IOException {
@@ -364,7 +363,7 @@
  
  			@Override
  			public TestLsEntry[] list(String path) {
-@@ -769,6 +763,11 @@
+@@ -769,6 +762,11 @@
  			}
  
  		});
@@ -376,7 +375,7 @@
  		@SuppressWarnings("unchecked")
  		MessageBuilder<File> out = (MessageBuilder<File>) gw.handleRequestMessage(new GenericMessage<>("x/f1"));
  		File outFile = new File(this.tmpDir + "/f1").getCanonicalFile();
-@@ -784,11 +783,7 @@
+@@ -784,11 +782,7 @@
  	public void testGet_create_dir() {
  		new File(this.tmpDir + "/x/f1").delete();
  		new File(this.tmpDir + "/x").delete();
@@ -385,17 +384,14 @@
 -		gw.setLocalDirectory(new File(this.tmpDir + "/x"));
 -		gw.afterPropertiesSet();
 -		when(sessionFactory.getSession()).thenReturn(new TestSession() {
-+		Session session = new TestSession() {
++		SessionFactory sessionFactory = createMockSessionFactory(new TestSession() {
  
  			@Override
  			public TestLsEntry[] list(String path) {
-@@ -802,7 +797,11 @@
- 				outputStream.write("testfile".getBytes());
+@@ -803,6 +797,9 @@
  			}
  
--		});
-+		};
-+		SessionFactory sessionFactory = createMockSessionFactory(session);
+ 		});
 +		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
 +		gw.setLocalDirectory(new File(this.tmpDir + "/x"));
 +		gw.afterPropertiesSet();

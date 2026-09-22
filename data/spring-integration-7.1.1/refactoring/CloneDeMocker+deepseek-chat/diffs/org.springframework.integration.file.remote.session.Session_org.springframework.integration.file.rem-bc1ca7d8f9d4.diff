@@ -1,0 +1,81 @@
+--- a/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
++++ b/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
+@@ -989,7 +989,7 @@
+ 	@SuppressWarnings("unchecked")
+ 	public void testMput() throws Exception {
+ 		SessionFactory<TestLsEntry> sessionFactory = mock(SessionFactory.class);
+-		Session<TestLsEntry> session = mock(Session.class);
++		Session<TestLsEntry> session = createMockSession(new AtomicReference<>());
+ 		RemoteFileTemplate<TestLsEntry> template = new RemoteFileTemplate<>(sessionFactory);
+ 		template.setRemoteDirectoryExpression(new LiteralExpression("foo/"));
+ 		template.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+@@ -997,11 +997,6 @@
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(template, "mput", "payload");
+ 		gw.afterPropertiesSet();
+ 		when(sessionFactory.getSession()).thenReturn(session);
+-		final AtomicReference<String> written = new AtomicReference<>();
+-		doAnswer(invocation -> {
+-			written.set(invocation.getArgument(1));
+-			return null;
+-		}).when(session).write(any(InputStream.class), anyString());
+ 		assertThat(new File(tempFolder, "baz.txt").createNewFile()).isTrue();
+ 		assertThat(new File(tempFolder, "qux.txt").createNewFile()).isTrue();
+ 		Message<File> requestMessage = MessageBuilder.withPayload(tempFolder).build();
+@@ -1016,7 +1011,8 @@
+ 	@SuppressWarnings("unchecked")
+ 	public void testMputRecursive() throws Exception {
+ 		SessionFactory<TestLsEntry> sessionFactory = mock(SessionFactory.class);
+-		Session<TestLsEntry> session = mock(Session.class);
++		final AtomicReference<String> written = new AtomicReference<>();
++		Session<TestLsEntry> session = createMockSession(written);
+ 		RemoteFileTemplate<TestLsEntry> template = new RemoteFileTemplate<>(sessionFactory);
+ 		template.setRemoteDirectoryExpression(new LiteralExpression("foo/"));
+ 		template.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+@@ -1025,11 +1021,6 @@
+ 		gw.setOptions("-R");
+ 		gw.afterPropertiesSet();
+ 		when(sessionFactory.getSession()).thenReturn(session);
+-		final AtomicReference<String> written = new AtomicReference<>();
+-		doAnswer(invocation -> {
+-			written.set(invocation.getArgument(1));
+-			return null;
+-		}).when(session).write(any(InputStream.class), anyString());
+ 		new File(tempFolder, "baz.txt").createNewFile();
+ 		new File(tempFolder, "qux.txt").createNewFile();
+ 		File dir1 = Files.createTempDirectory(tempFolder.toPath(), "junit").toFile();
+@@ -1060,16 +1051,12 @@
+ 	@SuppressWarnings("unchecked")
+ 	public void testMputCollection() throws Exception {
+ 		SessionFactory<TestLsEntry> sessionFactory = mock(SessionFactory.class);
+-		Session<TestLsEntry> session = mock(Session.class);
++		final AtomicReference<String> written = new AtomicReference<>();
++		Session<TestLsEntry> session = createMockSession(written);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mput", "payload");
+ 		gw.setRemoteDirectoryExpression(new LiteralExpression("foo/"));
+ 		gw.afterPropertiesSet();
+ 		when(sessionFactory.getSession()).thenReturn(session);
+-		final AtomicReference<String> written = new AtomicReference<>();
+-		doAnswer(invocation -> {
+-			written.set(invocation.getArgument(1));
+-			return null;
+-		}).when(session).write(any(InputStream.class), anyString());
+ 		List<File> files = new ArrayList<>();
+ 		File file1 = new File(tempFolder, "fiz.txt");
+ 		file1.createNewFile();
+@@ -1088,6 +1075,16 @@
+ 		verify(session).rename("foo/buz.txt.writing", "foo/buz.txt");
+ 	}
+ 
++	@SuppressWarnings("unchecked")
++	private static Session<TestLsEntry> createMockSession(AtomicReference<String> written) throws java.io.IOException {
++		Session<TestLsEntry> session = mock(Session.class);
++		doAnswer(invocation -> {
++			written.set(invocation.getArgument(1));
++			return null;
++		}).when(session).write(any(InputStream.class), anyString());
++		return session;
++	}
++
+ 	abstract static class TestSession implements Session<TestLsEntry> {
+ 
+ 		private boolean open;
