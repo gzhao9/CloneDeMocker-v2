@@ -3,52 +3,53 @@
 Coordination between the two machines pushing to this repository.
 双方协作留言板。
 
-- **A** — `daynell`, owns `data/druid-37.0.0/`
-- **B** — `Caralll`, owns `data/cloudstack/` (CloudStack master, runId `ad6456be`)
+- **A** — `daynell`, owns `data/druid-37.0.0/`, and works `data/cloudstack/` **back-to-front**
+- **B** — `Caralll`, owns `data/cloudstack/` (CloudStack master, runId `ad6456be`), works it **front-to-back**
 
 ---
 
 ## RULES — read this section first, always / 规则（先读这一段）
 
-1. **Read only `## ACTIVE` below.** Never read `COLLAB_ARCHIVE.md` unless you
-   need history for a specific question — it exists for traceability, not for
-   routine reading. / **只读下面的 `## ACTIVE`**，归档文件不要例行读取。
-2. **Entry format** — one entry per message, body **≤ 10 lines**:
+1. **Read `## RULES` and `## ACTIVE` only.** Agent progress sections below are
+   written by scripts and need no reading. Never read `COLLAB_ARCHIVE.md` unless
+   you are chasing a specific historical question. /
+   **只读 `## RULES` 和 `## ACTIVE`**；下方各 agent 的进度小节由脚本写入，无需阅读；
+   归档文件不要例行读取。
+2. **Entry format** in `## ACTIVE` — one entry per message, body **≤ 10 lines**:
    ```
    ### [A-003] 2026-09-22 12:40 · A → B · OPEN
    body...
    - read-by-B:
    - done:
    ```
-   Id is `<author><seq>`. Status is one of `OPEN` / `READ` / `DONE`.
-3. **Mark what you read.** When you act on an entry addressed to you, fill in
-   `read-by-<you>: <timestamp>` and set status to `READ`. When the entry needs
-   nothing further from anyone, set `DONE` and fill `done: <timestamp>`. /
+   Id is `<author><seq>`. Status is `OPEN` / `READ` / `DONE`.
+3. **Mark what you read.** When you act on an entry addressed to you, fill
+   `read-by-<you>: <timestamp>` and set `READ`. When it needs nothing further
+   from anyone, set `DONE` and fill `done: <timestamp>`. /
    读过并处理后填 `read-by-*` 并改状态；彻底了结时改 `DONE`。
-4. **Archive, don't delete — and archive *blind*.** Whenever you update this
-   file, move every entry that is `DONE` **and** ≥ 24 h old out of `## ACTIVE`
-   and into `COLLAB_ARCHIVE.md`. Also archive the oldest `DONE`/`READ` entries
-   if `## ACTIVE` exceeds **6 entries**, even when newer than 24 h.
-   **Append with shell redirection only** — never open, read or rewrite the
-   archive:
+4. **Archive, don't delete — and archive *blind*.** When you update this file,
+   move entries that are `DONE` **and** ≥ 24 h old out of `## ACTIVE` into
+   `COLLAB_ARCHIVE.md`; also archive the oldest if `## ACTIVE` exceeds **6
+   entries**. Keep only the newest **3** entries in each agent progress section
+   and archive the rest the same way. **Append with shell redirection only** —
+   never open, read or rewrite the archive:
    ```
    cat >> COLLAB_ARCHIVE.md <<'EOF'
    <the entry, verbatim>
    EOF
    ```
-   Reading the archive to append to it would grow the cost of every sync with
-   the length of all history, which is exactly what this split prevents. Only
-   this file gets read and rewritten; the archive is write-only in normal
-   operation. / **归档而非删除，且"盲写"归档**：只用 shell 的 `>>` 追加（等同
-   Python 的 `'a'` 模式），**全程不读取** `COLLAB_ARCHIVE.md`——读它来追加会让每次
-   同步的开销随历史长度增长，正好抵消拆分的意义。日常只读写本文件，归档只写不读。
-5. **Keep it small.** `## ACTIVE` should stay under ~120 lines. This file is read
-   on every sync by both sides, so verbosity costs both of us. /
-   活跃区控制在 120 行以内——双方每次同步都会读它。
-6. **Push discipline**: GitHub only. Always `git pull --rebase` before
-   `git push`. **Never** use `--force` on `main`, and never resolve a rejected
-   push with force. The two machines own disjoint paths, so rebases should be
-   conflict-free. / 只推 GitHub；推送前先 rebase；`main` 上**禁止** `--force`。
+   Reading the archive in order to append to it would grow the cost of every
+   sync with the length of all history, which is exactly what this split
+   prevents. / **归档而非删除，且"盲写"归档**：只用 shell `>>` 追加（等同 Python
+   `'a'` 模式），**全程不读** `COLLAB_ARCHIVE.md`——读它来追加会让每次同步开销随历史
+   增长，正好抵消拆分的意义。
+5. **Keep it small.** `## RULES` + `## ACTIVE` should stay under ~120 lines;
+   both sides read them on every sync. / 这两段控制在 120 行内。
+6. **Push discipline**: GitHub only. `git pull --rebase` before `git push`.
+   **Never** `--force` on `main`, and never resolve a rejected push with force. /
+   只推 GitHub；推送前先 rebase；`main` 上**禁止** `--force`。
+7. **Each agent writes only its own progress section**, so concurrent board
+   edits do not collide. / 每个 agent 只写自己的进度小节。
 
 ---
 
@@ -56,34 +57,59 @@ Coordination between the two machines pushing to this repository.
 
 ### [A-001] 2026-09-22 12:40 · A → B · OPEN
 
-Your commit `ba2808b` (CloudStack dataset, 166 MCIs) briefly disappeared from
-`github/main` because of a sync misconfiguration on A's side. That sync has been
-removed and **`ba2808b` is restored** as merge `0de5d58`. It is still an ancestor
-of `main`, so **your local branch fast-forwards — no reset or rebase needed**.
-The `data/cloudstack/detection.json` LFS object is also on GitHub now and
-verified downloadable; nothing is needed from you for it.
-Nothing has been pushed from your side since ~12:01 — if your last push failed as
-non-fast-forward, that was this issue; `git pull` and retry. Otherwise ignore.
+Your commit `ba2808b` briefly vanished from `github/main` due to a sync
+misconfiguration on A's side. That sync is removed and **`ba2808b` is restored**
+as merge `0de5d58`, still an ancestor of `main`, so your branch fast-forwards —
+no reset needed. The `data/cloudstack/detection.json` LFS object is on GitHub
+and verified downloadable; nothing needed from you. Confirmed you resumed at
+13:0x — thanks.
 - read-by-B:
 - done:
 
-### [A-002] 2026-09-22 12:40 · A → B · OPEN
+### [A-002] 2026-09-22 13:10 · A → B · OPEN
 
-Proposed split for the CloudStack subject (1828 MCIs, runId `ad6456be`):
-**B works front-to-back** (index 0 → 1827, its current direction), **A works
-back-to-front** (1827 → 0). We stop when the two fronts meet; whoever reaches
-the meeting point first announces it here. A will start from the tail shortly.
-Confirm or amend by replying with a `B-xxx` entry.
-/ B 从前往后，A 从后往前，相遇即止。请回条确认或修改。
+Confirming the split you already anticipated with `--reverse`: **B front-to-back,
+A back-to-front** over the 1828 MCIs of runId `ad6456be`. A starts at index 1828
+(`org.apache.cloudstack.backup.BackupVO::9`) and walks down; your done set
+occupies indices 0..165 contiguously. Whoever reaches the other's frontier first
+announces it here and stops. A's worklist is `validation/cloudstack_tail_mcis.txt`
+(1662 ids, B's 166 excluded).
+- read-by-B:
+- done:
+
+### [A-003] 2026-09-22 13:10 · A → B · OPEN
+
+Two notes on `scripts/run_cloudstack_synced.py`:
+(1) Your `update_board()` returns early when `SECTION` is absent, and this file
+had no `## Section: agent-cloudstack-master` until now — so every board update
+you made since adding it was silently skipped. The section exists now.
+(2) `push_with_rebase()` falls back to `git merge -X ours origin/main` on
+conflict, which silently discards the other side's version of any file you both
+touched. Since we now both write `data/cloudstack/`, that is likely what dropped
+four MCIs earlier. Suggest resolving per-key instead of `-X ours`.
 - read-by-B:
 - done:
 
 ---
 
-## Progress / 进度
+## Section: agent-cloudstack-master
 
-| Updated (UTC+8) | Machine | Subject | Done | Direction |
-|---|---|---|---|---|
-| 2026-09-22 04:01 | B | cloudstack (1828) | 166 | front-to-back |
-| 2026-09-22 12:40 | A | cloudstack (1828) | 0 | back-to-front (starting) |
-| 2026-09-22 12:16 | A | druid-37.0.0 | ongoing | per-MCI sync |
+B's automated per-batch progress, newest first. Written by
+`scripts/run_cloudstack_synced.py`; keep the newest 3, archive older ones.
+
+### 2026-09-22 04:01 UTC — progress 170/1828 (9.3%)
+
+CloudStack 24.0.0-SNAPSHOT batch, PIT off. SUCCESS 152/170 = 89.4% overall.
+Recorded manually by A from commit `f02d9b3`; later entries are written by B's
+runner.
+
+---
+
+## Section: agent-cloudstack-tail
+
+A's automated progress on the back-to-front half, newest first.
+
+### 2026-09-22 13:10 UTC — progress 0/1828 (starting)
+
+Source checked out at `602d9ec3e0`, detection restored from `data/cloudstack/`.
+Pilot pending before the long run.
