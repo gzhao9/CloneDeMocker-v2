@@ -1,0 +1,49 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
+@@ -76,6 +76,8 @@
+     DomainDao domainDao;
+     @Mock
+     AccountManager accountManager;
++    @Mock
++    private Account mockedAccount;
+ 
+     @Spy
+     @InjectMocks
+@@ -412,11 +414,10 @@
+     public void getManualDeliveryJobCreatesJobWithDefaultPayloadWhenPayloadIsBlank() {
+         Webhook webhook = Mockito.mock(Webhook.class);
+         CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = Mockito.mock(CompletableFuture.class);
+-        Account account = Mockito.mock(Account.class);
+ 
+         Mockito.when(webhook.getAccountId()).thenReturn(2L);
+         Mockito.when(webhook.getPayloadUrl()).thenReturn("https://example.com");
+-        Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(account);
++        Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(mockedAccount);
+ 
+         URI uri = WebhookUrlValidator.validateWebhookDestinationUrl(webhook.getPayloadUrl(), false, null, true);
+         Runnable job = webhookServiceImpl.getManualDeliveryJob(null, webhook, "   ", uri, future);
+@@ -468,11 +469,10 @@
+     public void getManualDeliveryJobSetsDeliveryTriesAndTimeoutFromWebhookDomain() {
+         Webhook webhook = Mockito.mock(Webhook.class);
+         CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = Mockito.mock(CompletableFuture.class);
+-        Account account = Mockito.mock(Account.class);
+ 
+         Mockito.when(webhook.getDomainId()).thenReturn(2L);
+         Mockito.when(webhook.getAccountId()).thenReturn(2L);
+-        Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(account);
++        Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(mockedAccount);
+ 
+         WebhookDeliveryThread job = (WebhookDeliveryThread) webhookServiceImpl.getManualDeliveryJob(null, webhook, "test-payload", null, future);
+ 
+@@ -622,10 +622,9 @@
+         Webhook webhook = Mockito.mock(Webhook.class);
+         WebhookDeliveryThread.WebhookDeliveryResult result =
+                 Mockito.mock(WebhookDeliveryThread.WebhookDeliveryResult.class);
+-        Account account = Mockito.mock(Account.class);
+ 
+         Mockito.when(webhook.getAccountId()).thenReturn(2L);
+-        Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(account);
++        Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(mockedAccount);
+         Mockito.when(result.getHeaders()).thenReturn("headers");
+         Mockito.when(result.getPayload()).thenReturn("payload");
+         Mockito.when(result.isSuccess()).thenReturn(true);
