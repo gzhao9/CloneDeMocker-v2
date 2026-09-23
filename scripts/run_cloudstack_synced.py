@@ -125,17 +125,48 @@ def sync_board() -> None:
     theirs = {eid for eid, _ in board.unread_in(upstream)} if upstream else set()
     mine = {eid for eid, _ in board.unread_from_them()}
 
-    for entry_id in sorted(theirs | mine):
+    # Both transports at once, deliberately. A-029 cut A's read path over to collab/inbox and
+    # kept A's *write* path dual until B confirms from its running process; C has not moved at
+    # all. Reading both is how B honours that without needing everyone to switch on one commit.
+    inbox = {eid for eid, _ in board.unread_inbox()}
+    inbox_first = dict(board.unread_inbox())
+
+    for entry_id in sorted(theirs | mine | inbox):
         body = board.entry_text(upstream, entry_id) or board.entry_text(board._read(), entry_id)
         first = next((line for line in body.splitlines()[2:] if line.strip()), "") if body else ""
-        print(f"    BOARD: unread {entry_id} from A -- {first[:110]}", flush=True)
+        first = first or inbox_first.get(entry_id, "")
+        via = "inbox" if entry_id in inbox else "board"
+        print(f"    BOARD: unread {entry_id} via {via} -- {first[:110]}", flush=True)
     # Only entries already in our copy can be stamped; the rest get stamped once a rebase
     # brings them in, and stay printed until then so they are not silently lost.
     board.mark_read(sorted(mine))
+    board.record_receipt(sorted(inbox))
 
 
 def update_board(done: int, total: int, counts: dict[str, int], started: float) -> None:
     board.progress(done, total, counts, (time.time() - started) / 3600)
+
+
+def write_status(done: int, total: int) -> None:
+    """A-029's collab/status/<agent>.md: alive, where, and stuck-or-not, in six lines.
+
+    B inferred in B-031 that A had stalled, from a row count that had not moved. A was
+    grading at full rate and could not push -- two states the repo could not tell apart.
+    Rewritten in place, never appended: this is a gauge, not a log, and single-writer so it
+    cannot conflict.
+    """
+    path = REPO / "collab" / "status" / "B.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    unpushed = len(git("log", "--oneline", "origin/main..HEAD",
+                       check=False, timeout=60).stdout.split(chr(10))) - 1
+    path.write_text(
+        f"# B — rewritten in place by the runner. Only B writes this file.\n"
+        f"updated:  {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}\n"
+        f"position: {done}/{total} of B's own queue\n"
+        f"unpushed: {max(unpushed, 0)} commit(s) ahead of origin/main\n"
+        f"host:     {publish_module.PLATFORM}\n"
+        f"pid:      {os.getpid()}\n",
+        encoding="utf-8", newline="\n")
 
 
 def main() -> None:
@@ -313,6 +344,7 @@ def main() -> None:
         sync_board()
 
         done = sum(counts.values())
+        write_status(done, total)
         paths = [f"data/{PROJECT}", "COLLAB.md"]
         if args.board_every and processed % args.board_every == 0:
             update_board(done, total, counts, started)

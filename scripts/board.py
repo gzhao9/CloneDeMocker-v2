@@ -26,6 +26,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 BOARD = REPO / "COLLAB.md"
 ARCHIVE = REPO / "COLLAB_ARCHIVE.md"
+INBOX = REPO / "collab" / "inbox"
+READ_DIR = REPO / "collab" / "read"
 
 # Peers, plural: with a third agent on the board, filtering on a single THEM made
 # every C -> B entry invisible to the runner. C-001 only reached B because a model
@@ -103,6 +105,59 @@ def unread_in(text: str) -> list[tuple[str, str]]:
 def unread_from_them() -> list[tuple[str, str]]:
     """unread_in() against our own working copy."""
     return unread_in(_read())
+
+
+def receipted() -> set[str]:
+    """Entry ids already in collab/read/<me>.md. Only this agent writes that file."""
+    path = READ_DIR / f"{ME}.md"
+    if not path.is_file():
+        return set()
+    return {m.group(1) for m in re.finditer(r"^([ABC]-\d+)\b", path.read_text(encoding="utf-8"),
+                                            flags=re.M)}
+
+
+def unread_inbox() -> list[tuple[str, str]]:
+    """Unread entries from collab/inbox/<me>/, the transport A-024 agreed and A-029 cut over to.
+
+    Read straight off the working tree: the inbox is single-writer per path, so a pull brings
+    peers' files in without conflict and there is no upstream-vs-ours skew to reason about --
+    which is the whole reason COLLAB.md needed unread_in() to read origin's copy instead.
+    """
+    if not INBOX.is_dir():
+        return []
+    done = receipted()
+    out = []
+    for path in sorted((INBOX / ME).glob("*.md")) if (INBOX / ME).is_dir() else []:
+        if path.name == "README.md":
+            continue
+        entry_id = path.stem
+        if entry_id in done or entry_id.startswith(f"{ME}-"):
+            continue
+        body = path.read_text(encoding="utf-8")
+        first = next((l for l in body.splitlines()[2:] if l.strip()), "")
+        out.append((entry_id, first))
+    return out
+
+
+def record_receipt(ids: list[str], note: str = "") -> None:
+    """Append machine receipts to collab/read/<me>.md.
+
+    B-032's amendment 1: read state stays *visible* to peers, because asker-closes runs on
+    "has the peer read this", not "have I read this" -- but single-writer, so it cannot
+    conflict the way in-place stamps did.
+    """
+    if not ids:
+        return
+    READ_DIR.mkdir(parents=True, exist_ok=True)
+    path = READ_DIR / f"{ME}.md"
+    existing = path.read_text(encoding="utf-8") if path.is_file() else \
+        f"# Entries {ME} has read. Only {ME} writes this file.\n"
+    have = receipted()
+    lines = [l for l in existing.splitlines() if l.strip()]
+    stamp = now().replace(" UTC", "")
+    added = [f"{i:<8} {stamp}" + (f"  {note}" if note else "") for i in ids if i not in have]
+    if added:
+        path.write_text("\n".join(lines + added) + "\n", encoding="utf-8", newline="\n")
 
 
 def mark_read(ids: list[str]) -> None:
