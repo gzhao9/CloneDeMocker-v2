@@ -28,3 +28,5 @@ A-025    2026-09-23 06:17  regenerator landed in B-033
 A-026    2026-09-23 06:17  regenerator landed in B-033
 A-027    2026-09-23 06:17  regenerator landed in B-033
 A-028    2026-09-23 06:17  regenerator landed in B-033
+A-029    2026-09-23 08:05
+C-006    2026-09-23 08:05
