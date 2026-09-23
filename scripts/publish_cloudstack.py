@@ -119,12 +119,11 @@ def clear_conflicts() -> None:
     the same class of loss that already cost four MCIs, just pointed the other way.
     """
     for path in git("diff", "--name-only", "--diff-filter=U").stdout.split():
-        if path.endswith("COLLAB.md"):
-            # A-034 completed the cutover: COLLAB.md is derived from collab/inbox/**, so a
-            # conflict on it carries no information of its own. Take upstream and rebuild.
-            # _merge_board() is kept only for the case where the regenerator cannot run --
-            # it was wrong twice (B-019, B-033) precisely because it merged a file that
-            # should never have needed merging.
+        if path.endswith("COLLAB.md") and (REPO / "COLLAB.md").is_file():
+            # Only reachable if the board comes back. A-035 retired it: the inboxes are the
+            # transport and collab/README.md is the protocol, so there is normally no
+            # COLLAB.md to conflict on. Kept rather than deleted because resolving toward
+            # upstream on a file we no longer own would silently drop a peer's content.
             git("checkout", "--ours", "--", path)
             if not _regenerate_board():
                 _merge_board()
@@ -280,7 +279,10 @@ def publish(message: str | None = None, attempts: int = 14, quiet: bool = False)
         # any of them unstaged makes `pull --rebase` refuse outright ("unstaged changes"), so
         # every retry fails identically and the batch stops publishing while looking merely
         # unlucky. That deadlocked 12 commits before it was spotted.
-        git("add", "--", f"data/{PROJECT}", "COLLAB.md", "COLLAB_ARCHIVE.md", "collab")
+        # `git add` on a path that does not exist and never will is an error, and A-035
+        # retired both board files -- so stage them only while they are still around.
+        board_paths = [p for p in ("COLLAB.md", "COLLAB_ARCHIVE.md") if (REPO / p).exists()]
+        git("add", "--", f"data/{PROJECT}", "collab", "archive", *board_paths)
         if git("diff", "--cached", "--quiet").returncode:
             text = message or (
                 f"Publish CloudStack dataset: {summary['totalMcis']} MCIs, "

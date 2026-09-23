@@ -224,9 +224,6 @@ def _next_seq(board_text: str) -> int:
 def post_note(body: str, re_id: str | None = None, urgent: bool = False) -> str | None:
     """Post a one-way NOTE. Never a REQ: a script cannot hold up its end of a request."""
     text = _read()
-    start, end = _section(text, "\n## ACTIVE")
-    if start == -1:
-        return None
     entry_id = f"{ME}-{_next_seq(text):03d}"
     header = f"### [{entry_id}] {now()} · {ME} → {THEM} · NOTE"
     if re_id:
@@ -235,10 +232,14 @@ def post_note(body: str, re_id: str | None = None, urgent: bool = False) -> str 
              f"_Detected and posted by B's runner; no reply needed. If this needs a decision, "
              f"open a REQ and B's next active session will answer._\n"
              f"- read-by-{THEM}:\n- done:\n\n")
-    text = text[:start] + block + text[start:]
-    _write(text)
-    _trim_active()
+    # Inbox first: A-035 retired COLLAB.md, so the board is no longer where a message lives.
+    # Writing it there first is also how B-034 was lost -- one rewritable file, no copies.
     _deliver(entry_id, block)
+    if BOARD.is_file():
+        start, _ = _section(text, "\n## ACTIVE")
+        if start != -1:
+            _write(text[:start] + block + text[start:])
+            _trim_active()
     return entry_id
 
 
