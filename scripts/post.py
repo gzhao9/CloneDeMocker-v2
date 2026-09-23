@@ -42,12 +42,12 @@ def main() -> None:
     entry_id = ids[0]
     if list((REPO / "collab" / "inbox").glob(f"*/*/{entry_id}.md")):
         sys.exit(f"post: {entry_id} has already been delivered")
-    deliver(entry_id, body)
+    written = deliver(entry_id, body)
     if "--push" in sys.argv:
-        publish_now(entry_id)
+        publish_now(entry_id, extra=written)
 
 
-def deliver(entry_id: str, body: str) -> None:
+def deliver(entry_id: str, body: str) -> list[str]:
     """Drop the entry in each recipient's unread inbox (A-024, folder form in A-030).
 
     Written alongside the board copy rather than instead of it, so the proposal needs no
@@ -60,48 +60,36 @@ def deliver(entry_id: str, body: str) -> None:
     names = re.findall(r"[ABC]", (m.group(1) if m else "") + (cc.group(1) if cc else ""))
     if not names:
         print(f"post: {entry_id} has no recipient in its header, inbox copy skipped")
-        return
+        return []
+    written = []
     for name in dict.fromkeys(names):
         path = BOARD.parent / "collab" / "inbox" / name / "unread" / f"{entry_id}.md"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(body, encoding="utf-8", newline=chr(10))
+        written.append(f"collab/inbox/{name}/unread/{entry_id}.md")
         print(f"post: {entry_id} delivered to collab/inbox/{name}/unread/")
 
 
 def a_owns(rel: str) -> bool:
-    """Is this a path THIS agent is entitled to write or remove?
+    """Is this a path THIS agent may write or remove on every publish?
 
-    RULES 3, enforced rather than remembered. A publish overlays this agent's local copy
-    onto the remote tree, so any path it lists that belongs to a peer is silently reverted
-    to whatever this agent last happened to have -- which resurrected 27 files C had just
-    deleted, on top of C's own cleanup commit. A may write the board, its own status and
-    receipts, its own mailbox, and the letters it sends. Nothing else under collab/.
+    RULES 3, enforced rather than remembered, and deliberately narrower than it looks
+    like it should be. A publish overlays this agent's local copy onto the remote tree,
+    so every path it lists is asserted to be whatever this agent last happened to hold.
+
+    **A letter this agent sent is not on this list.** Sending it is a one-off act, and
+    `deliver()` publishes exactly the paths it just wrote, through `extra`. Listing them
+    on every publish instead asserts, forever, that the letter is still *unread* -- which
+    re-added A-034 and A-035 to C's unread minutes after C had filed them, because A's
+    disk was behind C's cleanup. Where a delivered letter sits is the recipient's state,
+    not the sender's, and the sender stops having an opinion the moment it is delivered.
     """
     if rel.startswith("archive/board-retired-"):
         return True
-    if rel in ("collab/archived-ids", "collab/unread-B"):
-        return True                                   # dead scheme, archived; A may clear it
-    if rel in ("COLLAB.md", "COLLAB_ARCHIVE.md", "collab/README.md",
-               "collab/inbox/README.md", f"collab/latest-from-{ME}"):
+    if rel in ("collab/README.md", f"collab/status/{ME}.md",
+               f"collab/status/{ME}-session.md"):
         return True
-    if rel.startswith(f"collab/status/{ME}") or rel == f"collab/read/{ME}.md":
-        return True
-    if rel.startswith(f"collab/inbox/{ME}/"):          # this agent's own mailbox
-        return True
-    if re.fullmatch(rf"collab/inbox/[ABC]/unread/{ME}-\d+\.md", rel):
-        return True                                   # the letters this agent sends
-    # The flat layout `collab/inbox/<who>/<id>.md` is dead: it predates unread/read/ and
-    # every file still sitting in it was put there by A, first by A's original deliver()
-    # and then resurrected by A's stale-overlay push. Cleaning up one's own dead layout is
-    # the one case where touching a peer's directory is not touching a peer's work.
-    if re.fullmatch(r"collab/inbox/[ABC]/[ABC]-\d+\.md", rel):
-        return True
-    # An unread/ copy of an entry the owner has already filed to read/ is not the owner's
-    # work: it is an entry A's stale-overlay push un-filed. Undoing that is A cleaning up
-    # after itself, and the read/ copy proves the owner's real state is untouched.
-    m = re.fullmatch(r"collab/inbox/([ABC])/unread/([ABC]-\d+)\.md", rel)
-    return bool(m and (repo_root / "collab" / "inbox" / m.group(1) / "read" /
-                       f"{m.group(2)}.md").is_file())
+    return rel.startswith(f"collab/inbox/{ME}/")       # this agent's own mailbox
 
 
 def publish_now(entry_id: str, extra: list[str] | None = None) -> None:
