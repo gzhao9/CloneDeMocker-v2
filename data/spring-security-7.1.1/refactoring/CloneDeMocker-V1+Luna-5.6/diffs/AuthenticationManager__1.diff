@@ -1,0 +1,39 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/rememberme/RememberMeAuthenticationFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/rememberme/RememberMeAuthenticationFilterTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.authentication.rememberme;
+ 
++import org.mockito.Mock;
+ import jakarta.servlet.FilterChain;
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpServletResponse;
+@@ -53,6 +54,8 @@
+  * @author Ben Alex
+  */
+ public class RememberMeAuthenticationFilterTests {
++	@Mock
++	private AuthenticationManager authenticationManager;
+ 
+ 	Authentication remembered = new TestingAuthenticationToken("remembered", "password", "ROLE_REMEMBERED");
+ 
+@@ -74,8 +77,7 @@
+ 
+ 	@Test
+ 	public void testDetectsRememberMeServicesProperty() {
+-		assertThatIllegalArgumentException()
+-			.isThrownBy(() -> new RememberMeAuthenticationFilter(mock(AuthenticationManager.class), null));
++		assertThatIllegalArgumentException().isThrownBy(() -> new RememberMeAuthenticationFilter(authenticationManager, null));
+ 	}
+ 
+ 	@Test
+@@ -84,8 +86,7 @@
+ 		Authentication originalAuth = new TestingAuthenticationToken("user", "password", "ROLE_A");
+ 		SecurityContextHolder.getContext().setAuthentication(originalAuth);
+ 		// Setup our filter correctly
+-		RememberMeAuthenticationFilter filter = new RememberMeAuthenticationFilter(mock(AuthenticationManager.class),
+-				new MockRememberMeServices(this.remembered));
++		RememberMeAuthenticationFilter filter = new RememberMeAuthenticationFilter(authenticationManager, new MockRememberMeServices(this.remembered));
+ 		filter.afterPropertiesSet();
+ 		// Test
+ 		MockHttpServletRequest request = new MockHttpServletRequest();

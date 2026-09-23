@@ -1,0 +1,46 @@
+--- a/web/src/test/java/org/springframework/security/web/server/authentication/SwitchUserWebFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authentication/SwitchUserWebFilterTests.java
+@@ -71,6 +71,8 @@
+ 
+ 	private SwitchUserWebFilter switchUserWebFilter;
+ 
++	private Authentication authentication;
++
+ 	@Mock
+ 	private ReactiveUserDetailsService userDetailsService;
+ 
+@@ -88,6 +90,7 @@
+ 		this.switchUserWebFilter = new SwitchUserWebFilter(this.userDetailsService, this.successHandler,
+ 				this.failureHandler);
+ 		this.switchUserWebFilter.setSecurityContextRepository(this.serverSecurityContextRepository);
++		this.authentication = mock(Authentication.class);
+ 	}
+ 
+ 	@Test
+@@ -183,7 +186,7 @@
+ 		final MockServerWebExchange exchange = MockServerWebExchange
+ 			.from(MockServerHttpRequest.post("/login/impersonate"));
+ 		final WebFilterChain chain = mock(WebFilterChain.class);
+-		final SecurityContextImpl securityContext = new SecurityContextImpl(mock(Authentication.class));
++		final SecurityContextImpl securityContext = new SecurityContextImpl(authentication);
+ 		assertThatIllegalArgumentException().isThrownBy(() -> {
+ 			Context securityContextHolder = ReactiveSecurityContextHolder
+ 				.withSecurityContext(Mono.just(securityContext));
+@@ -198,7 +201,7 @@
+ 		final MockServerWebExchange exchange = MockServerWebExchange
+ 			.from(MockServerHttpRequest.post("/login/impersonate?username={targetUser}", targetUsername));
+ 		final WebFilterChain chain = mock(WebFilterChain.class);
+-		final SecurityContextImpl securityContext = new SecurityContextImpl(mock(Authentication.class));
++		final SecurityContextImpl securityContext = new SecurityContextImpl(this.authentication);
+ 		final UserDetails switchUserDetails = switchUserDetails(targetUsername, false);
+ 		given(this.userDetailsService.findByUsername(any(String.class))).willReturn(Mono.just(switchUserDetails));
+ 		given(this.failureHandler.onAuthenticationFailure(any(WebFilterExchange.class), any(DisabledException.class)))
+@@ -217,7 +220,7 @@
+ 		final MockServerWebExchange exchange = MockServerWebExchange
+ 			.from(MockServerHttpRequest.post("/login/impersonate?username={targetUser}", targetUsername));
+ 		final WebFilterChain chain = mock(WebFilterChain.class);
+-		final SecurityContextImpl securityContext = new SecurityContextImpl(mock(Authentication.class));
++		final SecurityContextImpl securityContext = new SecurityContextImpl(this.authentication);
+ 		final UserDetails switchUserDetails = switchUserDetails(targetUsername, false);
+ 		given(this.userDetailsService.findByUsername(any(String.class))).willReturn(Mono.just(switchUserDetails));
+ 		assertThatExceptionOfType(DisabledException.class).isThrownBy(() -> {

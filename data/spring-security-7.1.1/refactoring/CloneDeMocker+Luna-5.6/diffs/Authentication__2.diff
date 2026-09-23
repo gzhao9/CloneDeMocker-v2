@@ -1,0 +1,44 @@
+--- a/web/src/test/java/org/springframework/security/web/server/authentication/session/InvalidateLeastUsedServerMaximumSessionsExceededHandlerTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authentication/session/InvalidateLeastUsedServerMaximumSessionsExceededHandlerTests.java
+@@ -48,11 +48,14 @@
+ 
+ 	InvalidateLeastUsedServerMaximumSessionsExceededHandler handler;
+ 
++	private Authentication authentication;
++
+ 	WebSessionStore webSessionStore = spy(new InMemoryWebSessionStore());
+ 
+ 	@BeforeEach
+ 	void setup() {
+ 		this.handler = new InvalidateLeastUsedServerMaximumSessionsExceededHandler(this.webSessionStore);
++		this.authentication = mock(Authentication.class);
+ 	}
+ 
+ 	@Test
+@@ -65,7 +68,7 @@
+ 		given(session2.getSessionId()).willReturn("session2");
+ 		given(session2.invalidate()).willReturn(Mono.empty());
+ 
+-		MaximumSessionsContext context = new MaximumSessionsContext(mock(Authentication.class),
++		MaximumSessionsContext context = new MaximumSessionsContext(authentication,
+ 				List.of(session1, session2), 2, createWebSession());
+ 
+ 		this.handler.handle(context).block();
+@@ -97,7 +100,7 @@
+ 		given(session2.getSessionId()).willReturn("session2");
+ 		given(session3.getSessionId()).willReturn("session3");
+ 
+-		MaximumSessionsContext context = new MaximumSessionsContext(mock(Authentication.class),
++		MaximumSessionsContext context = new MaximumSessionsContext(this.authentication,
+ 				List.of(session1, session2, session3), 2, createWebSession());
+ 		this.handler.handle(context).block();
+ 
+@@ -130,7 +133,7 @@
+ 		given(session2.getSessionId()).willReturn(currentSession.getId());
+ 		given(session1.invalidate()).willReturn(Mono.empty());
+ 
+-		MaximumSessionsContext context = new MaximumSessionsContext(mock(Authentication.class),
++		MaximumSessionsContext context = new MaximumSessionsContext(authentication,
+ 				List.of(session1, session2), 1, currentSession);
+ 
+ 		this.handler.handle(context).block();

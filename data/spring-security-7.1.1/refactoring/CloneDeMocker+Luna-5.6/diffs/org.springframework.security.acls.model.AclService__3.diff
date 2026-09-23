@@ -1,0 +1,52 @@
+--- a/acl/src/test/java/org/springframework/security/acls/AclPermissionCacheOptimizerTests.java
++++ b/acl/src/test/java/org/springframework/security/acls/AclPermissionCacheOptimizerTests.java
+@@ -20,6 +20,7 @@
+ import java.util.Collections;
+ import java.util.List;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.security.acls.domain.ObjectIdentityImpl;
+@@ -42,10 +43,16 @@
+ @SuppressWarnings({ "unchecked" })
+ public class AclPermissionCacheOptimizerTests {
+ 
++	private AclService aclService;
++
++	@BeforeEach
++	public void setup() {
++		this.aclService = mock(AclService.class);
++	}
++
+ 	@Test
+ 	public void eagerlyLoadsRequiredAcls() {
+-		AclService service = mock(AclService.class);
+-		AclPermissionCacheOptimizer pco = new AclPermissionCacheOptimizer(service);
++		AclPermissionCacheOptimizer pco = new AclPermissionCacheOptimizer(aclService);
+ 		ObjectIdentityRetrievalStrategy oidStrat = mock(ObjectIdentityRetrievalStrategy.class);
+ 		SidRetrievalStrategy sidStrat = mock(SidRetrievalStrategy.class);
+ 		pco.setObjectIdentityRetrievalStrategy(oidStrat);
+@@ -56,19 +63,18 @@
+ 		given(oidStrat.getObjectIdentity(dos[2])).willReturn(oids[1]);
+ 		pco.cachePermissionsFor(mock(Authentication.class), Arrays.asList(dos));
+ 		// AclService should be invoked with the list of required Oids
+-		verify(service).readAclsById(eq(Arrays.asList(oids)), any(List.class));
++		verify(aclService).readAclsById(eq(Arrays.asList(oids)), any(List.class));
+ 	}
+ 
+ 	@Test
+ 	public void ignoresEmptyCollection() {
+-		AclService service = mock(AclService.class);
+-		AclPermissionCacheOptimizer pco = new AclPermissionCacheOptimizer(service);
++		AclPermissionCacheOptimizer pco = new AclPermissionCacheOptimizer(aclService);
+ 		ObjectIdentityRetrievalStrategy oids = mock(ObjectIdentityRetrievalStrategy.class);
+ 		SidRetrievalStrategy sids = mock(SidRetrievalStrategy.class);
+ 		pco.setObjectIdentityRetrievalStrategy(oids);
+ 		pco.setSidRetrievalStrategy(sids);
+ 		pco.cachePermissionsFor(mock(Authentication.class), Collections.emptyList());
+-		verifyNoMoreInteractions(service, sids, oids);
++		verifyNoMoreInteractions(aclService, sids, oids);
+ 	}
+ 
+ }

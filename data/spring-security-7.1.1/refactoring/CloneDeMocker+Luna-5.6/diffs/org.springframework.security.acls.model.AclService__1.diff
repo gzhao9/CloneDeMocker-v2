@@ -1,0 +1,65 @@
+--- a/access/src/test/java/org/springframework/security/acls/afterinvocation/AclEntryAfterInvocationCollectionFilteringProviderTests.java
++++ b/access/src/test/java/org/springframework/security/acls/afterinvocation/AclEntryAfterInvocationCollectionFilteringProviderTests.java
+@@ -49,10 +49,9 @@
+ 
+ 	@Test
+ 	public void objectsAreRemovedIfPermissionDenied() {
+-		AclService service = mock(AclService.class);
+ 		Acl acl = mock(Acl.class);
+ 		given(acl.isGranted(any(), any(), anyBoolean())).willReturn(false);
+-		given(service.readAclById(any(), any())).willReturn(acl);
++		AclService service = createMockAclService(acl);
+ 		AclEntryAfterInvocationCollectionFilteringProvider provider = new AclEntryAfterInvocationCollectionFilteringProvider(
+ 				service, Arrays.asList(mock(Permission.class)));
+ 		provider.setObjectIdentityRetrievalStrategy(mock(ObjectIdentityRetrievalStrategy.class));
+--- a/access/src/test/java/org/springframework/security/acls/afterinvocation/AclEntryAfterInvocationProviderTests.java
++++ b/access/src/test/java/org/springframework/security/acls/afterinvocation/AclEntryAfterInvocationProviderTests.java
+@@ -61,10 +61,9 @@
+ 
+ 	@Test
+ 	public void accessIsAllowedIfPermissionIsGranted() {
+-		AclService service = mock(AclService.class);
+ 		Acl acl = mock(Acl.class);
+ 		given(acl.isGranted(any(List.class), any(List.class), anyBoolean())).willReturn(true);
+-		given(service.readAclById(any(), any())).willReturn(acl);
++		AclService service = createMockAclService(acl);
+ 		AclEntryAfterInvocationProvider provider = new AclEntryAfterInvocationProvider(service,
+ 				Arrays.asList(mock(Permission.class)));
+ 		provider.setMessageSource(new SpringSecurityMessageSource());
+@@ -98,12 +97,11 @@
+ 
+ 	@Test
+ 	public void accessIsDeniedIfPermissionIsNotGranted() {
+-		AclService service = mock(AclService.class);
+ 		Acl acl = mock(Acl.class);
++		AclService service = createMockAclService(acl);
+ 		given(acl.isGranted(any(List.class), any(List.class), anyBoolean())).willReturn(false);
+ 		// Try a second time with no permissions found
+ 		given(acl.isGranted(any(), any(List.class), anyBoolean())).willThrow(new NotFoundException(""));
+-		given(service.readAclById(any(), any())).willReturn(acl);
+ 		AclEntryAfterInvocationProvider provider = new AclEntryAfterInvocationProvider(service,
+ 				Arrays.asList(mock(Permission.class)));
+ 		provider.setProcessConfigAttribute("MY_ATTRIBUTE");
+--- a/access/src/test/java/org/springframework/security/acls/afterinvocation/MockAclService.java
++++ b/access/src/test/java/org/springframework/security/acls/afterinvocation/MockAclService.java
+@@ -0,0 +1,20 @@
++package org.springframework.security.acls.afterinvocation;
++
++import org.mockito.Mockito;
++import org.springframework.security.acls.model.Acl;
++import org.springframework.security.acls.model.AclService;
++
++import static org.mockito.BDDMockito.given;
++import static org.mockito.ArgumentMatchers.any;
++
++public final class MockAclService {
++
++	private MockAclService() {
++	}
++
++	public static AclService createMockAclService(Acl acl) {
++		AclService service = Mockito.mock(AclService.class);
++		given(service.readAclById(any(), any())).willReturn(acl);
++		return service;
++	}
++}

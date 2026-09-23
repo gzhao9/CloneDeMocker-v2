@@ -1,0 +1,53 @@
+--- a/web/src/test/java/org/springframework/security/web/FilterChainProxyTests.java
++++ b/web/src/test/java/org/springframework/security/web/FilterChainProxyTests.java
+@@ -163,13 +163,11 @@
+ 
+ 	@Test
+ 	public void wrapperIsResetWhenNoMatchingFilters() throws Exception {
+-		HttpFirewall fw = mock(HttpFirewall.class);
+ 		FirewalledRequest fwr = mock(FirewalledRequest.class);
+ 		given(fwr.getRequestURI()).willReturn("/");
+ 		given(fwr.getContextPath()).willReturn("");
+ 		given(fwr.getHttpServletMapping()).willReturn(TestMockHttpServletMappings.defaultMapping());
+-		this.fcp.setFirewall(fw);
+-		given(fw.getFirewalledRequest(this.request)).willReturn(fwr);
++		this.fcp.setFirewall(createMockHttpFirewall(this.request, fwr));
+ 		given(this.matcher.matches(any(HttpServletRequest.class))).willReturn(false);
+ 		this.fcp.doFilter(this.request, this.response, this.chain);
+ 		verify(fwr).reset();
+@@ -178,11 +176,11 @@
+ 	// SEC-1639
+ 	@Test
+ 	public void bothWrappersAreResetWithNestedFcps() throws Exception {
+-		HttpFirewall fw = mock(HttpFirewall.class);
+ 		FilterChainProxy firstFcp = new FilterChainProxy(new DefaultSecurityFilterChain(this.matcher, this.fcp));
++		FirewalledRequest firstFwr = mock(FirewalledRequest.class, "firstFwr");
++		HttpFirewall fw = createMockHttpFirewall(this.request, firstFwr);
+ 		firstFcp.setFirewall(fw);
+ 		this.fcp.setFirewall(fw);
+-		FirewalledRequest firstFwr = mock(FirewalledRequest.class, "firstFwr");
+ 		given(firstFwr.getRequestURI()).willReturn("/");
+ 		given(firstFwr.getContextPath()).willReturn("");
+ 		given(firstFwr.getHttpServletMapping()).willReturn(TestMockHttpServletMappings.defaultMapping());
+@@ -190,7 +188,6 @@
+ 		given(fwr.getRequestURI()).willReturn("/");
+ 		given(fwr.getContextPath()).willReturn("");
+ 		given(fwr.getHttpServletMapping()).willReturn(TestMockHttpServletMappings.defaultMapping());
+-		given(fw.getFirewalledRequest(this.request)).willReturn(firstFwr);
+ 		given(fw.getFirewalledRequest(firstFwr)).willReturn(fwr);
+ 		given(fwr.getRequest()).willReturn(firstFwr);
+ 		given(firstFwr.getRequest()).willReturn(this.request);
+@@ -520,6 +517,13 @@
+ 		return filter;
+ 	}
+ 
++	private static HttpFirewall createMockHttpFirewall(HttpServletRequest request,
++			FirewalledRequest firewalledRequest) {
++		HttpFirewall fw = mock(HttpFirewall.class);
++		given(fw.getFirewalledRequest(request)).willReturn(firewalledRequest);
++		return fw;
++	}
++
+ 	private static class MockFirewalledRequest extends FirewalledRequest {
+ 
+ 		MockFirewalledRequest(HttpServletRequest request) {
