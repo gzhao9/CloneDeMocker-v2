@@ -109,8 +109,8 @@ def collect_receipts() -> dict[str, list[tuple[str, str, str]]]:
 
 def render(bodies: dict[str, str], receipts: dict, rules: str) -> str:
     archived = archived_ids()
-    active = sorted((i for i in bodies if i not in archived), key=lambda i: _sort_key(bodies[i]),
-                    reverse=True)
+    active = sorted((i for i in bodies if i not in archived),
+                    key=lambda i: (_sort_key(bodies[i]), i), reverse=True)
     out = [TITLE, "", rules.rstrip(), "", "## ACTIVE", ""]
     for entry_id in active:
         out.append(_strip_footer(bodies[entry_id]))
@@ -139,6 +139,48 @@ def preserved_rules() -> str:
     return "\n".join(lines[starts[0]:ends[0]])
 
 
+def migrate_receipts(agent: str) -> int:
+    """Lift this agent's in-place `read-by-<agent>:` stamps into collab/read/<agent>.md.
+
+    Without this the switch is lossy in the one direction nobody would notice: render()
+    strips the stamp slots and rebuilds read state from receipts, so every acknowledgement
+    this agent ever made would vanish from the board and its peers would see months of
+    entries as unread. The stamps are the only record of them.
+    """
+    # `[ \t]*`, not `\s*`: in Python `\s` matches newlines, so an *empty* slot would capture
+    # the following line and invent a receipt for an entry this agent has not read.
+    stamp_re = re.compile(rf"^- read-by-{agent}:[ \t]*(\S.*)$", flags=re.M)
+    found: dict[str, str] = {}
+    for source in (BOARD, ARCHIVE):
+        if not source.is_file():
+            continue
+        text = source.read_text(encoding="utf-8")
+        marks = [(m.start(), m.group(1)) for m in HEADER_RE.finditer(text)]
+        for idx, (pos, entry_id) in enumerate(marks):
+            end = marks[idx + 1][0] if idx + 1 < len(marks) else len(text)
+            m = stamp_re.search(text, pos, end)
+            if m:
+                found.setdefault(entry_id, m.group(1).strip())
+
+    dest = READ / f"{agent}.md"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    existing = dest.read_text(encoding="utf-8") if dest.is_file() else \
+        f"# Entries {agent} has read. Only {agent} writes this file.\n"
+    lines = [ln for ln in existing.splitlines() if ln.strip()]
+    already = {ln.split()[0] for ln in lines if re.match(r"^[ABC]-\d+", ln)}
+    added = 0
+    for entry_id, stamp in sorted(found.items()):
+        if entry_id in already:
+            continue
+        ts = TS_RE.search(stamp)
+        when = f"{ts.group(1)} {ts.group(2)}" if ts else "0000-00-00 00:00"
+        note = stamp.split("—", 1)[1].strip() if "—" in stamp else ""
+        lines.append(f"{entry_id:<8} {when}" + (f"  {note}" if note else ""))
+        added += 1
+    dest.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    return added
+
+
 def backfill(agent: str) -> int:
     """Copy this agent's own entries out of COLLAB.md into collab/inbox/<recipient>/.
 
@@ -151,10 +193,15 @@ def backfill(agent: str) -> int:
             continue
         text = source.read_text(encoding="utf-8")
         marks = [(m.start(), m.group(1), m.group(0)) for m in HEADER_RE.finditer(text)]
+        sections = [m.start() for m in re.finditer(r"^## ", text, flags=re.M)]
         for idx, (pos, entry_id, header) in enumerate(marks):
             if not entry_id.startswith(f"{agent}-"):
                 continue
+            # Bound at the next entry *or* the next `## ` section, whichever comes first: the
+            # live board has an entry sitting above `## RULES`, and slicing only to the next
+            # entry swallowed RULES and the ACTIVE heading into that entry's body.
             end = marks[idx + 1][0] if idx + 1 < len(marks) else len(text)
+            end = min([end] + [s for s in sections if s > pos])
             body = text[pos:end].rstrip() + "\n"
             route = ROUTE_RE.search(header)
             if not route:
@@ -181,7 +228,8 @@ def main() -> None:
 
     if args.backfill:
         n = backfill(args.backfill)
-        print(f"regen: backfilled {n} inbox file(s) for {args.backfill}")
+        r = migrate_receipts(args.backfill)
+        print(f"regen: backfilled {n} inbox file(s) and {r} read receipt(s) for {args.backfill}")
 
     rules = preserved_rules()
     bodies, warnings = collect_messages()
