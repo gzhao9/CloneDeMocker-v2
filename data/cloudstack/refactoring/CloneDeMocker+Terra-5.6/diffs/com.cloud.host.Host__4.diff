@@ -1,0 +1,66 @@
+--- a/server/src/test/java/com/cloud/deploy/DeploymentPlanningManagerImplTest.java
++++ b/server/src/test/java/com/cloud/deploy/DeploymentPlanningManagerImplTest.java
+@@ -213,7 +213,6 @@
+     @Inject
+     PrimaryDataStoreDao primaryDataStoreDao;
+ 
+-    @Mock
+     Host host;
+ 
+     @Mock
+@@ -282,7 +281,7 @@
+         StoragePoolAllocator allocator = Mockito.mock(StoragePoolAllocator.class);
+         _dpm.setStoragePoolAllocators(Arrays.asList(allocator));
+ 
+-        Mockito.when(host.getId()).thenReturn(hostId);
++        host = createMockHost(hostId);
+         Mockito.doNothing().when(_dpm).avoidDisabledResources(vmProfile, dc, avoids);
+     }
+ 
+@@ -1240,24 +1239,15 @@
+         priorities.put(8L, 5);
+         priorities.put(9L, DataCenterDeployment.PROHIBITED_HOST_PRIORITY);
+ 
+-        Host host1 = Mockito.mock(Host.class);
+-        Mockito.when(host1.getId()).thenReturn(1L);
+-        Host host2 = Mockito.mock(Host.class);
+-        Mockito.when(host2.getId()).thenReturn(2L);
+-        Host host3 = Mockito.mock(Host.class);
+-        Mockito.when(host3.getId()).thenReturn(3L);
+-        Host host4 = Mockito.mock(Host.class);
+-        Mockito.when(host4.getId()).thenReturn(4L);
+-        Host host5 = Mockito.mock(Host.class);
+-        Mockito.when(host5.getId()).thenReturn(5L);
+-        Host host6 = Mockito.mock(Host.class);
+-        Mockito.when(host6.getId()).thenReturn(6L);
+-        Host host7 = Mockito.mock(Host.class);
+-        Mockito.when(host7.getId()).thenReturn(7L);
+-        Host host8 = Mockito.mock(Host.class);
+-        Mockito.when(host8.getId()).thenReturn(8L);
+-        Host host9 = Mockito.mock(Host.class);
+-        Mockito.when(host9.getId()).thenReturn(9L);
++        Host host1 = createMockHost(1L);
++        Host host2 = createMockHost(2L);
++        Host host3 = createMockHost(3L);
++        Host host4 = createMockHost(4L);
++        Host host5 = createMockHost(5L);
++        Host host6 = createMockHost(6L);
++        Host host7 = createMockHost(7L);
++        Host host8 = createMockHost(8L);
++        Host host9 = createMockHost(9L);
+ 
+         List<Host> hosts = new ArrayList<>(Arrays.asList(host1, host2, host3, host4, host5, host6, host7, host8, host9));
+         _dpm.reorderHostsByPriority(priorities, hosts);
+@@ -1272,6 +1262,12 @@
+         Assert.assertEquals(7, hosts.get(5).getId());
+         Assert.assertEquals(6, hosts.get(6).getId());
+         Assert.assertEquals(2, hosts.get(7).getId());
++    }
++
++    private static Host createMockHost(long hostId) {
++        Host host = Mockito.mock(Host.class);
++        Mockito.when(host.getId()).thenReturn(hostId);
++        return host;
+     }
+ 
+     private List<Long> prepareMockForAvoidOtherClustersForDeploymentIfMigrationDisabled(boolean configValue,
