@@ -52,7 +52,6 @@ MODEL = "gpt-5.6-terra"
 REMOTE = "github"
 DATASET = REPO / "data/cloudstack/refactoring/CloneDeMocker+Terra-5.6"
 RESULTS = DATASET / "refactoring-results.json"
-CONFLICT_PATHS = ["refactoring-results.json", "refactoring-results.csv"]
 # MCIs whose run died inside the tooling. Kept out of the dataset on purpose: a tool
 # exception classifies as MODEL_DECLINED, which would read as "the model refused" in the
 # results and quietly overstate that category. Recorded here instead so the derived
@@ -69,7 +68,21 @@ UNREAD_ALERT_FILE = REPO / "validation/results/collab_unread_for_A.txt"
 
 
 def log(message: str) -> None:
-    print(f"{datetime.now().strftime('%m-%d %H:%M:%S')} {message}", flush=True)
+    """Write a log line, never raising.
+
+    The stdout this inherits is a GBK pipe on this host, so a single character it cannot
+    encode -- an emoji, or any of the board's Chinese text quoted into a message -- raised
+    UnicodeEncodeError out of `print` and killed a multi-day run mid-sync, leaving a
+    half-written dataset behind. A logger that can stop the run is worse than a lossy one.
+    """
+    line = f"{datetime.now().strftime('%m-%d %H:%M:%S')} {message}"
+    try:
+        print(line, flush=True)
+    except UnicodeEncodeError:
+        encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+        print(line.encode(encoding, "replace").decode(encoding, "replace"), flush=True)
+    except OSError:
+        pass
 
 
 def check_collab_messages() -> list[dict]:
@@ -113,7 +126,7 @@ def check_collab_messages() -> list[dict]:
             })
 
     if unread:
-        log(f"🔔 [COLLAB ALERT] Found {len(unread)} unread message(s) for A on the board:")
+        log(f"[COLLAB ALERT] Found {len(unread)} unread message(s) for A on the board:")
         lines_for_file = []
         for item in unread:
             log(f"    * [{item['id']}] {item['author']} -> {item['target']}: {item['summary']}")
@@ -323,6 +336,11 @@ def merge_board() -> None:
 def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5) -> bool:
     """Commit and push a batch, surviving the other machines pushing to the same files."""
     recover_repo()
+    # Never publish a results file that does not parse. A conflicted copy was committed and
+    # pushed once, and every agent that pulled it then read the corpus as empty.
+    if not done_ids():
+        log("    sync: results file does not parse — refusing to commit it")
+        return False
     git("add", "--", f"data/{PROJECT}", "COLLAB.md")
     if not git("diff", "--cached", "--quiet").returncode:
         return True
@@ -334,17 +352,30 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
         if pull.returncode == 0:
             check_collab_messages()
         else:
-            for name in CONFLICT_PATHS:
-                git("checkout", "--ours", "--", str((DATASET / name).relative_to(REPO)))
-                git("add", "--", str((DATASET / name).relative_to(REPO)))
-            status_out = git("status", "--porcelain").stdout
-            if "COLLAB.md" in status_out:
-                merge_board()
+            # Resolve every conflicted path, not a fixed list of two. A and B can collide on
+            # any file under the dataset -- `diffs/<mci>.diff` most often, because both hosts
+            # may run the same MCI and write the same path with different content. Leaving
+            # one of those unresolved made `rebase --continue` fail every attempt, which read
+            # in the log as "rebase unresolved" and stopped A publishing for hours.
+            unresolved = [p for p in git("diff", "--name-only", "--diff-filter=U")
+                          .stdout.split("\n") if p.strip()]
+            for path in unresolved:
+                if path.endswith("COLLAB.md"):
+                    merge_board()          # keeps both sides' entries and stamps
+                    continue
+                git("checkout", "--ours", "--", path)   # upstream wins; relayer re-applies ours
+                git("add", "--", path)
             cont = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--continue"],
                                   cwd=REPO, text=True, capture_output=True, timeout=300)
+            if cont.returncode != 0 and "empty" in (cont.stdout + cont.stderr).lower():
+                # Taking upstream wholesale can leave nothing to commit; that is a resolved
+                # rebase, not a failed one.
+                cont = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--skip"],
+                                      cwd=REPO, text=True, capture_output=True, timeout=300)
             if cont.returncode != 0:
                 git("rebase", "--abort")
-                log(f"    sync: rebase unresolved on attempt {attempt}, retrying")
+                why = (cont.stderr or cont.stdout).strip().split("\n")[-1][:160]
+                log(f"    sync: rebase unresolved on attempt {attempt} ({why}), retrying")
                 time.sleep(5 * attempt)
                 continue
             check_collab_messages()
@@ -395,12 +426,23 @@ def main() -> None:
     # ~1 s and no tokens), so allow a few, then set it aside.
     attempts: dict[str, int] = {}
     MAX_ATTEMPTS = 3
+    high_water = 0
 
     while True:
         done = done_ids()
         if not done:
             log("results file unreadable (conflict markers?) — stopping rather than re-running")
             break
+        # A *readable* but truncated results file is the dangerous one: the existing guard
+        # above only catches a file that fails to parse. When a crash mid-sync left 25 rows
+        # where there had been 1090, the worklist read that as "almost nothing is done" and
+        # began re-running the whole corpus from the tail, overwriting the dataset as it
+        # went. The count only ever grows, so a drop means damage, not progress.
+        if len(done) < high_water - 5:
+            log(f"results file shrank {high_water} -> {len(done)} — stopping; restore it "
+                f"from the remote before restarting")
+            break
+        high_water = max(high_water, len(done))
         skipped = skipped_ids()
         forced = [m for m in rerun_ids() if m in by_id and m not in skipped]
         remaining = forced + [m for m in reversed(ordered)

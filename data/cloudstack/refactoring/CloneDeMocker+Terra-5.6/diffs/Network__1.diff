@@ -1,223 +1,92 @@
 --- a/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/wrapper/xenbase/CitrixRequestWrapperTest.java
 +++ b/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/wrapper/xenbase/CitrixRequestWrapperTest.java
-@@ -652,8 +652,8 @@
- 
-     @Test
-     public void testOvsSetTagAndFlowCommand() {
--        final Network network = Mockito.mock(Network.class);
--        final Connection conn = Mockito.mock(Connection.class);
-+        final Connection conn = Mockito.mock(Connection.class);
-+        final Network network = createMockNetwork(conn, "br0");
- 
-         final OvsSetTagAndFlowCommand tagAndFlowCommand = new OvsSetTagAndFlowCommand("Test", "tag", "vlan://1", "123", 1l);
- 
-@@ -662,15 +662,6 @@
- 
-         when(citrixResourceBase.getConnection()).thenReturn(conn);
-         when(citrixResourceBase.setupvSwitchNetwork(conn)).thenReturn(network);
--        try {
--            when(network.getBridge(conn)).thenReturn("br0");
--        } catch (final BadServerResponse e) {
--            fail(e.getMessage());
--        } catch (final XenAPIException e) {
--            fail(e.getMessage());
--        } catch (final XmlRpcException e) {
--            fail(e.getMessage());
--        }
- 
-         final Answer answer = wrapper.execute(tagAndFlowCommand, citrixResourceBase);
- 
-@@ -773,7 +764,7 @@
+@@ -773,7 +773,7 @@
      public void testOvsCreateGreTunnelCommand() {
          final String bridge = "gre";
          final Connection conn = Mockito.mock(Connection.class);
 -        final Network network = Mockito.mock(Network.class);
-+        final Network network = createMockNetwork(conn, bridge);
++        final Network network = createMockNetwork();
          final XsHost xsHost = Mockito.mock(XsHost.class);
  
          final OvsCreateGreTunnelCommand createGreCommand = new OvsCreateGreTunnelCommand("127.0.0.1", "KEY", 1l, 2l);
-@@ -785,7 +776,6 @@
-         when(citrixResourceBase.getHost()).thenReturn(xsHost);
-         when(citrixResourceBase.setupvSwitchNetwork(conn)).thenReturn(network);
-         try {
--            when(network.getBridge(conn)).thenReturn(bridge);
-             when(
-                             citrixResourceBase.callHostPlugin(conn, "ovsgre", "ovs_create_gre", "bridge", bridge, "remoteIP", createGreCommand.getRemoteIp(), "greKey",
-                                             createGreCommand.getKey(), "from", Long.toString(createGreCommand.getFrom()), "to", Long.toString(createGreCommand.getTo()))).thenReturn(
-@@ -811,7 +801,7 @@
+@@ -811,7 +811,7 @@
      public void testOvsDeleteFlowCommandSuccess() {
          final String bridge = "gre";
          final Connection conn = Mockito.mock(Connection.class);
 -        final Network network = Mockito.mock(Network.class);
-+        final Network network = createMockNetwork(conn, bridge);
++        final Network network = createMockNetwork();
  
          final OvsDeleteFlowCommand deleteFlowCommand = new OvsDeleteFlowCommand("Test");
  
-@@ -821,7 +811,6 @@
-         when(citrixResourceBase.getConnection()).thenReturn(conn);
-         when(citrixResourceBase.setupvSwitchNetwork(conn)).thenReturn(network);
-         try {
--            when(network.getBridge(conn)).thenReturn(bridge);
-             when(citrixResourceBase.callHostPlugin(conn, "ovsgre", "ovs_delete_flow", "bridge", bridge, "vmName", deleteFlowCommand.getVmName())).thenReturn("SUCCESS");
- 
-         } catch (final BadServerResponse e) {
-@@ -844,7 +833,7 @@
+@@ -844,7 +844,7 @@
      public void testOvsDeleteFlowCommandFailure() {
          final String bridge = "gre";
          final Connection conn = Mockito.mock(Connection.class);
 -        final Network network = Mockito.mock(Network.class);
-+        final Network network = createMockNetwork(conn, bridge);
++        final Network network = createMockNetwork();
  
          final OvsDeleteFlowCommand deleteFlowCommand = new OvsDeleteFlowCommand("Test");
  
-@@ -854,7 +843,6 @@
-         when(citrixResourceBase.getConnection()).thenReturn(conn);
-         when(citrixResourceBase.setupvSwitchNetwork(conn)).thenReturn(network);
-         try {
--            when(network.getBridge(conn)).thenReturn(bridge);
-             when(citrixResourceBase.callHostPlugin(conn, "ovsgre", "ovs_delete_flow", "bridge", bridge, "vmName", deleteFlowCommand.getVmName())).thenReturn("FAILED");
- 
-         } catch (final BadServerResponse e) {
-@@ -877,7 +865,6 @@
+@@ -877,7 +877,7 @@
      public void testOvsVpcPhysicalTopologyConfigCommand() {
          final String bridge = "gre";
          final Connection conn = Mockito.mock(Connection.class);
 -        final Network network = Mockito.mock(Network.class);
++        final Network network = createMockNetwork();
  
          final OvsVpcPhysicalTopologyConfigCommand.Host[] hosts = new OvsVpcPhysicalTopologyConfigCommand.Host[0];
          final OvsVpcPhysicalTopologyConfigCommand.Tier[] tiers = new OvsVpcPhysicalTopologyConfigCommand.Tier[0];
-@@ -890,8 +877,8 @@
- 
-         when(citrixResourceBase.getConnection()).thenReturn(conn);
-         try {
-+            final Network network = createMockNetwork(conn, bridge);
-             when(citrixResourceBase.findOrCreateTunnelNetwork(conn, physicalTopology.getBridgeName())).thenReturn(network);
--            when(network.getBridge(conn)).thenReturn(bridge);
- 
-         } catch (final BadServerResponse e) {
-             fail(e.getMessage());
-@@ -912,7 +899,6 @@
+@@ -912,7 +912,7 @@
      public void testOvsVpcRoutingPolicyConfigCommand() {
          final String bridge = "gre";
          final Connection conn = Mockito.mock(Connection.class);
 -        final Network network = Mockito.mock(Network.class);
++        final Network network = createMockNetwork();
  
          final OvsVpcRoutingPolicyConfigCommand.Acl[] acls = new OvsVpcRoutingPolicyConfigCommand.Acl[0];
          final OvsVpcRoutingPolicyConfigCommand.Tier[] tiers = new OvsVpcRoutingPolicyConfigCommand.Tier[0];
-@@ -924,8 +910,8 @@
- 
-         when(citrixResourceBase.getConnection()).thenReturn(conn);
-         try {
-+            final Network network = createMockNetwork(conn, bridge);
-             when(citrixResourceBase.findOrCreateTunnelNetwork(conn, routingPolicy.getBridgeName())).thenReturn(network);
--            when(network.getBridge(conn)).thenReturn(bridge);
- 
-         } catch (final BadServerResponse e) {
-             fail(e.getMessage());
-@@ -1064,7 +1050,7 @@
+@@ -1064,7 +1064,7 @@
      public void testOvsCreateTunnelCommandSuccess() {
          final String bridge = "tunnel";
          final Connection conn = Mockito.mock(Connection.class);
 -        final Network network = Mockito.mock(Network.class);
-+        final Network network = createMockNetwork(conn, bridge);
++        final Network network = createMockNetwork();
  
          final OvsCreateTunnelCommand createTunnel = new OvsCreateTunnelCommand("127.0.0.1", 1, 1l, 2l, 1l, "127.0.1.1", "net01", "cd84c713-f448-48c9-ba25-e6740d4a9003");
  
-@@ -1074,7 +1060,6 @@
-         when(citrixResourceBase.getConnection()).thenReturn(conn);
-         try {
-             when(citrixResourceBase.findOrCreateTunnelNetwork(conn, createTunnel.getNetworkName())).thenReturn(network);
--            when(network.getBridge(conn)).thenReturn(bridge);
- 
-             when(citrixResourceBase.callHostPlugin(conn, "ovstunnel", "create_tunnel", "bridge", bridge, "remote_ip", createTunnel.getRemoteIp(),
-                             "key", createTunnel.getKey().toString(), "from",
-@@ -1097,11 +1082,25 @@
-         assertTrue(answer.getResult());
-     }
- 
-+    private static Network createMockNetwork(final Connection conn, final String bridge) {
-+        final Network network = Mockito.mock(Network.class);
-+        try {
-+            when(network.getBridge(conn)).thenReturn(bridge);
-+        } catch (final BadServerResponse e) {
-+            throw new AssertionError(e);
-+        } catch (final XenAPIException e) {
-+            throw new AssertionError(e);
-+        } catch (final XmlRpcException e) {
-+            throw new AssertionError(e);
-+        }
-+        return network;
-+    }
-+
-     @Test
+@@ -1101,7 +1101,7 @@
      public void testOvsCreateTunnelCommandFail() {
          final String bridge = "tunnel";
          final Connection conn = Mockito.mock(Connection.class);
 -        final Network network = Mockito.mock(Network.class);
-+        final Network network = createMockNetwork(conn, bridge);
++        final Network network = createMockNetwork();
  
          final OvsCreateTunnelCommand createTunnel = new OvsCreateTunnelCommand("127.0.0.1", 1, 1l, 2l, 1l, "127.0.1.1", "net01", "cd84c713-f448-48c9-ba25-e6740d4a9003");
  
-@@ -1111,7 +1110,6 @@
-         when(citrixResourceBase.getConnection()).thenReturn(conn);
-         try {
-             when(citrixResourceBase.findOrCreateTunnelNetwork(conn, createTunnel.getNetworkName())).thenReturn(network);
--            when(network.getBridge(conn)).thenReturn(bridge);
- 
-             when(citrixResourceBase.callHostPlugin(conn, "ovstunnel", "create_tunnel", "bridge", bridge, "remote_ip", createTunnel.getRemoteIp(),
-                             "key", createTunnel.getKey().toString(), "from",
-@@ -1205,7 +1203,7 @@
+@@ -1205,7 +1205,7 @@
      public void testOvsDestroyTunnelCommandSuccess() {
          final String bridge = "tunnel";
          final Connection conn = Mockito.mock(Connection.class);
 -        final Network network = Mockito.mock(Network.class);
-+        final Network network = createMockNetwork(conn, bridge);
++        final Network network = createMockNetwork();
  
          final OvsDestroyTunnelCommand destroyTunnel = new OvsDestroyTunnelCommand(1l, "net01", "port11");
  
-@@ -1215,7 +1213,6 @@
-         when(citrixResourceBase.getConnection()).thenReturn(conn);
-         try {
-             when(citrixResourceBase.findOrCreateTunnelNetwork(conn, destroyTunnel.getBridgeName())).thenReturn(network);
--            when(network.getBridge(conn)).thenReturn(bridge);
- 
-             when(citrixResourceBase.callHostPlugin(conn, "ovstunnel", "destroy_tunnel", "bridge", bridge, "in_port", destroyTunnel.getInPortName())).thenReturn("SUCCESS");
- 
-@@ -1238,9 +1235,9 @@
+@@ -1238,7 +1238,7 @@
      public void testOvsDestroyTunnelCommandFailed() {
          final String bridge = "tunnel";
          final Connection conn = Mockito.mock(Connection.class);
 -        final Network network = Mockito.mock(Network.class);
++        final Network network = createMockNetwork();
  
          final OvsDestroyTunnelCommand destroyTunnel = new OvsDestroyTunnelCommand(1l, "net01", "port11");
-+        final Network network = createMockNetwork(conn, bridge);
  
-         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
-         assertNotNull(wrapper);
-@@ -1248,7 +1245,6 @@
-         when(citrixResourceBase.getConnection()).thenReturn(conn);
-         try {
-             when(citrixResourceBase.findOrCreateTunnelNetwork(conn, destroyTunnel.getBridgeName())).thenReturn(network);
--            when(network.getBridge(conn)).thenReturn(bridge);
- 
-             when(citrixResourceBase.callHostPlugin(conn, "ovstunnel", "destroy_tunnel", "bridge", bridge, "in_port", destroyTunnel.getInPortName())).thenReturn("FAILED");
- 
-@@ -1920,6 +1916,20 @@
+@@ -1920,6 +1920,10 @@
          assertTrue(answer.getResult());
      }
  
-+    private static Network createMockNetwork(final Connection conn, final String bridge) {
-+        final Network network = Mockito.mock(Network.class);
-+        try {
-+            when(network.getBridge(conn)).thenReturn(bridge);
-+        } catch (final BadServerResponse e) {
-+            throw new AssertionError(e);
-+        } catch (final XenAPIException e) {
-+            throw new AssertionError(e);
-+        } catch (final XmlRpcException e) {
-+            throw new AssertionError(e);
-+        }
-+        return network;
++    private static Network createMockNetwork() {
++        return Mockito.mock(Network.class);
 +    }
 +
  }
