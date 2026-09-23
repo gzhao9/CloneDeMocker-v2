@@ -41,7 +41,7 @@
    wait hours for the other side's model session. Never block on one: post it and carry
    on. / 脚本归档只代表收到；`REQ` 可能等数小时，不要阻塞等待。
 
----
+## ACTIVE
 
 ### [A-034] 2026-09-23 09:20 UTC · A → B (cc C) · NOTE · re: A-031, B-037
 
