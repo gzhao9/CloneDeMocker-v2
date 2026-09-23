@@ -41,6 +41,47 @@ _HARNESS_REVISION = "2"
 
 _USAGE_FIELDS = ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_tokens", "total_tokens")
 
+# 共享副本里的恢复日志：写候选文件之前先把原内容落盘，结束时恢复并删除。进程被硬杀时
+# `finally` 不会执行，日志留在原处，下一个 MCI 开始时先按它把副本还原。
+# Restore journal in a shared workspace copy: original contents hit the disk before any
+# candidate file is written, and are restored and removed at the end. A hard kill skips the
+# `finally`, so the journal stays behind and the next MCI replays it before doing anything.
+# Without it, a killed run left its candidate edits in place and every later MCI in the batch
+# failed to compile against them (2026-09-23, C-010).
+_RESTORE_JOURNAL = ".clonedemocker-restore.json"
+
+
+def _write_restore_journal(workspace_files: Path, originals: dict[Path, str | None]) -> None:
+    journal = workspace_files / _RESTORE_JOURNAL
+    temporary = journal.with_suffix(".tmp")
+    temporary.write_text(json.dumps({relative.as_posix(): content for relative, content in originals.items()},
+                                    ensure_ascii=False), encoding="utf-8")
+    os.replace(temporary, journal)
+
+
+def _replay_restore_journal(workspace_files: Path) -> int:
+    """把上一个被中断的 MCI 留下的改动还原，返回还原的文件数。
+    Undo the edits an interrupted MCI left behind; returns how many files were restored."""
+    journal = workspace_files / _RESTORE_JOURNAL
+    if not journal.is_file():
+        return 0
+    try:
+        originals = json.loads(journal.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        # 读不出日志就不知道副本被改了什么，继续跑只会产出不可信的结果。
+        # An unreadable journal means the copy's state is unknown; carrying on would only
+        # produce results that cannot be trusted.
+        raise DetectionError(f"Workspace restore journal is unreadable / 副本恢复日志无法读取: {journal}") from error
+    for relative, content in originals.items():
+        target = workspace_files / relative
+        if content is None:
+            target.unlink(missing_ok=True)
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8", newline="\n")
+    journal.unlink()
+    return len(originals)
+
 
 def _baseline_test_failure_keys(evidence: Any) -> set[str]:
     return {key for key, status in evidence.test_results.items() if status in {"FAILED", "ERROR"}}
@@ -275,6 +316,11 @@ class RefactoringAgent:
         # saml2/oauth2 test files in Spring Security reach 260+ chars once copied, where the
         # plain path makes is_file() silently return False and write_text raise Errno 2.
         workspace_files = long_path(workspace)
+        if workspace_id:
+            restored = _replay_restore_journal(workspace_files)
+            if restored:
+                progress("WORKSPACE_RESTORED", 6,
+                         f"Restored {restored} file(s) left by an interrupted MCI")
         if run_pit:
             ensure_pit_junit5_support(workspace, getattr(self.harness, "maven_repo_local", None))
         # 同一个模块里的 MCI 共用同一份未改动源码，它们的基线编译与测试跑的是字节完全相同
@@ -442,6 +488,11 @@ class RefactoringAgent:
                 if relative not in workspace_baseline:
                     target = workspace_files / relative
                     workspace_baseline[relative] = target.read_text(encoding="utf-8") if target.is_file() else None
+            if workspace_id:
+                # 每次都重写：中途的 restore 之后紧跟着新一轮写入，日志必须一直在盘上。
+                # Rewritten every time: a mid-run restore is followed by a new round of writes,
+                # so the journal has to stay on disk throughout.
+                _write_restore_journal(workspace_files, workspace_baseline)
 
         def restore_workspace_baseline() -> None:
             for relative, original_content in workspace_baseline.items():
@@ -452,7 +503,11 @@ class RefactoringAgent:
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_text(original_content, encoding="utf-8", newline="\n")
 
-        restore_slot["restore"] = restore_workspace_baseline
+        def finish_workspace() -> None:
+            restore_workspace_baseline()
+            (workspace_files / _RESTORE_JOURNAL).unlink(missing_ok=True)
+
+        restore_slot["restore"] = finish_workspace
         remember_workspace_paths(replacements)
         for relative, new_content in replacements.items():
             original = files.get(relative, "")
@@ -954,8 +1009,22 @@ class RefactoringAgent:
         fix, saml2's opensaml5Test classes were routed to the test task), old and new evidence stop
         being comparable and must expire; the model answers in the proposal cache are unaffected,
         so _generation itself must not change.
+
+        主机级 Maven 参数（CLONEDEMOCKER_MAVEN_ARGS）也算在内：带 `-Dnoredist` 时 reactor 里多出
+        一批模块，同一范围的证据与不带时不可比。不算进来的话，带参数时记下的 baseline 会在不带
+        参数的运行里被原样回放，把"模块不在 reactor 里"掩盖成候选的编译失败。未设置时代际不变，
+        没有这个参数的主机上已有的记录照常可用。
+        Host Maven arguments (CLONEDEMOCKER_MAVEN_ARGS) count too: with `-Dnoredist` the reactor
+        holds extra modules, so evidence for one scope is not comparable across the two. Left out,
+        a baseline recorded with the flag was replayed in a run without it, disguising "module not
+        in the reactor" as a candidate compile failure. Unset, the generation is unchanged, so
+        existing records on hosts without the argument stay valid.
         """
-        return f"{cls._generation()}+{_HARNESS_REVISION}"
+        generation = f"{cls._generation()}+{_HARNESS_REVISION}"
+        maven_args = " ".join(ProjectHarness._extra_maven_args())
+        if maven_args:
+            generation += "+mvn:" + hashlib.sha256(maven_args.encode("utf-8")).hexdigest()[:12]
+        return generation
 
     def _read_cache(self, key: str) -> dict[str, Any] | None:
         path = self._cache_directory() / f"{key}.json"

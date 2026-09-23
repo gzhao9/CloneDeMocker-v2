@@ -221,6 +221,80 @@ class RefactoringAgentTest(unittest.TestCase):
             self.assertNotEqual(before, RefactoringAgent._verification_generation())
             self.assertEqual(prompts, RefactoringAgent._generation())
 
+    def test_host_maven_args_expire_verification_evidence_only_when_set(self):
+        # 带 -Dnoredist 记下的 baseline 不能在不带它的运行里回放（2026-09-23 的假语法失败）。
+        # A baseline recorded with -Dnoredist must not replay in a run without it (the false
+        # syntactic failures of 2026-09-23).
+        import os
+        from unittest.mock import patch
+        with patch.dict(os.environ, {"CLONEDEMOCKER_MAVEN_ARGS": ""}):
+            plain = RefactoringAgent._verification_generation()
+        self.assertEqual(f"{RefactoringAgent._generation()}+2", plain)
+        with patch.dict(os.environ, {"CLONEDEMOCKER_MAVEN_ARGS": "-Dnoredist"}):
+            flagged = RefactoringAgent._verification_generation()
+        self.assertNotEqual(plain, flagged)
+        self.assertTrue(flagged.startswith(plain + "+mvn:"))
+
+    def test_restore_journal_undoes_an_interrupted_mci(self):
+        from studio.refactoring_agent import _RESTORE_JOURNAL, _replay_restore_journal
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "src").mkdir()
+            (root / "src" / "Test.java").write_text("candidate", encoding="utf-8")
+            (root / "src" / "MockHelper.java").write_text("new file", encoding="utf-8")
+            (root / _RESTORE_JOURNAL).write_text(json.dumps(
+                {"src/Test.java": "original", "src/MockHelper.java": None}), encoding="utf-8")
+
+            self.assertEqual(2, _replay_restore_journal(root))
+            self.assertEqual("original", (root / "src" / "Test.java").read_text(encoding="utf-8"))
+            self.assertFalse((root / "src" / "MockHelper.java").exists())
+            self.assertFalse((root / _RESTORE_JOURNAL).exists())
+            self.assertEqual(0, _replay_restore_journal(root))
+
+            (root / _RESTORE_JOURNAL).write_text("{not json", encoding="utf-8")
+            with self.assertRaises(DetectionError):
+                _replay_restore_journal(root)
+
+    def test_shared_workspace_journals_edits_and_recovers_after_a_hard_kill(self):
+        from studio.refactoring_agent import _RESTORE_JOURNAL, _workspace_root
+
+        class JournalCheckingHarness(PassingHarness):
+            def __init__(self):
+                self.seen = []
+
+            def validate(self, project_root: Path, run_pit: bool = False) -> HarnessEvidence:
+                self.seen.append(((project_root / _RESTORE_JOURNAL).is_file(),
+                                  (project_root / "src" / "Test.java").read_text(encoding="utf-8")))
+                return super().validate(project_root, run_pit)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            service, source, run_id, _ = self._fixture(temporary, "f" * 32)
+            original = source.read_text(encoding="utf-8")
+            harness = JournalCheckingHarness()
+            agent = RefactoringAgent(service, StagedProvider(), harness)
+
+            result = agent.run(run_id, ["demo.Dependency::1"], "gpt-5.6-terra", workspace_id="batch",
+                               reuse_verification=False)
+            self.assertEqual("COMPLETED", result["stage"])
+            workspace = _workspace_root(source.parent.parent, "batch")
+            # 候选验证时日志已经在盘上；结束后副本还原、日志删除。
+            # The journal is on disk while the candidate is verified; afterwards the copy is
+            # restored and the journal removed.
+            self.assertIn(True, [journal for journal, _ in harness.seen])
+            self.assertFalse((workspace / _RESTORE_JOURNAL).exists())
+            self.assertEqual(original, (workspace / "src" / "Test.java").read_text(encoding="utf-8"))
+
+            # 模拟硬杀：候选内容和日志都留在副本里，下一个 MCI 的 baseline 必须看到原样。
+            # Simulate a hard kill: candidate content and journal stay in the copy; the next
+            # MCI's baseline must see the original.
+            (workspace / "src" / "Test.java").write_text("left over by a killed run", encoding="utf-8")
+            (workspace / _RESTORE_JOURNAL).write_text(json.dumps({"src/Test.java": original}), encoding="utf-8")
+            harness.seen.clear()
+            agent = RefactoringAgent(service, StagedProvider(), harness)
+            agent.run(run_id, ["demo.Dependency::1"], "gpt-5.6-terra", workspace_id="batch",
+                      reuse_verification=False, use_cache=False)
+            self.assertEqual((False, original), harness.seen[0])
+
     def test_names_that_collapse_after_normalization_keep_every_status(self):
         first, second = "demo.T#[1] x = demo.A@1a2b", "demo.T#[1] x = demo.A@3c4d"
         self.assertEqual({"demo.T#[1] x = demo.A@<hash>": ("FAILED", "PASSED")},
