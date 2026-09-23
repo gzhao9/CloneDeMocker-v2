@@ -1,0 +1,35 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
+@@ -215,8 +215,7 @@
+         UserVmVO userVm = mock(UserVmVO.class);
+         VolumeVO rootVolume = mock(VolumeVO.class);
+         StoragePoolVO storagePool = mock(StoragePoolVO.class);
+-        HostVO defaultHost = mock(HostVO.class);
+-        HostVO capableHost = mock(HostVO.class);
++        HostVO capableHost = createMockCapableHost(capableHostId);
+ 
+         when(userVm.getId()).thenReturn(vmId);
+         when(userVm.getUuid()).thenReturn("vm-uuid");
+@@ -231,8 +230,7 @@
+         when(storagePool.getClusterId()).thenReturn(clusterId);
+         when(storagePool.getPodId()).thenReturn(podId);
+         when(storagePool.getDataCenterId()).thenReturn(dataCenterId);
+-        when(defaultHost.getId()).thenReturn(defaultHostId);
+-        when(capableHost.getId()).thenReturn(capableHostId);
++        HostVO defaultHost = createMockCapableHost(defaultHostId);
+         when(hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterId, podId, dataCenterId, null))
+                 .thenReturn(List.of(defaultHost, capableHost));
+         when(hostDetailsDao.findDetail(defaultHostId, Host.HOST_UEFI_ENABLE)).thenReturn(null);
+@@ -527,6 +525,12 @@
+         verify(strategy.alertManager).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_VM_SNAPSHOT), eq(1L), eq(2L), anyString(), anyString());
+     }
+ 
++    private static HostVO createMockCapableHost(long capableHostId) {
++        HostVO capableHost = mock(HostVO.class);
++        when(capableHost.getId()).thenReturn(capableHostId);
++        return capableHost;
++    }
++
+     private void mockCandidateHostScope(long vmId, long hostId) {
+         long poolId = 50L;
+         long clusterId = 60L;
