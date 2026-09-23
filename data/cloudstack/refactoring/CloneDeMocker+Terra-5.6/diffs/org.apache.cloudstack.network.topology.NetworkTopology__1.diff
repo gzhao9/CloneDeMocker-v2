@@ -1,0 +1,34 @@
+--- a/server/src/test/java/com/cloud/network/element/VirtualRouterElementTest.java
++++ b/server/src/test/java/com/cloud/network/element/VirtualRouterElementTest.java
+@@ -544,9 +544,8 @@
+         when(_routerDao.listByVpcId(vpcId)).thenReturn(Arrays.asList(router));
+         DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+         when(_dcDao.findById(zoneId)).thenReturn(dc);
+-        NetworkTopology networkTopology = Mockito.mock(NetworkTopology.class);
++        NetworkTopology networkTopology = createMockNetworkTopology();
+         when(networkTopologyContext.retrieveNetworkTopology(dc)).thenReturn(networkTopology);
+-        doReturn(true).when(networkTopology).applyBgpPeers(any(), any(), any());
+ 
+         boolean result = virtualRouterElement.applyBgpPeers(vpc, null, bgpPeers);
+ 
+@@ -568,13 +567,18 @@
+         when(_routerDao.listByNetworkAndRole(networkId, VirtualRouter.Role.VIRTUAL_ROUTER)).thenReturn(Arrays.asList(router));
+         DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+         when(_dcDao.findById(zoneId)).thenReturn(dc);
+-        NetworkTopology networkTopology = Mockito.mock(NetworkTopology.class);
++        NetworkTopology networkTopology = createMockNetworkTopology();
+         when(networkTopologyContext.retrieveNetworkTopology(dc)).thenReturn(networkTopology);
+-        doReturn(true).when(networkTopology).applyBgpPeers(any(), any(), any());
+ 
+         boolean result = virtualRouterElement.applyBgpPeers(null, network, bgpPeers);
+ 
+         Assert.assertTrue(result);
+         verify(networkTopology).applyBgpPeers(any(), any(), any());
+     }
++
++    private static NetworkTopology createMockNetworkTopology() throws ResourceUnavailableException {
++        NetworkTopology networkTopology = Mockito.mock(NetworkTopology.class);
++        doReturn(true).when(networkTopology).applyBgpPeers(any(), any(), any());
++        return networkTopology;
++    }
+ }
