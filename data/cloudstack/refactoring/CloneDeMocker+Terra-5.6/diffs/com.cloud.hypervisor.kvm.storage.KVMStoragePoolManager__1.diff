@@ -1,0 +1,104 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -814,6 +814,13 @@
+         return to;
+     }
+ 
++    private static KVMStoragePoolManager createMockKVMStoragePoolManager(VirtualMachineTO vmSpec,
++            boolean connectPhysicalDisks, boolean connectResult) {
++        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
++        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, connectPhysicalDisks)).thenReturn(connectResult);
++        return storagePoolMgr;
++    }
++
+     private void verifyGuestResourceDef(GuestResourceDef guestResourceDef, VirtualMachineTO to) {
+         String xml = "<domain>" + guestResourceDef.toString() + "</domain>";
+         Document domainDoc = parse(xml);
+@@ -1555,7 +1562,6 @@
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+-        final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+         final NicTO nicTO = Mockito.mock(NicTO.class);
+         final DiskTO diskTO = Mockito.mock(DiskTO.class);
+         final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+@@ -1576,8 +1582,8 @@
+         when(diskTO.getType()).thenReturn(Volume.Type.ISO);
+ 
+         when(libvirtComputingResourceMock.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
++        final KVMStoragePoolManager storagePoolManager = createMockKVMStoragePoolManager(vm, true, true);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolManager);
+-        when(storagePoolManager.connectPhysicalDisksViaVmSpec(vm, true)).thenReturn(true);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -5107,7 +5113,7 @@
+ 
+         final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+ 
+-        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
++        final KVMStoragePoolManager storagePoolMgr = createMockKVMStoragePoolManager(vmSpec, false, false);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+@@ -5135,8 +5141,6 @@
+             fail(e.getMessage());
+         }
+ 
+-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(false);
+-
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+ 
+@@ -5306,7 +5310,7 @@
+ 
+         final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+ 
+-        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
++        final KVMStoragePoolManager storagePoolMgr = createMockKVMStoragePoolManager(vmSpec, false, true);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+@@ -5336,7 +5340,6 @@
+             fail(e.getMessage());
+         }
+ 
+-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(true);
+         try {
+             doNothing().when(libvirtComputingResourceMock).createVifs(vmSpec, vmDef);
+ 
+@@ -5385,7 +5388,7 @@
+ 
+         final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+ 
+-        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
++        final KVMStoragePoolManager storagePoolMgr = createMockKVMStoragePoolManager(vmSpec, false, true);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+@@ -5415,7 +5418,6 @@
+             fail(e.getMessage());
+         }
+ 
+-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(true);
+         try {
+             doNothing().when(libvirtComputingResourceMock).createVifs(vmSpec, vmDef);
+ 
+@@ -5465,7 +5467,7 @@
+ 
+         final StartCommand command = new StartCommand(vmSpec, host, executeInSequence);
+ 
+-        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
++        final KVMStoragePoolManager storagePoolMgr = createMockKVMStoragePoolManager(vmSpec, false, true);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+@@ -5495,8 +5497,6 @@
+         } catch (final URISyntaxException e) {
+             fail(e.getMessage());
+         }
+-
+-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(true);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);

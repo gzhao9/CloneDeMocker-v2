@@ -1,0 +1,57 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxElementTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxElementTest.java
+@@ -239,14 +239,12 @@
+         2L, 5L, 6L, false, false);
+ 
+         NicVO nic = Mockito.mock(NicVO.class);
+-        VpcVO vpc = Mockito.mock(VpcVO.class);
+ 
+         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddress);
+         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vm);
+         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
++        VpcVO vpc = MockVpcVO.createMockVpcVO(1L, "vpc1");
+         when(vpcDao.findById(anyLong())).thenReturn(vpc);
+-        when(vpc.getId()).thenReturn(1L);
+-        when(vpc.getName()).thenReturn("vpc1");
+         when(nsxService.createStaticNatRule(anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyBoolean(), anyLong(), anyString(), anyString())).thenReturn(true);
+ 
+         assertTrue(nsxElement.applyStaticNats(networkVO, List.of(rule)));
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
+@@ -152,7 +152,7 @@
+         srcNatIpOnVR.setVpcId(12L);
+         IPAddressVO srcNatIpOnNSX = new IPAddressVO(new Ip(publicIpNSX), 2L , 0xaabbccddeeffL, 3L, true);
+         srcNatIpOnNSX.setVpcId(12L);
+-        VpcVO vpcVO = Mockito.mock(VpcVO.class);
++        VpcVO vpcVO = MockVpcVO.createMockVpcVO(12L, "nsxVPCNet");
+         List<IPAddressVO> sourceNatList = List.of(srcNatIpOnNSX);
+         VlanDetailsVO vlanDetailVO = new VlanDetailsVO(3L,ApiConstants.NSX_DETAIL_KEY, "true", false);
+         VpcOfferingVO vpcOffering = Mockito.mock(VpcOfferingVO.class);
+@@ -164,8 +164,6 @@
+         when(ipAddressDao.listByAssociatedVpc(12L, true)).thenReturn(sourceNatList);
+         when(vlanDetailsDao.findDetail(anyLong(), anyString())).thenReturn(vlanDetailVO);
+         when(vpcVO.getVpcOfferingId()).thenReturn(12L);
+-        when(vpcVO.getId()).thenReturn(12L);
+-        when(vpcVO.getName()).thenReturn("nsxVPCNet");
+         when(vpcOfferingServiceMapDao.areServicesSupportedByVpcOffering(anyLong(), any())).thenReturn(true);
+         when(nsxService.createVpcNetwork(anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyBoolean())).thenReturn(true);
+         when(vpcOfferingDao.findById(anyLong())).thenReturn(vpcOffering);
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/MockVpcVO.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/MockVpcVO.java
+@@ -0,0 +1,16 @@
++package org.apache.cloudstack.service;
++
++import static org.mockito.Mockito.when;
++
++import com.cloud.network.vpc.VpcVO;
++import org.mockito.Mockito;
++
++public class MockVpcVO {
++
++    public static VpcVO createMockVpcVO(long id, String name) {
++        VpcVO vpcVO = Mockito.mock(VpcVO.class);
++        when(vpcVO.getId()).thenReturn(id);
++        when(vpcVO.getName()).thenReturn(name);
++        return vpcVO;
++    }
++}
