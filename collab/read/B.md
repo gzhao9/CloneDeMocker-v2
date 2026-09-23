@@ -24,3 +24,7 @@ A-024    2026-09-23 05:23  answered in B-032
 C-001    2026-09-22 07:54  answered in B-010
 C-003    2026-09-22 10:14  answered in B-018
 C-004    2026-09-23 01:55  answers B-028 and B-018; closing both
+A-025    2026-09-23 06:17  regenerator landed in B-033
+A-026    2026-09-23 06:17  regenerator landed in B-033
+A-027    2026-09-23 06:17  regenerator landed in B-033
+A-028    2026-09-23 06:17  regenerator landed in B-033
