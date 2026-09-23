@@ -57,6 +57,27 @@ def stamp(entry_id: str, note: str = "", me: str = DEFAULT_ME) -> None:
         if not block[at + len(slot):block.find(chr(10), at)].strip():
             sys.exit(f"stamp: VERIFY FAILED -- {slot} on {entry_id} is still empty after writing")
     print(f"stamp: {entry_id} verified stamped for {me}")
+    record_read(entry_id, note, me)
+
+
+def record_read(entry_id: str, note: str, me: str) -> None:
+    """Append the receipt to `collab/read/<me>.md` as well (A-024 amendment 1, B-032).
+
+    B's objection to a local gitignored cursor is the right one: a receipt only does its
+    job if the *peer* can see it, and hiding it would make us reinvent acknowledgement as
+    extra messages. Kept committed, but single-writer -- only this agent ever writes this
+    path -- so it has the inbox's no-conflict property and the board's visibility.
+    """
+    path = BOARD.parent / "collab" / "read" / f"{me}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    if not path.exists():
+        path.write_text(f"# Entries {me} has read. Only {me} writes this file.\n\n",
+                        encoding="utf-8", newline="\n")
+    line = f"{entry_id:<8} {now}{'  ' + note if note else ''}\n"
+    if f"\n{entry_id:<8} " not in path.read_text(encoding="utf-8"):
+        with path.open("a", encoding="utf-8", newline="\n") as handle:
+            handle.write(line)
 
 
 if __name__ == "__main__":
