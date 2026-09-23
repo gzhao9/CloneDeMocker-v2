@@ -1,0 +1,60 @@
+--- a/web/src/test/java/org/springframework/security/web/servletapi/SecurityContextHolderAwareRequestFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/servletapi/SecurityContextHolderAwareRequestFilterTests.java
+@@ -93,6 +93,9 @@
+ 	@Mock
+ 	private HttpServletResponse response;
+ 
++	@Mock
++	private AsyncContext asyncContextMock;
++
+ 	private List<LogoutHandler> logoutHandlers;
+ 
+ 	private SecurityContextHolderAwareRequestFilter filter;
+@@ -274,13 +277,12 @@
+ 		TestingAuthenticationToken expectedAuth = new TestingAuthenticationToken("user", "password", "ROLE_USER");
+ 		context.setAuthentication(expectedAuth);
+ 		SecurityContextHolder.setContext(context);
+-		AsyncContext asyncContext = mock(AsyncContext.class);
+-		given(this.request.getAsyncContext()).willReturn(asyncContext);
++		given(this.request.getAsyncContext()).willReturn(asyncContextMock);
+ 		Runnable runnable = () -> {
+ 		};
+ 		wrappedRequest().getAsyncContext().start(runnable);
+ 		verifyNoMoreInteractions(this.authenticationManager, this.logoutHandler);
+-		verify(asyncContext).start(runnableCaptor.capture());
++		verify(asyncContextMock).start(runnableCaptor.capture());
+ 		DelegatingSecurityContextRunnable wrappedRunnable = (DelegatingSecurityContextRunnable) runnableCaptor
+ 			.getValue();
+ 		assertThat(ReflectionTestUtils.getField(wrappedRunnable, "delegateSecurityContext")).isEqualTo(context);
+@@ -294,13 +296,12 @@
+ 		TestingAuthenticationToken expectedAuth = new TestingAuthenticationToken("user", "password", "ROLE_USER");
+ 		context.setAuthentication(expectedAuth);
+ 		SecurityContextHolder.setContext(context);
+-		AsyncContext asyncContext = mock(AsyncContext.class);
+-		given(this.request.startAsync()).willReturn(asyncContext);
++		given(this.request.startAsync()).willReturn(asyncContextMock);
+ 		Runnable runnable = () -> {
+ 		};
+ 		wrappedRequest().startAsync().start(runnable);
+ 		verifyNoMoreInteractions(this.authenticationManager, this.logoutHandler);
+-		verify(asyncContext).start(runnableCaptor.capture());
++		verify(asyncContextMock).start(runnableCaptor.capture());
+ 		DelegatingSecurityContextRunnable wrappedRunnable = (DelegatingSecurityContextRunnable) runnableCaptor
+ 			.getValue();
+ 		assertThat(ReflectionTestUtils.getField(wrappedRunnable, "delegateSecurityContext")).isEqualTo(context);
+@@ -314,13 +315,12 @@
+ 		TestingAuthenticationToken expectedAuth = new TestingAuthenticationToken("user", "password", "ROLE_USER");
+ 		context.setAuthentication(expectedAuth);
+ 		SecurityContextHolder.setContext(context);
+-		AsyncContext asyncContext = mock(AsyncContext.class);
+-		given(this.request.startAsync(this.request, this.response)).willReturn(asyncContext);
++		given(this.request.startAsync(this.request, this.response)).willReturn(asyncContextMock);
+ 		Runnable runnable = () -> {
+ 		};
+ 		wrappedRequest().startAsync(this.request, this.response).start(runnable);
+ 		verifyNoMoreInteractions(this.authenticationManager, this.logoutHandler);
+-		verify(asyncContext).start(runnableCaptor.capture());
++		verify(asyncContextMock).start(runnableCaptor.capture());
+ 		DelegatingSecurityContextRunnable wrappedRunnable = (DelegatingSecurityContextRunnable) runnableCaptor
+ 			.getValue();
+ 		assertThat(ReflectionTestUtils.getField(wrappedRunnable, "delegateSecurityContext")).isEqualTo(context);
