@@ -1,0 +1,290 @@
+--- a/components/http/okHttp/src/test/java/com/microsoft/kiota/http/OkHttpRequestAdapterTest.java
++++ b/components/http/okHttp/src/test/java/com/microsoft/kiota/http/OkHttpRequestAdapterTest.java
+@@ -51,6 +51,8 @@
+ import java.util.stream.Stream;
+ 
+ public class OkHttpRequestAdapterTest {
++    private final AuthenticationProvider authenticationProviderMockField =
++            mock(AuthenticationProvider.class);
+     private static <T> T nullValue() {
+         return java.util.Collections.<String, T>emptyMap().get("missing");
+     }
+@@ -83,8 +85,7 @@
+     @ParameterizedTest
+     @ValueSource(ints = {200, 201, 202, 203, 206})
+     void sendStreamReturnsUsableStream(int statusCode) throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+-        authenticationProviderMock.authenticateRequest(
++        authenticationProviderMockField.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var text = "my-demo-text";
+         final var bufferedSource =
+@@ -103,7 +104,7 @@
+                                                 text.getBytes("UTF-8").length))
+                                 .build());
+         final var requestAdapter =
+-                new OkHttpRequestAdapter(authenticationProviderMock, null, null, client);
++                new OkHttpRequestAdapter(authenticationProviderMockField, null, null, client);
+         final var requestInformation =
+                 new RequestInformation() {
+                     {
+@@ -126,8 +127,7 @@
+     @ParameterizedTest
+     @ValueSource(ints = {200, 201, 202, 203, 204, 304})
+     void sendStreamReturnsNullOnNoContent(int statusCode) throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+-        authenticationProviderMock.authenticateRequest(
++        authenticationProviderMockField.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
+                 getMockClient(
+@@ -139,7 +139,7 @@
+                                 .body(null)
+                                 .build());
+         final var requestAdapter =
+-                new OkHttpRequestAdapter(authenticationProviderMock, null, null, client);
++                new OkHttpRequestAdapter(authenticationProviderMockField, null, null, client);
+         final var requestInformation =
+                 new RequestInformation() {
+                     {
+@@ -155,8 +155,7 @@
+     @ParameterizedTest
+     @ValueSource(ints = {200, 201, 202, 203, 204, 205, 304})
+     void sendReturnsNullOnNoContent(int statusCode) throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+-        authenticationProviderMock.authenticateRequest(
++        authenticationProviderMockField.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
+                 getMockClient(
+@@ -168,7 +167,7 @@
+                                 .body(null)
+                                 .build());
+         final var requestAdapter =
+-                new OkHttpRequestAdapter(authenticationProviderMock, null, null, client);
++                new OkHttpRequestAdapter(authenticationProviderMockField, null, null, client);
+         final var requestInformation =
+                 new RequestInformation() {
+                     {
+@@ -184,8 +183,7 @@
+     @ParameterizedTest
+     @ValueSource(ints = {200, 201, 202, 203})
+     void sendReturnsObjectOnContent(int statusCode) throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+-        authenticationProviderMock.authenticateRequest(
++        authenticationProviderMockField.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
+                 getMockClient(
+@@ -210,7 +208,7 @@
+         final var mockParseNode = creatMockParseNode(mockEntity);
+         final var mockFactory = creatMockParseNodeFactory(mockParseNode, "application/json");
+         final var requestAdapter =
+-                new OkHttpRequestAdapter(authenticationProviderMock, mockFactory, null, client);
++                new OkHttpRequestAdapter(authenticationProviderMockField, mockFactory, null, client);
+         final var response = requestAdapter.send(requestInformation, null, (node) -> mockEntity);
+         assertNotNull(response);
+     }
+@@ -240,8 +238,7 @@
+             List<String> errorMappingCodes,
+             boolean expectDeserializedException)
+             throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+-        authenticationProviderMock.authenticateRequest(
++        authenticationProviderMockField.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
+                 getMockClient(
+@@ -270,7 +267,7 @@
+         final var mockFactory = creatMockParseNodeFactory(mockParseNode, "application/json");
+ 
+         final var requestAdapter =
+-                new OkHttpRequestAdapter(authenticationProviderMock, mockFactory, null, client);
++                new OkHttpRequestAdapter(authenticationProviderMockField, mockFactory, null, client);
+         final var errorMappings =
+                 errorMappingCodes == null
+                         ? null
+@@ -292,7 +289,6 @@
+ 
+     @Test
+     void getRequestFromRequestInformationHasCorrectContentLength_JsonPayload() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var requestInformation = new RequestInformation();
+         requestInformation.setUri(new URI("https://localhost"));
+         ByteArrayInputStream content =
+@@ -304,7 +300,7 @@
+         final var contentLength = content.available();
+         requestInformation.headers.tryAdd("Content-Length", String.valueOf(contentLength));
+ 
+-        final var adapter = new OkHttpRequestAdapter(authenticationProviderMock);
++        final var adapter = new OkHttpRequestAdapter(authenticationProviderMockField);
+         final var request =
+                 adapter.getRequestFromRequestInformation(
+                         requestInformation, mock(Span.class), mock(Span.class));
+@@ -318,7 +314,6 @@
+ 
+     @Test
+     void getRequestFromRequestInformationIncludesContentLength_FilePayload() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var testFile = new File("./src/test/resources/helloWorld.txt");
+         final var requestInformation = new RequestInformation();
+ 
+@@ -329,7 +324,7 @@
+         try (FileInputStream content = new FileInputStream(testFile)) {
+             requestInformation.setStreamContent(content, "application/octet-stream");
+ 
+-            final var adapter = new OkHttpRequestAdapter(authenticationProviderMock);
++            final var adapter = new OkHttpRequestAdapter(authenticationProviderMockField);
+             final var request =
+                     adapter.getRequestFromRequestInformation(
+                             requestInformation, mock(Span.class), mock(Span.class));
+@@ -345,7 +340,6 @@
+     @Test
+     void getRequestFromRequestInformationWithoutContentLengthOverrideForStreamBody()
+             throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var testFile = new File("./src/test/resources/helloWorld.txt");
+         final var requestInformation = new RequestInformation();
+ 
+@@ -354,7 +348,7 @@
+         try (FileInputStream content = new FileInputStream(testFile)) {
+             requestInformation.setStreamContent(content, "application/octet-stream");
+ 
+-            final var adapter = new OkHttpRequestAdapter(authenticationProviderMock);
++            final var adapter = new OkHttpRequestAdapter(authenticationProviderMockField);
+             final var request =
+                     adapter.getRequestFromRequestInformation(
+                             requestInformation, mock(Span.class), mock(Span.class));
+@@ -369,7 +363,6 @@
+     @Test
+     void getRequestFromRequestInformationWithoutContentLengthOverrideForJsonPayload()
+             throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var requestInformation = new RequestInformation();
+         requestInformation.setUri(new URI("https://localhost"));
+         ByteArrayInputStream content =
+@@ -380,7 +373,7 @@
+         requestInformation.httpMethod = HttpMethod.PUT;
+         final var contentLength = content.available();
+ 
+-        final var adapter = new OkHttpRequestAdapter(authenticationProviderMock);
++        final var adapter = new OkHttpRequestAdapter(authenticationProviderMockField);
+         final var request =
+                 adapter.getRequestFromRequestInformation(
+                         requestInformation, mock(Span.class), mock(Span.class));
+@@ -394,14 +387,13 @@
+     @Test
+     void getRequestFromRequestInformationWithoutContentLengthOverrideWithEmptyPayload()
+             throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var requestInformation = new RequestInformation();
+         requestInformation.setUri(new URI("https://localhost"));
+         ByteArrayInputStream content = new ByteArrayInputStream(new byte[0]);
+         requestInformation.httpMethod = HttpMethod.PUT;
+         requestInformation.content = content;
+ 
+-        final var adapter = new OkHttpRequestAdapter(authenticationProviderMock);
++        final var adapter = new OkHttpRequestAdapter(authenticationProviderMockField);
+         final var request =
+                 adapter.getRequestFromRequestInformation(
+                         requestInformation, mock(Span.class), mock(Span.class));
+@@ -412,7 +404,6 @@
+ 
+     @Test
+     void buildsNativeRequestSupportingMultipleWrites() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var requestInformation = new RequestInformation();
+         requestInformation.setUri(new URI("https://localhost"));
+         var requestBodyJson = "{\"name\":\"value\",\"array\":[\"1\",\"2\",\"3\"]}";
+@@ -421,7 +412,7 @@
+         requestInformation.setStreamContent(content, "application/json");
+         requestInformation.httpMethod = HttpMethod.PUT;
+ 
+-        final var adapter = new OkHttpRequestAdapter(authenticationProviderMock);
++        final var adapter = new OkHttpRequestAdapter(authenticationProviderMockField);
+         final var request =
+                 adapter.getRequestFromRequestInformation(
+                         requestInformation, mock(Span.class), mock(Span.class));
+@@ -440,7 +431,6 @@
+ 
+     @Test
+     void buildsNativeRequestSupportingOneShotWrite() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var testFile = new File("./src/test/resources/helloWorld.txt");
+         final var requestInformation = new RequestInformation();
+ 
+@@ -451,7 +441,7 @@
+         try (FileInputStream content = new FileInputStream(testFile)) {
+             requestInformation.setStreamContent(content, "application/octet-stream");
+ 
+-            final var adapter = new OkHttpRequestAdapter(authenticationProviderMock);
++            final var adapter = new OkHttpRequestAdapter(authenticationProviderMockField);
+             final var request =
+                     adapter.getRequestFromRequestInformation(
+                             requestInformation, mock(Span.class), mock(Span.class));
+@@ -480,11 +470,10 @@
+                         .addInterceptor(new MockResponseHandler())
+                         .build();
+ 
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+-        authenticationProviderMock.authenticateRequest(
++        authenticationProviderMockField.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         var requestAdapter =
+-                new OkHttpRequestAdapter(authenticationProviderMock, null, null, okHttpClient);
++                new OkHttpRequestAdapter(authenticationProviderMockField, null, null, okHttpClient);
+ 
+         final var requestInformation = new RequestInformation();
+         requestInformation.setUri(new URI("https://localhost"));
+@@ -514,11 +503,10 @@
+                         .addInterceptor(new MockResponseHandler())
+                         .build();
+ 
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+-        authenticationProviderMock.authenticateRequest(
++        authenticationProviderMockField.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         var requestAdapter =
+-                new OkHttpRequestAdapter(authenticationProviderMock, null, null, okHttpClient);
++                new OkHttpRequestAdapter(authenticationProviderMockField, null, null, okHttpClient);
+ 
+         final var requestInformation = new RequestInformation();
+         requestInformation.setUri(new URI("https://localhost"));
+@@ -541,8 +529,7 @@
+ 
+     @Test
+     void testHandle3XXResponseWithoutLocationHeader() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+-        authenticationProviderMock.authenticateRequest(
++        authenticationProviderMockField.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
+                 getMockClient(
+@@ -568,7 +555,7 @@
+         final var mockFactory = creatMockParseNodeFactory(mockParseNode, "application/json");
+ 
+         final var requestAdapter =
+-                new OkHttpRequestAdapter(authenticationProviderMock, mockFactory, null, client);
++                new OkHttpRequestAdapter(authenticationProviderMockField, mockFactory, null, client);
+         var nativeResponseHandler = new NativeResponseHandler();
+         requestAdapter.send(requestInformation, null, node -> mockEntity);
+         var nativeResponse = (Response) nativeResponseHandler.getValue();
+@@ -577,8 +564,7 @@
+ 
+     @Test
+     void handle3XXResponseWithLocationHeader() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+-        authenticationProviderMock.authenticateRequest(
++        authenticationProviderMockField.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
+                 getMockClient(
+@@ -605,7 +591,7 @@
+         final var mockFactory = creatMockParseNodeFactory(mockParseNode, "application/json");
+ 
+         final var requestAdapter =
+-                new OkHttpRequestAdapter(authenticationProviderMock, mockFactory, null, client);
++                new OkHttpRequestAdapter(authenticationProviderMockField, mockFactory, null, client);
+         var nativeResponseHandler = new NativeResponseHandler();
+         requestAdapter.send(requestInformation, null, node -> mockEntity);
+         // Should throw an exception

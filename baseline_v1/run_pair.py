@@ -4,7 +4,7 @@ For each MCI, on one shared isolated workspace:
 
   1. V2, CloneDeMocker with its harness: `RefactoringAgent.run` with exactly the arguments the
      previous V2 round used (scripts/run_cloudstack_tail.py): user_instruction="",
-     run_pit=False, max_retries=2, use_cache=True.
+     run_pit=False, max_retries=2 -- but with the proposal cache off (see PairV2Agent).
   2. V1, the original notebook with no harness: `V1RefactoringAgent.run`, max_retries=0,
      use_cache=False.
 
@@ -51,6 +51,24 @@ from studio.refactoring_agent import RefactoringAgent  # noqa: E402
 from baseline_v1.v1_agent import V1RefactoringAgent  # noqa: E402
 
 canonical_store.MODEL_DISPLAY_NAMES.setdefault("gpt-5.6-luna", "Luna 5.6")
+
+
+class PairV2Agent(RefactoringAgent):
+    """V2 exactly as in round 1, except it neither reads nor writes the proposal cache.
+
+    The cache key has no model in it, so with the cache on, a luna run replays the answer
+    terra gave in round 1 (0 model calls, "SUCCESS") -- the result would not be luna's. And
+    RefactoringAgent writes every verified proposal back regardless of use_cache, which would
+    overwrite terra's cached answers with luna's (and V1's) on this machine.
+    """
+
+    def _write_cache(self, key, value):
+        return None
+
+
+class PairV1Agent(V1RefactoringAgent):
+    def _write_cache(self, key, value):
+        return None
 HARNESS_V2 = canonical_store.HARNESS_CLONEDEMOCKER
 HARNESS_V1 = "CloneDeMocker-V1"
 LOG = REPO / "validation" / "results" / "pair-run.log"
@@ -145,8 +163,8 @@ def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: i
     errors = 0
     for mci_id in todo:
         for name, agent_cls, harness, kwargs, done in (
-            ("V2", RefactoringAgent, HARNESS_V2, {"max_retries": 2, "use_cache": True}, v2_done),
-            ("V1", V1RefactoringAgent, HARNESS_V1, {"max_retries": 0, "use_cache": False}, v1_done),
+            ("V2", PairV2Agent, HARNESS_V2, {"max_retries": 2, "use_cache": False}, v2_done),
+            ("V1", PairV1Agent, HARNESS_V1, {"max_retries": 0, "use_cache": False}, v1_done),
         ):
             if mci_id in done:
                 continue
