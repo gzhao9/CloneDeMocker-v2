@@ -1,0 +1,50 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -445,7 +445,7 @@
+         Network publicNetwork = mock(Network.class);
+         Ip ip1 = mock(Ip.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+-        LoadBalancingRule loadBalancingRule1 = mock(LoadBalancingRule.class);
++        LoadBalancingRule loadBalancingRule1 = createMockLoadBalancingRule(ip1);
+         LoadBalancerVO loadBalancerVO1 = mock(LoadBalancerVO.class);
+         List<LoadBalancingRule> loadBalancingRuleList1 = List.of(loadBalancingRule1);
+         List<LoadBalancerVO> loadBalancerVOList1 = List.of(loadBalancerVO1);
+@@ -454,8 +454,6 @@
+         TungstenAnswer deleteTungstenLoadBalancerCommand = MockTungstenAnswerFactory.get(true);
+ 
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+-        when(loadBalancingRule1.getSourceIp()).thenReturn(ip1);
+-        when(loadBalancingRule1.getState()).thenReturn(FirewallRule.State.Revoke);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+         when(ipAddressVO.getAddress()).thenReturn(ip1);
+         when(ip1.addr()).thenReturn("10.10.10.10");
+@@ -473,7 +471,7 @@
+         Network publicNetwork = mock(Network.class);
+         Ip ip = mock(Ip.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+-        LoadBalancingRule loadBalancingRule = mock(LoadBalancingRule.class);
++        LoadBalancingRule loadBalancingRule = createMockLoadBalancingRule(ip);
+         LoadBalancerVO loadBalancerVO1 = mock(LoadBalancerVO.class);
+         LoadBalancerVO loadBalancerVO2 = mock(LoadBalancerVO.class);
+         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
+@@ -483,8 +481,6 @@
+         List<LoadBalancerVO> loadBalancerVOList = Arrays.asList(loadBalancerVO1, loadBalancerVO2);
+ 
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+-        when(loadBalancingRule.getSourceIp()).thenReturn(ip);
+-        when(loadBalancingRule.getState()).thenReturn(FirewallRule.State.Revoke);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+         when(ip.addr()).thenReturn("10.10.10.10");
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerListenerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerListenerAnswer);
+@@ -962,4 +958,11 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    private static LoadBalancingRule createMockLoadBalancingRule(Ip sourceIp) {
++        LoadBalancingRule loadBalancingRule1 = mock(LoadBalancingRule.class);
++        when(loadBalancingRule1.getSourceIp()).thenReturn(sourceIp);
++        when(loadBalancingRule1.getState()).thenReturn(FirewallRule.State.Revoke);
++        return loadBalancingRule1;
++    }
+ }
