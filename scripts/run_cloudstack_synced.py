@@ -51,6 +51,16 @@ MODEL = "gpt-5.6-terra"
 GIT_NAME = "Caralll"
 GIT_EMAIL = "lixinyi0823@gmail.com"
 BOARD = REPO / "COLLAB.md"
+
+# MCIs that terminate the interpreter rather than failing: no traceback, no result file,
+# so the supervisor restarts straight back into them. Listed explicitly so the skip is
+# visible in the log and auditable, and so nothing is silently graded that was never run.
+FATAL_SKIPS = frozenset(
+    line.strip() for line in (REPO / "validation" / "cloudstack_B_fatal_skips.txt")
+    .read_text(encoding="utf-8").splitlines()
+    if line.strip() and not line.startswith("#")
+) if (REPO / "validation" / "cloudstack_B_fatal_skips.txt").is_file() else frozenset()
+
 SECTION = "## Section: agent-cloudstack-master"
 
 
@@ -230,6 +240,13 @@ def main() -> None:
         owner = (published.get(mci_id) or {}).get("producedBy")
         if owner and owner != "B":
             print(f"[{index}/{total}] SKIP {mci_id} — already graded by {owner}", flush=True)
+            continue
+        if mci_id in FATAL_SKIPS:
+            # An MCI that kills the interpreter leaves no result file, so the batch restarts,
+            # reaches it again and dies again -- six times, in the case this list was written
+            # for. Skipping is not grading: these stay unrun and unreported rather than being
+            # given a verdict nobody measured.
+            print(f"[{index}/{total}] SKIP {mci_id} — quarantined: kills the runner", flush=True)
             continue
 
         print(f"[{index}/{total}] START {mci_id}", flush=True)
