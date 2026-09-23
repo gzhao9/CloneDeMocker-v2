@@ -1,0 +1,68 @@
+--- a/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/SocketSupportTests.java
++++ b/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/SocketSupportTests.java
+@@ -77,8 +77,7 @@
+ 		SocketFactory factory = Mockito.mock(SocketFactory.class);
+ 		when(factorySupport.getSocketFactory()).thenReturn(factory);
+ 		Socket socket = mock(Socket.class);
+-		InputStream is = mock(InputStream.class);
+-		when(is.read()).thenReturn(-1);
++		InputStream is = MockInputStream.createMockInputStream(-1);
+ 		when(socket.getInputStream()).thenReturn(is);
+ 		InetAddress inetAddress = InetAddress.getLocalHost();
+ 		when(socket.getInetAddress()).thenReturn(inetAddress);
+@@ -104,8 +103,7 @@
+ 		SocketFactory factory = Mockito.mock(SocketFactory.class);
+ 		when(factorySupport.getSocketFactory()).thenReturn(factory);
+ 		Socket socket = mock(Socket.class);
+-		InputStream is = mock(InputStream.class);
+-		when(is.read()).thenReturn(-1);
++		InputStream is = MockInputStream.createMockInputStream(-1);
+ 		when(socket.getInputStream()).thenReturn(is);
+ 		InetAddress inetAddress = InetAddress.getLocalHost();
+ 		when(socket.getInetAddress()).thenReturn(inetAddress);
+@@ -135,8 +133,7 @@
+ 		when(factorySupport.getServerSocketFactory()).thenReturn(factory);
+ 		Socket socket = mock(Socket.class);
+ 		Socket socket1 = mock(Socket.class);
+-		InputStream is = mock(InputStream.class);
+-		when(is.read()).thenReturn(-1);
++		InputStream is = MockInputStream.createMockInputStream(-1);
+ 		when(socket.getInputStream()).thenReturn(is);
+ 		when(socket1.getInputStream()).thenReturn(is);
+ 		InetAddress inetAddress = InetAddress.getLocalHost();
+--- a/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpNetConnectionTests.java
++++ b/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpNetConnectionTests.java
+@@ -69,9 +69,8 @@
+ 	@Test
+ 	public void testErrorLog() throws Exception {
+ 		Socket socket = mock(Socket.class);
+-		InputStream stream = mock(InputStream.class);
++		InputStream stream = MockInputStream.createMockInputStream((int) 'x');
+ 		when(socket.getInputStream()).thenReturn(stream);
+-		when(stream.read()).thenReturn((int) 'x');
+ 		TcpNetConnection connection = new TcpNetConnection(socket, true, false, e -> {
+ 		}, null);
+ 		connection.setDeserializer(new ByteArrayStxEtxSerializer());
+--- a/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/MockInputStream.java
++++ b/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/MockInputStream.java
+@@ -0,0 +1,20 @@
++package org.springframework.integration.ip.tcp.connection;
++
++import java.io.IOException;
++import java.io.InputStream;
++
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++public final class MockInputStream {
++
++	private MockInputStream() {
++	}
++
++	public static InputStream createMockInputStream(int readReturn) throws IOException {
++		InputStream inputStream = mock(InputStream.class);
++		when(inputStream.read()).thenReturn(readReturn);
++		return inputStream;
++	}
++
++}
