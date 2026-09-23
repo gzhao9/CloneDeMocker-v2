@@ -94,6 +94,12 @@ def regenerate() -> dict:
         entry = trim_entry(canonical_store.entry_from_agent_result(mci_id, result))
         entry["producedBy"] = AGENT
         entry["platform"] = PLATFORM
+        # Carry forward anything a peer added that B does not itself produce. B asserts only
+        # the fields it generates; every other key on the stored row belongs to whoever wrote
+        # it. Without this, regenerate() silently deleted C's `resampleOutcome` (B-047's own
+        # design) on every publish -- about once every two minutes.
+        for key, value in (stored.get(mci_id) or {}).items():
+            entry.setdefault(key, value)
         entries.append(entry)
         counts[entry["classification"]] += 1
         proposal_id = result.get("proposalId")
