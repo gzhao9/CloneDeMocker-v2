@@ -158,7 +158,13 @@ def migrate_receipts(agent: str) -> int:
         marks = [(m.start(), m.group(1)) for m in HEADER_RE.finditer(text)]
         for idx, (pos, entry_id) in enumerate(marks):
             end = marks[idx + 1][0] if idx + 1 < len(marks) else len(text)
-            m = stamp_re.search(text, pos, end)
+            # Search backwards from `- done:`, as stamp.py does: A-016's body *quotes* the
+            # slot names to document them, and a forward search matches the example, not the
+            # footer. The real stamp is the last one before the entry's own `- done:`.
+            done = text.find("- done:", pos, end)
+            m = None
+            for m in stamp_re.finditer(text, pos, done if done != -1 else end):
+                pass
             if m:
                 found.setdefault(entry_id, m.group(1).strip())
 
@@ -224,12 +230,16 @@ def main() -> None:
     ap.add_argument("--check", action="store_true", help="verify only; write nothing")
     ap.add_argument("--backfill", metavar="AGENT", nargs="?", const="B",
                     help="first copy AGENT's COLLAB.md entries into collab/inbox/")
+    ap.add_argument("--no-render", action="store_true",
+                    help="backfill only; leave COLLAB.md untouched (backward-compatible step)")
     args = ap.parse_args()
 
     if args.backfill:
         n = backfill(args.backfill)
         r = migrate_receipts(args.backfill)
         print(f"regen: backfilled {n} inbox file(s) and {r} read receipt(s) for {args.backfill}")
+    if args.no_render:
+        return
 
     rules = preserved_rules()
     bodies, warnings = collect_messages()
