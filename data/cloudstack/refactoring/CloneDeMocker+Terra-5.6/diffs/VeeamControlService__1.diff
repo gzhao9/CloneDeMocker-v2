@@ -1,0 +1,41 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/VeeamControlServerTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/VeeamControlServerTest.java
+@@ -58,9 +58,11 @@
+     private ConfigDepotImpl previousDepot;
+     private Properties previousServerProperties;
+     private final Map<String, String> globalValues = new HashMap<>();
++    private VeeamControlService veeamControlService;
+ 
+     @Before
+     public void setUp() throws Exception {
++        veeamControlService = mock(VeeamControlService.class);
+         previousDepot = getConfigDepot();
+         final ConfigDepotImpl depot = mock(ConfigDepotImpl.class);
+         when(depot.getConfigStringValue(Mockito.anyString(), Mockito.any(), Mockito.any())).thenAnswer(invocation -> {
+@@ -97,7 +99,7 @@
+         when(low.priority()).thenReturn(1);
+         when(high.priority()).thenReturn(10);
+ 
+-        final VeeamControlServer server = new VeeamControlServer(List.of(low, high), mock(VeeamControlService.class));
++        final VeeamControlServer server = new VeeamControlServer(List.of(low, high), veeamControlService);
+         final List<RouteHandler> handlers = getRouteHandlers(server);
+ 
+         assertEquals(high, handlers.get(0));
+@@ -109,7 +111,7 @@
+         globalValues.put(KEY_ENABLED, "false");
+         resetConfigKeyCache(VeeamControlService.Enabled);
+ 
+-        final VeeamControlServer server = new VeeamControlServer(List.of(), mock(VeeamControlService.class));
++        final VeeamControlServer server = new VeeamControlServer(List.of(), veeamControlService);
+         server.startIfEnabled();
+ 
+         assertNull(getJettyServer(server));
+@@ -140,7 +142,7 @@
+ 
+     @Test
+     public void testStopStopsExistingJettyServerAndClearsReference() throws Exception {
+-        final VeeamControlServer server = new VeeamControlServer(List.of(), mock(VeeamControlService.class));
++        final VeeamControlServer server = new VeeamControlServer(List.of(), veeamControlService);
+         final Server jetty = mock(Server.class);
+         setJettyServer(server, jetty);
+ 

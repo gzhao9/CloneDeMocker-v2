@@ -1,0 +1,37 @@
+--- a/server/src/test/java/org/apache/cloudstack/storage/sharedfs/SharedFSServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/storage/sharedfs/SharedFSServiceImplTest.java
+@@ -202,6 +202,12 @@
+         return sharedFS;
+     }
+ 
++    private static GlobalLock createMockScanlock() {
++        GlobalLock scanlock = mock(GlobalLock.class);
++        when(scanlock.lock(30)).thenReturn(true);
++        return scanlock;
++    }
++
+     @Test
+     public void testDeploySharedFS() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, NoTransitionException, OperationTimedoutException {
+         CreateSharedFSCmd cmd = getMockCreateSharedFSCmd();
+@@ -639,9 +645,8 @@
+         ReflectionTestUtils.setField(sharedFS, "state", SharedFS.State.Destroyed);
+         when(sharedFSDao.listSharedFSToBeDestroyed(any(Date.class))).thenReturn(List.of(sharedFS));
+         try (MockedStatic<GlobalLock> globalLockMocked = Mockito.mockStatic(GlobalLock.class)) {
+-            GlobalLock scanlock = mock(GlobalLock.class);
++            GlobalLock scanlock = createMockScanlock();
+             when(GlobalLock.getInternLock("sharedfsservice.cleanup")).thenReturn(scanlock);
+-            when(scanlock.lock(30)).thenReturn(true);
+             sharedFSServiceImpl.cleanupSharedFS(true);
+             verify(_stateMachine, times(1)).transitTo(sharedFS, SharedFS.Event.ExpungeOperation, null, sharedFSDao);
+             verify(_stateMachine, times(1)).transitTo(sharedFS, SharedFS.Event.OperationFailed, null, sharedFSDao);
+@@ -654,9 +659,8 @@
+         ReflectionTestUtils.setField(sharedFS, "state", SharedFS.State.Stopped);
+         when(sharedFSDao.listSharedFSToBeDestroyed(any(Date.class))).thenReturn(List.of(sharedFS));
+         try (MockedStatic<GlobalLock> globalLockMocked = Mockito.mockStatic(GlobalLock.class)) {
+-            GlobalLock scanlock = mock(GlobalLock.class);
++            GlobalLock scanlock = createMockScanlock();
+             when(GlobalLock.getInternLock("sharedfsservice.cleanup")).thenReturn(scanlock);
+-            when(scanlock.lock(30)).thenReturn(true);
+             sharedFSServiceImpl.cleanupSharedFS(true);
+             verify(_stateMachine, times(1)).transitTo(sharedFS, SharedFS.Event.ExpungeOperation, null, sharedFSDao);
+             verify(_stateMachine, times(1)).transitTo(sharedFS, SharedFS.Event.OperationFailed, null, sharedFSDao);
