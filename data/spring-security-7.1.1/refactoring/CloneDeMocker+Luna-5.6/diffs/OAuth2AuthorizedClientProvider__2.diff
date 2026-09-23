@@ -1,0 +1,38 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/DelegatingOAuth2AuthorizedClientProviderTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/DelegatingOAuth2AuthorizedClientProviderTests.java
+@@ -18,6 +18,7 @@
+ 
+ import java.util.Collections;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.security.authentication.TestingAuthenticationToken;
+@@ -38,6 +39,13 @@
+  * @author Joe Grandja
+  */
+ public class DelegatingOAuth2AuthorizedClientProviderTests {
++
++	private OAuth2AuthorizedClientProvider provider;
++
++	@BeforeEach
++	public void setUp() {
++		this.provider = mock(OAuth2AuthorizedClientProvider.class);
++	}
+ 
+ 	@Test
+ 	public void constructorWhenProvidersIsEmptyThenThrowIllegalArgumentException() {
+@@ -61,11 +69,10 @@
+ 		ClientRegistration clientRegistration = TestClientRegistrations.clientRegistration().build();
+ 		OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(clientRegistration, principal.getName(),
+ 				TestOAuth2AccessTokens.noScopes());
+-		OAuth2AuthorizedClientProvider authorizedClientProvider = mock(OAuth2AuthorizedClientProvider.class);
+-		given(authorizedClientProvider.authorize(any())).willReturn(authorizedClient);
++		given(provider.authorize(any())).willReturn(authorizedClient);
+ 		DelegatingOAuth2AuthorizedClientProvider delegate = new DelegatingOAuth2AuthorizedClientProvider(
+ 				mock(OAuth2AuthorizedClientProvider.class), mock(OAuth2AuthorizedClientProvider.class),
+-				authorizedClientProvider);
++				provider);
+ 		OAuth2AuthorizationContext context = OAuth2AuthorizationContext.withClientRegistration(clientRegistration)
+ 			.principal(principal)
+ 			.build();

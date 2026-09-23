@@ -1,0 +1,114 @@
+--- a/messaging/src/test/java/org/springframework/security/messaging/util/matcher/AndMessageMatcherTests.java
++++ b/messaging/src/test/java/org/springframework/security/messaging/util/matcher/AndMessageMatcherTests.java
+@@ -81,37 +81,37 @@
+ 
+ 	@Test
+ 	public void matchesSingleTrue() {
+-		given(this.delegate.matches(this.message)).willReturn(true);
++		this.delegate = MockMessageMatcher.createMockMessageMatcher(this.message, true);
+ 		this.matcher = new AndMessageMatcher<>(this.delegate);
+ 		assertThat(this.matcher.matches(this.message)).isTrue();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiTrue() {
+-		given(this.delegate.matches(this.message)).willReturn(true);
+-		given(this.delegate2.matches(this.message)).willReturn(true);
++		this.delegate = MockMessageMatcher.createMockMessageMatcher(this.message, true);
++		this.delegate2 = MockMessageMatcher.createMockMessageMatcher(this.message, true);
+ 		this.matcher = new AndMessageMatcher<>(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.message)).isTrue();
+ 	}
+ 
+ 	@Test
+ 	public void matchesSingleFalse() {
+-		given(this.delegate.matches(this.message)).willReturn(false);
++		this.delegate = MockMessageMatcher.createMockMessageMatcher(this.message, false);
+ 		this.matcher = new AndMessageMatcher<>(this.delegate);
+ 		assertThat(this.matcher.matches(this.message)).isFalse();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiBothFalse() {
+-		given(this.delegate.matches(this.message)).willReturn(false);
++		this.delegate = MockMessageMatcher.createMockMessageMatcher(this.message, false);
+ 		this.matcher = new AndMessageMatcher<>(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.message)).isFalse();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiSingleFalse() {
+-		given(this.delegate.matches(this.message)).willReturn(true);
+-		given(this.delegate2.matches(this.message)).willReturn(false);
++		this.delegate = MockMessageMatcher.createMockMessageMatcher(this.message, true);
++		this.delegate2 = MockMessageMatcher.createMockMessageMatcher(this.message, false);
+ 		this.matcher = new AndMessageMatcher<>(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.message)).isFalse();
+ 	}
+--- a/messaging/src/test/java/org/springframework/security/messaging/util/matcher/OrMessageMatcherTests.java
++++ b/messaging/src/test/java/org/springframework/security/messaging/util/matcher/OrMessageMatcherTests.java
+@@ -81,36 +81,36 @@
+ 
+ 	@Test
+ 	public void matchesSingleTrue() {
+-		given(this.delegate.matches(this.message)).willReturn(true);
++		this.delegate = MockMessageMatcher.createMockMessageMatcher(this.message, true);
+ 		this.matcher = new OrMessageMatcher<>(this.delegate);
+ 		assertThat(this.matcher.matches(this.message)).isTrue();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiTrue() {
+-		given(this.delegate.matches(this.message)).willReturn(true);
++		this.delegate = MockMessageMatcher.createMockMessageMatcher(this.message, true);
+ 		this.matcher = new OrMessageMatcher<>(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.message)).isTrue();
+ 	}
+ 
+ 	@Test
+ 	public void matchesSingleFalse() {
+-		given(this.delegate.matches(this.message)).willReturn(false);
++		this.delegate = MockMessageMatcher.createMockMessageMatcher(this.message, false);
+ 		this.matcher = new OrMessageMatcher<>(this.delegate);
+ 		assertThat(this.matcher.matches(this.message)).isFalse();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiBothFalse() {
+-		given(this.delegate.matches(this.message)).willReturn(false);
+-		given(this.delegate2.matches(this.message)).willReturn(false);
++		this.delegate = MockMessageMatcher.createMockMessageMatcher(this.message, false);
++		this.delegate2 = MockMessageMatcher.createMockMessageMatcher(this.message, false);
+ 		this.matcher = new OrMessageMatcher<>(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.message)).isFalse();
+ 	}
+ 
+ 	@Test
+ 	public void matchesMultiSingleFalse() {
+-		given(this.delegate.matches(this.message)).willReturn(true);
++		this.delegate = MockMessageMatcher.createMockMessageMatcher(this.message, true);
+ 		this.matcher = new OrMessageMatcher<>(this.delegate, this.delegate2);
+ 		assertThat(this.matcher.matches(this.message)).isTrue();
+ 	}
+--- a/messaging/src/test/java/org/springframework/security/messaging/util/matcher/MockMessageMatcher.java
++++ b/messaging/src/test/java/org/springframework/security/messaging/util/matcher/MockMessageMatcher.java
+@@ -0,0 +1,19 @@
++package org.springframework.security.messaging.util.matcher;
++
++import org.springframework.messaging.Message;
++import org.mockito.Mockito;
++
++import static org.mockito.BDDMockito.given;
++
++public final class MockMessageMatcher {
++
++	private MockMessageMatcher() {
++	}
++
++	public static MessageMatcher<Object> createMockMessageMatcher(Message<Object> message, boolean matchesReturn) {
++		MessageMatcher<Object> delegate = Mockito.mock(MessageMatcher.class);
++		given(delegate.matches(message)).willReturn(matchesReturn);
++		return delegate;
++	}
++
++}

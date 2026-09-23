@@ -1,0 +1,33 @@
+--- a/config/src/test/java/org/springframework/security/config/annotation/web/configurers/oauth2/server/resource/OAuth2ResourceServerConfigurerTests.java
++++ b/config/src/test/java/org/springframework/security/config/annotation/web/configurers/oauth2/server/resource/OAuth2ResourceServerConfigurerTests.java
+@@ -832,8 +832,7 @@
+ 	public void getJwtDecoderWhenConflictingJwtDecodersThenTheDslWiredOneTakesPrecedence() {
+ 		JwtDecoder decoderBean = mock(JwtDecoder.class);
+ 		JwtDecoder decoder = mock(JwtDecoder.class);
+-		ApplicationContext context = mock(ApplicationContext.class);
+-		given(context.getBean(JwtDecoder.class)).willReturn(decoderBean);
++		ApplicationContext context = createMockApplicationContext(decoderBean);
+ 		new OAuth2ResourceServerConfigurer<HttpSecurity>(context).jwt((jwt) -> {
+ 			jwt.decoder(decoder);
+ 			assertThat(jwt.getJwtDecoder()).isEqualTo(decoder);
+@@ -843,8 +842,7 @@
+ 	@Test
+ 	public void getJwtDecoderWhenContextHasBeanAndUserConfiguresJwkSetUriThenJwkSetUriTakesPrecedence() {
+ 		JwtDecoder decoder = mock(JwtDecoder.class);
+-		ApplicationContext context = mock(ApplicationContext.class);
+-		given(context.getBean(JwtDecoder.class)).willReturn(decoder);
++		ApplicationContext context = createMockApplicationContext(decoder);
+ 		new OAuth2ResourceServerConfigurer<HttpSecurity>(context).jwt((jwt) -> {
+ 			jwt.jwkSetUri(JWK_SET_URI);
+ 			assertThat(jwt.getJwtDecoder()).isNotEqualTo(decoder);
+@@ -2793,4 +2791,10 @@
+ 
+ 	}
+ 
++
++	private static ApplicationContext createMockApplicationContext(JwtDecoder decoder) {
++		ApplicationContext context = mock(ApplicationContext.class);
++		given(context.getBean(JwtDecoder.class)).willReturn(decoder);
++		return context;
++	}
+ }

@@ -1,0 +1,49 @@
+--- a/access/src/test/java/org/springframework/security/messaging/access/expression/ExpressionBasedMessageSecurityMetadataSourceFactoryTests.java
++++ b/access/src/test/java/org/springframework/security/messaging/access/expression/ExpressionBasedMessageSecurityMetadataSourceFactoryTests.java
+@@ -23,6 +23,7 @@
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.extension.ExtendWith;
+ import org.mockito.Mock;
++import org.mockito.Mockito;
+ import org.mockito.junit.jupiter.MockitoExtension;
+ 
+ import org.springframework.messaging.Message;
+@@ -80,7 +81,12 @@
+ 
+ 	@Test
+ 	public void createExpressionMessageMetadataSourceMatchFirst() {
+-		given(this.matcher1.matches(this.message)).willReturn(true);
++		this.matcher1 = createMockMessageMatcher(this.message);
++		this.matcherToExpression = new LinkedHashMap<>();
++		this.matcherToExpression.put(this.matcher1, this.expression1);
++		this.matcherToExpression.put(this.matcher2, this.expression2);
++		this.source = ExpressionBasedMessageSecurityMetadataSourceFactory
++			.createExpressionMessageMetadataSource(this.matcherToExpression);
+ 		Collection<ConfigAttribute> attrs = this.source.getAttributes(this.message);
+ 		assertThat(attrs).hasSize(1);
+ 		ConfigAttribute attr = attrs.iterator().next();
+@@ -91,7 +97,12 @@
+ 
+ 	@Test
+ 	public void createExpressionMessageMetadataSourceMatchSecond() {
+-		given(this.matcher2.matches(this.message)).willReturn(true);
++		MessageMatcher<Object> oldMatcher2 = this.matcher2;
++		this.matcher2 = createMockMessageMatcher(this.message);
++		this.matcherToExpression.remove(oldMatcher2);
++		this.matcherToExpression.put(this.matcher2, this.expression2);
++		this.source = ExpressionBasedMessageSecurityMetadataSourceFactory
++			.createExpressionMessageMetadataSource(this.matcherToExpression);
+ 		Collection<ConfigAttribute> attrs = this.source.getAttributes(this.message);
+ 		assertThat(attrs).hasSize(1);
+ 		ConfigAttribute attr = attrs.iterator().next();
+@@ -100,4 +111,10 @@
+ 			.isEqualTo(false);
+ 	}
+ 
++	private static MessageMatcher<Object> createMockMessageMatcher(Message<Object> message) {
++		MessageMatcher<Object> matcher = Mockito.mock(MessageMatcher.class);
++		given(matcher.matches(message)).willReturn(true);
++		return matcher;
++	}
++
+ }

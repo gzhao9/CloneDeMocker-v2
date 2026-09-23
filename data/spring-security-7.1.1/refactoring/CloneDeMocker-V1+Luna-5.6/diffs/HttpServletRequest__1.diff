@@ -1,0 +1,59 @@
+--- a/kerberos/kerberos-web/src/test/java/org/springframework/security/kerberos/web/SpnegoEntryPointTests.java
++++ b/kerberos/kerberos-web/src/test/java/org/springframework/security/kerberos/web/SpnegoEntryPointTests.java
+@@ -61,9 +61,8 @@
+ 	public void testEntryPointOkWithDispatcher() throws Exception {
+ 		SpnegoEntryPoint entryPoint = new SpnegoEntryPoint();
+ 		HttpServletResponse response = mock(HttpServletResponse.class);
+-		HttpServletRequest request = mock(HttpServletRequest.class);
+ 		RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
+-		given(request.getRequestDispatcher(anyString())).willReturn(requestDispatcher);
++		HttpServletRequest request = createHttpServletRequest(requestDispatcher);
+ 		entryPoint.commence(request, response, null);
+ 		verify(response).addHeader("WWW-Authenticate", "Negotiate");
+ 		verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+@@ -74,9 +73,8 @@
+ 		String forwardUrl = "/login";
+ 		SpnegoEntryPoint entryPoint = new SpnegoEntryPoint(forwardUrl);
+ 		HttpServletResponse response = mock(HttpServletResponse.class);
+-		HttpServletRequest request = mock(HttpServletRequest.class);
+ 		RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
+-		given(request.getRequestDispatcher(anyString())).willReturn(requestDispatcher);
++		HttpServletRequest request = createHttpServletRequest(requestDispatcher);
+ 		entryPoint.commence(request, response, null);
+ 		verify(response).addHeader("WWW-Authenticate", "Negotiate");
+ 		verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+@@ -90,10 +88,9 @@
+ 		String forwardUrl = "/login";
+ 		SpnegoEntryPoint entryPoint = new SpnegoEntryPoint(forwardUrl);
+ 		HttpServletResponse response = mock(HttpServletResponse.class);
+-		HttpServletRequest request = mock(HttpServletRequest.class);
++		RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
++		HttpServletRequest request = createHttpServletRequest(requestDispatcher);
+ 		given(request.getMethod()).willReturn(RequestMethod.POST.name());
+-		RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
+-		given(request.getRequestDispatcher(anyString())).willReturn(requestDispatcher);
+ 		entryPoint.commence(request, response, null);
+ 		verify(requestDispatcher).forward(servletRequestCaptor.capture(), eq(response));
+ 		assertThat(servletRequestCaptor.getValue().getMethod()).isEqualTo(HttpMethod.POST.name());
+@@ -105,9 +102,8 @@
+ 		String forwardUrl = "/login";
+ 		SpnegoEntryPoint entryPoint = new SpnegoEntryPoint(forwardUrl, HttpMethod.DELETE);
+ 		HttpServletResponse response = mock(HttpServletResponse.class);
+-		HttpServletRequest request = mock(HttpServletRequest.class);
+ 		RequestDispatcher requestDispatcher = mock(RequestDispatcher.class);
+-		given(request.getRequestDispatcher(anyString())).willReturn(requestDispatcher);
++		HttpServletRequest request = createHttpServletRequest(requestDispatcher);
+ 		entryPoint.commence(request, response, null);
+ 		verify(requestDispatcher).forward(servletRequestCaptor.capture(), eq(response));
+ 		assertThat(servletRequestCaptor.getValue().getMethod()).isEqualTo(HttpMethod.DELETE.name());
+@@ -118,4 +114,10 @@
+ 		assertThatIllegalArgumentException().isThrownBy(() -> new SpnegoEntryPoint("http://test/login"));
+ 	}
+ 
++
++	private static HttpServletRequest createHttpServletRequest(RequestDispatcher requestDispatcher) {
++		HttpServletRequest request = mock(HttpServletRequest.class);
++		given(request.getRequestDispatcher(anyString())).willReturn(requestDispatcher);
++		return request;
++	}
+ }

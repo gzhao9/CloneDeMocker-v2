@@ -1,0 +1,50 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/DelegatingOAuth2AuthorizedClientProviderTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/DelegatingOAuth2AuthorizedClientProviderTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.oauth2.client;
+ 
++import org.mockito.Mock;
+ import java.util.Collections;
+ 
+ import org.junit.jupiter.api.Test;
+@@ -38,6 +39,8 @@
+  * @author Joe Grandja
+  */
+ public class DelegatingOAuth2AuthorizedClientProviderTests {
++	@Mock
++	private OAuth2AuthorizedClientProvider oauth2AuthorizedClientProvider;
+ 
+ 	@Test
+ 	public void constructorWhenProvidersIsEmptyThenThrowIllegalArgumentException() {
+@@ -49,8 +52,7 @@
+ 
+ 	@Test
+ 	public void authorizeWhenContextIsNullThenThrowIllegalArgumentException() {
+-		DelegatingOAuth2AuthorizedClientProvider delegate = new DelegatingOAuth2AuthorizedClientProvider(
+-				mock(OAuth2AuthorizedClientProvider.class));
++		DelegatingOAuth2AuthorizedClientProvider delegate = new DelegatingOAuth2AuthorizedClientProvider(oauth2AuthorizedClientProvider);
+ 		assertThatIllegalArgumentException().isThrownBy(() -> delegate.authorize(null))
+ 			.withMessage("context cannot be null");
+ 	}
+@@ -63,9 +65,7 @@
+ 				TestOAuth2AccessTokens.noScopes());
+ 		OAuth2AuthorizedClientProvider authorizedClientProvider = mock(OAuth2AuthorizedClientProvider.class);
+ 		given(authorizedClientProvider.authorize(any())).willReturn(authorizedClient);
+-		DelegatingOAuth2AuthorizedClientProvider delegate = new DelegatingOAuth2AuthorizedClientProvider(
+-				mock(OAuth2AuthorizedClientProvider.class), mock(OAuth2AuthorizedClientProvider.class),
+-				authorizedClientProvider);
++		DelegatingOAuth2AuthorizedClientProvider delegate = new DelegatingOAuth2AuthorizedClientProvider(oauth2AuthorizedClientProvider, mock(OAuth2AuthorizedClientProvider.class), authorizedClientProvider);
+ 		OAuth2AuthorizationContext context = OAuth2AuthorizationContext.withClientRegistration(clientRegistration)
+ 			.principal(principal)
+ 			.build();
+@@ -79,8 +79,7 @@
+ 		OAuth2AuthorizationContext context = OAuth2AuthorizationContext.withClientRegistration(clientRegistration)
+ 			.principal(new TestingAuthenticationToken("principal", "password"))
+ 			.build();
+-		DelegatingOAuth2AuthorizedClientProvider delegate = new DelegatingOAuth2AuthorizedClientProvider(
+-				mock(OAuth2AuthorizedClientProvider.class), mock(OAuth2AuthorizedClientProvider.class));
++		DelegatingOAuth2AuthorizedClientProvider delegate = new DelegatingOAuth2AuthorizedClientProvider(oauth2AuthorizedClientProvider, oauth2AuthorizedClientProvider);
+ 		assertThat(delegate.authorize(context)).isNull();
+ 	}
+ 

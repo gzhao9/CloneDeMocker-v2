@@ -1,0 +1,59 @@
+--- a/config/src/test/java/org/springframework/security/config/annotation/web/configurers/oauth2/server/resource/OAuth2ResourceServerConfigurerTests.java
++++ b/config/src/test/java/org/springframework/security/config/annotation/web/configurers/oauth2/server/resource/OAuth2ResourceServerConfigurerTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.config.annotation.web.configurers.oauth2.server.resource;
+ 
++import org.mockito.Mock;
+ import java.io.BufferedReader;
+ import java.io.FileReader;
+ import java.io.IOException;
+@@ -184,6 +185,8 @@
+  */
+ @ExtendWith(SpringTestContextExtension.class)
+ public class OAuth2ResourceServerConfigurerTests {
++	@Mock
++	private ApplicationContext context;
+ 
+ 	private static final String JWT_TOKEN = "token";
+ 
+@@ -815,7 +818,6 @@
+ 
+ 	@Test
+ 	public void getJwtDecoderWhenConfiguredWithDecoderAndJwkSetUriThenLastOneWins() {
+-		ApplicationContext context = mock(ApplicationContext.class);
+ 		JwtDecoder decoder = mock(JwtDecoder.class);
+ 		new OAuth2ResourceServerConfigurer<HttpSecurity>(context).jwt((jwt) -> {
+ 			jwt.jwkSetUri(JWK_SET_URI);
+@@ -904,14 +906,12 @@
+ 
+ 	@Test
+ 	public void authenticationEntryPointWhenGivenNullThenThrowsException() {
+-		ApplicationContext context = mock(ApplicationContext.class);
+ 		OAuth2ResourceServerConfigurer configurer = new OAuth2ResourceServerConfigurer(context);
+ 		assertThatIllegalArgumentException().isThrownBy(() -> configurer.authenticationEntryPoint(null));
+ 	}
+ 
+ 	@Test
+ 	public void accessDeniedHandlerWhenGivenNullThenThrowsException() {
+-		ApplicationContext context = mock(ApplicationContext.class);
+ 		OAuth2ResourceServerConfigurer configurer = new OAuth2ResourceServerConfigurer(context);
+ 		assertThatIllegalArgumentException().isThrownBy(() -> configurer.accessDeniedHandler(null));
+ 	}
+@@ -1157,7 +1157,6 @@
+ 
+ 	@Test
+ 	public void getIntrospectionClientWhenConfiguredWithClientAndIntrospectionUriThenLastOneWins() {
+-		ApplicationContext context = mock(ApplicationContext.class);
+ 		OpaqueTokenIntrospector client = mock(OpaqueTokenIntrospector.class);
+ 		new OAuth2ResourceServerConfigurer<HttpSecurity>(context).opaqueToken((opaqueToken) -> {
+ 			opaqueToken.introspectionUri(INTROSPECTION_URI);
+@@ -1268,7 +1267,7 @@
+ 
+ 	@Test
+ 	public void getAuthenticationManagerWhenConfiguredAuthenticationManagerThenTakesPrecedence() {
+-		ApplicationContext context = mock(ApplicationContext.class);
++		// removed local mock; replaced with global field `context`
+ 		OAuth2ResourceServerConfigurer<HttpSecurity> oauth2ResourceServer = new OAuth2ResourceServerConfigurer<>(
+ 				context);
+ 		AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
