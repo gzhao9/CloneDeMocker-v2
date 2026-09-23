@@ -1,0 +1,120 @@
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
+@@ -136,6 +136,12 @@
+         field.set(strategy, mockedField);
+     }
+ 
++    private static EndPoint createMockEndPoint(Answer answer) {
++        EndPoint endPoint = mock(EndPoint.class);
++        when(endPoint.sendMessage(any(CreateObjectCommand.class))).thenReturn(answer);
++        return endPoint;
++    }
++
+     private class TestableUnifiedNASStrategy extends UnifiedNASStrategy {
+         public TestableUnifiedNASStrategy(OntapStorage ontapStorage,
+                                           NASFeignClient nasFeignClient,
+@@ -174,8 +180,51 @@
+         CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+         VolumeObject volumeObject = mock(VolumeObject.class);
+         VolumeVO volumeVO = mock(VolumeVO.class);
+-        EndPoint endPoint = mock(EndPoint.class);
+         Answer answer = new Answer(null, true, "Success");
++
++        when(cloudStackVolume.getDatastoreId()).thenReturn("1");
++        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeObject);
++        when(volumeObject.getId()).thenReturn(100L);
++        when(volumeObject.getUuid()).thenReturn("volume-uuid-123");
++        when(volumeDao.findById(100L)).thenReturn(volumeVO);
++        when(volumeDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
++        EndPoint endPoint = createMockEndPoint(answer);
++        when(epSelector.select(volumeObject)).thenReturn(endPoint);
++
++        // Execute
++        CloudStackVolume result = strategy.createCloudStackVolume(cloudStackVolume);
++
++        // Verify
++        assertNotNull(result);
++        verify(volumeDao).update(anyLong(), any(VolumeVO.class));
++        verify(epSelector).select(volumeObject);
++        verify(endPoint).sendMessage(any(CreateObjectCommand.class));
++    }
++
++    // Test createCloudStackVolume - Volume Not Found
++    @Test
++    public void testCreateCloudStackVolume_VolumeNotFound() {
++        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
++        VolumeObject volumeObject = mock(VolumeObject.class);
++
++        when(cloudStackVolume.getDatastoreId()).thenReturn("1");
++        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeObject);
++        when(volumeObject.getId()).thenReturn(100L);
++        when(volumeDao.findById(100L)).thenReturn(null);
++
++        assertThrows(CloudRuntimeException.class, () -> {
++            strategy.createCloudStackVolume(cloudStackVolume);
++        });
++    }
++
++    // Test createCloudStackVolume - KVM Host Creation Failed
++    @Test
++    public void testCreateCloudStackVolume_KVMHostFailed() {
++        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
++        VolumeObject volumeObject = mock(VolumeObject.class);
++        VolumeVO volumeVO = mock(VolumeVO.class);
++        Answer answer = new Answer(null, false, "Failed to create volume");
++        EndPoint endPoint = createMockEndPoint(answer);
+ 
+         when(cloudStackVolume.getDatastoreId()).thenReturn("1");
+         when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeObject);
+@@ -184,51 +233,6 @@
+         when(volumeDao.findById(100L)).thenReturn(volumeVO);
+         when(volumeDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
+         when(epSelector.select(volumeObject)).thenReturn(endPoint);
+-        when(endPoint.sendMessage(any(CreateObjectCommand.class))).thenReturn(answer);
+-
+-        // Execute
+-        CloudStackVolume result = strategy.createCloudStackVolume(cloudStackVolume);
+-
+-        // Verify
+-        assertNotNull(result);
+-        verify(volumeDao).update(anyLong(), any(VolumeVO.class));
+-        verify(epSelector).select(volumeObject);
+-        verify(endPoint).sendMessage(any(CreateObjectCommand.class));
+-    }
+-
+-    // Test createCloudStackVolume - Volume Not Found
+-    @Test
+-    public void testCreateCloudStackVolume_VolumeNotFound() {
+-        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+-        VolumeObject volumeObject = mock(VolumeObject.class);
+-
+-        when(cloudStackVolume.getDatastoreId()).thenReturn("1");
+-        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeObject);
+-        when(volumeObject.getId()).thenReturn(100L);
+-        when(volumeDao.findById(100L)).thenReturn(null);
+-
+-        assertThrows(CloudRuntimeException.class, () -> {
+-            strategy.createCloudStackVolume(cloudStackVolume);
+-        });
+-    }
+-
+-    // Test createCloudStackVolume - KVM Host Creation Failed
+-    @Test
+-    public void testCreateCloudStackVolume_KVMHostFailed() {
+-        CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+-        VolumeObject volumeObject = mock(VolumeObject.class);
+-        VolumeVO volumeVO = mock(VolumeVO.class);
+-        EndPoint endPoint = mock(EndPoint.class);
+-        Answer answer = new Answer(null, false, "Failed to create volume");
+-
+-        when(cloudStackVolume.getDatastoreId()).thenReturn("1");
+-        when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeObject);
+-        when(volumeObject.getId()).thenReturn(100L);
+-        when(volumeObject.getUuid()).thenReturn("volume-uuid-123");
+-        when(volumeDao.findById(100L)).thenReturn(volumeVO);
+-        when(volumeDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
+-        when(epSelector.select(volumeObject)).thenReturn(endPoint);
+-        when(endPoint.sendMessage(any(CreateObjectCommand.class))).thenReturn(answer);
+ 
+         assertThrows(CloudRuntimeException.class, () -> {
+             strategy.createCloudStackVolume(cloudStackVolume);
