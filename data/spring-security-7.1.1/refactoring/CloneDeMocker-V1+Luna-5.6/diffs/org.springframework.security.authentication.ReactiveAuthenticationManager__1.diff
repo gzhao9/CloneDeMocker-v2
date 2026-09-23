@@ -1,0 +1,42 @@
+--- a/core/src/test/java/org/springframework/security/authentication/DelegatingReactiveAuthenticationManagerTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/DelegatingReactiveAuthenticationManagerTests.java
+@@ -70,7 +70,7 @@
+ 
+ 	@Test
+ 	public void authenticateWhenBadCredentialsThenDelegate2NotInvokedAndError() {
+-		given(this.delegate1.authenticate(any())).willReturn(Mono.error(new BadCredentialsException("Test")));
++		this.delegate1 = createReactiveAuthenticationManager();
+ 		DelegatingReactiveAuthenticationManager manager = new DelegatingReactiveAuthenticationManager(this.delegate1,
+ 				this.delegate2);
+ 		StepVerifier.create(manager.authenticate(this.authentication))
+@@ -80,7 +80,7 @@
+ 
+ 	@Test
+ 	public void authenticateWhenContinueOnErrorAndFirstBadCredentialsThenTriesSecond() {
+-		given(this.delegate1.authenticate(any())).willReturn(Mono.error(new BadCredentialsException("Test")));
++		this.delegate1 = createReactiveAuthenticationManager();
+ 		given(this.delegate2.authenticate(any())).willReturn(Mono.just(this.authentication));
+ 
+ 		DelegatingReactiveAuthenticationManager manager = managerWithContinueOnError();
+@@ -90,8 +90,8 @@
+ 
+ 	@Test
+ 	public void authenticateWhenContinueOnErrorAndBothDelegatesBadCredentialsThenError() {
+-		given(this.delegate1.authenticate(any())).willReturn(Mono.error(new BadCredentialsException("Test")));
+-		given(this.delegate2.authenticate(any())).willReturn(Mono.error(new BadCredentialsException("Test")));
++		this.delegate1 = createReactiveAuthenticationManager();
++		this.delegate2 = createReactiveAuthenticationManager();
+ 
+ 		DelegatingReactiveAuthenticationManager manager = managerWithContinueOnError();
+ 
+@@ -126,4 +126,10 @@
+ 		return manager;
+ 	}
+ 
++
++	private static ReactiveAuthenticationManager createReactiveAuthenticationManager() {
++		ReactiveAuthenticationManager manager = Mockito.mock(ReactiveAuthenticationManager.class);
++		given(manager.authenticate(any())).willReturn(Mono.error(new BadCredentialsException("Test")));
++		return manager;
++	}
+ }

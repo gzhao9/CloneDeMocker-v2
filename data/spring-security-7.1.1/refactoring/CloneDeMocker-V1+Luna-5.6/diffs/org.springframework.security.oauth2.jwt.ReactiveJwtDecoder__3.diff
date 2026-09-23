@@ -1,0 +1,47 @@
+--- a/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/SupplierReactiveJwtDecoderTests.java
++++ b/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/SupplierReactiveJwtDecoderTests.java
+@@ -35,8 +35,7 @@
+ 
+ 	@Test
+ 	public void decodeWhenUninitializedThenSupplierInitializes() {
+-		ReactiveJwtDecoder jwtDecoder = mock(ReactiveJwtDecoder.class);
+-		given(jwtDecoder.decode("token")).willReturn(Mono.empty());
++		ReactiveJwtDecoder jwtDecoder = createReactiveJwtDecoder();
+ 		SupplierReactiveJwtDecoder supplierReactiveJwtDecoder = new SupplierReactiveJwtDecoder(() -> jwtDecoder);
+ 		supplierReactiveJwtDecoder.decode("token").block();
+ 		verify(jwtDecoder).decode("token");
+@@ -54,10 +53,9 @@
+ 
+ 	@Test
+ 	public void decodeWhenInitializedThenCaches() {
+-		ReactiveJwtDecoder jwtDecoder = mock(ReactiveJwtDecoder.class);
+ 		Supplier<ReactiveJwtDecoder> supplier = mock(Supplier.class);
++		ReactiveJwtDecoder jwtDecoder = createReactiveJwtDecoder();
+ 		given(supplier.get()).willReturn(jwtDecoder);
+-		given(jwtDecoder.decode("token")).willReturn(Mono.empty());
+ 		ReactiveJwtDecoder supplierReactiveJwtDecoder = new SupplierReactiveJwtDecoder(supplier);
+ 		supplierReactiveJwtDecoder.decode("token").block();
+ 		supplierReactiveJwtDecoder.decode("token").block();
+@@ -67,10 +65,9 @@
+ 
+ 	@Test
+ 	public void decodeWhenInitializationInitiallyFailsThenRecoverable() {
+-		ReactiveJwtDecoder jwtDecoder = mock(ReactiveJwtDecoder.class);
+ 		Supplier<ReactiveJwtDecoder> broken = mock(Supplier.class);
+ 		given(broken.get()).willThrow(RuntimeException.class);
+-		given(jwtDecoder.decode("token")).willReturn(Mono.empty());
++		ReactiveJwtDecoder jwtDecoder = createReactiveJwtDecoder();
+ 		ReactiveJwtDecoder supplierReactiveJwtDecoder = new SupplierReactiveJwtDecoder(broken);
+ 		assertThatExceptionOfType(JwtDecoderInitializationException.class)
+ 			.isThrownBy(() -> supplierReactiveJwtDecoder.decode("token").block());
+@@ -80,4 +77,10 @@
+ 		verify(jwtDecoder).decode("token");
+ 	}
+ 
++
++	private static ReactiveJwtDecoder createReactiveJwtDecoder() {
++		ReactiveJwtDecoder jwtDecoder = mock(ReactiveJwtDecoder.class);
++		given(jwtDecoder.decode("token")).willReturn(Mono.empty());
++		return jwtDecoder;
++	}
+ }

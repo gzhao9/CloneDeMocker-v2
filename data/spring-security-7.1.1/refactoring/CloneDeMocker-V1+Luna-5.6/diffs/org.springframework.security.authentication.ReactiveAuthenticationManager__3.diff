@@ -1,0 +1,66 @@
+--- a/config/src/test/java/org/springframework/security/config/web/server/ServerHttpSecurityTests.java
++++ b/config/src/test/java/org/springframework/security/config/web/server/ServerHttpSecurityTests.java
+@@ -145,8 +145,7 @@
+ 
+ 	@Test
+ 	public void basic() {
+-		given(this.authenticationManager.authenticate(any()))
+-			.willReturn(Mono.just(new TestingAuthenticationToken("rob", "rob", "ROLE_USER", "ROLE_ADMIN")));
++		this.authenticationManager = createMockReactiveAuthenticationManager();
+ 		this.http.httpBasic(withDefaults());
+ 		this.http.authenticationManager(this.authenticationManager);
+ 		this.http.authorizeExchange((authorize) -> authorize.anyExchange().authenticated());
+@@ -168,8 +167,7 @@
+ 
+ 	@Test
+ 	public void basicWithGlobalWebSessionServerSecurityContextRepository() {
+-		given(this.authenticationManager.authenticate(any()))
+-			.willReturn(Mono.just(new TestingAuthenticationToken("rob", "rob", "ROLE_USER", "ROLE_ADMIN")));
++		this.authenticationManager = createMockReactiveAuthenticationManager();
+ 		this.http.securityContextRepository(new WebSessionServerSecurityContextRepository());
+ 		this.http.httpBasic(withDefaults());
+ 		this.http.authenticationManager(this.authenticationManager);
+@@ -356,8 +354,7 @@
+ 
+ 	@Test
+ 	public void basicWithAnonymous() {
+-		given(this.authenticationManager.authenticate(any()))
+-			.willReturn(Mono.just(new TestingAuthenticationToken("rob", "rob", "ROLE_USER", "ROLE_ADMIN")));
++		this.authenticationManager = createMockReactiveAuthenticationManager();
+ 		this.http.httpBasic(withDefaults()).anonymous(withDefaults());
+ 		this.http.authenticationManager(this.authenticationManager);
+ 		this.http.authorizeExchange((authorize) -> authorize.anyExchange().hasAuthority("ROLE_ADMIN"));
+@@ -420,9 +417,7 @@
+ 
+ 	@Test
+ 	public void basicWithCustomAuthenticationManager() {
+-		ReactiveAuthenticationManager customAuthenticationManager = mock(ReactiveAuthenticationManager.class);
+-		given(customAuthenticationManager.authenticate(any()))
+-			.willReturn(Mono.just(new TestingAuthenticationToken("rob", "rob", "ROLE_USER", "ROLE_ADMIN")));
++		ReactiveAuthenticationManager customAuthenticationManager = createMockReactiveAuthenticationManager();
+ 		// @formatter:off
+ 		SecurityWebFilterChain securityFilterChain = this.http
+ 			.httpBasic((basic) -> basic
+@@ -447,9 +442,7 @@
+ 
+ 	@Test
+ 	public void requestWhenBasicWithAuthenticationManagerInLambdaThenAuthenticationManagerUsed() {
+-		ReactiveAuthenticationManager customAuthenticationManager = mock(ReactiveAuthenticationManager.class);
+-		given(customAuthenticationManager.authenticate(any()))
+-			.willReturn(Mono.just(new TestingAuthenticationToken("rob", "rob", "ROLE_USER", "ROLE_ADMIN")));
++		ReactiveAuthenticationManager customAuthenticationManager = createMockReactiveAuthenticationManager();
+ 		// @formatter:off
+ 		SecurityWebFilterChain securityFilterChain = this.http
+ 				.httpBasic((httpBasic) -> httpBasic
+@@ -835,4 +828,11 @@
+ 
+ 	}
+ 
++
++	private static ReactiveAuthenticationManager createMockReactiveAuthenticationManager() {
++		ReactiveAuthenticationManager authenticationManager = mock(ReactiveAuthenticationManager.class);
++		given(authenticationManager.authenticate(any()))
++				.willReturn(Mono.just(new TestingAuthenticationToken("rob", "rob", "ROLE_USER", "ROLE_ADMIN")));
++		return authenticationManager;
++	}
+ }

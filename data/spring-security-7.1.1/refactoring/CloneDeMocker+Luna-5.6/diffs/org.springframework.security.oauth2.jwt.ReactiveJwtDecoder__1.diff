@@ -1,0 +1,60 @@
+--- a/config/src/test/java/org/springframework/security/config/web/server/OAuth2ResourceServerSpecTests.java
++++ b/config/src/test/java/org/springframework/security/config/web/server/OAuth2ResourceServerSpecTests.java
+@@ -35,6 +35,7 @@
+ import okhttp3.mockwebserver.MockWebServer;
+ import okhttp3.mockwebserver.RecordedRequest;
+ import org.apache.http.HttpHeaders;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.extension.ExtendWith;
+ import reactor.core.publisher.Mono;
+@@ -150,6 +151,13 @@
+ 
+ 	WebTestClient client;
+ 
++	private ReactiveJwtDecoder beanWiredJwtDecoderMock;
++
++	@BeforeEach
++	public void setUp() {
++		this.beanWiredJwtDecoderMock = mock(ReactiveJwtDecoder.class);
++	}
++
+ 	@Autowired
+ 	public void setApplicationContext(ApplicationContext context) {
+ 		this.client = WebTestClient.bindToApplicationContext(context).build();
+@@ -462,9 +470,8 @@
+ 		GenericWebApplicationContext context = autowireWebServerGenericWebApplicationContext();
+ 		ServerHttpSecurity http = new ServerHttpSecurity();
+ 		http.setApplicationContext(context);
+-		ReactiveJwtDecoder beanWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+ 		ReactiveJwtDecoder dslWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+-		context.registerBean(ReactiveJwtDecoder.class, () -> beanWiredJwtDecoder);
++		context.registerBean(ReactiveJwtDecoder.class, () -> beanWiredJwtDecoderMock);
+ 		http.oauth2ResourceServer((server) -> server.jwt((jwt) -> {
+ 			jwt.jwtDecoder(dslWiredJwtDecoder);
+ 			assertThat(jwt.getJwtDecoder()).isEqualTo(dslWiredJwtDecoder);
+@@ -476,10 +483,9 @@
+ 		GenericWebApplicationContext context = autowireWebServerGenericWebApplicationContext();
+ 		ServerHttpSecurity http = new ServerHttpSecurity();
+ 		http.setApplicationContext(context);
+-		ReactiveJwtDecoder beanWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+ 		ReactiveJwtDecoder dslWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+-		context.registerBean("firstJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoder);
+-		context.registerBean("secondJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoder);
++		context.registerBean("firstJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoderMock);
++		context.registerBean("secondJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoderMock);
+ 		http.oauth2ResourceServer((server) -> server.jwt((jwt) -> {
+ 			jwt.jwtDecoder(dslWiredJwtDecoder);
+ 			assertThat(jwt.getJwtDecoder()).isEqualTo(dslWiredJwtDecoder);
+@@ -491,9 +497,8 @@
+ 		GenericWebApplicationContext context = autowireWebServerGenericWebApplicationContext();
+ 		ServerHttpSecurity http = new ServerHttpSecurity();
+ 		http.setApplicationContext(context);
+-		ReactiveJwtDecoder beanWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+-		context.registerBean("firstJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoder);
+-		context.registerBean("secondJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoder);
++		context.registerBean("firstJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoderMock);
++		context.registerBean("secondJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoderMock);
+ 		http.oauth2ResourceServer(
+ 				(server) -> server.jwt((jwt) -> assertThatExceptionOfType(NoUniqueBeanDefinitionException.class)
+ 					.isThrownBy(jwt::getJwtDecoder)));

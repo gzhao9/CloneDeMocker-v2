@@ -1,0 +1,53 @@
+--- a/config/src/test/java/org/springframework/security/config/web/server/OAuth2ResourceServerSpecTests.java
++++ b/config/src/test/java/org/springframework/security/config/web/server/OAuth2ResourceServerSpecTests.java
+@@ -35,6 +35,7 @@
+ import okhttp3.mockwebserver.MockWebServer;
+ import okhttp3.mockwebserver.RecordedRequest;
+ import org.apache.http.HttpHeaders;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.extension.ExtendWith;
+ import reactor.core.publisher.Mono;
+@@ -103,6 +104,13 @@
+ @SuppressWarnings("removal")
+ public class OAuth2ResourceServerSpecTests {
+ 
++	private ReactiveJwtDecoder dslWiredJwtDecoderMock;
++
++	@BeforeEach
++	public void setUp() {
++		this.dslWiredJwtDecoderMock = mock(ReactiveJwtDecoder.class);
++	}
++
+ 	private String expired = "eyJhbGciOiJSUzI1NiJ9.eyJleHAiOjE1MzUwMzc4OTd9.jqZDDjfc2eysX44lHXEIr9XFd2S8vjIZHCccZU-dRWMRJNsQ1QN5VNnJGklqJBXJR4qgla6cmVqPOLkUHDb0sL0nxM5XuzQaG5ZzKP81RV88shFyAiT0fD-6nl1k-Fai-Fu-VkzSpNXgeONoTxDaYhdB-yxmgrgsApgmbOTE_9AcMk-FQDXQ-pL9kynccFGV0lZx4CA7cyknKN7KBxUilfIycvXODwgKCjj_1WddLTCNGYogJJSg__7NoxzqbyWd3udbHVjqYq7GsMMrGB4_2kBD4CkghOSNcRHbT_DIXowxfAVT7PAg7Q0E5ruZsr2zPZacEUDhJ6-wbvlA0FAOUg";
+ 
+ 	private String messageReadToken = "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJtb2NrLXN1YmplY3QiLCJzY29wZSI6Im1lc3NhZ2U6cmVhZCIsImV4cCI6NDY4ODY0MTQxM30.cRl1bv_dDYcAN5U4NlIVKj8uu4mLMwjABF93P4dShiq-GQ-owzaqTSlB4YarNFgV3PKQvT9wxN1jBpGribvISljakoC0E8wDV-saDi8WxN-qvImYsn1zLzYFiZXCfRIxCmonJpydeiAPRxMTPtwnYDS9Ib0T_iA80TBGd-INhyxUUfrwRW5sqKRbjUciRJhpp7fW2ZYXmi9iPt3HDjRQA4IloJZ7f4-spt5Q9wl5HcQTv1t4XrX4eqhVbE5cCoIkFQnKPOc-jhVM44_eazLU6Xk-CCXP8C_UT5pX0luRS2cJrVFfHp2IR_AWxC-shItg6LNEmNFD4Zc-JLZcr0Q86Q";
+@@ -463,11 +471,10 @@
+ 		ServerHttpSecurity http = new ServerHttpSecurity();
+ 		http.setApplicationContext(context);
+ 		ReactiveJwtDecoder beanWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+-		ReactiveJwtDecoder dslWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+ 		context.registerBean(ReactiveJwtDecoder.class, () -> beanWiredJwtDecoder);
+ 		http.oauth2ResourceServer((server) -> server.jwt((jwt) -> {
+-			jwt.jwtDecoder(dslWiredJwtDecoder);
+-			assertThat(jwt.getJwtDecoder()).isEqualTo(dslWiredJwtDecoder);
++			jwt.jwtDecoder(dslWiredJwtDecoderMock);
++			assertThat(jwt.getJwtDecoder()).isEqualTo(dslWiredJwtDecoderMock);
+ 		}));
+ 	}
+ 
+@@ -477,12 +484,11 @@
+ 		ServerHttpSecurity http = new ServerHttpSecurity();
+ 		http.setApplicationContext(context);
+ 		ReactiveJwtDecoder beanWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+-		ReactiveJwtDecoder dslWiredJwtDecoder = mock(ReactiveJwtDecoder.class);
+ 		context.registerBean("firstJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoder);
+ 		context.registerBean("secondJwtDecoder", ReactiveJwtDecoder.class, () -> beanWiredJwtDecoder);
+ 		http.oauth2ResourceServer((server) -> server.jwt((jwt) -> {
+-			jwt.jwtDecoder(dslWiredJwtDecoder);
+-			assertThat(jwt.getJwtDecoder()).isEqualTo(dslWiredJwtDecoder);
++			jwt.jwtDecoder(dslWiredJwtDecoderMock);
++			assertThat(jwt.getJwtDecoder()).isEqualTo(dslWiredJwtDecoderMock);
+ 		}));
+ 	}
+ 
