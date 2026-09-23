@@ -1,0 +1,56 @@
+--- a/spring-integration-file/src/test/java/org/springframework/integration/file/remote/handler/FileTransferringMessageHandlerTests.java
++++ b/spring-integration-file/src/test/java/org/springframework/integration/file/remote/handler/FileTransferringMessageHandlerTests.java
+@@ -61,14 +61,9 @@
+ 	@Test
+ 	public <F> void testRemoteDirWithEmptyString() throws Exception {
+ 		SessionFactory<F> sf = mock(SessionFactory.class);
+-		Session<F> session = mock(Session.class);
+-
+-		when(sf.getSession()).thenReturn(session);
+-		doAnswer(invocation -> {
+-			String path = invocation.getArgument(1);
+-			assertThat(path.startsWith("/")).isFalse();
+-			return null;
+-		}).when(session).rename(Mockito.anyString(), Mockito.anyString());
++		Session<F> session = createMockSession();
++
++		when(sf.getSession()).thenReturn(session);
+ 		ExpressionParser parser = new SpelExpressionParser();
+ 		FileTransferringMessageHandler<F> handler = new FileTransferringMessageHandler<F>(sf);
+ 		handler.setRemoteDirectoryExpression(parser.parseExpression("''"));
+@@ -107,14 +102,9 @@
+ 	@Test
+ 	public <F> void testRemoteDirWithNull() throws Exception {
+ 		SessionFactory<F> sf = mock(SessionFactory.class);
+-		Session<F> session = mock(Session.class);
+-
+-		when(sf.getSession()).thenReturn(session);
+-		doAnswer(invocation -> {
+-			String path = invocation.getArgument(1);
+-			assertThat(path.startsWith("/")).isFalse();
+-			return null;
+-		}).when(session).rename(Mockito.anyString(), Mockito.anyString());
++		Session<F> session = createMockSession();
++
++		when(sf.getSession()).thenReturn(session);
+ 		ExpressionParser parser = new SpelExpressionParser();
+ 		FileTransferringMessageHandler<F> handler = new FileTransferringMessageHandler<F>(sf);
+ 		handler.setRemoteDirectoryExpression(parser.parseExpression("headers['path']"));
+@@ -188,6 +178,17 @@
+ 		assertThat(TestUtils.<Set<?>>getPropertyValue(pool, "allocated").iterator().next()).isSameAs(session3);
+ 	}
+ 
++	@SuppressWarnings("unchecked")
++	private static <F> Session<F> createMockSession() {
++		Session<F> session = mock(Session.class);
++		doAnswer(invocation -> {
++			String path = invocation.getArgument(1);
++			assertThat(path.startsWith("/")).isFalse();
++			return null;
++		}).when(session).rename(Mockito.anyString(), Mockito.anyString());
++		return session;
++	}
++
+ 	private <F> Session<F> newSession() throws IOException {
+ 		@SuppressWarnings("unchecked")
+ 		Session<F> session = mock(Session.class);
