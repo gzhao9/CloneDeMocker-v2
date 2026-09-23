@@ -1,0 +1,142 @@
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/ConnectivityValidationTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/ConnectivityValidationTest.java
+@@ -73,21 +73,21 @@
+     @BeforeEach
+     public void setup() {
+         ApplicationModel.defaultModel().getBeanFactory().registerBean(MetricsDispatcher.class);
+-        invoker1 = Mockito.mock(Invoker.class);
+-        invoker2 = Mockito.mock(Invoker.class);
+-        invoker3 = Mockito.mock(Invoker.class);
+-        invoker4 = Mockito.mock(Invoker.class);
+-        invoker5 = Mockito.mock(Invoker.class);
+-        invoker6 = Mockito.mock(Invoker.class);
+-        invoker7 = Mockito.mock(Invoker.class);
+-        invoker8 = Mockito.mock(Invoker.class);
+-        invoker9 = Mockito.mock(Invoker.class);
+-        invoker10 = Mockito.mock(Invoker.class);
+-        invoker11 = Mockito.mock(Invoker.class);
+-        invoker12 = Mockito.mock(Invoker.class);
+-        invoker13 = Mockito.mock(Invoker.class);
+-        invoker14 = Mockito.mock(Invoker.class);
+-        invoker15 = Mockito.mock(Invoker.class);
++        invoker1 = createMockInvoker();
++        invoker2 = createMockInvoker();
++        invoker3 = createMockInvoker();
++        invoker4 = createMockInvoker();
++        invoker5 = createMockInvoker();
++        invoker6 = createMockInvoker();
++        invoker7 = createMockInvoker();
++        invoker8 = createMockInvoker();
++        invoker9 = createMockInvoker();
++        invoker10 = createMockInvoker();
++        invoker11 = createMockInvoker();
++        invoker12 = createMockInvoker();
++        invoker13 = createMockInvoker();
++        invoker14 = createMockInvoker();
++        invoker15 = createMockInvoker();
+ 
+         configInvoker(invoker1);
+         configInvoker(invoker2);
+@@ -121,6 +121,16 @@
+         clusterInvoker.destroy();
+     }
+ 
++    private static Invoker createMockInvoker() {
++        Invoker invoker = Mockito.mock(Invoker.class);
++        when(invoker.isAvailable()).thenReturn(true);
++        return invoker;
++    }
++
++    private static void markUnavailable(Invoker invoker) {
++        when(invoker.isAvailable()).thenReturn(false);
++    }
++
+     private void configInvoker(Invoker invoker) {
+         when(invoker.getUrl()).thenReturn(URL.valueOf(""));
+         when(invoker.isAvailable()).thenReturn(true);
+@@ -150,7 +160,7 @@
+         when(invoker2.isAvailable()).thenReturn(false);
+         when(invoker3.isAvailable()).thenReturn(false);
+         when(invoker4.isAvailable()).thenReturn(false);
+-        when(invoker5.isAvailable()).thenReturn(false);
++        markUnavailable(invoker5);
+ 
+         clusterInvoker.select(loadBalance, invocation, directory.list(invocation), Collections.emptyList());
+         Assertions.assertEquals(0, directory.list(invocation).size());
+@@ -172,7 +182,6 @@
+ 
+         invokerList.remove(invoker5);
+         directory.notify(invokerList);
+-        when(invoker2.isAvailable()).thenReturn(true);
+         waitRefresh(invokerSet);
+         Assertions.assertEquals(2, directory.list(invocation).size());
+         Assertions.assertNotNull(
+@@ -234,20 +243,20 @@
+ 
+         Assertions.assertEquals(15, directory.list(invocation).size());
+ 
+-        when(invoker2.isAvailable()).thenReturn(false);
++        setInvokerAvailability(invoker2, false);
+         when(invoker3.isAvailable()).thenReturn(false);
+-        when(invoker4.isAvailable()).thenReturn(false);
+-        when(invoker5.isAvailable()).thenReturn(false);
++        setInvokerAvailability(invoker4, false);
++        markUnavailable(invoker5);
+         when(invoker6.isAvailable()).thenReturn(false);
+         when(invoker7.isAvailable()).thenReturn(false);
+-        when(invoker8.isAvailable()).thenReturn(false);
+-        when(invoker9.isAvailable()).thenReturn(false);
+-        when(invoker10.isAvailable()).thenReturn(false);
++        setInvokerAvailability(invoker8, false);
++        setInvokerAvailability(invoker9, false);
++        setInvokerAvailability(invoker10, false);
+         when(invoker11.isAvailable()).thenReturn(false);
+-        when(invoker12.isAvailable()).thenReturn(false);
++        setInvokerAvailability(invoker12, false);
+         when(invoker13.isAvailable()).thenReturn(false);
+         when(invoker14.isAvailable()).thenReturn(false);
+-        when(invoker15.isAvailable()).thenReturn(false);
++        setInvokerAvailability(invoker15, false);
+         for (int i = 0; i < 15; i++) {
+             clusterInvoker.select(loadBalance, invocation, directory.list(invocation), Collections.emptyList());
+         }
+@@ -263,20 +272,20 @@
+         Assertions.assertEquals(0, directory.list(invocation).size());
+ 
+         when(invoker1.isAvailable()).thenReturn(true);
+-        when(invoker2.isAvailable()).thenReturn(true);
++        setInvokerAvailability(invoker2, true);
+         when(invoker3.isAvailable()).thenReturn(true);
+-        when(invoker4.isAvailable()).thenReturn(true);
+-        when(invoker5.isAvailable()).thenReturn(true);
++        setInvokerAvailability(invoker4, true);
++        setInvokerAvailability(invoker5, true);
+         when(invoker6.isAvailable()).thenReturn(true);
+         when(invoker7.isAvailable()).thenReturn(true);
+-        when(invoker8.isAvailable()).thenReturn(true);
+-        when(invoker9.isAvailable()).thenReturn(true);
+-        when(invoker10.isAvailable()).thenReturn(true);
++        setInvokerAvailability(invoker8, true);
++        setInvokerAvailability(invoker9, true);
++        setInvokerAvailability(invoker10, true);
+         when(invoker11.isAvailable()).thenReturn(true);
+-        when(invoker12.isAvailable()).thenReturn(true);
++        setInvokerAvailability(invoker12, true);
+         when(invoker13.isAvailable()).thenReturn(true);
+         when(invoker14.isAvailable()).thenReturn(true);
+-        when(invoker15.isAvailable()).thenReturn(true);
++        setInvokerAvailability(invoker15, true);
+ 
+         Set<Invoker> invokerSet = new HashSet<>();
+         invokerSet.add(invoker1);
+@@ -298,6 +307,10 @@
+         Assertions.assertTrue(directory.list(invocation).size() > 1);
+     }
+ 
++    private static void setInvokerAvailability(Invoker invoker, boolean available) {
++        when(invoker.isAvailable()).thenReturn(available);
++    }
++
+     private static class ConnectivityClusterInvoker<T> extends AbstractClusterInvoker<T> {
+         public ConnectivityClusterInvoker(Directory<T> directory) {
+             super(directory);

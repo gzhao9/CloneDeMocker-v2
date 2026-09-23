@@ -1,0 +1,66 @@
+--- a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/TelnetProcessHandlerTest.java
++++ b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/TelnetProcessHandlerTest.java
+@@ -23,6 +23,7 @@
+ import io.netty.channel.ChannelFuture;
+ import io.netty.channel.ChannelFutureListener;
+ import io.netty.channel.ChannelHandlerContext;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.ArgumentCaptor;
+ import org.mockito.Mockito;
+@@ -35,16 +36,21 @@
+ import static org.mockito.Mockito.when;
+ 
+ class TelnetProcessHandlerTest {
++    private ChannelHandlerContext contextMock;
++
++    @BeforeEach
++    void setUp() {
++        contextMock = mock(ChannelHandlerContext.class);
++    }
+     @Test
+     void testPrompt() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         TelnetProcessHandler handler = new TelnetProcessHandler(
+                 FrameworkModel.defaultModel(),
+                 QosConfiguration.builder()
+                         .anonymousAccessPermissionLevel(PermissionLevel.NONE.name())
+                         .build());
+-        handler.channelRead0(context, "");
+-        verify(context).writeAndFlush(QosProcessHandler.PROMPT);
++        handler.channelRead0(contextMock, "");
++        verify(contextMock).writeAndFlush(QosProcessHandler.PROMPT);
+     }
+ 
+     @Test
+@@ -60,26 +66,24 @@
+ 
+     @Test
+     void testUnknownCommand() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         TelnetProcessHandler handler = new TelnetProcessHandler(
+                 FrameworkModel.defaultModel(), QosConfiguration.builder().build());
+-        handler.channelRead0(context, "unknown");
++        handler.channelRead0(contextMock, "unknown");
+         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+-        verify(context, Mockito.atLeastOnce()).writeAndFlush(captor.capture());
++        verify(contextMock, Mockito.atLeastOnce()).writeAndFlush(captor.capture());
+         assertThat(captor.getAllValues(), contains("unknown :no such command", "\r\ndubbo>"));
+     }
+ 
+     @Test
+     void testGreeting() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         TelnetProcessHandler handler = new TelnetProcessHandler(
+                 FrameworkModel.defaultModel(),
+                 QosConfiguration.builder()
+                         .anonymousAccessPermissionLevel(PermissionLevel.NONE.name())
+                         .build());
+-        handler.channelRead0(context, "greeting");
++        handler.channelRead0(contextMock, "greeting");
+         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+-        verify(context).writeAndFlush(captor.capture());
++        verify(contextMock).writeAndFlush(captor.capture());
+         assertThat(captor.getValue(), containsString("greeting"));
+         assertThat(captor.getValue(), containsString("dubbo>"));
+     }
