@@ -1,0 +1,74 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -236,6 +236,8 @@
+     @Mock
+     private HostDao hostDao;
+     @Mock
++    private HostVO hostMock;
++    @Mock
+     private VmwareDatacenterDao vmwareDatacenterDao;
+     @Mock
+     private HypervisorGuruManager hypervisorGuruManager;
+@@ -662,7 +664,6 @@
+         when(cmd.getPassword()).thenReturn("pass");
+         when(cmd.getImportSource()).thenReturn("external");
+         when(cmd.getDomainId()).thenReturn(null);
+-        HostVO host = Mockito.mock(HostVO.class);
+         DeployDestination mockDest = Mockito.mock(DeployDestination.class);
+         when(deploymentPlanningManager.planDeployment(any(), any(), any(), any())).thenReturn(mockDest);
+         DiskProfile diskProfile = Mockito.mock(DiskProfile.class);
+@@ -673,7 +674,7 @@
+         StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+         storage.put(volume, storagePool);
+         when(mockDest.getStorageForDisks()).thenReturn(storage);
+-        when(mockDest.getHost()).thenReturn(host);
++        when(mockDest.getHost()).thenReturn(hostMock);
+         when(volumeDao.findById(anyLong())).thenReturn(volume);
+         CopyRemoteVolumeAnswer copyAnswer = Mockito.mock(CopyRemoteVolumeAnswer.class);
+         when(copyAnswer.getResult()).thenReturn(true);
+@@ -1165,11 +1166,10 @@
+     @Test
+     public void testSelectKVMHostForImportingInClusterWithNullImportInstanceIdSuccess() {
+         ClusterVO cluster = getClusterForTests();
+-        HostVO host = Mockito.mock(HostVO.class);
+-        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of(host));
++        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of(hostMock));
+ 
+         HostVO returnedHost = unmanagedVMsManager.selectKVMHostForImportingInCluster(cluster, null);
+-        Assert.assertEquals(host, returnedHost);
++        Assert.assertEquals(hostMock, returnedHost);
+     }
+ 
+     @Test(expected = CloudRuntimeException.class)
+@@ -1279,27 +1279,25 @@
+     @Test
+     public void testSelectKVMHostForConversionInClusterWithImportInstanceIdSuccessCompatible() {
+         ClusterVO cluster = getClusterForTests();
+-        HostVO host = Mockito.mock(HostVO.class);
+ 
+         when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+-                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of(host));
++                cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of(hostMock));
+ 
+         HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, false);
+-        Assert.assertEquals(host, returnedHost);
++        Assert.assertEquals(hostMock, returnedHost);
+     }
+ 
+     @Test
+     public void testSelectKVMHostForConversionInClusterWithImportInstanceIdSuccessNonCompatible() {
+         ClusterVO cluster = getClusterForTests();
+-        HostVO host = Mockito.mock(HostVO.class);
+ 
+         when(hostDao.listByClusterHypervisorTypeAndHostCapability(cluster.getId(),
+                 cluster.getHypervisorType(), Host.HOST_INSTANCE_CONVERSION)).thenReturn(List.of());
+ 
+-        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of(host));
++        when(hostDao.listByClusterAndHypervisorType(cluster.getId(), cluster.getHypervisorType())).thenReturn(List.of(hostMock));
+ 
+         HostVO returnedHost = unmanagedVMsManager.selectKVMHostForConversionInCluster(cluster, null, false);
+-        Assert.assertEquals(host, returnedHost);
++        Assert.assertEquals(hostMock, returnedHost);
+     }
+ 
+     @Test(expected = CloudRuntimeException.class)
