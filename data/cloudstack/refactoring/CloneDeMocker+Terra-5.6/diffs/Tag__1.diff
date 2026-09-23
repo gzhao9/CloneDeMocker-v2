@@ -1,0 +1,87 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
+@@ -183,6 +183,9 @@
+     @Mock
+     TungstenApi tungstenApi;
+ 
++    @Mock
++    private Tag tagMock;
++
+     TungstenResource tungstenResource;
+ 
+     MockedStatic<TungstenVRouterApi> tungstenVRouterApiMocked;
+@@ -1010,7 +1013,6 @@
+     @Test
+     public void executeRequestCreateTungstenTagCommandTest() {
+         TungstenCommand command = new CreateTungstenTagCommand("tagType", "tagValue");
+-        Tag tag = mock(Tag.class);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+         VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+@@ -1023,7 +1025,7 @@
+         NetworkPolicy networkPolicy1 = mock(NetworkPolicy.class);
+         NetworkPolicy networkPolicy2 = mock(NetworkPolicy.class);
+         Answer<List<ApiObjectBase>> networkPoliciesAnswer = setupApiObjectBaseListAnswer(networkPolicy1, networkPolicy2);
+-        when(tungstenApi.createTungstenTag(anyString(), anyString(), anyString(), any())).thenReturn(tag);
++        when(tungstenApi.createTungstenTag(anyString(), anyString(), anyString(), any())).thenReturn(tagMock);
+         when(tungstenApi.getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList())).thenAnswer(virtualNetworksAnswer);
+         when(tungstenApi.getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList())).thenAnswer(virtualMachinesAnswer);
+         when(tungstenApi.getBackRefFromVirtualMachineInterface(eq(VirtualMachineInterface.class), anyList())).thenAnswer(virtualMachineInterfacesAnswer);
+@@ -1046,8 +1048,7 @@
+     @Test
+     public void executeRequestDeleteTungstenTagCommandTest() {
+         TungstenCommand command = new DeleteTungstenTagCommand("2e51abf8-1097-11ec-82a8-0242ac130003");
+-        Tag tag = mock(Tag.class);
+-        when(tungstenApi.getTungstenObject(eq(Tag.class), anyString())).thenReturn(tag);
++        when(tungstenApi.getTungstenObject(eq(Tag.class), anyString())).thenReturn(tagMock);
+         when(tungstenApi.deleteTungstenObject(any(Tag.class))).thenReturn(true);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+@@ -1069,12 +1070,11 @@
+             "8b4637b6-5629-46de-8fb2-d0b0502bfa85", "8d097a79-a38d-4db4-8a41-16f15d9c5afa",
+             "a329662e-1805-4a89-9b05-2b818ea35978", "d5e3f5c5-97ed-41b6-9b6f-7f696b9eddeb"
+         , "92e989bb-325e-4c16-9d32-ad89166feeab");
+-        Tag tag = mock(Tag.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         VirtualMachine virtualMachine = mock(VirtualMachine.class);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+-        doReturn(List.of(tag)).when(tungstenApi).listTungstenTag(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
++        doReturn(List.of(tagMock)).when(tungstenApi).listTungstenTag(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+         doReturn(List.of(virtualNetwork)).when(tungstenApi).getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList());
+         doReturn(List.of(virtualMachine)).when(tungstenApi).getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList());
+         doReturn(List.of(virtualMachineInterface)).when(tungstenApi).getBackRefFromVirtualMachineInterface(eq(VirtualMachineInterface.class), anyList());
+@@ -1105,7 +1105,6 @@
+     public void executeRequestApplyTungstenTagCommandTest() {
+         TungstenCommand command = new ApplyTungstenTagCommand(null, null, null, "22f28f5a-1099-11ec-82a8-0242ac130003",
+             null, "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652");
+-        Tag tag = mock(Tag.class);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+         VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+@@ -1122,7 +1121,7 @@
+         ApplicationPolicySet applicationPolicySet2 = mock(ApplicationPolicySet.class);
+         Answer<List<ApiObjectBase>> applicationPoliciesAnswer = setupApiObjectBaseListAnswer(applicationPolicySet1, applicationPolicySet2);
+         when(tungstenApi.applyTungstenPolicyTag(anyString(), anyString())).thenReturn(true);
+-        when(tungstenApi.getTungstenObject(eq(Tag.class), anyString())).thenReturn(tag);
++        when(tungstenApi.getTungstenObject(eq(Tag.class), anyString())).thenReturn(tagMock);
+         when(tungstenApi.getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList())).thenAnswer(virtualNetworksAnswer);
+         when(tungstenApi.getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList())).thenAnswer(virtualMachinesAnswer);
+         when(tungstenApi.getBackRefFromVirtualMachineInterface(eq(VirtualMachineInterface.class), anyList())).thenAnswer(virtualMachineInterfacesAnswer);
+@@ -1156,7 +1155,6 @@
+         TungstenCommand command = new RemoveTungstenTagCommand(networkUuids, vmUuids, nicUuids,
+             "c8ed82ea-10a1-11ec-82a8-0242ac130003", "41c2e4a8-1553-4cbb-9d68-0c1173e18c7b",
+             "caa4d57a-10a6-11ec-82a8-0242ac130003");
+-        Tag tag = mock(Tag.class);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+         VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+@@ -1172,7 +1170,7 @@
+         ApplicationPolicySet applicationPolicySet1 = mock(ApplicationPolicySet.class);
+         ApplicationPolicySet applicationPolicySet2 = mock(ApplicationPolicySet.class);
+         Answer<List<ApiObjectBase>> applicationPoliciesAnswer = setupApiObjectBaseListAnswer(applicationPolicySet1, applicationPolicySet2);
+-        when(tungstenApi.removeTungstenTag(anyList(), anyList(), anyList(), anyString(), anyString(), anyString())).thenReturn(tag);
++        when(tungstenApi.removeTungstenTag(anyList(), anyList(), anyList(), anyString(), anyString(), anyString())).thenReturn(tagMock);
+         when(tungstenApi.getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList())).thenAnswer(virtualNetworksAnswer);
+         when(tungstenApi.getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList())).thenAnswer(virtualMachinesAnswer);
+         when(tungstenApi.getBackRefFromVirtualMachineInterface(eq(VirtualMachineInterface.class), anyList())).thenAnswer(virtualMachineInterfacesAnswer);

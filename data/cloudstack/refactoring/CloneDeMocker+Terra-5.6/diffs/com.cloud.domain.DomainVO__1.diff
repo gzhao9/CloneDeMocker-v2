@@ -1,0 +1,76 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -274,6 +274,8 @@
+     @Mock
+     IpAddressManager ipAddressManager;
+ 
++    private DomainVO domainVOMock;
++
+     TungstenServiceImpl tungstenService;
+ 
+     AutoCloseable closeable;
+@@ -309,6 +311,7 @@
+         tungstenService.dataCenterDao = dataCenterDao;
+         tungstenService.ipAddressManager = ipAddressManager;
+         tungstenService.messageBus = messageBus;
++        domainVOMock = mock(DomainVO.class);
+     }
+ 
+     @After
+@@ -344,14 +347,13 @@
+ 
+     @Test
+     public void deleteTungstenDomainTest() throws Exception {
+-        DomainVO domainVO = mock(DomainVO.class);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         TungstenAnswer deleteTungstenDomainAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenDomainCommand.class), anyLong())).thenReturn(deleteTungstenDomainAnswer);
+ 
+-        assertTrue(ReflectionTestUtils.invokeMethod(tungstenService, "deleteTungstenDomain", domainVO));
++        assertTrue(ReflectionTestUtils.invokeMethod(tungstenService, "deleteTungstenDomain", domainVOMock));
+     }
+ 
+     @Test
+@@ -617,7 +619,6 @@
+ 
+     @Test
+     public void syncTungstenDbWithCloudstackProjectsAndDomainsTest() {
+-        DomainVO domainVO = mock(DomainVO.class);
+         ProjectVO projectVO = mock(ProjectVO.class);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         TungstenAnswer createTungstenDomainAnswer = MockTungstenAnswerFactory.get(true);
+@@ -625,14 +626,14 @@
+         TungstenAnswer createTungstenDefaultProjectAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer updateTungstenDefaultSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
+ 
+-        when(domainDao.listAll()).thenReturn(List.of(domainVO));
++        when(domainDao.listAll()).thenReturn(List.of(domainVOMock));
+         when(projectDao.listAll()).thenReturn(List.of(projectVO));
+         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenDomainCommand.class), anyLong())).thenReturn(createTungstenDomainAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenProjectCommand.class), anyLong())).thenReturn(createTungstenProjectAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenDefaultSecurityGroupCommand.class), anyLong())).thenReturn(updateTungstenDefaultSecurityGroupAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenDefaultProjectCommand.class), anyLong())).thenReturn(createTungstenDefaultProjectAnswer);
+-        when(domainDao.findById(anyLong())).thenReturn(domainVO);
++        when(domainDao.findById(anyLong())).thenReturn(domainVOMock);
+ 
+         assertTrue(tungstenService.syncTungstenDbWithCloudstackProjectsAndDomains());
+     }
+@@ -685,14 +686,13 @@
+         SecurityGroup securityGroup = mock(SecurityGroup.class);
+         ProjectVO projectVO = mock(ProjectVO.class);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+-        DomainVO domainVO = mock(DomainVO.class);
+         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
+         TungstenAnswer createTungstenSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         when(projectDao.findByProjectAccountId(anyLong())).thenReturn(projectVO);
+         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
+-        when(domainDao.findById(anyLong())).thenReturn(domainVO);
++        when(domainDao.findById(anyLong())).thenReturn(domainVOMock);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenSecurityGroupCommand.class), anyLong())).thenReturn(createTungstenSecurityGroupAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(addTungstenSecurityGroupRuleAnswer);
+ 

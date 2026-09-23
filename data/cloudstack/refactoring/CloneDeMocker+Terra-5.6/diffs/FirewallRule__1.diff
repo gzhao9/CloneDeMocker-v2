@@ -1,0 +1,51 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
+@@ -185,6 +185,8 @@
+ 
+     TungstenResource tungstenResource;
+ 
++    private FirewallRule firewallRuleMock;
++
+     MockedStatic<TungstenVRouterApi> tungstenVRouterApiMocked;
+ 
+     AutoCloseable closeable;
+@@ -196,6 +198,7 @@
+         tungstenResource.tungstenApi = tungstenApi;
+         ReflectionTestUtils.setField(tungstenResource, "vrouterPort", "9091");
+         tungstenVRouterApiMocked = Mockito.mockStatic(TungstenVRouterApi.class);
++        firewallRuleMock = mock(FirewallRule.class);
+ 
+         Project project = mock(Project.class);
+         when(project.getUuid()).thenReturn("065eab99-b819-4f3f-8e97-99c2ab22e6ed");
+@@ -1210,9 +1213,8 @@
+             "ba7cc71c-10aa-11ec-82a8-0242ac130003", "92e989bb-325e-4c16-9d32-ad89166feeab", "<>",
+             "d7723adc-10aa-11ec-82a8-0242ac130003", "dd8e0572-10aa-11ec-82a8-0242ac130003",
+             "e4ca41cf-bc0a-4a62-b520-b7785f84b7a3", "e2e59350-10aa-11ec-82a8-0242ac130003", 1);
+-        FirewallRule firewallRule = mock(FirewallRule.class);
+         when(tungstenApi.createTungstenFirewallRule(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(),
+-                anyString(), anyString(), anyString(), anyInt())).thenReturn(firewallRule);
++                anyString(), anyString(), anyString(), anyInt())).thenReturn(firewallRuleMock);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+         assertNotNull(answer.getApiObjectBase());
+@@ -1267,9 +1269,8 @@
+     public void executeRequestListTungstenFirewallRuleCommandTest() {
+         TungstenCommand command = new ListTungstenFirewallRuleCommand("d64e6082-10b3-11ec-82a8-0242ac130003",
+                 "db1f89d8-10b3-11ec-82a8-0242ac130003");
+-        FirewallRule firewallRule1 = mock(FirewallRule.class);
+         FirewallRule firewallRule2 = mock(FirewallRule.class);
+-        Answer<List<ApiObjectBase>> firewallRulesAnswer = setupApiObjectBaseListAnswer(firewallRule1, firewallRule2);
++        Answer<List<ApiObjectBase>> firewallRulesAnswer = setupApiObjectBaseListAnswer(firewallRuleMock, firewallRule2);
+         when(tungstenApi.listTungstenFirewallRule(anyString(), anyString())).thenAnswer(firewallRulesAnswer);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+@@ -1323,8 +1324,7 @@
+     @Test
+     public void executeRequestDeleteTungstenFirewallRuleCommandTest() {
+         TungstenCommand command = new DeleteTungstenFirewallRuleCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003");
+-        FirewallRule firewallRule = mock(FirewallRule.class);
+-        when(tungstenApi.getTungstenObject(eq(FirewallRule.class), anyString())).thenReturn(firewallRule);
++        when(tungstenApi.getTungstenObject(eq(FirewallRule.class), anyString())).thenReturn(firewallRuleMock);
+         when(tungstenApi.deleteTungstenObject(any(FirewallRule.class))).thenReturn(true);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
