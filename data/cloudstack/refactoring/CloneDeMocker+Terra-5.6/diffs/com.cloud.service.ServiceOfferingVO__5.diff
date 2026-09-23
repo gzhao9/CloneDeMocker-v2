@@ -1,0 +1,36 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -339,6 +339,12 @@
+         }
+     }
+ 
++    private static ServiceOfferingVO createMockServiceOffering() {
++        ServiceOfferingVO serviceOfferingMock = mock(ServiceOfferingVO.class);
++        when(serviceOfferingMock.isSystemUse()).thenReturn(true);
++        return serviceOfferingMock;
++    }
++
+     private ClvmPoolManager injectMockedClvmPoolManager() {
+         ClvmPoolManager clvmPoolManagerMock = mock(ClvmPoolManager.class);
+         ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmPoolManager", clvmPoolManagerMock);
+@@ -479,18 +485,17 @@
+     @Test
+     public void testCheckIfCanUpgrade() throws Exception {
+         when(vmInstanceMock.getState()).thenReturn(State.Stopped);
++        serviceOfferingMock = createMockServiceOffering();
+         when(serviceOfferingMock.isDynamic()).thenReturn(true);
+         when(vmInstanceMock.getServiceOfferingId()).thenReturn(1l);
+ 
+-        ServiceOfferingVO mockCurrentServiceOffering = mock(ServiceOfferingVO.class);
++        ServiceOfferingVO mockCurrentServiceOffering = createMockServiceOffering();
+         DiskOfferingVO mockCurrentDiskOffering = mock(DiskOfferingVO.class);
+ 
+         when(serviceOfferingDaoMock.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(mockCurrentServiceOffering);
+         when(diskOfferingDaoMock.findByIdIncludingRemoved(anyLong())).thenReturn(mockCurrentDiskOffering);
+         when(diskOfferingDaoMock.findById(anyLong())).thenReturn(diskOfferingMock);
+         when(diskOfferingMock.isUseLocalStorage()).thenReturn(false);
+-        when(mockCurrentServiceOffering.isSystemUse()).thenReturn(true);
+-        when(serviceOfferingMock.isSystemUse()).thenReturn(true);
+         String[] oldDOStorageTags = {"x","y"};
+         String[] newDOStorageTags = {"z","x","y"};
+         when(mockCurrentDiskOffering.getTagsArray()).thenReturn(oldDOStorageTags);
