@@ -1,0 +1,91 @@
+--- a/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/wrapper/xenbase/CitrixRequestWrapperTest.java
++++ b/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/wrapper/xenbase/CitrixRequestWrapperTest.java
+@@ -1641,7 +1641,7 @@
+ 
+         final Connection conn = Mockito.mock(Connection.class);
+         final XsLocalNetwork network = Mockito.mock(XsLocalNetwork.class);
+-        final Network network2 = Mockito.mock(Network.class);
++        final Network network2 = createMockNetwork(conn);
+ 
+         final PvlanSetupCommand lanSetup = PvlanSetupCommand.createDhcpSetup("add", URI.create("http://127.0.0.1"), "tag", "dhcp", "0:0:0:0:0:0", "127.0.0.1");
+ 
+@@ -1659,7 +1659,6 @@
+         try {
+             when(citrixResourceBase.getNativeNetworkForTraffic(conn, TrafficType.Guest, "tag")).thenReturn(network);
+             when(network.getNetwork()).thenReturn(network2);
+-            when(network2.getNameLabel(conn)).thenReturn(label);
+         } catch (final XenAPIException e) {
+             fail(e.getMessage());
+         } catch (final XmlRpcException e) {
+@@ -1682,7 +1681,6 @@
+ 
+         final Connection conn = Mockito.mock(Connection.class);
+         final XsLocalNetwork network = Mockito.mock(XsLocalNetwork.class);
+-        final Network network2 = Mockito.mock(Network.class);
+ 
+         final PvlanSetupCommand lanSetup = PvlanSetupCommand.createDhcpSetup("add", URI.create("http://127.0.0.1"), "tag", "dhcp", "0:0:0:0:0:0", "127.0.0.1");
+ 
+@@ -1699,8 +1697,8 @@
+         when(citrixResourceBase.getConnection()).thenReturn(conn);
+         try {
+             when(citrixResourceBase.getNativeNetworkForTraffic(conn, TrafficType.Guest, "tag")).thenReturn(network);
++            final Network network2 = createMockNetwork(conn);
+             when(network.getNetwork()).thenReturn(network2);
+-            when(network2.getNameLabel(conn)).thenReturn(label);
+         } catch (final XenAPIException e) {
+             fail(e.getMessage());
+         } catch (final XmlRpcException e) {
+@@ -1723,7 +1721,7 @@
+ 
+         final Connection conn = Mockito.mock(Connection.class);
+         final XsLocalNetwork network = Mockito.mock(XsLocalNetwork.class);
+-        final Network network2 = Mockito.mock(Network.class);
++        final Network network2 = createMockNetwork(conn);
+ 
+         final PvlanSetupCommand lanSetup = PvlanSetupCommand.createVmSetup("add", URI.create("http://127.0.0.1"), "tag", "0:0:0:0:0:0");
+ 
+@@ -1739,7 +1737,6 @@
+         try {
+             when(citrixResourceBase.getNativeNetworkForTraffic(conn, TrafficType.Guest, "tag")).thenReturn(network);
+             when(network.getNetwork()).thenReturn(network2);
+-            when(network2.getNameLabel(conn)).thenReturn(label);
+         } catch (final XenAPIException e) {
+             fail(e.getMessage());
+         } catch (final XmlRpcException e) {
+@@ -1762,7 +1759,6 @@
+ 
+         final Connection conn = Mockito.mock(Connection.class);
+         final XsLocalNetwork network = Mockito.mock(XsLocalNetwork.class);
+-        final Network network2 = Mockito.mock(Network.class);
+ 
+         final PvlanSetupCommand lanSetup = PvlanSetupCommand.createVmSetup("add", URI.create("http://127.0.0.1"), "tag", "0:0:0:0:0:0");
+ 
+@@ -1777,8 +1773,8 @@
+         when(citrixResourceBase.getConnection()).thenReturn(conn);
+         try {
+             when(citrixResourceBase.getNativeNetworkForTraffic(conn, TrafficType.Guest, "tag")).thenReturn(network);
++            final Network network2 = createMockNetwork(conn);
+             when(network.getNetwork()).thenReturn(network2);
+-            when(network2.getNameLabel(conn)).thenReturn(label);
+         } catch (final XenAPIException e) {
+             fail(e.getMessage());
+         } catch (final XmlRpcException e) {
+@@ -1920,6 +1916,18 @@
+         assertTrue(answer.getResult());
+     }
+ 
++    private static Network createMockNetwork(final Connection conn) {
++        final Network network2 = Mockito.mock(Network.class);
++        try {
++            when(network2.getNameLabel(conn)).thenReturn("net");
++        } catch (final XenAPIException e) {
++            fail(e.getMessage());
++        } catch (final XmlRpcException e) {
++            fail(e.getMessage());
++        }
++        return network2;
++    }
++
+ }
+ 
+ class NotAValidCommand extends Command {
