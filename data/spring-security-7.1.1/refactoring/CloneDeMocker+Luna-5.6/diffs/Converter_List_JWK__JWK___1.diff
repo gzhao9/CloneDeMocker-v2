@@ -1,0 +1,53 @@
+--- a/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/NimbusJwtEncoderTests.java
++++ b/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/NimbusJwtEncoderTests.java
+@@ -81,11 +81,14 @@
+ 
+ 	private NimbusJwtEncoder jwtEncoder;
+ 
++	private Converter<List<JWK>, JWK> selectorMock;
++
+ 	@BeforeEach
+ 	public void setUp() {
+ 		this.jwkList = new ArrayList<>();
+ 		this.jwkSource = (jwkSelector, securityContext) -> jwkSelector.select(new JWKSet(this.jwkList));
+ 		this.jwtEncoder = new NimbusJwtEncoder(this.jwkSource);
++		this.selectorMock = mock(Converter.class);
+ 	}
+ 
+ 	@Test
+@@ -329,31 +332,29 @@
+ 		JWK jwk = TestJwks.rsa().algorithm(JWSAlgorithm.RS256).build();
+ 		JWKSource<SecurityContext> jwkSource = mock(JWKSource.class);
+ 		given(jwkSource.get(any(), any())).willReturn(List.of(jwk));
+-		Converter<List<JWK>, JWK> selector = mock(Converter.class);
+ 
+ 		NimbusJwtEncoder jwtEncoder = new NimbusJwtEncoder(jwkSource);
+-		jwtEncoder.setJwkSelector(selector);
++		jwtEncoder.setJwkSelector(selectorMock);
+ 
+ 		JwtClaimsSet claims = JwtClaimsSet.builder().subject("sub").build();
+ 		jwtEncoder.encode(JwtEncoderParameters.from(claims));
+ 
+-		verifyNoInteractions(selector);
++		verifyNoInteractions(selectorMock);
+ 	}
+ 
+ 	@Test
+ 	public void encodeWhenNoKeysThenJwkSelectorIsNotUsed() throws Exception {
+ 		JWKSource<SecurityContext> jwkSource = mock(JWKSource.class);
+ 		given(jwkSource.get(any(), any())).willReturn(List.of());
+-		Converter<List<JWK>, JWK> selector = mock(Converter.class);
+ 
+ 		NimbusJwtEncoder jwtEncoder = new NimbusJwtEncoder(jwkSource);
+-		jwtEncoder.setJwkSelector(selector);
++		jwtEncoder.setJwkSelector(selectorMock);
+ 
+ 		JwtClaimsSet claims = JwtClaimsSet.builder().subject("sub").build();
+ 		assertThatExceptionOfType(JwtEncodingException.class)
+ 			.isThrownBy(() -> jwtEncoder.encode(JwtEncoderParameters.from(claims)));
+ 
+-		verifyNoInteractions(selector);
++		verifyNoInteractions(selectorMock);
+ 	}
+ 
+ 	// Default algorithm

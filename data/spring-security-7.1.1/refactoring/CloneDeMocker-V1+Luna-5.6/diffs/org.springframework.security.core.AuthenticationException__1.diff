@@ -1,0 +1,36 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/SimpleUrlAuthenticationFailureHandlerTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/SimpleUrlAuthenticationFailureHandlerTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.authentication;
+ 
++import org.mockito.Mock;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.mock.web.MockHttpServletRequest;
+@@ -31,6 +32,8 @@
+  * @author Luke Taylor
+  */
+ public class SimpleUrlAuthenticationFailureHandlerTests {
++	@Mock
++	private AuthenticationException e;
+ 
+ 	@Test
+ 	public void error401IsReturnedIfNoUrlIsSet() throws Exception {
+@@ -50,7 +53,7 @@
+ 		afh.setDefaultFailureUrl("/target");
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		AuthenticationException e = mock(AuthenticationException.class);
++		// removed local mock; replaced with global field `e`
+ 		afh.onAuthenticationFailure(request, response, e);
+ 		assertThat(request.getSession().getAttribute(WebAttributes.AUTHENTICATION_EXCEPTION)).isSameAs(e);
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/target");
+@@ -75,7 +78,6 @@
+ 		assertThat(afh.isUseForward()).isTrue();
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		AuthenticationException e = mock(AuthenticationException.class);
+ 		afh.onAuthenticationFailure(request, response, e);
+ 		assertThat(request.getSession(false)).isNull();
+ 		assertThat(response.getRedirectedUrl()).isNull();

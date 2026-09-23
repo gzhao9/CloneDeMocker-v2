@@ -1,0 +1,67 @@
+--- a/core/src/test/java/org/springframework/security/authentication/DefaultAuthenticationEventPublisherTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/DefaultAuthenticationEventPublisherTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.authentication;
+ 
++import org.mockito.Mock;
+ import java.util.HashMap;
+ import java.util.Map;
+ import java.util.Properties;
+@@ -49,13 +50,14 @@
+  * @author Luke Taylor
+  */
+ public class DefaultAuthenticationEventPublisherTests {
++	@Mock
++	private ApplicationEventPublisher appPublisher;
+ 
+ 	DefaultAuthenticationEventPublisher publisher;
+ 
+ 	@Test
+ 	public void expectedDefaultMappingsAreSatisfied() {
+ 		this.publisher = new DefaultAuthenticationEventPublisher();
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
+ 		this.publisher.setApplicationEventPublisher(appPublisher);
+ 		Authentication a = mock(Authentication.class);
+ 		Exception cause = new Exception();
+@@ -90,7 +92,6 @@
+ 	@Test
+ 	public void authenticationSuccessIsPublished() {
+ 		this.publisher = new DefaultAuthenticationEventPublisher();
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
+ 		this.publisher.setApplicationEventPublisher(appPublisher);
+ 		this.publisher.publishAuthenticationSuccess(mock(Authentication.class));
+ 		verify(appPublisher).publishEvent(isA(AuthenticationSuccessEvent.class));
+@@ -105,7 +106,7 @@
+ 		Properties p = new Properties();
+ 		p.put(MockAuthenticationException.class.getName(), AuthenticationFailureDisabledEvent.class.getName());
+ 		this.publisher.setAdditionalExceptionMappings(p);
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
++		// removed local mock; replaced with global field `appPublisher`
+ 		this.publisher.setApplicationEventPublisher(appPublisher);
+ 		this.publisher.publishAuthenticationFailure(new MockAuthenticationException("test"),
+ 				mock(Authentication.class));
+@@ -127,7 +128,6 @@
+ 		Properties p = new Properties();
+ 		p.put(MockAuthenticationException.class.getName(), AuthenticationFailureDisabledEvent.class.getName());
+ 		this.publisher.setAdditionalExceptionMappings(p);
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
+ 		this.publisher.setApplicationEventPublisher(appPublisher);
+ 		this.publisher.publishAuthenticationFailure(new AuthenticationException("") {
+ 		}, mock(Authentication.class));
+@@ -163,7 +163,6 @@
+ 		Map<Class<? extends AuthenticationException>, Class<? extends AbstractAuthenticationFailureEvent>> mappings = new HashMap<>();
+ 		mappings.put(MockAuthenticationException.class, AuthenticationFailureDisabledEvent.class);
+ 		this.publisher.setAdditionalExceptionMappings(mappings);
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
+ 		this.publisher.setApplicationEventPublisher(appPublisher);
+ 		this.publisher.publishAuthenticationFailure(new MockAuthenticationException("test"),
+ 				mock(Authentication.class));
+@@ -181,7 +180,6 @@
+ 	public void defaultAuthenticationFailureEventIsPublished() {
+ 		this.publisher = new DefaultAuthenticationEventPublisher();
+ 		this.publisher.setDefaultAuthenticationFailureEvent(AuthenticationFailureBadCredentialsEvent.class);
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
+ 		this.publisher.setApplicationEventPublisher(appPublisher);
+ 		this.publisher.publishAuthenticationFailure(new AuthenticationException("") {
+ 		}, mock(Authentication.class));

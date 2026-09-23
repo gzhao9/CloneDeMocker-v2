@@ -1,0 +1,129 @@
+--- a/core/src/test/java/org/springframework/security/authentication/DefaultAuthenticationEventPublisherTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/DefaultAuthenticationEventPublisherTests.java
+@@ -20,6 +20,7 @@
+ import java.util.Map;
+ import java.util.Properties;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.context.ApplicationEventPublisher;
+@@ -52,18 +53,24 @@
+ 
+ 	DefaultAuthenticationEventPublisher publisher;
+ 
++	private ApplicationEventPublisher applicationEventPublisher;
++
++	@BeforeEach
++	public void setup() {
++		this.applicationEventPublisher = mock(ApplicationEventPublisher.class);
++	}
++
+ 	@Test
+ 	public void expectedDefaultMappingsAreSatisfied() {
+ 		this.publisher = new DefaultAuthenticationEventPublisher();
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
+-		this.publisher.setApplicationEventPublisher(appPublisher);
++		this.publisher.setApplicationEventPublisher(applicationEventPublisher);
+ 		Authentication a = mock(Authentication.class);
+ 		Exception cause = new Exception();
+ 		Object extraInfo = new Object();
+ 		this.publisher.publishAuthenticationFailure(new BadCredentialsException(""), a);
+ 		this.publisher.publishAuthenticationFailure(new BadCredentialsException("", cause), a);
+-		verify(appPublisher, times(2)).publishEvent(isA(AuthenticationFailureBadCredentialsEvent.class));
+-		reset(appPublisher);
++		verify(applicationEventPublisher, times(2)).publishEvent(isA(AuthenticationFailureBadCredentialsEvent.class));
++		reset(applicationEventPublisher);
+ 		this.publisher.publishAuthenticationFailure(new UsernameNotFoundException(""), a);
+ 		this.publisher.publishAuthenticationFailure(new UsernameNotFoundException("", cause), a);
+ 		this.publisher.publishAuthenticationFailure(new AccountExpiredException(""), a);
+@@ -77,23 +84,22 @@
+ 		this.publisher.publishAuthenticationFailure(new AuthenticationServiceException("", cause), a);
+ 		this.publisher.publishAuthenticationFailure(new CredentialsExpiredException(""), a);
+ 		this.publisher.publishAuthenticationFailure(new CredentialsExpiredException("", cause), a);
+-		verify(appPublisher, times(2)).publishEvent(isA(AuthenticationFailureBadCredentialsEvent.class));
+-		verify(appPublisher, times(2)).publishEvent(isA(AuthenticationFailureExpiredEvent.class));
+-		verify(appPublisher).publishEvent(isA(AuthenticationFailureProviderNotFoundEvent.class));
+-		verify(appPublisher, times(2)).publishEvent(isA(AuthenticationFailureDisabledEvent.class));
+-		verify(appPublisher, times(2)).publishEvent(isA(AuthenticationFailureLockedEvent.class));
+-		verify(appPublisher, times(2)).publishEvent(isA(AuthenticationFailureServiceExceptionEvent.class));
+-		verify(appPublisher, times(2)).publishEvent(isA(AuthenticationFailureCredentialsExpiredEvent.class));
+-		verifyNoMoreInteractions(appPublisher);
++		verify(applicationEventPublisher, times(2)).publishEvent(isA(AuthenticationFailureBadCredentialsEvent.class));
++		verify(applicationEventPublisher, times(2)).publishEvent(isA(AuthenticationFailureExpiredEvent.class));
++		verify(applicationEventPublisher).publishEvent(isA(AuthenticationFailureProviderNotFoundEvent.class));
++		verify(applicationEventPublisher, times(2)).publishEvent(isA(AuthenticationFailureDisabledEvent.class));
++		verify(applicationEventPublisher, times(2)).publishEvent(isA(AuthenticationFailureLockedEvent.class));
++		verify(applicationEventPublisher, times(2)).publishEvent(isA(AuthenticationFailureServiceExceptionEvent.class));
++		verify(applicationEventPublisher, times(2)).publishEvent(isA(AuthenticationFailureCredentialsExpiredEvent.class));
++		verifyNoMoreInteractions(applicationEventPublisher);
+ 	}
+ 
+ 	@Test
+ 	public void authenticationSuccessIsPublished() {
+ 		this.publisher = new DefaultAuthenticationEventPublisher();
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
+-		this.publisher.setApplicationEventPublisher(appPublisher);
++		this.publisher.setApplicationEventPublisher(applicationEventPublisher);
+ 		this.publisher.publishAuthenticationSuccess(mock(Authentication.class));
+-		verify(appPublisher).publishEvent(isA(AuthenticationSuccessEvent.class));
++		verify(applicationEventPublisher).publishEvent(isA(AuthenticationSuccessEvent.class));
+ 		this.publisher.setApplicationEventPublisher(null);
+ 		// Should be ignored with null app publisher
+ 		this.publisher.publishAuthenticationSuccess(mock(Authentication.class));
+@@ -105,11 +111,10 @@
+ 		Properties p = new Properties();
+ 		p.put(MockAuthenticationException.class.getName(), AuthenticationFailureDisabledEvent.class.getName());
+ 		this.publisher.setAdditionalExceptionMappings(p);
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
+-		this.publisher.setApplicationEventPublisher(appPublisher);
++		this.publisher.setApplicationEventPublisher(applicationEventPublisher);
+ 		this.publisher.publishAuthenticationFailure(new MockAuthenticationException("test"),
+ 				mock(Authentication.class));
+-		verify(appPublisher).publishEvent(isA(AuthenticationFailureDisabledEvent.class));
++		verify(applicationEventPublisher).publishEvent(isA(AuthenticationFailureDisabledEvent.class));
+ 	}
+ 
+ 	@Test
+@@ -127,11 +132,10 @@
+ 		Properties p = new Properties();
+ 		p.put(MockAuthenticationException.class.getName(), AuthenticationFailureDisabledEvent.class.getName());
+ 		this.publisher.setAdditionalExceptionMappings(p);
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
+-		this.publisher.setApplicationEventPublisher(appPublisher);
++		this.publisher.setApplicationEventPublisher(applicationEventPublisher);
+ 		this.publisher.publishAuthenticationFailure(new AuthenticationException("") {
+ 		}, mock(Authentication.class));
+-		verifyNoMoreInteractions(appPublisher);
++		verifyNoMoreInteractions(applicationEventPublisher);
+ 	}
+ 
+ 	@Test
+@@ -163,11 +167,10 @@
+ 		Map<Class<? extends AuthenticationException>, Class<? extends AbstractAuthenticationFailureEvent>> mappings = new HashMap<>();
+ 		mappings.put(MockAuthenticationException.class, AuthenticationFailureDisabledEvent.class);
+ 		this.publisher.setAdditionalExceptionMappings(mappings);
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
+-		this.publisher.setApplicationEventPublisher(appPublisher);
++		this.publisher.setApplicationEventPublisher(applicationEventPublisher);
+ 		this.publisher.publishAuthenticationFailure(new MockAuthenticationException("test"),
+ 				mock(Authentication.class));
+-		verify(appPublisher).publishEvent(isA(AuthenticationFailureDisabledEvent.class));
++		verify(applicationEventPublisher).publishEvent(isA(AuthenticationFailureDisabledEvent.class));
+ 	}
+ 
+ 	@Test
+@@ -181,11 +184,10 @@
+ 	public void defaultAuthenticationFailureEventIsPublished() {
+ 		this.publisher = new DefaultAuthenticationEventPublisher();
+ 		this.publisher.setDefaultAuthenticationFailureEvent(AuthenticationFailureBadCredentialsEvent.class);
+-		ApplicationEventPublisher appPublisher = mock(ApplicationEventPublisher.class);
+-		this.publisher.setApplicationEventPublisher(appPublisher);
++		this.publisher.setApplicationEventPublisher(applicationEventPublisher);
+ 		this.publisher.publishAuthenticationFailure(new AuthenticationException("") {
+ 		}, mock(Authentication.class));
+-		verify(appPublisher).publishEvent(isA(AuthenticationFailureBadCredentialsEvent.class));
++		verify(applicationEventPublisher).publishEvent(isA(AuthenticationFailureBadCredentialsEvent.class));
+ 	}
+ 
+ 	@Test
