@@ -185,7 +185,24 @@ def _parse_hunks(diff: list[str]) -> list[list[tuple[str, str]]]:
 
 
 def _squash(text: str) -> str:
-    return re.sub(r"\s+", "", text)
+    # V1 sent code to the model as str(dict), and Python's repr escapes ' as \'; the model
+    # copies that form back. Compare with the escape undone, on both sides.
+    return re.sub(r"\s+", "", text).replace("\\'", "'")
+
+
+def _method_range(lines: list[str], method: str) -> tuple[int, int] | None:
+    """Line span of the test method's declaration through its closing brace."""
+    pattern = re.compile(r"\b" + re.escape(method) + r"\s*\(")
+    for i, line in enumerate(lines):
+        if pattern.search(line) and not line.rstrip().endswith(";") and "=" not in line.split("(")[0]:
+            depth, opened = 0, False
+            for j in range(i, len(lines)):
+                depth += lines[j].count("{") - lines[j].count("}")
+                opened = opened or "{" in lines[j]
+                if opened and depth <= 0:
+                    return i, j
+            return None
+    return None
 
 
 def _anchor_at(lines: list[str], start: int, keys: list[str]) -> list[tuple[int, int]] | None:
@@ -216,7 +233,7 @@ def _anchor_at(lines: list[str], start: int, keys: list[str]) -> list[tuple[int,
     return spans
 
 
-def _apply_hunk(text: str, hunk: list[tuple[str, str]], where: str) -> str:
+def _apply_hunk(text: str, hunk: list[tuple[str, str]], where: str, method: str | None = None) -> str:
     lines = text.split("\n")
     old = [(tag, body) for tag, body in hunk if tag in (" ", "-") and body.strip()]
     if not old:
@@ -224,7 +241,17 @@ def _apply_hunk(text: str, hunk: list[tuple[str, str]], where: str) -> str:
     keys = [_squash(body) for _, body in old]
     matches = [spans for start in range(len(lines)) if lines[start].strip()
                for spans in [_anchor_at(lines, start, keys)] if spans]
+    if len(matches) > 1 and method:
+        # Mock clones repeat across tests, so context can recur; V1 wrote each hunk for one
+        # named test method, so look only inside it.
+        bounds = _method_range(lines, method)
+        if bounds:
+            matches = [m for m in matches if bounds[0] <= m[0][0] and m[-1][1] <= bounds[1]]
     if len(matches) != 1:
+        fallback = _apply_by_removed_lines(lines, hunk, method)
+        if fallback is not None:
+            FUZZY_USED.append(where)
+            return fallback
         raise V1ApplyError(f"{where}: hunk context matches {len(matches)} places (needs exactly 1)")
     spans = matches[0]
     first, last = spans[0][0], spans[-1][1]
@@ -253,11 +280,48 @@ def _apply_hunk(text: str, hunk: list[tuple[str, str]], where: str) -> str:
     return "\n".join(lines[:first] + out + lines[last + 1:])
 
 
+NL = chr(10)
+
+
+def _unit(lines: list[str]) -> str:
+    """The file's own indentation unit, so inserted code follows its style (tabs or spaces)."""
+    tabs = sum(line.startswith("\t") for line in lines)
+    spaces = sum(line.startswith("    ") for line in lines)
+    return "\t" if tabs > spaces else "    "
+FUZZY_USED: list[str] = []
+
+
+def _apply_by_removed_lines(lines: list[str], hunk: list[tuple[str, str]], method: str | None) -> str | None:
+    """Fallback when V1's context lines do not match the source (it omits or rewrites one).
+
+    Locate the hunk by its removed lines alone -- as a developer applying V1's guide would --
+    inside the named test method, requiring one contiguous, unique match; replace them with
+    the hunk's added lines. A hunk with no removed lines has nothing to anchor on and fails.
+    """
+    removed = [_squash(body) for tag, body in hunk if tag == "-" and body.strip()]
+    added = [body for tag, body in hunk if tag == "+"]
+    if not removed or not method:
+        return None
+    bounds = _method_range(lines, method)
+    if not bounds:
+        return None
+    found = [spans for start in range(bounds[0], bounds[1] + 1) if lines[start].strip()
+             for spans in [_anchor_at(lines, start, removed)] if spans and spans[-1][1] <= bounds[1]]
+    if len(found) != 1:
+        return None
+    first, last = found[0][0][0], found[0][-1][1]
+    indent = _indent(lines[first])
+    base = min((len(_indent(b)) for b in added if b.strip()), default=0)
+    new = [(indent + " " * max(0, len(_indent(b)) - base) + b.strip()) if b.strip() else "" for b in added]
+    return NL.join(lines[:first] + new + lines[last + 1:])
+
+
 def _insert_before_class_end(text: str, block: str, where: str) -> str:
     lines = text.split("\n")
     for i in range(len(lines) - 1, -1, -1):
         if lines[i].strip() == "}":
-            body = [("    " + l) if l.strip() else "" for l in block.strip("\n").split("\n")]
+            unit = _unit(lines)
+            body = [(unit + l.replace("    ", unit)) if l.strip() else "" for l in block.strip("\n").split("\n")]
             return "\n".join(lines[:i] + [""] + body + lines[i:])
     raise V1ApplyError(f"{where}: no closing brace to insert the reusable method before")
 
@@ -271,7 +335,8 @@ def _insert_field(text: str, block: str, where: str) -> str:
                 j += 1
             if j == len(lines):
                 break
-            body = ["    " + l.strip() for l in block.strip("\n").split("\n") if l.strip()]
+            unit = _unit(lines)
+            body = [unit + l.strip() for l in block.strip("\n").split("\n") if l.strip()]
             text = "\n".join(lines[: j + 1] + body + lines[j + 1:])
             if "import org.mockito.Mock;" not in text:
                 text = re.sub(r"(?m)^(package [^\n]+;\n)", r"\1\nimport org.mockito.Mock;", text, count=1)
@@ -305,6 +370,7 @@ def generate_v1(provider: ModelProvider, model: str, project_root: Path,
 
     working = dict(files)
     key_normalized = False
+    FUZZY_USED.clear()
 
     def declined(reason: str) -> tuple[dict[str, Any], list[ModelResult], list[dict[str, Any]]]:
         return {"canRefactor": False, "reason": "V1: " + reason}, results, stage_log
@@ -374,7 +440,7 @@ def generate_v1(provider: ModelProvider, model: str, project_root: Path,
                     working[path] = _insert_before_class_end(working[path], reusable, str(path))
             for path, diff, method in hunks:
                 for hunk in _parse_hunks(diff):
-                    working[path] = _apply_hunk(working[path], hunk, f"{path}#{method}")
+                    working[path] = _apply_hunk(working[path], hunk, f"{path}#{method}", method)
         except V1ApplyError as exc:
             # Not a model refusal: V1 answered, but its answer cannot be written back.
             return {"canRefactor": True, "edits": [], "newFiles": [],
@@ -383,6 +449,7 @@ def generate_v1(provider: ModelProvider, model: str, project_root: Path,
     edits = [{"path": path.as_posix(), "oldString": files[path], "newString": content}
              for path, content in working.items() if content != files.get(path)]
     return {"canRefactor": True, "edits": edits, "newFiles": [], "v1KeyNormalized": key_normalized,
+            "v1FuzzyApply": list(FUZZY_USED),
             "summary": "CloneDeMocker V1 (original prompts, no harness)"}, results, stage_log
 
 
@@ -400,6 +467,7 @@ class V1RefactoringAgent(RefactoringAgent):
         proposal, results, stage_log = generate_v1(provider, model, project_root, instances, files, progress)
         self.v1_apply_error = proposal.get("v1ApplyError")
         self.v1_key_normalized = bool(proposal.get("v1KeyNormalized"))
+        self.v1_fuzzy_apply = list(proposal.get("v1FuzzyApply") or [])
         return proposal, results, stage_log
 
     def _apply_edits(self, root, allowed, edits, new_files):

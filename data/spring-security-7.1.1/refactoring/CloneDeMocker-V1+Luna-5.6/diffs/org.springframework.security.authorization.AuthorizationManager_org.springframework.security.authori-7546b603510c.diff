@@ -1,0 +1,32 @@
+--- a/core/src/test/java/org/springframework/security/authorization/method/AuthorizationManagerAfterMethodInterceptorTests.java
++++ b/core/src/test/java/org/springframework/security/authorization/method/AuthorizationManagerAfterMethodInterceptorTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.authorization.method;
+ 
++import org.mockito.Mock;
+ import java.util.function.Supplier;
+ 
+ import org.aopalliance.intercept.MethodInvocation;
+@@ -52,10 +53,11 @@
+  * @author Gengwu Zhao
+  */
+ public class AuthorizationManagerAfterMethodInterceptorTests {
++    @Mock
++    private AuthorizationManager<MethodInvocationResult> mockAuthorizationManager;
+ 
+ 	@Test
+ 	public void instantiateWhenMethodMatcherNullThenException() {
+-		AuthorizationManager<MethodInvocationResult> mockAuthorizationManager = mock(AuthorizationManager.class);
+ 		assertThatIllegalArgumentException()
+ 			.isThrownBy(() -> new AuthorizationManagerAfterMethodInterceptor(null, mockAuthorizationManager))
+ 			.withMessage("pointcut cannot be null");
+@@ -73,7 +75,7 @@
+ 		MethodInvocation mockMethodInvocation = mock(MethodInvocation.class);
+ 		MethodInvocationResult result = new MethodInvocationResult(mockMethodInvocation, new Object());
+ 		given(mockMethodInvocation.proceed()).willReturn(result.getResult());
+-		AuthorizationManager<MethodInvocationResult> mockAuthorizationManager = mock(AuthorizationManager.class);
++		// removed local mock; replaced with global field `mockAuthorizationManager`
+ 		AuthorizationManagerAfterMethodInterceptor advice = new AuthorizationManagerAfterMethodInterceptor(
+ 				Pointcut.TRUE, mockAuthorizationManager);
+ 		Object returnedObject = advice.invoke(mockMethodInvocation);

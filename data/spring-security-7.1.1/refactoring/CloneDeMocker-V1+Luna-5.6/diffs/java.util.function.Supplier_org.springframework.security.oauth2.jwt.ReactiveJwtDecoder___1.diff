@@ -1,0 +1,33 @@
+--- a/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/SupplierReactiveJwtDecoderTests.java
++++ b/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/SupplierReactiveJwtDecoderTests.java
+@@ -55,8 +55,7 @@
+ 	@Test
+ 	public void decodeWhenInitializedThenCaches() {
+ 		ReactiveJwtDecoder jwtDecoder = mock(ReactiveJwtDecoder.class);
+-		Supplier<ReactiveJwtDecoder> supplier = mock(Supplier.class);
+-		given(supplier.get()).willReturn(jwtDecoder);
++		Supplier<ReactiveJwtDecoder> supplier = createMockReactiveJwtDecoderSupplier(jwtDecoder);
+ 		given(jwtDecoder.decode("token")).willReturn(Mono.empty());
+ 		ReactiveJwtDecoder supplierReactiveJwtDecoder = new SupplierReactiveJwtDecoder(supplier);
+ 		supplierReactiveJwtDecoder.decode("token").block();
+@@ -68,7 +67,7 @@
+ 	@Test
+ 	public void decodeWhenInitializationInitiallyFailsThenRecoverable() {
+ 		ReactiveJwtDecoder jwtDecoder = mock(ReactiveJwtDecoder.class);
+-		Supplier<ReactiveJwtDecoder> broken = mock(Supplier.class);
++		Supplier<ReactiveJwtDecoder> broken = createMockReactiveJwtDecoderSupplier(jwtDecoder);
+ 		given(broken.get()).willThrow(RuntimeException.class);
+ 		given(jwtDecoder.decode("token")).willReturn(Mono.empty());
+ 		ReactiveJwtDecoder supplierReactiveJwtDecoder = new SupplierReactiveJwtDecoder(broken);
+@@ -80,4 +79,11 @@
+ 		verify(jwtDecoder).decode("token");
+ 	}
+ 
++
++    private static Supplier<ReactiveJwtDecoder> createMockReactiveJwtDecoderSupplier(
++            ReactiveJwtDecoder jwtDecoder) {
++        Supplier<ReactiveJwtDecoder> supplier = mock(Supplier.class);
++        given(supplier.get()).willReturn(jwtDecoder);
++        return supplier;
++    }
+ }

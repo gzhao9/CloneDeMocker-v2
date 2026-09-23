@@ -122,6 +122,8 @@ def record(project: str, mci_id: str, result: dict, run_id: str, model: str, har
     entry["host"] = socket.gethostname()
     if result.get("v1KeyNormalized"):
         entry["v1KeyNormalized"] = True
+    if result.get("v1FuzzyApply"):
+        entry["v1FuzzyApply"] = result["v1FuzzyApply"]
     if result.get("reason") and entry["classification"] != "SUCCESS":
         entry["declineReason"] = str(result.get("reason"))[:2000]
     why = f"{entry.get('validationReason') or ''} {result.get('reason') or ''}"
@@ -190,6 +192,8 @@ def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: i
                                                           encoding="utf-8")
             if getattr(agent, "v1_key_normalized", False):
                 result = {**result, "v1KeyNormalized": True}
+            if getattr(agent, "v1_fuzzy_apply", None):
+                result = {**result, "v1FuzzyApply": agent.v1_fuzzy_apply}
             verdict = record(project, mci_id, result, run_id, model, harness)
             t = result["timings"]
             log(f"  {name} {mci_id}: {verdict}  model {t['modelSeconds']}s ({len(provider.calls)} calls), "
