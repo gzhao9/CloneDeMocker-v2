@@ -36,7 +36,15 @@ STOPPED = REPO / "validation" / "results" / "cloudstack-tail-SUPERVISOR-STOPPED"
 POLL_SECONDS = 60
 MAX_RESTARTS = 3
 WINDOW_SECONDS = 600
-DONE_MARKERS = ("nothing left in the tail", "session done")
+# "session done" is NOT a completion marker: the runner logs it at the end of every
+# session, including a safety-stop (unreadable or shrunk results file) that leaves most
+# of the tail unprocessed. Treating it as done meant the supervisor read a 1406/1828
+# safety-stop as a finished batch and never restarted -- silently, for however long
+# nobody happened to check the log by hand. Only "nothing left in the tail" is real
+# completion; the two stop-early paths log their own distinct lines and are left
+# unmatched here on purpose, so the supervisor keeps restarting (and its own
+# restart-count guard below is what protects against a stop that a restart can't fix).
+DONE_MARKERS = ("nothing left in the tail",)
 
 
 def log(message: str) -> None:
