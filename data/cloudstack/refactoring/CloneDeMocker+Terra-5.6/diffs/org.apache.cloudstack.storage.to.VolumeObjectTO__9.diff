@@ -1,0 +1,48 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
+@@ -71,7 +71,7 @@
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+         VMSnapshotTO vmSnapshotTO = mock(VMSnapshotTO.class);
+         PrimaryDataStoreTO dataStoreTO = mock(PrimaryDataStoreTO.class);
+-        VolumeObjectTO rootVolume = mock(VolumeObjectTO.class);
++        VolumeObjectTO rootVolume = createMockRootVolume();
+ 
+         Path activeNvram = Files.createTempFile("active-", ".fd");
+         Files.writeString(activeNvram, "snapshot-nvram");
+@@ -83,7 +83,6 @@
+         when(command.getTarget()).thenReturn(vmSnapshotTO);
+         when(vmSnapshotTO.getId()).thenReturn(42L);
+         when(command.getVolumeTOs()).thenReturn(List.of(rootVolume));
+-        when(rootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+         when(rootVolume.getDataStore()).thenReturn(dataStoreTO);
+         when(dataStoreTO.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         when(dataStoreTO.getUuid()).thenReturn("pool-uuid");
+@@ -277,7 +276,6 @@
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+         DeleteDiskOnlyVmSnapshotCommand command = mock(DeleteDiskOnlyVmSnapshotCommand.class);
+         SnapshotObjectTO rootSnapshot = mock(SnapshotObjectTO.class);
+-        VolumeObjectTO rootVolume = mock(VolumeObjectTO.class);
+ 
+         Path poolDirectory = Files.createTempDirectory("pool-");
+         Path snapshotNvram = poolDirectory.resolve("nvram/42.fd");
+@@ -285,8 +283,8 @@
+         Files.writeString(snapshotNvram, "snapshot");
+ 
+         when(command.getNvramSnapshotPath()).thenReturn("nvram/42.fd");
++        VolumeObjectTO rootVolume = createMockRootVolume();
+         when(rootSnapshot.getVolume()).thenReturn(rootVolume);
+-        when(rootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         when(libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(rootSnapshot, storagePoolManager)).thenReturn(storagePool);
+         when(storagePool.getLocalPathFor("nvram/42.fd")).thenReturn(snapshotNvram.toString());
+@@ -818,4 +816,10 @@
+ 
+         assertFalse(answer.getResult());
+     }
++
++    private static VolumeObjectTO createMockRootVolume() {
++        VolumeObjectTO rootVolume = mock(VolumeObjectTO.class);
++        when(rootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
++        return rootVolume;
++    }
+ }
