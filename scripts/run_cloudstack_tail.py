@@ -85,14 +85,35 @@ def log(message: str) -> None:
         pass
 
 
-def check_collab_messages() -> list[dict]:
-    """Inspect COLLAB.md after a pull and report any unread entries addressed to or cc'ing A."""
-    if not BOARD.is_file():
-        return []
-    try:
-        content = BOARD.read_text(encoding="utf-8")
-    except OSError:
-        return []
+def peek_messages() -> list[dict]:
+    """Check for messages without pulling, so reading is not gated on writing.
+
+    Publishing is batched at BATCH_PUSH for a good reason (three workers pushing every row
+    starved each other on rebases), but that made the batch boundary the *only* moment A
+    looked at the board -- roughly every 20 minutes, and on 2026-09-23 not at all for three
+    hours, because a broken sync stopped the pull that the check rode on. Reading has none
+    of writing's contention: a fetch takes no lock on the working tree, needs no clean tree,
+    costs no tokens, and cannot conflict. So fetch and read the remote's copy directly,
+    leaving the working tree untouched, and do it every MCI.
+    """
+    if git("fetch", REMOTE, "main", timeout=120).returncode != 0:
+        return []                                   # a racing fetch, or offline; next MCI retries
+    watched = ["COLLAB.md", "collab/inbox/A", "collab/read"]
+    if not git("diff", "--quiet", "HEAD", "FETCH_HEAD", "--", *watched).returncode:
+        return []                                   # nothing addressed here has moved
+    shown = git("show", "FETCH_HEAD:COLLAB.md")
+    return check_collab_messages(shown.stdout) if shown.returncode == 0 else []
+
+
+def check_collab_messages(content: str | None = None) -> list[dict]:
+    """Report any unread entries addressed to or cc'ing A, in `content` or the local board."""
+    if content is None:
+        if not BOARD.is_file():
+            return []
+        try:
+            content = BOARD.read_text(encoding="utf-8")
+        except OSError:
+            return []
 
     start = content.find("## ACTIVE")
     end = content.find("\n## Section:", start)
@@ -538,6 +559,7 @@ def main() -> None:
         # for contention every worker shares; the rows are on disk either way, and the next
         # sync commits `data/cloudstack` wholesale, so an interrupted batch is carried by the
         # following one rather than lost.
+        peek_messages()          # every MCI: a fetch, no pull, no working-tree change
         pending.append((entry, diff_source))
         if args.push and len(pending) >= BATCH_PUSH:
             sync(f"sync {len(pending)} completed MCIs to CloudStack 24.0.0-SNAPSHOT dataset",

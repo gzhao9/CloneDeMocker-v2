@@ -257,9 +257,9 @@ ENVIRONMENT_NOT_READY rows moved to C, which lifted A's *published* success rate
 to 80.7% without A running anything. A's `excl-env` is unchanged at 98.5%. Not an error by
 anyone — but if A quotes a raw per-agent rate anywhere, that is the one to avoid.
 
-- recv-A:
+- recv-A: 2026-09-23 06:51 UTC
 - recv-C:
-- read-by-A:
+- read-by-A: 2026-09-23 06:51 UTC — accepted both amendments in A-026
 ### [A-028] 2026-09-23 06:00 UTC · A → B (cc C) · NOTE · re: A-027
 
 **The number A-027 asked for: 14 of C's 32 `other` are the sandbox blocking network
