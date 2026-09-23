@@ -1,0 +1,72 @@
+--- a/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/inbound/MessageSourceTests.java
++++ b/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/inbound/MessageSourceTests.java
+@@ -111,15 +111,11 @@
+ 	@SuppressWarnings({"unchecked", "rawtypes"})
+ 	@Test
+ 	void testConsumerAwareRebalanceListener() {
+-		Consumer consumer = mock(Consumer.class);
+ 		TopicPartition topicPartition = new TopicPartition("foo", 0);
+ 		List<TopicPartition> assigned = Collections.singletonList(topicPartition);
+ 		AtomicReference<ConsumerRebalanceListener> listener = new AtomicReference<>();
+-		willAnswer(i -> {
+-			listener.set(i.getArgument(1));
+-			return null;
+-		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
+-
++
++		Consumer consumer = createConsumer(listener);
+ 		ConsumerFactory consumerFactory = mock(ConsumerFactory.class);
+ 		willReturn(Collections.singletonMap(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1)).given(consumerFactory)
+ 				.getConfigurationProperties();
+@@ -161,17 +157,13 @@
+ 	@SuppressWarnings({"unchecked", "rawtypes"})
+ 	@Test
+ 	void testRebalanceListener() {
+-		Consumer consumer = mock(Consumer.class);
+ 		TopicPartition topicPartition1 = new TopicPartition("foo", 0);
+ 		List<TopicPartition> assigned1 = new ArrayList<>(Collections.singletonList(topicPartition1));
+ 		TopicPartition topicPartition2 = new TopicPartition("foo", 1);
+ 		List<TopicPartition> assigned2 = new ArrayList<>(Collections.singletonList(topicPartition2));
+ 		AtomicReference<ConsumerRebalanceListener> listener = new AtomicReference<>();
+-		willAnswer(i -> {
+-			listener.set(i.getArgument(1));
+-			return null;
+-		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
+-
++
++		Consumer consumer = createConsumer(listener);
+ 		ConsumerFactory consumerFactory = mock(ConsumerFactory.class);
+ 		willReturn(Collections.singletonMap(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1)).given(consumerFactory)
+ 				.getConfigurationProperties();
+@@ -645,15 +637,11 @@
+ 	@SuppressWarnings({"rawtypes", "unchecked"})
+ 	@Test
+ 	void testPollTimeouts() {
+-		Consumer consumer = mock(Consumer.class);
+ 		TopicPartition topicPartition = new TopicPartition("foo", 0);
+ 		List<TopicPartition> assigned = Collections.singletonList(topicPartition);
+ 		AtomicReference<ConsumerRebalanceListener> listener = new AtomicReference<>();
+-		willAnswer(i -> {
+-			listener.set(i.getArgument(1));
+-			return null;
+-		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
+-
++
++		Consumer consumer = createConsumer(listener);
+ 		Map<TopicPartition, List<ConsumerRecord>> records1 = new LinkedHashMap<>();
+ 		records1.put(topicPartition, Collections.singletonList(
+ 				new ConsumerRecord("foo", 0, 0L, 0L, TimestampType.NO_TIMESTAMP_TYPE, 0, 0, null, "foo",
+@@ -950,4 +938,13 @@
+ 		inOrder.verify(consumer).close(any(CloseOptions.class));
+ 	}
+ 
++
++	private static Consumer createConsumer(AtomicReference<ConsumerRebalanceListener> listener) {
++		Consumer consumer = mock(Consumer.class);
++		willAnswer(i -> {
++			listener.set(i.getArgument(1));
++			return null;
++		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
++		return consumer;
++	}
+ }
