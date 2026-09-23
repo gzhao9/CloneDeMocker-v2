@@ -1,0 +1,141 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckVirtualMachineCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckVirtualMachineCommandWrapperTest.java
+@@ -72,9 +72,10 @@
+         DomainInfo domainInfo = new DomainInfo();
+         domainInfo.state = DomainState.VIR_DOMAIN_RUNNING;
+ 
++        conn = MockConnect.createMockConnect(VM_NAME, domain);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(conn);
+         when(libvirtComputingResource.getVmState(conn, VM_NAME)).thenReturn(PowerState.PowerOn);
+         when(libvirtComputingResource.getVncPort(conn, VM_NAME)).thenReturn(5900);
+-        when(conn.domainLookupByName(VM_NAME)).thenReturn(domain);
+         when(domain.getInfo()).thenReturn(domainInfo);
+ 
+         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) wrapper.execute(command, libvirtComputingResource);
+@@ -89,9 +90,10 @@
+         DomainInfo domainInfo = new DomainInfo();
+         domainInfo.state = DomainState.VIR_DOMAIN_PAUSED;
+ 
++        conn = MockConnect.createMockConnect(VM_NAME, domain);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(conn);
+         when(libvirtComputingResource.getVmState(conn, VM_NAME)).thenReturn(PowerState.PowerOn);
+         when(libvirtComputingResource.getVncPort(conn, VM_NAME)).thenReturn(5901);
+-        when(conn.domainLookupByName(VM_NAME)).thenReturn(domain);
+         when(domain.getInfo()).thenReturn(domainInfo);
+ 
+         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) wrapper.execute(command, libvirtComputingResource);
+@@ -128,9 +130,10 @@
+         DomainInfo domainInfo = new DomainInfo();
+         domainInfo.state = DomainState.VIR_DOMAIN_RUNNING;
+ 
++        conn = MockConnect.createMockConnect(VM_NAME, domain);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(conn);
+         when(libvirtComputingResource.getVmState(conn, VM_NAME)).thenReturn(PowerState.PowerOn);
+         when(libvirtComputingResource.getVncPort(conn, VM_NAME)).thenReturn(null);
+-        when(conn.domainLookupByName(VM_NAME)).thenReturn(domain);
+         when(domain.getInfo()).thenReturn(domainInfo);
+ 
+         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) wrapper.execute(command, libvirtComputingResource);
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPreMigrationCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPreMigrationCommandWrapperTest.java
+@@ -81,8 +81,8 @@
+     @Test
+     public void testExecute_NoClvmVolumes_Success() throws LibvirtException {
+         List<DiskDef> disks = createNonClvmDisks();
+-        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+-        when(connect.domainLookupByName(VM_NAME)).thenReturn(domain);
++        connect = MockConnect.createMockConnect(VM_NAME, domain);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+         when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
+ 
+         Answer answer = wrapper.execute(preMigrationCommand, libvirtComputingResource);
+@@ -95,8 +95,8 @@
+     @Test
+     public void testExecute_ClvmVolumes_ConvertedToSharedMode() throws LibvirtException {
+         List<DiskDef> disks = createClvmDisks();
+-        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+-        when(connect.domainLookupByName(VM_NAME)).thenReturn(domain);
++        connect = MockConnect.createMockConnect(VM_NAME, domain);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+         when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
+ 
+         try (MockedStatic<LibvirtComputingResource> mockedStatic = Mockito.mockStatic(LibvirtComputingResource.class)) {
+@@ -121,8 +121,8 @@
+     @Test
+     public void testExecute_ClvmNgVolumes_ConvertedToSharedMode() throws LibvirtException {
+         List<DiskDef> disks = createClvmNgDisks();
+-        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+-        when(connect.domainLookupByName(VM_NAME)).thenReturn(domain);
++        connect = MockConnect.createMockConnect(VM_NAME, domain);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+         when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
+ 
+         try (MockedStatic<LibvirtComputingResource> mockedStatic = Mockito.mockStatic(LibvirtComputingResource.class)) {
+@@ -146,8 +146,8 @@
+     @Test
+     public void testExecute_MixedVolumes_OnlyClvmConverted() throws LibvirtException {
+         List<DiskDef> disks = createMixedDisks();
+-        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+-        when(connect.domainLookupByName(VM_NAME)).thenReturn(domain);
++        connect = MockConnect.createMockConnect(VM_NAME, domain);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+         when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
+ 
+         try (MockedStatic<LibvirtComputingResource> mockedStatic = Mockito.mockStatic(LibvirtComputingResource.class)) {
+@@ -186,8 +186,8 @@
+     public void testExecute_DomainFreeFails_StillReturnsSuccess() throws LibvirtException {
+         List<DiskDef> disks = createNonClvmDisks();
+         LibvirtException libvirtException = Mockito.mock(LibvirtException.class);
+-        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+-        when(connect.domainLookupByName(VM_NAME)).thenReturn(domain);
++        connect = MockConnect.createMockConnect(VM_NAME, domain);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+         when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
+         Mockito.doThrow(libvirtException).when(domain).free();
+ 
+@@ -210,8 +210,8 @@
+     @Test
+     public void testExecute_EmptyDiskList_Success() throws LibvirtException {
+         List<DiskDef> disks = new ArrayList<>();
+-        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+-        when(connect.domainLookupByName(VM_NAME)).thenReturn(domain);
++        connect = MockConnect.createMockConnect(VM_NAME, domain);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+         when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
+ 
+         Answer answer = wrapper.execute(preMigrationCommand, libvirtComputingResource);
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtStopBackupCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtStopBackupCommandWrapperTest.java
+@@ -65,14 +65,13 @@
+ 
+     @Test
+     public void testExecuteDomainFoundReturnsSuccess() throws Exception {
+-        Connect connect = Mockito.mock(Connect.class);
+         Domain domain = Mockito.mock(Domain.class);
++        Connect connect = MockConnect.createMockConnect("i-2-3-VM", domain);
+ 
+         try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class,
+                 (mock, context) -> Mockito.when(mock.execute()).thenReturn(null));
+              MockedStatic<LibvirtConnection> libvirtConnectionMock = Mockito.mockStatic(LibvirtConnection.class)) {
+             libvirtConnectionMock.when(LibvirtConnection::getConnection).thenReturn(connect);
+-            Mockito.when(connect.domainLookupByName("i-2-3-VM")).thenReturn(domain);
+ 
+             Answer answer = wrapper.execute(command, resource);
+ 
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockConnect.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockConnect.java
+@@ -0,0 +1,14 @@
++package com.cloud.hypervisor.kvm.resource.wrapper;
++
++import org.libvirt.Connect;
++import org.libvirt.Domain;
++import org.libvirt.LibvirtException;
++import org.mockito.Mockito;
++
++public class MockConnect {
++    public static Connect createMockConnect(String domainName, Domain domain) throws LibvirtException {
++        Connect connect = Mockito.mock(Connect.class);
++        Mockito.when(connect.domainLookupByName(domainName)).thenReturn(domain);
++        return connect;
++    }
++}

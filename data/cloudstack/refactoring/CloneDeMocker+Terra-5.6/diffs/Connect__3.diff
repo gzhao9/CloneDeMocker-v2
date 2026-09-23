@@ -1,0 +1,46 @@
+--- a/plugins/hypervisors/kvm/src/test/java/org/apache/cloudstack/utils/linux/KVMHostInfoTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/org/apache/cloudstack/utils/linux/KVMHostInfoTest.java
+@@ -62,14 +62,12 @@
+             return;
+         }
+         try (MockedStatic<LibvirtConnection> ignored = Mockito.mockStatic(LibvirtConnection.class)) {
+-            Connect conn = Mockito.mock(Connect.class);
+             NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
+             nodeInfo.mhz = 1000;
+             String capabilitiesXml = "<capabilities></capabilities>";
+ 
++            Connect conn = createMockConnect(nodeInfo, capabilitiesXml);
+             Mockito.when(LibvirtConnection.getConnection()).thenReturn(conn);
+-            Mockito.when(conn.nodeInfo()).thenReturn(nodeInfo);
+-            Mockito.when(conn.getCapabilities()).thenReturn(capabilitiesXml);
+             int manualSpeed = 500;
+ 
+             KVMHostInfo kvmHostInfo = new KVMHostInfo(10, 10, manualSpeed, 0);
+@@ -83,14 +81,12 @@
+             return;
+         }
+         try (MockedStatic<LibvirtConnection> ignored = Mockito.mockStatic(LibvirtConnection.class)) {
+-            Connect conn = Mockito.mock(Connect.class);
+             NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
+             nodeInfo.cpus = 10;
+             String capabilitiesXml = "<capabilities></capabilities>";
+ 
++            Connect conn = createMockConnect(nodeInfo, capabilitiesXml);
+             Mockito.when(LibvirtConnection.getConnection()).thenReturn(conn);
+-            Mockito.when(conn.nodeInfo()).thenReturn(nodeInfo);
+-            Mockito.when(conn.getCapabilities()).thenReturn(capabilitiesXml);
+ 
+             KVMHostInfo kvmHostInfo = new KVMHostInfo(10, 10, 100, 2);
+             Assert.assertEquals("reserve two CPU cores", 8, kvmHostInfo.getAllocatableCpus());
+@@ -102,4 +98,11 @@
+             Assert.assertEquals("Misconfigured/too large CPU reserve", 0, kvmHostInfo.getAllocatableCpus());
+         }
+     }
++
++    private static Connect createMockConnect(NodeInfo nodeInfo, String capabilitiesXml) throws Exception {
++        Connect conn = Mockito.mock(Connect.class);
++        Mockito.when(conn.nodeInfo()).thenReturn(nodeInfo);
++        Mockito.when(conn.getCapabilities()).thenReturn(capabilitiesXml);
++        return conn;
++    }
+ }

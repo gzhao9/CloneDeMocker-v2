@@ -1,0 +1,44 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckVirtualMachineCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckVirtualMachineCommandWrapperTest.java
+@@ -169,9 +169,10 @@
+     public void testExecuteLibvirtExceptionOnDomainLookupReturnsFailure() throws LibvirtException {
+         LibvirtException libvirtException = mock(LibvirtException.class);
+         when(libvirtException.getMessage()).thenReturn("Domain not found");
++        conn = MockConnectForDomainLookup.createMockConnectForDomainLookup(VM_NAME, libvirtException);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(conn);
+         when(libvirtComputingResource.getVmState(conn, VM_NAME)).thenReturn(PowerState.PowerOn);
+         when(libvirtComputingResource.getVncPort(conn, VM_NAME)).thenReturn(5900);
+-        when(conn.domainLookupByName(VM_NAME)).thenThrow(libvirtException);
+ 
+         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) wrapper.execute(command, libvirtComputingResource);
+ 
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPreMigrationCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPreMigrationCommandWrapperTest.java
+@@ -172,8 +172,8 @@
+     public void testExecute_LibvirtException_ReturnsFailure() throws LibvirtException {
+         LibvirtException libvirtException = Mockito.mock(LibvirtException.class);
+         when(libvirtException.getMessage()).thenReturn("Connection failed");
+-        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+-        when(connect.domainLookupByName(VM_NAME)).thenThrow(libvirtException);
++        connect = MockConnectForDomainLookup.createMockConnectForDomainLookup(VM_NAME, libvirtException);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+ 
+         Answer answer = wrapper.execute(preMigrationCommand, libvirtComputingResource);
+ 
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockConnectForDomainLookup.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockConnectForDomainLookup.java
+@@ -0,0 +1,14 @@
++package com.cloud.hypervisor.kvm.resource.wrapper;
++
++import org.libvirt.Connect;
++import org.libvirt.LibvirtException;
++
++import static org.mockito.Mockito.when;
++
++public class MockConnectForDomainLookup {
++    public static Connect createMockConnectForDomainLookup(String vmName, LibvirtException libvirtException) throws LibvirtException {
++        Connect conn = org.mockito.Mockito.mock(Connect.class);
++        when(conn.domainLookupByName(vmName)).thenThrow(libvirtException);
++        return conn;
++    }
++}
