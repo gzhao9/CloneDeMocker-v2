@@ -307,13 +307,33 @@ def _apply_by_removed_lines(lines: list[str], hunk: list[tuple[str, str]], metho
         return None
     found = [spans for start in range(bounds[0], bounds[1] + 1) if lines[start].strip()
              for spans in [_anchor_at(lines, start, removed)] if spans and spans[-1][1] <= bounds[1]]
-    if len(found) != 1:
-        return None
-    first, last = found[0][0][0], found[0][-1][1]
+    if len(found) == 1:
+        spans = found[0]
+    else:
+        # The removed lines may be scattered through the method (V1 lists them in one hunk
+        # although other statements sit between them). Each must still match exactly once.
+        spans = []
+        for key in removed:
+            hits = [s for start in range(bounds[0], bounds[1] + 1) if lines[start].strip()
+                    for s in [_anchor_at(lines, start, [key])] if s and s[0][1] <= bounds[1]]
+            if len(hits) != 1:
+                return None
+            spans.append(hits[0][0])
+        spans.sort()
+        if any(a[1] >= b[0] for a, b in zip(spans, spans[1:])):
+            return None
+    first = spans[0][0]
     indent = _indent(lines[first])
     base = min((len(_indent(b)) for b in added if b.strip()), default=0)
     new = [(indent + " " * max(0, len(_indent(b)) - base) + b.strip()) if b.strip() else "" for b in added]
-    return NL.join(lines[:first] + new + lines[last + 1:])
+    drop = {i for a, b in spans for i in range(a, b + 1)}
+    out: list[str] = []
+    for i, line in enumerate(lines):
+        if i == first:
+            out.extend(new)
+        if i not in drop:
+            out.append(line)
+    return NL.join(out)
 
 
 def _insert_before_class_end(text: str, block: str, where: str) -> str:
