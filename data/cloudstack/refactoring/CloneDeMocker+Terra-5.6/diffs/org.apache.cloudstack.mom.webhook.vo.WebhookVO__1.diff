@@ -1,0 +1,39 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
+@@ -267,6 +267,12 @@
+         return webhook;
+     }
+ 
++    private static WebhookVO createMockWebhook() {
++        WebhookVO webhook = Mockito.mock(WebhookVO.class);
++        Mockito.when(webhook.getAccountId()).thenReturn(1L);
++        return webhook;
++    }
++
+     @Test
+     public void testValidateWebhookOwnerPayloadUrlUpdateSameExist() {
+         WebhookVO webhookVO = mockWebhookVO(1L);
+@@ -965,7 +971,7 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void updateWebhookThrowsExceptionForInvalidState() {
+         UpdateWebhookCmd cmd = Mockito.mock(UpdateWebhookCmd.class);
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
++        WebhookVO webhook = createMockWebhook();
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+         Mockito.when(cmd.getState()).thenReturn("InvalidState");
+@@ -991,13 +997,12 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void updateWebhookThrowsExceptionForNonHttpsWithSslVerification() {
+         UpdateWebhookCmd cmd = Mockito.mock(UpdateWebhookCmd.class);
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
++        WebhookVO webhook = createMockWebhook();
+         Mockito.when(webhook.getPayloadUrl()).thenReturn("http://abc.xyz");
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+         Mockito.when(cmd.getPayloadUrl()).thenReturn("http://cloudstack.apache.org/");
+         Mockito.when(cmd.isSslVerification()).thenReturn(true);
+-        Mockito.when(webhook.getAccountId()).thenReturn(1L);
+         Mockito.when(accountManager.getAccount(1L)).thenReturn(caller);
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+ 
