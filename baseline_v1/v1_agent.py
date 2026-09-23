@@ -120,10 +120,24 @@ def _field_payload(row: dict[str, Any], variable_name: str) -> dict[str, Any]:
     }
 
 
+def _load_field_reply(clean: str) -> tuple[dict[str, Any], bool]:
+    """Parse a 1.2 reply, tolerating whitespace around keys. Returns (data, normalized?).
+
+    V1's prompt 1.2 spells the key `"newFieldValueName "` (trailing space) while V1's parser
+    reads `newFieldValueName`. gpt-4o-mini happened to drop the space; a model that copies the
+    prompt literally fails on a typo that says nothing about refactoring. Stripping key
+    whitespace is a parser fix only -- no prompt change, no retry -- and it is flagged.
+    """
+    data = json.loads(clean)
+    stripped = {str(k).strip(): v for k, v in data.items()}
+    return stripped, stripped.keys() != data.keys()
+
+
 def _global_mock_snippet(clean: str) -> str:
     """Notebook cell 8: what V1 handed the user for a field-mode MCI."""
-    field = json.loads(clean)["field"]
-    new_name = json.loads(clean)["newFieldValueName"]
+    data, _ = _load_field_reply(clean)
+    field = data["field"]
+    new_name = data["newFieldValueName"]
     return f"""// === Declare in class scope ===
 @Mock
 {field}
@@ -170,36 +184,66 @@ def _parse_hunks(diff: list[str]) -> list[list[tuple[str, str]]]:
     return [h for h in hunks if any(tag != " " for tag, _ in h)]
 
 
+def _squash(text: str) -> str:
+    return re.sub(r"\s+", "", text)
+
+
+def _anchor_at(lines: list[str], start: int, keys: list[str]) -> list[tuple[int, int]] | None:
+    """Map each hunk line (whitespace-squashed) onto one or more consecutive file lines.
+
+    V1's hunks are written against the detector's `methodRawCode`, where a statement the
+    source wraps over several lines appears on one. So one hunk line may cover a run of file
+    lines; blank file lines in between are skipped. Returns [(first, last)] per key or None.
+    """
+    spans: list[tuple[int, int]] = []
+    i = start
+    for key in keys:
+        while i < len(lines) and not lines[i].strip():
+            i += 1
+        if i >= len(lines):
+            return None
+        first, acc = i, ""
+        while i < len(lines):
+            acc += _squash(lines[i])
+            i += 1
+            if acc == key:
+                spans.append((first, i - 1))
+                break
+            if not key.startswith(acc):
+                return None
+        else:
+            return None
+    return spans
+
+
 def _apply_hunk(text: str, hunk: list[tuple[str, str]], where: str) -> str:
     lines = text.split("\n")
     old = [(tag, body) for tag, body in hunk if tag in (" ", "-") and body.strip()]
     if not old:
         raise V1ApplyError(f"{where}: hunk has no context or removed lines to anchor it")
-    keys = [body.strip() for _, body in old]
-    nonblank = [i for i, line in enumerate(lines) if line.strip()]
-    matches = []
-    for start in range(len(nonblank) - len(keys) + 1):
-        if all(lines[nonblank[start + k]].strip() == keys[k] for k in range(len(keys))):
-            matches.append([nonblank[start + k] for k in range(len(keys))])
+    keys = [_squash(body) for _, body in old]
+    matches = [spans for start in range(len(lines)) if lines[start].strip()
+               for spans in [_anchor_at(lines, start, keys)] if spans]
     if len(matches) != 1:
         raise V1ApplyError(f"{where}: hunk context matches {len(matches)} places (needs exactly 1)")
-    anchored = matches[0]
-    first, last = anchored[0], anchored[-1]
+    spans = matches[0]
+    first, last = spans[0][0], spans[-1][1]
 
-    # Rebuild the span: context lines keep the file's text, removed lines go, added lines take
-    # the indentation of the nearest anchored line plus the hunk's own relative indentation.
+    # Rebuild the span: context keeps the file's own lines (wrapping included), removed lines
+    # go, added lines take the indentation of the nearest anchored line plus the hunk's own
+    # relative indentation. Blank file lines between anchored lines are kept.
     out: list[str] = []
-    pointer = 0                      # next anchored line to consume
+    pointer = 0
     ref_file, ref_hunk = _indent(lines[first]), _indent(old[0][1])
     for tag, body in hunk:
         if tag in (" ", "-") and body.strip():
-            file_index = anchored[pointer]
+            a, b = spans[pointer]
             pointer += 1
-            ref_file, ref_hunk = _indent(lines[file_index]), _indent(body)
+            ref_file, ref_hunk = _indent(lines[a]), _indent(body)
             if tag == " ":
-                out.append(lines[file_index])
-            nxt = anchored[pointer] if pointer < len(anchored) else file_index + 1
-            out.extend(lines[j] for j in range(file_index + 1, nxt) if not lines[j].strip())
+                out.extend(lines[a:b + 1])
+            nxt = spans[pointer][0] if pointer < len(spans) else b + 1
+            out.extend(lines[j] for j in range(b + 1, nxt) if not lines[j].strip())
         elif tag == "+":
             if not body.strip():
                 out.append("")
@@ -260,6 +304,7 @@ def generate_v1(provider: ModelProvider, model: str, project_root: Path,
         return path
 
     working = dict(files)
+    key_normalized = False
 
     def declined(reason: str) -> tuple[dict[str, Any], list[ModelResult], list[dict[str, Any]]]:
         return {"canRefactor": False, "reason": "V1: " + reason}, results, stage_log
@@ -284,7 +329,9 @@ def generate_v1(provider: ModelProvider, model: str, project_root: Path,
         try:
             if field_mode:
                 reusable = _global_mock_snippet(clean)
-                value_name = json.loads(clean)["newFieldValueName"].replace(";", "")
+                data, normalized = _load_field_reply(clean)
+                key_normalized = key_normalized or normalized
+                value_name = data["newFieldValueName"].replace(";", "")
             else:
                 reusable = json.loads(clean)["code"]
                 value_name = ""
@@ -321,7 +368,7 @@ def generate_v1(provider: ModelProvider, model: str, project_root: Path,
                 if path not in working:
                     raise V1ApplyError(f"{path}: not among the MCI's files")
                 if field_mode:
-                    field = json.loads(clean)["field"]
+                    field = _load_field_reply(clean)[0]["field"]
                     working[path] = _insert_field(working[path], "@Mock\n" + field, str(path))
                 else:
                     working[path] = _insert_before_class_end(working[path], reusable, str(path))
@@ -335,7 +382,7 @@ def generate_v1(provider: ModelProvider, model: str, project_root: Path,
 
     edits = [{"path": path.as_posix(), "oldString": files[path], "newString": content}
              for path, content in working.items() if content != files.get(path)]
-    return {"canRefactor": True, "edits": edits, "newFiles": [],
+    return {"canRefactor": True, "edits": edits, "newFiles": [], "v1KeyNormalized": key_normalized,
             "summary": "CloneDeMocker V1 (original prompts, no harness)"}, results, stage_log
 
 
@@ -352,6 +399,7 @@ class V1RefactoringAgent(RefactoringAgent):
                          progress=None):
         proposal, results, stage_log = generate_v1(provider, model, project_root, instances, files, progress)
         self.v1_apply_error = proposal.get("v1ApplyError")
+        self.v1_key_normalized = bool(proposal.get("v1KeyNormalized"))
         return proposal, results, stage_log
 
     def _apply_edits(self, root, allowed, edits, new_files):

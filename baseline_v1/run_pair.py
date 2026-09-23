@@ -120,6 +120,8 @@ class TimedProvider(ModelProvider):
 def record(project: str, mci_id: str, result: dict, run_id: str, model: str, harness: str) -> str:
     entry = canonical_store.entry_from_agent_result(mci_id, result)
     entry["host"] = socket.gethostname()
+    if result.get("v1KeyNormalized"):
+        entry["v1KeyNormalized"] = True
     if result.get("reason") and entry["classification"] != "SUCCESS":
         entry["declineReason"] = str(result.get("reason"))[:2000]
     why = f"{entry.get('validationReason') or ''} {result.get('reason') or ''}"
@@ -186,6 +188,8 @@ def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: i
             reply_dir.mkdir(parents=True, exist_ok=True)
             (reply_dir / "model-replies.json").write_text(json.dumps(provider.replies, ensure_ascii=False, indent=1),
                                                           encoding="utf-8")
+            if getattr(agent, "v1_key_normalized", False):
+                result = {**result, "v1KeyNormalized": True}
             verdict = record(project, mci_id, result, run_id, model, harness)
             t = result["timings"]
             log(f"  {name} {mci_id}: {verdict}  model {t['modelSeconds']}s ({len(provider.calls)} calls), "
