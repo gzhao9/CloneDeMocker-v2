@@ -1,0 +1,73 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/VolumeOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/VolumeOrchestratorTest.java
+@@ -157,6 +157,12 @@
+         Assert.assertEquals(expected, accountPSResourceCount);
+     }
+ 
++    private static VolumeVO createMockVolumeWithInstanceId() {
++        VolumeVO volume = Mockito.mock(VolumeVO.class);
++        Mockito.when(volume.getInstanceId()).thenReturn(MOCK_VM_ID);
++        return volume;
++    }
++
+     @Test
+     public void testCheckAndUpdateVolumeAccountResourceCountSameSize() {
+         runCheckAndUpdateVolumeAccountResourceCountTest(10L, 10L);
+@@ -424,7 +430,7 @@
+ 
+     @Test
+     public void testVolumeInactiveNoVmId() {
+-        VolumeVO volume = Mockito.mock(VolumeVO.class);
++        VolumeVO volume = createMockVolumeWithInstanceId();
+         Mockito.when(volume.getInstanceId()).thenReturn(null);
+         assertTrue(volumeOrchestrator.volumeInactive(volume));
+         Mockito.verify(entityMgr, Mockito.never()).findById(Mockito.eq(UserVm.class), Mockito.anyLong());
+@@ -432,8 +438,7 @@
+ 
+     @Test
+     public void testVolumeInactiveVmNotFound() {
+-        VolumeVO volume = Mockito.mock(VolumeVO.class);
+-        Mockito.when(volume.getInstanceId()).thenReturn(MOCK_VM_ID);
++        VolumeVO volume = createMockVolumeWithInstanceId();
+         Mockito.when(entityMgr.findById(UserVm.class, MOCK_VM_ID)).thenReturn(null);
+         assertTrue(volumeOrchestrator.volumeInactive(volume));
+     }
+@@ -450,8 +455,7 @@
+ 
+     @Test
+     public void testVolumeInactiveVmDestroyed() {
+-        VolumeVO volume = Mockito.mock(VolumeVO.class);
+-        Mockito.when(volume.getInstanceId()).thenReturn(MOCK_VM_ID);
++        VolumeVO volume = createMockVolumeWithInstanceId();
+         UserVm vm = Mockito.mock(UserVm.class);
+         Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Destroyed);
+         Mockito.when(entityMgr.findById(UserVm.class, MOCK_VM_ID)).thenReturn(vm);
+@@ -460,8 +464,7 @@
+ 
+     @Test
+     public void testVolumeInactiveVmRunning() {
+-        VolumeVO volume = Mockito.mock(VolumeVO.class);
+-        Mockito.when(volume.getInstanceId()).thenReturn(MOCK_VM_ID);
++        VolumeVO volume = createMockVolumeWithInstanceId();
+         UserVm vm = Mockito.mock(UserVm.class);
+         Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running); // Active state
+         Mockito.when(entityMgr.findById(UserVm.class, MOCK_VM_ID)).thenReturn(vm);
+@@ -478,16 +481,14 @@
+ 
+     @Test
+     public void testGetVmNameOnVolumeVmNotFound() {
+-        VolumeVO volume = Mockito.mock(VolumeVO.class);
+-        Mockito.when(volume.getInstanceId()).thenReturn(MOCK_VM_ID);
++        VolumeVO volume = createMockVolumeWithInstanceId();
+         Mockito.when(entityMgr.findById(VirtualMachine.class, MOCK_VM_ID)).thenReturn(null);
+         Assert.assertNull(volumeOrchestrator.getVmNameOnVolume(volume));
+     }
+ 
+     @Test
+     public void testGetVmNameOnVolumeSuccess() {
+-        VolumeVO volume = Mockito.mock(VolumeVO.class);
+-        Mockito.when(volume.getInstanceId()).thenReturn(MOCK_VM_ID);
++        VolumeVO volume = createMockVolumeWithInstanceId();
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+         Mockito.when(vm.getInstanceName()).thenReturn(MOCK_VM_NAME);
+         Mockito.when(entityMgr.findById(VirtualMachine.class, MOCK_VM_ID)).thenReturn(vm);
