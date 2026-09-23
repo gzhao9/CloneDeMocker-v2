@@ -292,6 +292,9 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
     git("commit", "-q", "-m", message)
 
     for attempt in range(1, attempts + 1):
+        if git("push", REMOTE, "main").returncode == 0:
+            return True
+
         pull = git("pull", "--rebase", REMOTE, "main")
         if pull.returncode == 0:
             check_collab_messages()
