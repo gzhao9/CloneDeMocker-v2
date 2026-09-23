@@ -1,0 +1,47 @@
+--- a/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
+@@ -186,6 +186,9 @@
+     CounterDao counterDao;
+ 
+     @Mock
++    private CounterTO scaleDownCounterMock;
++
++    @Mock
+     ConditionDao conditionDao;
+ 
+     @Mock
+@@ -1710,12 +1713,11 @@
+         ConditionTO conditionTO1 = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO1 = Mockito.mock(CounterTO.class);
+         ConditionTO conditionTO2 = Mockito.mock(ConditionTO.class);
+-        CounterTO counterTO2 = Mockito.mock(CounterTO.class);
+ 
+         when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+         when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO1, conditionTO2));
+         when(conditionTO1.getCounter()).thenReturn(counterTO1);
+-        when(conditionTO2.getCounter()).thenReturn(counterTO2);
++        when(conditionTO2.getCounter()).thenReturn(scaleDownCounterMock);
+         when(policyTO.getId()).thenReturn(scaleUpPolicyId);
+ 
+         Map<Long, List<CounterTO>> result = autoScaleManagerImplSpy.getPolicyCounters(groupTO);
+@@ -1724,7 +1726,7 @@
+         List<CounterTO> counters = result.get(scaleUpPolicyId);
+         Assert.assertEquals(2, counters.size());
+         Assert.assertTrue(counters.contains(counterTO1));
+-        Assert.assertTrue(counters.contains(counterTO2));
++        Assert.assertTrue(counters.contains(scaleDownCounterMock));
+     }
+ 
+     @Test
+@@ -2245,10 +2247,9 @@
+         hostAndVmIdsMap.put(4L, Arrays.asList(5L, 6L));
+ 
+         CounterTO scaleUpCounter = Mockito.mock(CounterTO.class);
+-        CounterTO scaleDownCounter = Mockito.mock(CounterTO.class);
+         Map<Long, List<CounterTO>> policyCountersMap = new HashMap<>();
+         policyCountersMap.put(scaleUpPolicyId, Arrays.asList(scaleUpCounter));
+-        policyCountersMap.put(scaleDownPolicyId, Arrays.asList(scaleDownCounter));
++        policyCountersMap.put(scaleDownPolicyId, Arrays.asList(scaleDownCounterMock));
+ 
+         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+         Mockito.doReturn(hostAndVmIdsMap).when(autoScaleManagerImplSpy).getHostAndVmIdsMap(groupTO);
