@@ -1,0 +1,98 @@
+--- a/web/src/test/java/org/springframework/security/web/csrf/CsrfAuthenticationStrategyTests.java
++++ b/web/src/test/java/org/springframework/security/web/csrf/CsrfAuthenticationStrategyTests.java
+@@ -82,9 +82,8 @@
+ 
+ 	@Test
+ 	public void onAuthenticationWhenCustomRequestHandlerThenUsed() {
++		this.csrfTokenRepository = createMockCsrfTokenRepository(this.request, this.response, this.existingToken);
+ 		given(this.csrfTokenRepository.loadToken(this.request)).willReturn(this.existingToken);
+-		given(this.csrfTokenRepository.loadDeferredToken(this.request, this.response))
+-			.willReturn(new TestDeferredCsrfToken(this.existingToken, false));
+ 
+ 		CsrfTokenRequestHandler requestHandler = mock(CsrfTokenRequestHandler.class);
+ 		this.strategy.setRequestHandler(requestHandler);
+@@ -98,9 +97,8 @@
+ 
+ 	@Test
+ 	public void logoutRemovesCsrfTokenAndLoadsNewDeferredCsrfToken() {
++		this.csrfTokenRepository = createMockCsrfTokenRepository(this.request, this.response, this.generatedToken);
+ 		given(this.csrfTokenRepository.loadToken(this.request)).willReturn(this.existingToken);
+-		given(this.csrfTokenRepository.loadDeferredToken(this.request, this.response))
+-			.willReturn(new TestDeferredCsrfToken(this.generatedToken, false));
+ 		this.strategy.onAuthentication(new TestingAuthenticationToken("user", "password", "ROLE_USER"), this.request,
+ 				this.response);
+ 		verify(this.csrfTokenRepository).loadToken(this.request);
+--- a/web/src/test/java/org/springframework/security/web/csrf/CsrfFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/csrf/CsrfFilterTests.java
+@@ -285,12 +285,11 @@
+ 
+ 	@Test
+ 	public void doFilterDefaultRequireCsrfProtectionMatcherAllowedMethods() throws ServletException, IOException {
+-		this.filter = new CsrfFilter(this.tokenRepository);
+-		this.filter.setAccessDeniedHandler(this.deniedHandler);
+ 		for (String method : Arrays.asList("GET", "TRACE", "OPTIONS", "HEAD")) {
+ 			resetRequestResponse();
+-			given(this.tokenRepository.loadDeferredToken(this.request, this.response))
+-				.willReturn(new TestDeferredCsrfToken(this.token, false));
++			this.tokenRepository = createMockCsrfTokenRepository(this.request, this.response, this.token);
++			this.filter = new CsrfFilter(this.tokenRepository);
++			this.filter.setAccessDeniedHandler(this.deniedHandler);
+ 			this.request.setMethod(method);
+ 			this.filter.doFilter(this.request, this.response, this.filterChain);
+ 			verify(this.filterChain).doFilter(this.request, this.response);
+@@ -306,12 +305,11 @@
+ 	 */
+ 	@Test
+ 	public void doFilterDefaultRequireCsrfProtectionMatcherAllowedMethodsCaseSensitive() throws Exception {
+-		this.filter = new CsrfFilter(this.tokenRepository);
+-		this.filter.setAccessDeniedHandler(this.deniedHandler);
+ 		for (String method : Arrays.asList("get", "TrAcE", "oPTIOnS", "hEaD")) {
+ 			resetRequestResponse();
+-			given(this.tokenRepository.loadDeferredToken(this.request, this.response))
+-				.willReturn(new TestDeferredCsrfToken(this.token, false));
++			this.tokenRepository = createMockCsrfTokenRepository(this.request, this.response, this.token);
++			this.filter = new CsrfFilter(this.tokenRepository);
++			this.filter.setAccessDeniedHandler(this.deniedHandler);
+ 			this.request.setMethod(method);
+ 			this.filter.doFilter(this.request, this.response, this.filterChain);
+ 			verify(this.deniedHandler).handle(eq(this.request), eq(this.response),
+@@ -322,12 +320,11 @@
+ 
+ 	@Test
+ 	public void doFilterDefaultRequireCsrfProtectionMatcherDeniedMethods() throws ServletException, IOException {
++		this.tokenRepository = createMockCsrfTokenRepository(this.request, this.response, this.token);
+ 		this.filter = new CsrfFilter(this.tokenRepository);
+ 		this.filter.setAccessDeniedHandler(this.deniedHandler);
+ 		for (String method : Arrays.asList("POST", "PUT", "PATCH", "DELETE", "INVALID")) {
+ 			resetRequestResponse();
+-			given(this.tokenRepository.loadDeferredToken(this.request, this.response))
+-				.willReturn(new TestDeferredCsrfToken(this.token, false));
+ 			this.request.setMethod(method);
+ 			this.filter.doFilter(this.request, this.response, this.filterChain);
+ 			verify(this.deniedHandler).handle(eq(this.request), eq(this.response),
+--- a/web/src/test/java/org/springframework/security/web/csrf/MockCsrfTokenRepository.java
++++ b/web/src/test/java/org/springframework/security/web/csrf/MockCsrfTokenRepository.java
+@@ -0,0 +1,23 @@
++package org.springframework.security.web.csrf;
++
++import static org.mockito.BDDMockito.given;
++
++import jakarta.servlet.http.HttpServletRequest;
++import jakarta.servlet.http.HttpServletResponse;
++
++import org.mockito.Mockito;
++
++public final class MockCsrfTokenRepository {
++
++	private MockCsrfTokenRepository() {
++	}
++
++	public static CsrfTokenRepository createMockCsrfTokenRepository(HttpServletRequest request,
++			HttpServletResponse response, CsrfToken token) {
++		CsrfTokenRepository tokenRepository = Mockito.mock(CsrfTokenRepository.class);
++		given(tokenRepository.loadDeferredToken(request, response))
++				.willReturn(new TestDeferredCsrfToken(token, false));
++		return tokenRepository;
++	}
++
++}

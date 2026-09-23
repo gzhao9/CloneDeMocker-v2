@@ -1,0 +1,53 @@
+--- a/oauth2/oauth2-resource-server/src/test/java/org/springframework/security/oauth2/server/resource/introspection/SpringOpaqueTokenIntrospectorTests.java
++++ b/oauth2/oauth2-resource-server/src/test/java/org/springframework/security/oauth2/server/resource/introspection/SpringOpaqueTokenIntrospectorTests.java
+@@ -30,6 +30,7 @@
+ import okhttp3.mockwebserver.MockResponse;
+ import okhttp3.mockwebserver.MockWebServer;
+ import okhttp3.mockwebserver.RecordedRequest;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.core.ParameterizedTypeReference;
+@@ -58,6 +59,13 @@
+  * Tests for {@link SpringOpaqueTokenIntrospector}
+  */
+ public class SpringOpaqueTokenIntrospectorTests {
++
++	private RequestEntity requestEntityMock;
++
++	@BeforeEach
++	public void setUp() {
++		this.requestEntityMock = mock(RequestEntity.class);
++	}
+ 
+ 	private static final ParameterizedTypeReference<Map<String, Object>> STRING_OBJECT_MAP = new ParameterizedTypeReference<Map<String, Object>>() {
+ 	};
+@@ -299,10 +307,9 @@
+ 	public void setRequestEntityConverterWhenNonNullConverterGivenThenConverterUsed() {
+ 		RestOperations restOperations = mock(RestOperations.class);
+ 		Converter<String, RequestEntity<?>> requestEntityConverter = mock(Converter.class);
+-		RequestEntity requestEntity = mock(RequestEntity.class);
+ 		String tokenToIntrospect = "some token";
+-		given(requestEntityConverter.convert(tokenToIntrospect)).willReturn(requestEntity);
+-		given(restOperations.exchange(requestEntity, STRING_OBJECT_MAP)).willReturn(ACTIVE);
++		given(requestEntityConverter.convert(tokenToIntrospect)).willReturn(requestEntityMock);
++		given(restOperations.exchange(requestEntityMock, STRING_OBJECT_MAP)).willReturn(ACTIVE);
+ 		SpringOpaqueTokenIntrospector introspectionClient = new SpringOpaqueTokenIntrospector(INTROSPECTION_URL,
+ 				restOperations);
+ 		introspectionClient.setRequestEntityConverter(requestEntityConverter);
+@@ -323,13 +330,12 @@
+ 	public void setAuthenticationConverterWhenNonNullConverterGivenThenConverterUsed() {
+ 		RestOperations restOperations = mock(RestOperations.class);
+ 		Converter<String, RequestEntity<?>> requestEntityConverter = mock(Converter.class);
+-		RequestEntity requestEntity = mock(RequestEntity.class);
+ 		Converter<OAuth2TokenIntrospectionClaimAccessor, OAuth2AuthenticatedPrincipal> authenticationConverter = mock(
+ 				Converter.class);
+ 		OAuth2AuthenticatedPrincipal oAuth2AuthenticatedPrincipal = mock(OAuth2AuthenticatedPrincipal.class);
+ 		String tokenToIntrospect = "some token";
+-		given(requestEntityConverter.convert(tokenToIntrospect)).willReturn(requestEntity);
+-		given(restOperations.exchange(requestEntity, STRING_OBJECT_MAP)).willReturn(response(ACTIVE_RESPONSE));
++		given(requestEntityConverter.convert(tokenToIntrospect)).willReturn(requestEntityMock);
++		given(restOperations.exchange(requestEntityMock, STRING_OBJECT_MAP)).willReturn(response(ACTIVE_RESPONSE));
+ 		given(authenticationConverter.convert(any())).willReturn(oAuth2AuthenticatedPrincipal);
+ 		SpringOpaqueTokenIntrospector introspectionClient = new SpringOpaqueTokenIntrospector(INTROSPECTION_URL,
+ 				restOperations);

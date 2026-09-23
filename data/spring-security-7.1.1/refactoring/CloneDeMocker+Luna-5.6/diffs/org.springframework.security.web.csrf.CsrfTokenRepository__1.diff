@@ -1,0 +1,47 @@
+--- a/web/src/test/java/org/springframework/security/web/csrf/CsrfAuthenticationStrategyTests.java
++++ b/web/src/test/java/org/springframework/security/web/csrf/CsrfAuthenticationStrategyTests.java
+@@ -118,6 +118,7 @@
+ 	// SEC-2872
+ 	@Test
+ 	public void delaySavingCsrf() {
++		this.csrfTokenRepository = MockCsrfTokenRepository.createMockCsrfTokenRepository(this.request, this.generatedToken);
+ 		this.strategy = new CsrfAuthenticationStrategy(this.csrfTokenRepository);
+ 		given(this.csrfTokenRepository.loadToken(this.request)).willReturn(this.existingToken, (CsrfToken) null);
+ 		given(this.csrfTokenRepository.generateToken(this.request)).willReturn(this.generatedToken);
+--- a/web/src/test/java/org/springframework/security/web/csrf/CsrfFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/csrf/CsrfFilterTests.java
+@@ -108,10 +108,9 @@
+ 	// SEC-2276
+ 	@Test
+ 	public void doFilterDoesNotSaveCsrfTokenUntilAccessed() throws ServletException, IOException {
++		this.tokenRepository = MockCsrfTokenRepository.createMockCsrfTokenRepository(this.request, this.token);
+ 		this.filter = createCsrfFilter(this.tokenRepository);
+ 		given(this.requestMatcher.matches(this.request)).willReturn(false);
+-		given(this.tokenRepository.generateToken(this.request)).willReturn(this.token);
+-		given(this.tokenRepository.loadDeferredToken(any(), any())).willCallRealMethod();
+ 		this.filter.doFilter(this.request, this.response, this.filterChain);
+ 		CsrfToken attrToken = (CsrfToken) this.request.getAttribute(this.csrfAttrName);
+ 		// no CsrfToken should have been saved yet
+--- a/web/src/test/java/org/springframework/security/web/csrf/MockCsrfTokenRepository.java
++++ b/web/src/test/java/org/springframework/security/web/csrf/MockCsrfTokenRepository.java
+@@ -0,0 +1,20 @@
++package org.springframework.security.web.csrf;
++
++import jakarta.servlet.http.HttpServletRequest;
++
++import org.mockito.Mockito;
++
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.BDDMockito.given;
++
++public class MockCsrfTokenRepository {
++
++	public static CsrfTokenRepository createMockCsrfTokenRepository(HttpServletRequest request,
++			CsrfToken generatedToken) {
++		CsrfTokenRepository tokenRepository = Mockito.mock(CsrfTokenRepository.class);
++		given(tokenRepository.generateToken(request)).willReturn(generatedToken);
++		given(tokenRepository.loadDeferredToken(any(), any())).willCallRealMethod();
++		return tokenRepository;
++	}
++
++}

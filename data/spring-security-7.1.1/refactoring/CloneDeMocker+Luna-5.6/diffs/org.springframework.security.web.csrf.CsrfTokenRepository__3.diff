@@ -1,0 +1,64 @@
+--- a/config/src/test/java/org/springframework/security/config/annotation/web/configurers/CsrfConfigurerTests.java
++++ b/config/src/test/java/org/springframework/security/config/annotation/web/configurers/CsrfConfigurerTests.java
+@@ -456,10 +456,8 @@
+ 
+ 	@Test
+ 	public void getLoginWhenCsrfTokenRequestAttributeHandlerSetThenRespondsWithNormalCsrfToken() throws Exception {
+-		CsrfTokenRepository csrfTokenRepository = mock(CsrfTokenRepository.class);
+ 		CsrfToken csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "token");
+-		given(csrfTokenRepository.loadDeferredToken(any(HttpServletRequest.class), any(HttpServletResponse.class)))
+-			.willReturn(new TestDeferredCsrfToken(csrfToken));
++		CsrfTokenRepository csrfTokenRepository = createMockCsrfTokenRepository(csrfToken);
+ 		CsrfTokenRequestHandlerConfig.REPO = csrfTokenRepository;
+ 		CsrfTokenRequestHandlerConfig.HANDLER = new CsrfTokenRequestAttributeHandler();
+ 		this.spring.register(CsrfTokenRequestHandlerConfig.class, BasicController.class).autowire();
+@@ -473,10 +471,8 @@
+ 	@Test
+ 	public void loginWhenCsrfTokenRequestAttributeHandlerSetAndNormalCsrfTokenThenSuccess() throws Exception {
+ 		CsrfToken csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "token");
+-		CsrfTokenRepository csrfTokenRepository = mock(CsrfTokenRepository.class);
++		CsrfTokenRepository csrfTokenRepository = createMockCsrfTokenRepository(csrfToken);
+ 		given(csrfTokenRepository.loadToken(any(HttpServletRequest.class))).willReturn(csrfToken);
+-		given(csrfTokenRepository.loadDeferredToken(any(HttpServletRequest.class), any(HttpServletResponse.class)))
+-			.willReturn(new TestDeferredCsrfToken(csrfToken));
+ 		CsrfTokenRequestHandlerConfig.REPO = csrfTokenRepository;
+ 		CsrfTokenRequestHandlerConfig.HANDLER = new CsrfTokenRequestAttributeHandler();
+ 		this.spring.register(CsrfTokenRequestHandlerConfig.class, BasicController.class).autowire();
+@@ -497,10 +493,8 @@
+ 
+ 	@Test
+ 	public void getLoginWhenXorCsrfTokenRequestAttributeHandlerSetThenRespondsWithMaskedCsrfToken() throws Exception {
+-		CsrfTokenRepository csrfTokenRepository = mock(CsrfTokenRepository.class);
+ 		CsrfToken csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "token");
+-		given(csrfTokenRepository.loadDeferredToken(any(HttpServletRequest.class), any(HttpServletResponse.class)))
+-			.willReturn(new TestDeferredCsrfToken(csrfToken));
++		CsrfTokenRepository csrfTokenRepository = createMockCsrfTokenRepository(csrfToken);
+ 		CsrfTokenRequestHandlerConfig.REPO = csrfTokenRepository;
+ 		CsrfTokenRequestHandlerConfig.HANDLER = new XorCsrfTokenRequestAttributeHandler();
+ 		this.spring.register(CsrfTokenRequestHandlerConfig.class, BasicController.class).autowire();
+@@ -514,10 +508,8 @@
+ 	@Test
+ 	public void loginWhenXorCsrfTokenRequestAttributeHandlerSetAndMaskedCsrfTokenThenSuccess() throws Exception {
+ 		CsrfToken csrfToken = new DefaultCsrfToken("X-CSRF-TOKEN", "_csrf", "token");
+-		CsrfTokenRepository csrfTokenRepository = mock(CsrfTokenRepository.class);
++		CsrfTokenRepository csrfTokenRepository = createMockCsrfTokenRepository(csrfToken);
+ 		given(csrfTokenRepository.loadToken(any(HttpServletRequest.class))).willReturn(csrfToken);
+-		given(csrfTokenRepository.loadDeferredToken(any(HttpServletRequest.class), any(HttpServletResponse.class)))
+-			.willReturn(new TestDeferredCsrfToken(csrfToken));
+ 		CsrfTokenRequestHandlerConfig.REPO = csrfTokenRepository;
+ 		CsrfTokenRequestHandlerConfig.HANDLER = new XorCsrfTokenRequestAttributeHandler();
+ 		this.spring.register(CsrfTokenRequestHandlerConfig.class, BasicController.class).autowire();
+@@ -1089,6 +1081,13 @@
+ 
+ 	}
+ 
++	private static CsrfTokenRepository createMockCsrfTokenRepository(CsrfToken csrfToken) {
++		CsrfTokenRepository csrfTokenRepository = mock(CsrfTokenRepository.class);
++		given(csrfTokenRepository.loadDeferredToken(any(HttpServletRequest.class), any(HttpServletResponse.class)))
++			.willReturn(new TestDeferredCsrfToken(csrfToken));
++		return csrfTokenRepository;
++	}
++
+ 	private static final class TestDeferredCsrfToken implements DeferredCsrfToken {
+ 
+ 		private final CsrfToken csrfToken;

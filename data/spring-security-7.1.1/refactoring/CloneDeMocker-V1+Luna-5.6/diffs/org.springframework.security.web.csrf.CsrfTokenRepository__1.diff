@@ -1,0 +1,73 @@
+--- a/web/src/test/java/org/springframework/security/web/csrf/CsrfAuthenticationStrategyTests.java
++++ b/web/src/test/java/org/springframework/security/web/csrf/CsrfAuthenticationStrategyTests.java
+@@ -119,9 +119,8 @@
+ 	@Test
+ 	public void delaySavingCsrf() {
+ 		this.strategy = new CsrfAuthenticationStrategy(this.csrfTokenRepository);
++		this.csrfTokenRepository = MockCsrfTokenRepository.createCsrfTokenRepository(this.request, this.generatedToken);
+ 		given(this.csrfTokenRepository.loadToken(this.request)).willReturn(this.existingToken, (CsrfToken) null);
+-		given(this.csrfTokenRepository.generateToken(this.request)).willReturn(this.generatedToken);
+-		given(this.csrfTokenRepository.loadDeferredToken(any(), any())).willCallRealMethod();
+ 		this.strategy.onAuthentication(new TestingAuthenticationToken("user", "password", "ROLE_USER"), this.request,
+ 				this.response);
+ 		verify(this.csrfTokenRepository).saveToken(null, this.request, this.response);
+@@ -135,4 +134,22 @@
+ 				any(HttpServletResponse.class));
+ 	}
+ 
++
++	public final class MockCsrfTokenRepository {
++
++		private MockCsrfTokenRepository() {
++		}
++
++		public static org.springframework.security.web.csrf.CsrfTokenRepository createCsrfTokenRepository(
++				jakarta.servlet.http.HttpServletRequest request,
++				org.springframework.security.web.csrf.CsrfToken generatedToken) {
++			org.springframework.security.web.csrf.CsrfTokenRepository csrfTokenRepository =
++					org.mockito.Mockito.mock(org.springframework.security.web.csrf.CsrfTokenRepository.class);
++
++			given(csrfTokenRepository.generateToken(request)).willReturn(generatedToken);
++			given(csrfTokenRepository.loadDeferredToken(any(), any())).willCallRealMethod();
++
++			return csrfTokenRepository;
++		}
++	}
+ }
+--- a/web/src/test/java/org/springframework/security/web/csrf/CsrfFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/csrf/CsrfFilterTests.java
+@@ -108,10 +108,9 @@
+ 	// SEC-2276
+ 	@Test
+ 	public void doFilterDoesNotSaveCsrfTokenUntilAccessed() throws ServletException, IOException {
++	    this.tokenRepository = MockCsrfTokenRepository.createCsrfTokenRepository(this.request, this.token);
+ 		this.filter = createCsrfFilter(this.tokenRepository);
+ 		given(this.requestMatcher.matches(this.request)).willReturn(false);
+-		given(this.tokenRepository.generateToken(this.request)).willReturn(this.token);
+-		given(this.tokenRepository.loadDeferredToken(any(), any())).willCallRealMethod();
+ 		this.filter.doFilter(this.request, this.response, this.filterChain);
+ 		CsrfToken attrToken = (CsrfToken) this.request.getAttribute(this.csrfAttrName);
+ 		// no CsrfToken should have been saved yet
+@@ -460,4 +459,22 @@
+ 		assertThatCsrfToken(tokenFromRequest).isNotNull();
+ 	}
+ 
++
++	public final class MockCsrfTokenRepository {
++
++		private MockCsrfTokenRepository() {
++		}
++
++		public static org.springframework.security.web.csrf.CsrfTokenRepository createCsrfTokenRepository(
++				jakarta.servlet.http.HttpServletRequest request,
++				org.springframework.security.web.csrf.CsrfToken generatedToken) {
++			org.springframework.security.web.csrf.CsrfTokenRepository csrfTokenRepository =
++					org.mockito.Mockito.mock(org.springframework.security.web.csrf.CsrfTokenRepository.class);
++
++			given(csrfTokenRepository.generateToken(request)).willReturn(generatedToken);
++			given(csrfTokenRepository.loadDeferredToken(any(), any())).willCallRealMethod();
++
++			return csrfTokenRepository;
++		}
++	}
+ }
