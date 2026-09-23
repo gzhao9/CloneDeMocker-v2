@@ -1,0 +1,84 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/DefaultVMSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/DefaultVMSnapshotStrategyTest.java
+@@ -117,9 +117,8 @@
+         VMSnapshot vmSnapshot = Mockito.mock(VMSnapshot.class);
+         Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
+ 
+-        UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        Mockito.when(vm.getId()).thenReturn(vmId);
+-        Mockito.when(vm.getState()).thenReturn(State.Running);
++        UserVmVO vm = MockUserVmVOWithState.createMockUserVmVO(State.Running);
++        Mockito.when(vm.getId()).thenReturn(vmId);
+         Mockito.when(userVmDao.findById(vmId)).thenReturn(vm);
+ 
+         VolumeVO volumeOnClvm = createVolume(vmId, 1L);
+@@ -141,9 +140,8 @@
+         VMSnapshot vmSnapshot = Mockito.mock(VMSnapshot.class);
+         Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
+ 
+-        UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        Mockito.when(vm.getId()).thenReturn(vmId);
+-        Mockito.when(vm.getState()).thenReturn(State.Stopped);
++        UserVmVO vm = MockUserVmVOWithState.createMockUserVmVO(State.Stopped);
++        Mockito.when(vm.getId()).thenReturn(vmId);
+         Mockito.when(userVmDao.findById(vmId)).thenReturn(vm);
+ 
+         StrategyPriority result = defaultVMSnapshotStrategy.canHandle(vmSnapshot);
+@@ -157,9 +155,8 @@
+         VMSnapshot vmSnapshot = Mockito.mock(VMSnapshot.class);
+         Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
+ 
+-        UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        Mockito.when(vm.getId()).thenReturn(vmId);
+-        Mockito.when(vm.getState()).thenReturn(State.Running);
++        UserVmVO vm = MockUserVmVOWithState.createMockUserVmVO(State.Running);
++        Mockito.when(vm.getId()).thenReturn(vmId);
+         Mockito.when(userVmDao.findById(vmId)).thenReturn(vm);
+ 
+         VolumeVO volumeOnNfs = createVolume(vmId, 1L);
+@@ -182,9 +179,8 @@
+         VMSnapshot vmSnapshot = Mockito.mock(VMSnapshot.class);
+         Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
+ 
+-        UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        Mockito.when(vm.getId()).thenReturn(vmId);
+-        Mockito.when(vm.getState()).thenReturn(State.Running);
++        UserVmVO vm = MockUserVmVOWithState.createMockUserVmVO(State.Running);
++        Mockito.when(vm.getId()).thenReturn(vmId);
+         Mockito.when(userVmDao.findById(vmId)).thenReturn(vm);
+ 
+         VolumeVO volumeOnClvm = createVolume(vmId, 1L);
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
+@@ -423,14 +423,13 @@
+         long vmSnapshotId = 20L;
+         long hostId = 40L;
+ 
+-        UserVmVO userVm = mock(UserVmVO.class);
+         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+         VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(vmSnapshotId, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+ 
+         when(vmSnapshot.getVmId()).thenReturn(vmId);
+         when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
+         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+-        when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
++        UserVmVO userVm = MockUserVmVOWithState.createMockUserVmVO(VirtualMachine.State.Running);
+         when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
+         when(vmSnapshotHelper.pickRunningHost(vmId)).thenReturn(hostId);
+         when(vmSnapshotDetailsDao.findDetail(vmSnapshotId, "kvmFileBasedStorageSnapshotNvram")).thenReturn(nvramDetail);
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockUserVmVOWithState.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockUserVmVOWithState.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.storage.vmsnapshot;
++
++import com.cloud.vm.UserVmVO;
++import com.cloud.vm.VirtualMachine.State;
++import org.mockito.Mockito;
++
++public class MockUserVmVOWithState {
++    public static UserVmVO createMockUserVmVO(State state) {
++        UserVmVO vm = Mockito.mock(UserVmVO.class);
++        Mockito.when(vm.getState()).thenReturn(state);
++        return vm;
++    }
++}
