@@ -79,6 +79,7 @@ class TimedProvider(ModelProvider):
     def __init__(self, inner: ModelProvider) -> None:
         self.inner = inner
         self.calls: list[dict] = []
+        self.replies: list[dict] = []
 
     def generate(self, instructions: str, input_text: str, model: str) -> ModelResult:
         audit = any(frame.function == "_audit_refactoring" for frame in inspect.stack()[1:8])
@@ -86,6 +87,8 @@ class TimedProvider(ModelProvider):
         result = self.inner.generate(instructions, input_text, model)
         self.calls.append({"seconds": round(time.perf_counter() - started, 3),
                            "responseId": result.response_id, "audit": audit})
+        self.replies.append({"responseId": result.response_id, "audit": audit,
+                             "instructions": instructions[:120], "input": input_text, "reply": result.text})
         return result
 
     def stamp(self, result: dict) -> dict:
@@ -99,11 +102,14 @@ class TimedProvider(ModelProvider):
 def record(project: str, mci_id: str, result: dict, run_id: str, model: str, harness: str) -> str:
     entry = canonical_store.entry_from_agent_result(mci_id, result)
     entry["host"] = socket.gethostname()
-    if harness == HARNESS_V1 and "V1 output could not be written back" in (entry.get("validationReason") or ""):
+    if result.get("reason") and entry["classification"] != "SUCCESS":
+        entry["declineReason"] = str(result.get("reason"))[:2000]
+    why = f"{entry.get('validationReason') or ''} {result.get('reason') or ''}"
+    if harness == HARNESS_V1 and "V1 output could not be written back" in why:
         # V1 answered but its answer cannot become code: count it against V1's output, not as
         # the model declining. Flagged so it can be reported separately.
         entry["classification"] = "FAILED_SYNTACTIC_VALIDITY"
-        entry["v1WriteBackFailed"] = True
+        entry["v1OutputUnusable"] = True
     diff = REPO / ".clonedemocker" / "runs" / run_id / "refactoring" / (result.get("proposalId") or "_") / "changes.diff"
     lookup = {mci_id: diff} if diff.is_file() and diff.stat().st_size else {}
     canonical_store.merge(project=project, repository_root=REPO, entries=[entry], detection_source=None,
@@ -156,12 +162,19 @@ def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: i
                 log(f"  {name} {mci_id}: TOOL ERROR {type(error).__name__}: {str(error)[:200]}")
                 continue
             result = provider.stamp(result)
+            # Keep every raw reply next to the proposal (local only), so a decline or a failed
+            # write-back can be checked against what the model actually said.
+            reply_dir = REPO / ".clonedemocker" / "runs" / run_id / "refactoring" / (result.get("proposalId") or "_")
+            reply_dir.mkdir(parents=True, exist_ok=True)
+            (reply_dir / "model-replies.json").write_text(json.dumps(provider.replies, ensure_ascii=False, indent=1),
+                                                          encoding="utf-8")
             verdict = record(project, mci_id, result, run_id, model, harness)
             t = result["timings"]
             log(f"  {name} {mci_id}: {verdict}  model {t['modelSeconds']}s ({len(provider.calls)} calls), "
                 f"audit {t['auditSeconds']}s, total {time.time() - started:.0f}s, "
-                f"baseline {'reused' if (result.get('verificationReused') or {}).get('baseline') else 'run'}"
-                + (f"  | {result.get('validationReason', '')[:120]}" if verdict != "SUCCESS" else ""))
+                f"baseline {'reused' if (result.get('verificationReused') or {}).get('baseline') else '-'}"
+                + (f"  | {(result.get('validationReason') or result.get('reason') or '')[:160]}"
+                   if verdict != "SUCCESS" else ""))
         if after_mci:
             after_mci(project, mci_id)
     log(f"pair run: {project} pass finished ({errors} tool errors)")

@@ -131,13 +131,16 @@ def _global_mock_snippet(clean: str) -> str:
 """
 
 
+_NOT_JSON = "V1 integration reply is not the JSON the prompt asks for"
+
+
 def _parse_hunk_reply(text: str) -> tuple[bool, list[str], str]:
     """Notebook cell 12's parse of an integration reply: (canRefactor, diff lines, reason)."""
     try:
         data = json.loads(text.split('```json')[-1].split('```')[0].replace('```', "").strip())
         return bool(data.get("canRefactor", False)), list(data.get("diff") or []), str(data.get("reason", ""))
     except Exception:  # noqa: BLE001
-        return False, [], "V1 integration reply is not the JSON the prompt asks for"
+        return False, [], _NOT_JSON
 
 
 # ---------------------------------------------------------------- mechanical write-back
@@ -261,6 +264,12 @@ def generate_v1(provider: ModelProvider, model: str, project_root: Path,
     def declined(reason: str) -> tuple[dict[str, Any], list[ModelResult], list[dict[str, Any]]]:
         return {"canRefactor": False, "reason": "V1: " + reason}, results, stage_log
 
+    def unusable(reason: str) -> tuple[dict[str, Any], list[ModelResult], list[dict[str, Any]]]:
+        # The model answered but the answer cannot be used as V1 used it (the notebook crashed
+        # or gave up on these). That is V1's output failing, not the model declining.
+        return {"canRefactor": True, "edits": [], "newFiles": [], "summary": "V1 output unusable",
+                "v1ApplyError": reason}, results, stage_log
+
     for instance in instances:
         label = str(instance.get("mockedClass", ""))
         info = extract_mock_info(instance)
@@ -280,7 +289,7 @@ def generate_v1(provider: ModelProvider, model: str, project_root: Path,
                 reusable = json.loads(clean)["code"]
                 value_name = ""
         except Exception as exc:  # noqa: BLE001 - the notebook gave up on the MCI here too
-            return declined(f"encapsulation reply unusable ({type(exc).__name__})")
+            return unusable(f"encapsulation reply unusable ({type(exc).__name__}: {exc})")
 
         hunks: list[tuple[Path, list[str], str]] = []
         for index, seq in enumerate(instance.get("sequences", []), start=1):
@@ -300,6 +309,8 @@ def generate_v1(provider: ModelProvider, model: str, project_root: Path,
             else:
                 reply = call(P23, _field_payload(row, value_name), "INTEGRATION", f"{label}#{index}")
             can, diff, reason = _parse_hunk_reply(reply)
+            if reason == _NOT_JSON:
+                return unusable(f"integration reply for {seq['testMethodName']} is not the JSON the prompt asks for")
             if not can:
                 return declined(reason or f"integration declined for {seq['testMethodName']}")
             hunks.append((relative(seq["filePath"]), diff, seq["testMethodName"]))
