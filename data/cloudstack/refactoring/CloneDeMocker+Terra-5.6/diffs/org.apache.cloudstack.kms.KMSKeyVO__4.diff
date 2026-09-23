@@ -1,0 +1,78 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
+@@ -191,10 +191,9 @@
+ 
+     @Test
+     public void testCheckKmsKeyForVolumeEncryption_PassesForMatchingZone() {
+-        KMSKeyVO key = mock(KMSKeyVO.class);
++        KMSKeyVO key = KMSKeyMockFactory.createMockKmsKey(KeyPurpose.VOLUME_ENCRYPTION);
+         when(key.getZoneId()).thenReturn(1L);
+         when(key.isEnabled()).thenReturn(true);
+-        when(key.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+         when(kmsKeyDao.findById(1L)).thenReturn(key);
+ 
+         kmsManager.checkKmsKeyForVolumeEncryption(mock(Account.class), 1L, 1L);
+@@ -202,10 +201,9 @@
+ 
+     @Test
+     public void testCheckKmsKeyForVolumeEncryption_PassesWhenKeyHasNoZoneRestriction() {
+-        KMSKeyVO key = mock(KMSKeyVO.class);
++        KMSKeyVO key = KMSKeyMockFactory.createMockKmsKey(KeyPurpose.VOLUME_ENCRYPTION);
+         when(key.getZoneId()).thenReturn(null);
+         when(key.isEnabled()).thenReturn(true);
+-        when(key.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+         when(kmsKeyDao.findById(1L)).thenReturn(key);
+ 
+         kmsManager.checkKmsKeyForVolumeEncryption(mock(Account.class), 1L, 5L);
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
+@@ -136,8 +136,7 @@
+         when(wrappedVO.getWrappedBlob()).thenReturn(new byte[]{0, 1});
+         when(kmsWrappedKeyDao.findById(wrappedKeyId)).thenReturn(wrappedVO);
+ 
+-        KMSKeyVO kmsKey = mock(KMSKeyVO.class);
+-        when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
++        KMSKeyVO kmsKey = KMSKeyMockFactory.createMockKmsKey(KeyPurpose.VOLUME_ENCRYPTION);
+         when(kmsKey.getAlgorithm()).thenReturn("AES/GCM/NoPadding");
+         when(kmsKeyDao.findById(kmsKeyId)).thenReturn(kmsKey);
+ 
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyRotationTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyRotationTest.java
+@@ -231,8 +231,7 @@
+         KMSWrappedKeyVO wrappedKeyVO = mock(KMSWrappedKeyVO.class);
+         when(wrappedKeyVO.getId()).thenReturn(wrappedKeyId);
+ 
+-        KMSKeyVO kmsKey = mock(KMSKeyVO.class);
+-        when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
++        KMSKeyVO kmsKey = KMSKeyMockFactory.createMockKmsKey(KeyPurpose.VOLUME_ENCRYPTION);
+ 
+         KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
+ 
+@@ -322,9 +321,8 @@
+         Long oldProfileId = 10L;
+         Long kmsKeyId = 1L;
+ 
+-        KMSKeyVO kmsKey = mock(KMSKeyVO.class);
++        KMSKeyVO kmsKey = KMSKeyMockFactory.createMockKmsKey(KeyPurpose.VOLUME_ENCRYPTION);
+         when(kmsKey.getHsmProfileId()).thenReturn(oldProfileId);
+-        when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+ 
+         HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
+         when(hsmProfile.getId()).thenReturn(oldProfileId);
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSKeyMockFactory.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSKeyMockFactory.java
+@@ -0,0 +1,14 @@
++package org.apache.cloudstack.kms;
++
++import org.apache.cloudstack.framework.kms.KeyPurpose;
++import org.mockito.Mockito;
++
++import static org.mockito.Mockito.when;
++
++public class KMSKeyMockFactory {
++    public static KMSKeyVO createMockKmsKey(KeyPurpose purpose) {
++        KMSKeyVO kmsKey = Mockito.mock(KMSKeyVO.class);
++        when(kmsKey.getPurpose()).thenReturn(purpose);
++        return kmsKey;
++    }
++}
