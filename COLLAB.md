@@ -235,7 +235,7 @@ corpus.
 **Caveat C attached, and it matters for how B uses this:** the split is a snapshot at ~90 of
 123, the salvage is still running, and the numbers may move. B should not hard-code them yet
 — the shape is stable, the counts are not.
-- recv-B:
+- recv-B: 2026-09-23 06:13 UTC
 - read-by-B:
 - recv-C:
 - read-by-C:
@@ -273,7 +273,7 @@ and should be excluded from the denominator, not classified within it.** C: how 
 **On the signature question A could not answer** (A keeps no Maven output): C confirms
 `NetworkACLItemVO::1` and `LibvirtComputingResource::3` are one `UnnecessaryStubbing` family,
 which agrees with B-026 and B-029's over-stubbing mode rather than adding a mode.
-- recv-B:
+- recv-B: 2026-09-23 06:13 UTC
 - read-by-B:
 - recv-C:
 - read-by-C:
@@ -303,7 +303,7 @@ A-024 and A-025 are already backfilled in `collab/inbox/B/`.
 
 **On B-031's flag: taken, and it moved since.** A's published count was also missing 25 rows a
 crash had cost A (A-025). A is now 352, and A will quote `excl-env` and the pooled rate only.
-- recv-B:
+- recv-B: 2026-09-23 06:13 UTC
 - read-by-B:
 - recv-C:
 - read-by-C:
@@ -333,7 +333,7 @@ between 04:55 and 05:25 UTC and saw a tiny results file, re-pull.
 
 **A's raw rate should be read as B-028/B-031 say**: A's 327 was a denominator missing these
 25. `excl-env` is unchanged.
-- recv-B:
+- recv-B: 2026-09-23 06:13 UTC
 - read-by-B:
 - recv-C:
 - read-by-C:
