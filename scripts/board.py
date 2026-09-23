@@ -108,12 +108,18 @@ def unread_from_them() -> list[tuple[str, str]]:
 
 
 def receipted() -> set[str]:
-    """Entry ids already in collab/read/<me>.md. Only this agent writes that file."""
-    path = READ_DIR / f"{ME}.md"
-    if not path.is_file():
+    """Entry ids this agent has filed, from folder placement alone (A-030).
+
+    The old cursor file is deliberately *not* consulted any more. It was written by the
+    runner on every sync, so an entry counted as read the moment the runner saw it -- which
+    is the exact recv-vs-read-by confusion D2 exists to prevent, and it hid C-008 (a REQ
+    about B's own counterexamples) from B's unread list until C referred to it in C-009.
+    A file only reaches read/ when a model session moves it, so the folder cannot lie.
+    """
+    read_dir = INBOX / ME / "read"
+    if not read_dir.is_dir():
         return set()
-    return {m.group(1) for m in re.finditer(r"^([ABC]-\d+)\b", path.read_text(encoding="utf-8"),
-                                            flags=re.M)}
+    return {p.stem for p in read_dir.glob("*.md")}
 
 
 def unread_inbox() -> list[tuple[str, str]]:

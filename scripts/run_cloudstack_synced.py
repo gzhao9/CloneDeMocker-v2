@@ -140,7 +140,8 @@ def sync_board() -> None:
     # Only entries already in our copy can be stamped; the rest get stamped once a rebase
     # brings them in, and stay printed until then so they are not silently lost.
     board.mark_read(sorted(mine))
-    board.record_receipt(sorted(inbox))
+    # Deliberately no receipt for inbox entries: filing is a model session's act, not the
+    # runner's. Recording it here marked C-008 read before any session had seen it.
 
 
 def update_board(done: int, total: int, counts: dict[str, int], started: float) -> None:
