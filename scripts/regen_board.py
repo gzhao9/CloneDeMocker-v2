@@ -61,9 +61,20 @@ def _strip_footer(body: str) -> str:
 
 
 def archived_ids() -> set[str]:
-    if not ARCHIVED_IDS.is_file():
-        return set()
-    return {ln.strip() for ln in ARCHIVED_IDS.read_text(encoding="utf-8").splitlines() if ln.strip()}
+    """Anything whose body already lives in COLLAB_ARCHIVE.md, plus the legacy id list.
+
+    Reading the archive itself matters after A-034: A moved 37 entries there, and rendering
+    them back into ## ACTIVE from their inbox copies would undo the archiving on the next
+    regeneration.
+    """
+    ids: set[str] = set()
+    if ARCHIVED_IDS.is_file():
+        ids |= {ln.strip() for ln in ARCHIVED_IDS.read_text(encoding="utf-8").splitlines()
+                if ln.strip()}
+    if ARCHIVE.is_file():
+        ids |= set(re.findall(r"^### \[([ABC]-\d+)\]", ARCHIVE.read_text(encoding="utf-8"),
+                              flags=re.M))
+    return ids
 
 
 def collect_messages() -> tuple[dict[str, str], list[str]]:
@@ -90,6 +101,26 @@ def collect_messages() -> tuple[dict[str, str], list[str]]:
     return bodies, warnings
 
 
+def folder_receipts() -> dict[str, set[str]]:
+    """id -> {agents who have filed it under their own read/}.
+
+    A-030 made the *path* the read state, so this is the authoritative source now: a file in
+    `collab/inbox/<agent>/read/` is a committed, peer-visible receipt that nothing has to
+    reconstruct. `collab/read/*.md` is kept as a second source only because it carries the
+    "answered in B-036" notes the folder cannot.
+    """
+    out: dict[str, set[str]] = defaultdict(set)
+    if not INBOX.is_dir():
+        return out
+    for agent_dir in sorted(INBOX.iterdir()):
+        read_dir = agent_dir / "read"
+        if not read_dir.is_dir():
+            continue
+        for path in read_dir.glob("*.md"):
+            out[path.stem].add(agent_dir.name)
+    return out
+
+
 def collect_receipts() -> dict[str, list[tuple[str, str, str]]]:
     """id -> [(reader, timestamp, note)], from each agent's own read file."""
     receipts: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
@@ -109,13 +140,18 @@ def collect_receipts() -> dict[str, list[tuple[str, str, str]]]:
 
 def render(bodies: dict[str, str], receipts: dict, rules: str) -> str:
     archived = archived_ids()
+    filed = folder_receipts()
+    noted = {i: {r for r, _, _ in v} for i, v in receipts.items()}
     active = sorted((i for i in bodies if i not in archived),
                     key=lambda i: (_sort_key(bodies[i]), i), reverse=True)
     out = [TITLE, "", rules.rstrip(), "", "## ACTIVE", ""]
     for entry_id in active:
         out.append(_strip_footer(bodies[entry_id]))
-        for reader, when, note in sorted(receipts.get(entry_id, [])):
-            out.append(f"- read-by-{reader}: {when}" + (f" — {note}" if note else ""))
+        seen = filed.get(entry_id, set()) | noted.get(entry_id, set())
+        for reader in sorted(seen):
+            note = next((f"{w} — {n}" if n else w
+                         for r, w, n in receipts.get(entry_id, []) if r == reader), "filed")
+            out.append(f"- read-by-{reader}: {note}")
         out.append("")
     archived_here = sorted((i for i in bodies if i in archived), reverse=True)
     if archived_here:
