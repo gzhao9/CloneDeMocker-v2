@@ -1,0 +1,151 @@
+--- a/components/http/okHttp/src/test/java/com/microsoft/kiota/http/OkHttpRequestAdapterTest.java
++++ b/components/http/okHttp/src/test/java/com/microsoft/kiota/http/OkHttpRequestAdapterTest.java
+@@ -1,5 +1,6 @@
+ package com.microsoft.kiota.http;
+ 
++import org.mockito.Mock;
+ import static org.junit.jupiter.api.Assertions.*;
+ import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.Mockito.*;
+@@ -51,6 +52,8 @@
+ import java.util.stream.Stream;
+ 
+ public class OkHttpRequestAdapterTest {
++    @Mock
++    private final AuthenticationProvider authenticationProviderMock;
+     private static <T> T nullValue() {
+         return java.util.Collections.<String, T>emptyMap().get("missing");
+     }
+@@ -83,7 +86,7 @@
+     @ParameterizedTest
+     @ValueSource(ints = {200, 201, 202, 203, 206})
+     void sendStreamReturnsUsableStream(int statusCode) throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
++        // removed local mock; replaced with global field `authenticationProviderMock`
+         authenticationProviderMock.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var text = "my-demo-text";
+@@ -126,7 +129,7 @@
+     @ParameterizedTest
+     @ValueSource(ints = {200, 201, 202, 203, 204, 304})
+     void sendStreamReturnsNullOnNoContent(int statusCode) throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
++        // removed local mock; replaced with global field `authenticationProviderMock`
+         authenticationProviderMock.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
+@@ -155,7 +158,6 @@
+     @ParameterizedTest
+     @ValueSource(ints = {200, 201, 202, 203, 204, 205, 304})
+     void sendReturnsNullOnNoContent(int statusCode) throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         authenticationProviderMock.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
+@@ -184,7 +186,6 @@
+     @ParameterizedTest
+     @ValueSource(ints = {200, 201, 202, 203})
+     void sendReturnsObjectOnContent(int statusCode) throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         authenticationProviderMock.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
+@@ -240,7 +241,6 @@
+             List<String> errorMappingCodes,
+             boolean expectDeserializedException)
+             throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         authenticationProviderMock.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
+@@ -292,7 +292,6 @@
+ 
+     @Test
+     void getRequestFromRequestInformationHasCorrectContentLength_JsonPayload() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var requestInformation = new RequestInformation();
+         requestInformation.setUri(new URI("https://localhost"));
+         ByteArrayInputStream content =
+@@ -318,7 +317,6 @@
+ 
+     @Test
+     void getRequestFromRequestInformationIncludesContentLength_FilePayload() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var testFile = new File("./src/test/resources/helloWorld.txt");
+         final var requestInformation = new RequestInformation();
+ 
+@@ -345,7 +343,6 @@
+     @Test
+     void getRequestFromRequestInformationWithoutContentLengthOverrideForStreamBody()
+             throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var testFile = new File("./src/test/resources/helloWorld.txt");
+         final var requestInformation = new RequestInformation();
+ 
+@@ -369,7 +366,7 @@
+     @Test
+     void getRequestFromRequestInformationWithoutContentLengthOverrideForJsonPayload()
+             throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
++        // removed local mock; replaced with global field `authenticationProviderMock`
+         final var requestInformation = new RequestInformation();
+         requestInformation.setUri(new URI("https://localhost"));
+         ByteArrayInputStream content =
+@@ -394,7 +391,6 @@
+     @Test
+     void getRequestFromRequestInformationWithoutContentLengthOverrideWithEmptyPayload()
+             throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var requestInformation = new RequestInformation();
+         requestInformation.setUri(new URI("https://localhost"));
+         ByteArrayInputStream content = new ByteArrayInputStream(new byte[0]);
+@@ -412,7 +408,6 @@
+ 
+     @Test
+     void buildsNativeRequestSupportingMultipleWrites() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         final var requestInformation = new RequestInformation();
+         requestInformation.setUri(new URI("https://localhost"));
+         var requestBodyJson = "{\"name\":\"value\",\"array\":[\"1\",\"2\",\"3\"]}";
+@@ -440,7 +435,7 @@
+ 
+     @Test
+     void buildsNativeRequestSupportingOneShotWrite() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
++        // removed local mock; replaced with global field `authenticationProviderMock`
+         final var testFile = new File("./src/test/resources/helloWorld.txt");
+         final var requestInformation = new RequestInformation();
+ 
+@@ -480,7 +475,6 @@
+                         .addInterceptor(new MockResponseHandler())
+                         .build();
+ 
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         authenticationProviderMock.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         var requestAdapter =
+@@ -514,7 +508,7 @@
+                         .addInterceptor(new MockResponseHandler())
+                         .build();
+ 
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
++        // removed local mock; replaced with global field `authenticationProviderMock`
+         authenticationProviderMock.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         var requestAdapter =
+@@ -541,7 +535,6 @@
+ 
+     @Test
+     void testHandle3XXResponseWithoutLocationHeader() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         authenticationProviderMock.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
+@@ -577,7 +570,6 @@
+ 
+     @Test
+     void handle3XXResponseWithLocationHeader() throws Exception {
+-        final var authenticationProviderMock = mock(AuthenticationProvider.class);
+         authenticationProviderMock.authenticateRequest(
+                 any(RequestInformation.class), any(Map.class));
+         final var client =
