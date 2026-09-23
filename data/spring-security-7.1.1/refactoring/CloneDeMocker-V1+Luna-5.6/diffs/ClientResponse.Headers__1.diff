@@ -1,0 +1,62 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/reactive/function/client/ServerOAuth2AuthorizedClientExchangeFilterFunctionTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/reactive/function/client/ServerOAuth2AuthorizedClientExchangeFilterFunctionTests.java
+@@ -667,9 +667,7 @@
+ 		String wwwAuthenticateHeader = "Bearer error=\"insufficient_scope\", "
+ 				+ "error_description=\"The request requires higher privileges than provided by the access token.\", "
+ 				+ "error_uri=\"https://tools.ietf.org/html/rfc6750#section-3.1\"";
+-		ClientResponse.Headers headers = mock(ClientResponse.Headers.class);
+-		given(headers.header(eq(HttpHeaders.WWW_AUTHENTICATE)))
+-			.willReturn(Collections.singletonList(wwwAuthenticateHeader));
++		ClientResponse.Headers headers = MockClientResponseHeaders.createMockClientResponseHeaders(wwwAuthenticateHeader);
+ 		given(this.exchange.getResponse().headers()).willReturn(headers);
+ 		this.function.filter(request, this.exchange).contextWrite(serverWebExchange()).block();
+ 		assertThat(publisherProbe.wasSubscribed()).isTrue();
+@@ -959,4 +957,17 @@
+ 		return body.getBodyAsString().block();
+ 	}
+ 
++
++	public final class MockClientResponseHeaders {
++
++		private MockClientResponseHeaders() {
++		}
++
++		public static ClientResponse.Headers createMockClientResponseHeaders(String wwwAuthenticateHeader) {
++			ClientResponse.Headers headers = mock(ClientResponse.Headers.class);
++			given(headers.header(eq(HttpHeaders.WWW_AUTHENTICATE)))
++					.willReturn(Collections.singletonList(wwwAuthenticateHeader));
++			return headers;
++		}
++	}
+ }
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/reactive/function/client/ServletOAuth2AuthorizedClientExchangeFilterFunctionTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/reactive/function/client/ServletOAuth2AuthorizedClientExchangeFilterFunctionTests.java
+@@ -714,9 +714,7 @@
+ 		String wwwAuthenticateHeader = "Bearer error=\"insufficient_scope\", "
+ 				+ "error_description=\"The request requires higher privileges than provided by the access token.\", "
+ 				+ "error_uri=\"https://tools.ietf.org/html/rfc6750#section-3.1\"";
+-		ClientResponse.Headers headers = mock(ClientResponse.Headers.class);
+-		given(headers.header(eq(HttpHeaders.WWW_AUTHENTICATE)))
+-			.willReturn(Collections.singletonList(wwwAuthenticateHeader));
++		ClientResponse.Headers headers = MockClientResponseHeaders.createMockClientResponseHeaders(wwwAuthenticateHeader);
+ 		given(this.exchange.getResponse().headers()).willReturn(headers);
+ 		this.function.setAuthorizationFailureHandler(this.authorizationFailureHandler);
+ 		this.function.filter(request, this.exchange).block();
+@@ -875,4 +873,17 @@
+ 		return body.getBodyAsString().block();
+ 	}
+ 
++
++	public final class MockClientResponseHeaders {
++
++		private MockClientResponseHeaders() {
++		}
++
++		public static ClientResponse.Headers createMockClientResponseHeaders(String wwwAuthenticateHeader) {
++			ClientResponse.Headers headers = mock(ClientResponse.Headers.class);
++			given(headers.header(eq(HttpHeaders.WWW_AUTHENTICATE)))
++					.willReturn(Collections.singletonList(wwwAuthenticateHeader));
++			return headers;
++		}
++	}
+ }

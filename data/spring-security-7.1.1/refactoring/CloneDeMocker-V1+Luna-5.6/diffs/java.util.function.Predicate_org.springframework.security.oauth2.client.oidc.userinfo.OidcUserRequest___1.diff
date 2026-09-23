@@ -1,0 +1,59 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/userinfo/OidcReactiveOAuth2UserServiceTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/userinfo/OidcReactiveOAuth2UserServiceTests.java
+@@ -203,9 +203,8 @@
+ 		OAuth2User oauth2User = new DefaultOAuth2User(AuthorityUtils.createAuthorityList("ROLE_USER"), attributes,
+ 				"user");
+ 		given(this.oauth2UserService.loadUser(any())).willReturn(Mono.just(oauth2User));
+-		Predicate<OidcUserRequest> customRetrieveUserInfo = mock(Predicate.class);
++		Predicate<OidcUserRequest> customRetrieveUserInfo = MockOidcUserRequestPredicate.createMockOidcUserRequestPredicate();
+ 		this.userService.setRetrieveUserInfo(customRetrieveUserInfo);
+-		given(customRetrieveUserInfo.test(any(OidcUserRequest.class))).willReturn(true);
+ 		// @formatter:off
+ 		OAuth2AccessToken accessToken = new OAuth2AccessToken(
+ 				this.accessToken.getTokenType(),
+@@ -340,4 +339,16 @@
+ 				new MockResponse().setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).setBody(json));
+ 	}
+ 
++
++	public final class MockOidcUserRequestPredicate {
++
++		private MockOidcUserRequestPredicate() {
++		}
++
++		public static Predicate<OidcUserRequest> createMockOidcUserRequestPredicate() {
++			Predicate<OidcUserRequest> customRetrieveUserInfo = mock(Predicate.class);
++			given(customRetrieveUserInfo.test(any(OidcUserRequest.class))).willReturn(true);
++			return customRetrieveUserInfo;
++		}
++	}
+ }
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/userinfo/OidcUserServiceTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/userinfo/OidcUserServiceTests.java
+@@ -172,8 +172,7 @@
+ 		String userInfoUri = this.server.url("/user").toString();
+ 		ClientRegistration clientRegistration = this.clientRegistrationBuilder.userInfoUri(userInfoUri).build();
+ 		this.accessToken = TestOAuth2AccessTokens.noScopes();
+-		Predicate<OidcUserRequest> customRetrieveUserInfo = mock(Predicate.class);
+-		given(customRetrieveUserInfo.test(any(OidcUserRequest.class))).willReturn(true);
++		Predicate<OidcUserRequest> customRetrieveUserInfo = MockOidcUserRequestPredicate.createMockOidcUserRequestPredicate();
+ 		this.userService.setRetrieveUserInfo(customRetrieveUserInfo);
+ 		OidcUser user = this.userService
+ 			.loadUser(new OidcUserRequest(clientRegistration, this.accessToken, this.idToken));
+@@ -536,4 +535,16 @@
+ 		// @formatter:on
+ 	}
+ 
++
++	public final class MockOidcUserRequestPredicate {
++
++		private MockOidcUserRequestPredicate() {
++		}
++
++		public static Predicate<OidcUserRequest> createMockOidcUserRequestPredicate() {
++			Predicate<OidcUserRequest> customRetrieveUserInfo = mock(Predicate.class);
++			given(customRetrieveUserInfo.test(any(OidcUserRequest.class))).willReturn(true);
++			return customRetrieveUserInfo;
++		}
++	}
+ }

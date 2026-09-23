@@ -1,0 +1,46 @@
+--- a/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
++++ b/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.saml2.provider.service.web.authentication;
+ 
++import org.mockito.Mock;
+ import jakarta.servlet.FilterChain;
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpServletResponse;
+@@ -56,6 +57,8 @@
+ import static org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.pathPattern;
+ 
+ public class Saml2WebSsoAuthenticationFilterTests {
++	@Mock
++	private Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository;
+ 
+ 	private Saml2WebSsoAuthenticationFilter filter;
+ 
+@@ -149,8 +152,6 @@
+ 
+ 	@Test
+ 	public void attemptAuthenticationWhenSavedAuthnRequestThenRemovesAuthnRequest() {
+-		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+-				Saml2AuthenticationRequestRepository.class);
+ 		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
+ 		given(authenticationConverter.convert(this.request)).willReturn(TestSaml2AuthenticationTokens.token());
+ 		this.filter = new Saml2WebSsoAuthenticationFilter(authenticationConverter, "/some/other/path/{registrationId}");
+@@ -201,8 +202,6 @@
+ 	@Test
+ 	public void setAuthenticationRequestRepositoryWhenExpectedAuthenticationConverterTypeThenSetLoaderIntoConverter() {
+ 		Saml2AuthenticationTokenConverter authenticationConverter = mock(Saml2AuthenticationTokenConverter.class);
+-		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+-				Saml2AuthenticationRequestRepository.class);
+ 		this.filter = new Saml2WebSsoAuthenticationFilter(authenticationConverter, "/some/other/path/{registrationId}");
+ 		this.filter.setAuthenticationRequestRepository(authenticationRequestRepository);
+ 		verify(authenticationConverter).setAuthenticationRequestRepository(authenticationRequestRepository);
+@@ -211,8 +210,6 @@
+ 	@Test
+ 	public void setAuthenticationRequestRepositoryWhenNotExpectedAuthenticationConverterTypeThenDoNotSet() {
+ 		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
+-		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+-				Saml2AuthenticationRequestRepository.class);
+ 		this.filter = new Saml2WebSsoAuthenticationFilter(authenticationConverter, "/some/other/path/{registrationId}");
+ 		this.filter.setAuthenticationRequestRepository(authenticationRequestRepository);
+ 		verifyNoInteractions(authenticationConverter);
