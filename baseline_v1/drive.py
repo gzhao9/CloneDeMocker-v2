@@ -82,21 +82,42 @@ def sync(lane: str, project: str, note: str) -> bool:
               if (REPO / "data" / project / f).exists()]
     if not paths:
         return True
+    # Build the commit on top of the remote with a private index and push it. The working tree,
+    # the local branch and the other lane's half-written files are never touched: an earlier
+    # `pull --rebase --autostash` stashed both lanes' unpublished rows and failed to re-apply
+    # them, leaving the lanes writing into truncated files.
+    files = [p for d in paths for p in ([d] if (REPO / d).is_file() else
+             [f.relative_to(REPO).as_posix() for f in (REPO / d).rglob("*") if f.is_file()])]
+    index = REPO / ".git" / f"pair-index-{lane}"
+    env = {**os.environ, "GIT_INDEX_FILE": str(index)}
+
+    def plumb(*args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True,
+                              encoding="utf-8", errors="replace", timeout=600, env=env)
+
     with Lock():
-        git("add", "--", *paths)
-        if git("diff", "--cached", "--quiet").returncode == 0:
-            return True
-        git("commit", "-q", "-m", f"pair {project}: {note} (V2 vs V1, gpt-5.6-luna)", "--", *paths)
         for attempt in range(1, 6):
-            pull = git("pull", "-q", "--rebase", "--autostash", REMOTE, "main")
-            if pull.returncode != 0:
-                git("rebase", "--abort")
+            if git("fetch", "-q", REMOTE, "main").returncode != 0:
                 time.sleep(5 * attempt)
                 continue
-            if git("push", "-q", REMOTE, "main").returncode == 0:
+            base = git("rev-parse", "FETCH_HEAD").stdout.strip()
+            index.unlink(missing_ok=True)
+            plumb("read-tree", base)
+            for rel in files:
+                blob = git("hash-object", "-w", "--", rel).stdout.strip()
+                plumb("update-index", "--add", "--cacheinfo", f"100644,{blob},{rel}")
+            tree = plumb("write-tree").stdout.strip()
+            if tree == git("rev-parse", f"{base}^{{tree}}").stdout.strip():
+                index.unlink(missing_ok=True)
+                return True                                   # nothing new to publish
+            commit = plumb("commit-tree", tree, "-p", base, "-m",
+                           f"pair {project}: {note} (V2 vs V1, gpt-5.6-luna)").stdout.strip()
+            if git("push", "-q", REMOTE, f"{commit}:refs/heads/main").returncode == 0:
+                index.unlink(missing_ok=True)
                 return True
             time.sleep(3 * attempt)
-    issue(lane, f"{project}: push failed 5 times ({note}); rows are committed locally, next sync retries")
+        index.unlink(missing_ok=True)
+    issue(lane, f"{project}: push failed 5 times ({note}); rows are on disk, next sync retries")
     return False
 
 
