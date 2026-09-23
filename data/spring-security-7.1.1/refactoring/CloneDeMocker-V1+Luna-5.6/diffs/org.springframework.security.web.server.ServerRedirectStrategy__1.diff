@@ -1,0 +1,43 @@
+--- a/config/src/test/java/org/springframework/security/config/web/server/ServerHttpSecurityTests.java
++++ b/config/src/test/java/org/springframework/security/config/web/server/ServerHttpSecurityTests.java
+@@ -667,12 +667,11 @@
+ 
+ 	@Test
+ 	public void shouldConfigureAuthorizationRedirectStrategyForOAuth2Login() {
+-		ServerRedirectStrategy authorizationRedirectStrategy = mock(ServerRedirectStrategy.class);
++		ServerRedirectStrategy authorizationRedirectStrategy = createServerRedirectStrategy();
+ 		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+ 				ReactiveClientRegistrationRepository.class);
+ 		given(clientRegistrationRepository.findByRegistrationId(anyString()))
+ 			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
+-		given(authorizationRedirectStrategy.sendRedirect(any(), any())).willReturn(Mono.empty());
+ 
+ 		SecurityWebFilterChain securityFilterChain = this.http
+ 			.oauth2Login((login) -> login.clientRegistrationRepository(clientRegistrationRepository)
+@@ -713,13 +712,12 @@
+ 
+ 	@Test
+ 	public void shouldConfigureAuthorizationRedirectStrategyForOAuth2Client() {
+-		ServerRedirectStrategy authorizationRedirectStrategy = mock(ServerRedirectStrategy.class);
+ 		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+ 				ReactiveClientRegistrationRepository.class);
+ 		given(clientRegistrationRepository.findByRegistrationId(anyString()))
+ 			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
+-		given(authorizationRedirectStrategy.sendRedirect(any(), any())).willReturn(Mono.empty());
+-
++
++		ServerRedirectStrategy authorizationRedirectStrategy = createServerRedirectStrategy();
+ 		SecurityWebFilterChain securityFilterChain = this.http
+ 			.oauth2Client((client) -> client.clientRegistrationRepository(clientRegistrationRepository)
+ 				.authorizationRedirectStrategy(authorizationRedirectStrategy))
+@@ -835,4 +833,10 @@
+ 
+ 	}
+ 
++
++	private static ServerRedirectStrategy createServerRedirectStrategy() {
++		ServerRedirectStrategy authorizationRedirectStrategy = mock(ServerRedirectStrategy.class);
++		given(authorizationRedirectStrategy.sendRedirect(any(), any())).willReturn(Mono.empty());
++		return authorizationRedirectStrategy;
++	}
+ }

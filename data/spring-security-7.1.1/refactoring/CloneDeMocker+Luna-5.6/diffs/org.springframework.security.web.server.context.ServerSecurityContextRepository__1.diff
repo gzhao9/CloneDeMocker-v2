@@ -1,0 +1,33 @@
+--- a/config/src/test/java/org/springframework/security/config/web/server/FormLoginTests.java
++++ b/config/src/test/java/org/springframework/security/config/web/server/FormLoginTests.java
+@@ -289,13 +289,9 @@
+ 
+ 	@Test
+ 	public void formLoginSecurityContextRepository() {
+-		ServerSecurityContextRepository defaultSecContextRepository = mock(ServerSecurityContextRepository.class);
+-		ServerSecurityContextRepository formLoginSecContextRepository = mock(ServerSecurityContextRepository.class);
+ 		TestingAuthenticationToken token = new TestingAuthenticationToken("rob", "rob", "ROLE_USER");
+-		given(defaultSecContextRepository.save(any(), any())).willReturn(Mono.empty());
+-		given(defaultSecContextRepository.load(any())).willReturn(authentication(token));
+-		given(formLoginSecContextRepository.save(any(), any())).willReturn(Mono.empty());
+-		given(formLoginSecContextRepository.load(any())).willReturn(authentication(token));
++		ServerSecurityContextRepository formLoginSecContextRepository = createMockServerSecurityContextRepository(authentication(token));
++		ServerSecurityContextRepository defaultSecContextRepository = createMockServerSecurityContextRepository(authentication(token));
+ 		// @formatter:off
+ 		SecurityWebFilterChain securityWebFilter = this.http
+ 			.authorizeExchange((authorize) -> authorize
+@@ -321,6 +317,14 @@
+ 		homePage.assertAt();
+ 		verify(defaultSecContextRepository, atLeastOnce()).load(any());
+ 		verify(formLoginSecContextRepository).save(any(), any());
++	}
++
++	private static ServerSecurityContextRepository createMockServerSecurityContextRepository(
++			Mono<SecurityContext> authentication) {
++		ServerSecurityContextRepository repository = mock(ServerSecurityContextRepository.class);
++		given(repository.save(any(), any())).willReturn(Mono.empty());
++		given(repository.load(any())).willReturn(authentication);
++		return repository;
+ 	}
+ 
+ 	Mono<SecurityContext> authentication(Authentication authentication) {

@@ -1,0 +1,50 @@
+--- a/web/src/test/java/org/springframework/security/web/access/intercept/AuthorizationFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/access/intercept/AuthorizationFilterTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.access.intercept;
+ 
++import org.mockito.Mock;
+ import java.io.IOException;
+ import java.util.function.Supplier;
+ 
+@@ -64,6 +65,8 @@
+  * @author Evgeniy Cheban
+  */
+ public class AuthorizationFilterTests {
++	@Mock
++	private AuthorizationManager<HttpServletRequest> authorizationManager;
+ 
+ 	private static final String ALREADY_FILTERED_ATTRIBUTE_NAME = "org.springframework.security.web.access.intercept.AuthorizationFilter.APPLIED";
+ 
+@@ -160,14 +163,12 @@
+ 
+ 	@Test
+ 	public void getAuthorizationManager() {
+-		AuthorizationManager<HttpServletRequest> authorizationManager = mock(AuthorizationManager.class);
+ 		AuthorizationFilter authorizationFilter = new AuthorizationFilter(authorizationManager);
+ 		assertThat(authorizationFilter.getAuthorizationManager()).isSameAs(authorizationManager);
+ 	}
+ 
+ 	@Test
+ 	public void configureWhenAuthorizationEventPublisherIsNullThenIllegalArgument() {
+-		AuthorizationManager<HttpServletRequest> authorizationManager = mock(AuthorizationManager.class);
+ 		AuthorizationFilter authorizationFilter = new AuthorizationFilter(authorizationManager);
+ 		assertThatIllegalArgumentException().isThrownBy(() -> authorizationFilter.setAuthorizationEventPublisher(null))
+ 			.withMessage("eventPublisher cannot be null");
+@@ -194,7 +195,6 @@
+ 
+ 	@Test
+ 	public void doFilterWhenErrorThenDoFilter() throws Exception {
+-		AuthorizationManager<HttpServletRequest> authorizationManager = mock(AuthorizationManager.class);
+ 		AuthorizationFilter authorizationFilter = new AuthorizationFilter(authorizationManager);
+ 		MockHttpServletRequest mockRequest = new MockHttpServletRequest(null, "/path");
+ 		mockRequest.setDispatcherType(DispatcherType.ERROR);
+@@ -208,7 +208,6 @@
+ 
+ 	@Test
+ 	public void doFilterWhenErrorAndShouldFilterAllDispatcherTypesFalseThenDoNotFilter() throws Exception {
+-		AuthorizationManager<HttpServletRequest> authorizationManager = mock(AuthorizationManager.class);
+ 		AuthorizationFilter authorizationFilter = new AuthorizationFilter(authorizationManager);
+ 		authorizationFilter.setObserveOncePerRequest(true);
+ 		authorizationFilter.setFilterErrorDispatch(false);

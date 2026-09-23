@@ -1,0 +1,73 @@
+--- a/web/src/test/java/org/springframework/security/web/access/intercept/AuthorizationFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/access/intercept/AuthorizationFilterTests.java
+@@ -71,6 +71,8 @@
+ 
+ 	private AuthorizationManager<HttpServletRequest> authorizationManager;
+ 
++	private AuthorizationManager<HttpServletRequest> sharedAuthorizationManager;
++
+ 	private MockHttpServletRequest request = new MockHttpServletRequest();
+ 
+ 	private final MockHttpServletResponse response = new MockHttpServletResponse();
+@@ -80,6 +82,7 @@
+ 	@BeforeEach
+ 	public void setup() {
+ 		this.authorizationManager = mock(AuthorizationManager.class);
++		this.sharedAuthorizationManager = mock(AuthorizationManager.class);
+ 		this.filter = new AuthorizationFilter(this.authorizationManager);
+ 	}
+ 
+@@ -160,15 +163,13 @@
+ 
+ 	@Test
+ 	public void getAuthorizationManager() {
+-		AuthorizationManager<HttpServletRequest> authorizationManager = mock(AuthorizationManager.class);
+-		AuthorizationFilter authorizationFilter = new AuthorizationFilter(authorizationManager);
+-		assertThat(authorizationFilter.getAuthorizationManager()).isSameAs(authorizationManager);
++		AuthorizationFilter authorizationFilter = new AuthorizationFilter(sharedAuthorizationManager);
++		assertThat(authorizationFilter.getAuthorizationManager()).isSameAs(sharedAuthorizationManager);
+ 	}
+ 
+ 	@Test
+ 	public void configureWhenAuthorizationEventPublisherIsNullThenIllegalArgument() {
+-		AuthorizationManager<HttpServletRequest> authorizationManager = mock(AuthorizationManager.class);
+-		AuthorizationFilter authorizationFilter = new AuthorizationFilter(authorizationManager);
++		AuthorizationFilter authorizationFilter = new AuthorizationFilter(sharedAuthorizationManager);
+ 		assertThatIllegalArgumentException().isThrownBy(() -> authorizationFilter.setAuthorizationEventPublisher(null))
+ 			.withMessage("eventPublisher cannot be null");
+ 	}
+@@ -194,8 +195,7 @@
+ 
+ 	@Test
+ 	public void doFilterWhenErrorThenDoFilter() throws Exception {
+-		AuthorizationManager<HttpServletRequest> authorizationManager = mock(AuthorizationManager.class);
+-		AuthorizationFilter authorizationFilter = new AuthorizationFilter(authorizationManager);
++		AuthorizationFilter authorizationFilter = new AuthorizationFilter(sharedAuthorizationManager);
+ 		MockHttpServletRequest mockRequest = new MockHttpServletRequest(null, "/path");
+ 		mockRequest.setDispatcherType(DispatcherType.ERROR);
+ 		mockRequest.setAttribute(WebUtils.ERROR_REQUEST_URI_ATTRIBUTE, "/error");
+@@ -203,13 +203,12 @@
+ 		FilterChain mockFilterChain = mock(FilterChain.class);
+ 
+ 		authorizationFilter.doFilter(mockRequest, mockResponse, mockFilterChain);
+-		verify(authorizationManager).authorize(any(Supplier.class), eq(mockRequest));
++		verify(sharedAuthorizationManager).authorize(any(Supplier.class), eq(mockRequest));
+ 	}
+ 
+ 	@Test
+ 	public void doFilterWhenErrorAndShouldFilterAllDispatcherTypesFalseThenDoNotFilter() throws Exception {
+-		AuthorizationManager<HttpServletRequest> authorizationManager = mock(AuthorizationManager.class);
+-		AuthorizationFilter authorizationFilter = new AuthorizationFilter(authorizationManager);
++		AuthorizationFilter authorizationFilter = new AuthorizationFilter(sharedAuthorizationManager);
+ 		authorizationFilter.setObserveOncePerRequest(true);
+ 		authorizationFilter.setFilterErrorDispatch(false);
+ 		authorizationFilter.setFilterAsyncDispatch(false);
+@@ -220,7 +219,7 @@
+ 		FilterChain mockFilterChain = mock(FilterChain.class);
+ 
+ 		authorizationFilter.doFilter(mockRequest, mockResponse, mockFilterChain);
+-		verifyNoInteractions(authorizationManager);
++		verifyNoInteractions(sharedAuthorizationManager);
+ 	}
+ 
+ 	@Test

@@ -1,0 +1,189 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/preauth/AbstractPreAuthenticatedProcessingFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/preauth/AbstractPreAuthenticatedProcessingFilterTests.java
+@@ -70,6 +70,8 @@
+ 
+ 	private AbstractPreAuthenticatedProcessingFilter filter;
+ 
++	private AuthenticationManager authenticationManager;
++
+ 	@BeforeEach
+ 	public void createFilter() {
+ 		this.filter = new AbstractPreAuthenticatedProcessingFilter() {
+@@ -83,6 +85,7 @@
+ 				return "doesntmatter";
+ 			}
+ 		};
++		this.authenticationManager = mock(AuthenticationManager.class);
+ 		SecurityContextHolder.clearContext();
+ 	}
+ 
+@@ -125,8 +128,7 @@
+ 	@Test
+ 	public void testAfterPropertiesSetInvokesSuper() {
+ 		ConcretePreAuthenticatedProcessingFilter filter = new ConcretePreAuthenticatedProcessingFilter();
+-		AuthenticationManager am = mock(AuthenticationManager.class);
+-		filter.setAuthenticationManager(am);
++		filter.setAuthenticationManager(authenticationManager);
+ 		filter.afterPropertiesSet();
+ 		assertThat(filter.initFilterBeanInvoked).isTrue();
+ 	}
+@@ -174,11 +176,10 @@
+ 		ConcretePreAuthenticatedProcessingFilter filter = new ConcretePreAuthenticatedProcessingFilter();
+ 		filter.setCheckForPrincipalChanges(true);
+ 		filter.principal = principal;
+-		AuthenticationManager am = mock(AuthenticationManager.class);
+-		filter.setAuthenticationManager(am);
+-		filter.afterPropertiesSet();
+-		filter.doFilter(request, response, chain);
+-		verifyNoMoreInteractions(am);
++		filter.setAuthenticationManager(authenticationManager);
++		filter.afterPropertiesSet();
++		filter.doFilter(request, response, chain);
++		verifyNoMoreInteractions(authenticationManager);
+ 	}
+ 
+ 	@Test
+@@ -193,11 +194,10 @@
+ 		ConcretePreAuthenticatedProcessingFilter filter = new ConcretePreAuthenticatedProcessingFilter();
+ 		filter.setCheckForPrincipalChanges(true);
+ 		filter.principal = "newUser";
+-		AuthenticationManager am = mock(AuthenticationManager.class);
+-		filter.setAuthenticationManager(am);
+-		filter.afterPropertiesSet();
+-		filter.doFilter(request, response, chain);
+-		verify(am).authenticate(any(PreAuthenticatedAuthenticationToken.class));
++		filter.setAuthenticationManager(authenticationManager);
++		filter.afterPropertiesSet();
++		filter.doFilter(request, response, chain);
++		verify(authenticationManager).authenticate(any(PreAuthenticatedAuthenticationToken.class));
+ 	}
+ 
+ 	@Test
+@@ -213,11 +213,10 @@
+ 		filter.setAuthenticationSuccessHandler(new ForwardAuthenticationSuccessHandler("/forwardUrl"));
+ 		filter.setCheckForPrincipalChanges(true);
+ 		filter.principal = "newUser";
+-		AuthenticationManager am = mock(AuthenticationManager.class);
+-		filter.setAuthenticationManager(am);
+-		filter.afterPropertiesSet();
+-		filter.doFilter(request, response, chain);
+-		verify(am).authenticate(any(PreAuthenticatedAuthenticationToken.class));
++		filter.setAuthenticationManager(authenticationManager);
++		filter.afterPropertiesSet();
++		filter.doFilter(request, response, chain);
++		verify(authenticationManager).authenticate(any(PreAuthenticatedAuthenticationToken.class));
+ 		assertThat(response.getForwardedUrl()).isEqualTo("/forwardUrl");
+ 	}
+ 
+@@ -277,11 +276,10 @@
+ 		ConcretePreAuthenticatedProcessingFilter filter = new ConcretePreAuthenticatedProcessingFilter();
+ 		filter.setCheckForPrincipalChanges(true);
+ 		filter.principal = principal;
+-		AuthenticationManager am = mock(AuthenticationManager.class);
+-		filter.setAuthenticationManager(am);
+-		filter.afterPropertiesSet();
+-		filter.doFilter(request, response, chain);
+-		verifyNoMoreInteractions(am);
++		filter.setAuthenticationManager(authenticationManager);
++		filter.afterPropertiesSet();
++		filter.doFilter(request, response, chain);
++		verifyNoMoreInteractions(authenticationManager);
+ 	}
+ 
+ 	@Test
+@@ -297,11 +295,10 @@
+ 		filter.setCheckForPrincipalChanges(true);
+ 		filter.principal = new User(currentPrincipal.getUsername(), currentPrincipal.getPassword(),
+ 				AuthorityUtils.NO_AUTHORITIES);
+-		AuthenticationManager am = mock(AuthenticationManager.class);
+-		filter.setAuthenticationManager(am);
+-		filter.afterPropertiesSet();
+-		filter.doFilter(request, response, chain);
+-		verifyNoMoreInteractions(am);
++		filter.setAuthenticationManager(authenticationManager);
++		filter.afterPropertiesSet();
++		filter.doFilter(request, response, chain);
++		verifyNoMoreInteractions(authenticationManager);
+ 	}
+ 
+ 	@Test
+@@ -316,11 +313,10 @@
+ 		ConcretePreAuthenticatedProcessingFilter filter = new ConcretePreAuthenticatedProcessingFilter();
+ 		filter.setCheckForPrincipalChanges(true);
+ 		filter.principal = new Object();
+-		AuthenticationManager am = mock(AuthenticationManager.class);
+-		filter.setAuthenticationManager(am);
+-		filter.afterPropertiesSet();
+-		filter.doFilter(request, response, chain);
+-		verify(am).authenticate(any(PreAuthenticatedAuthenticationToken.class));
++		filter.setAuthenticationManager(authenticationManager);
++		filter.afterPropertiesSet();
++		filter.doFilter(request, response, chain);
++		verify(authenticationManager).authenticate(any(PreAuthenticatedAuthenticationToken.class));
+ 	}
+ 
+ 	@Test
+@@ -339,11 +335,10 @@
+ 		};
+ 		filter.setCheckForPrincipalChanges(true);
+ 		filter.principal = principal;
+-		AuthenticationManager am = mock(AuthenticationManager.class);
+-		filter.setAuthenticationManager(am);
+-		filter.afterPropertiesSet();
+-		filter.doFilter(request, response, chain);
+-		verify(am).authenticate(any(PreAuthenticatedAuthenticationToken.class));
++		filter.setAuthenticationManager(authenticationManager);
++		filter.afterPropertiesSet();
++		filter.doFilter(request, response, chain);
++		verify(authenticationManager).authenticate(any(PreAuthenticatedAuthenticationToken.class));
+ 	}
+ 
+ 	@Test
+@@ -362,11 +357,10 @@
+ 		};
+ 		filter.setCheckForPrincipalChanges(true);
+ 		filter.principal = principal;
+-		AuthenticationManager am = mock(AuthenticationManager.class);
+-		filter.setAuthenticationManager(am);
+-		filter.afterPropertiesSet();
+-		filter.doFilter(request, response, chain);
+-		verifyNoMoreInteractions(am);
++		filter.setAuthenticationManager(authenticationManager);
++		filter.afterPropertiesSet();
++		filter.doFilter(request, response, chain);
++		verifyNoMoreInteractions(authenticationManager);
+ 	}
+ 
+ 	@Test
+@@ -376,11 +370,10 @@
+ 		MockFilterChain chain = new MockFilterChain();
+ 		ConcretePreAuthenticatedProcessingFilter filter = new ConcretePreAuthenticatedProcessingFilter();
+ 		filter.setRequiresAuthenticationRequestMatcher(pathPattern("/no-matching"));
+-		AuthenticationManager am = mock(AuthenticationManager.class);
+-		filter.setAuthenticationManager(am);
+-		filter.afterPropertiesSet();
+-		filter.doFilter(request, response, chain);
+-		verifyNoMoreInteractions(am);
++		filter.setAuthenticationManager(authenticationManager);
++		filter.afterPropertiesSet();
++		filter.doFilter(request, response, chain);
++		verifyNoMoreInteractions(authenticationManager);
+ 	}
+ 
+ 	@Test
+@@ -390,11 +383,10 @@
+ 		MockFilterChain chain = new MockFilterChain();
+ 		ConcretePreAuthenticatedProcessingFilter filter = new ConcretePreAuthenticatedProcessingFilter();
+ 		filter.setRequiresAuthenticationRequestMatcher(pathPattern("/**"));
+-		AuthenticationManager am = mock(AuthenticationManager.class);
+-		filter.setAuthenticationManager(am);
+-		filter.afterPropertiesSet();
+-		filter.doFilter(request, response, chain);
+-		verify(am).authenticate(any(PreAuthenticatedAuthenticationToken.class));
++		filter.setAuthenticationManager(authenticationManager);
++		filter.afterPropertiesSet();
++		filter.doFilter(request, response, chain);
++		verify(authenticationManager).authenticate(any(PreAuthenticatedAuthenticationToken.class));
+ 	}
+ 
+ 	@Test

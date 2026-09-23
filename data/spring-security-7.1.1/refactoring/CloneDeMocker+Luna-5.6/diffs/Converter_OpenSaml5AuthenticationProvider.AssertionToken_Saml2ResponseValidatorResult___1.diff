@@ -1,0 +1,48 @@
+--- a/saml2/saml2-service-provider/src/opensaml5Test/java/org/springframework/security/saml2/provider/service/authentication/OpenSaml5AuthenticationProviderTests.java
++++ b/saml2/saml2-service-provider/src/opensaml5Test/java/org/springframework/security/saml2/provider/service/authentication/OpenSaml5AuthenticationProviderTests.java
+@@ -218,10 +218,7 @@
+ 		good.setID("good-assertion");
+ 		response.getAssertions().add(signed(good));
+ 		OpenSaml5AuthenticationProvider provider = new OpenSaml5AuthenticationProvider();
+-		Converter<OpenSaml5AuthenticationProvider.AssertionToken, Saml2ResponseValidatorResult> assertionValidator = mock(
+-				Converter.class);
+-		given(assertionValidator.convert(any(OpenSaml5AuthenticationProvider.AssertionToken.class)))
+-			.willReturn(Saml2ResponseValidatorResult.success());
++		Converter<OpenSaml5AuthenticationProvider.AssertionToken, Saml2ResponseValidatorResult> assertionValidator = createMockAssertionValidator();
+ 		provider.setAssertionValidator(assertionValidator);
+ 		Saml2AuthenticationToken token = token(signed(response), verifying(registration()));
+ 		assertThatExceptionOfType(Saml2AuthenticationException.class).isThrownBy(() -> provider.authenticate(token))
+@@ -653,8 +650,7 @@
+ 
+ 	@Test
+ 	public void authenticateWhenCustomAssertionValidatorThenUses() {
+-		Converter<OpenSaml5AuthenticationProvider.AssertionToken, Saml2ResponseValidatorResult> validator = mock(
+-				Converter.class);
++		Converter<OpenSaml5AuthenticationProvider.AssertionToken, Saml2ResponseValidatorResult> validator = createMockAssertionValidator();
+ 		OpenSaml5AuthenticationProvider provider = new OpenSaml5AuthenticationProvider();
+ 		// @formatter:off
+ 		provider.setAssertionValidator((assertionToken) -> OpenSaml5AuthenticationProvider.createDefaultAssertionValidator()
+@@ -666,8 +662,6 @@
+ 		Assertion assertion = assertion();
+ 		response.getAssertions().add(assertion);
+ 		Saml2AuthenticationToken token = token(signed(response), verifying(registration()));
+-		given(validator.convert(any(OpenSaml5AuthenticationProvider.AssertionToken.class)))
+-			.willReturn(Saml2ResponseValidatorResult.success());
+ 		provider.authenticate(token);
+ 		verify(validator).convert(any(OpenSaml5AuthenticationProvider.AssertionToken.class));
+ 	}
+@@ -1038,6 +1032,14 @@
+ 		Authentication request = token(response, verifying(registration()));
+ 		Authentication result = this.provider.authenticate(request);
+ 		SecurityAssertions.assertThat(result).hasAuthority(FactorGrantedAuthority.SAML_RESPONSE_AUTHORITY);
++	}
++
++	private static Converter<OpenSaml5AuthenticationProvider.AssertionToken, Saml2ResponseValidatorResult> createMockAssertionValidator() {
++		Converter<OpenSaml5AuthenticationProvider.AssertionToken, Saml2ResponseValidatorResult> assertionValidator = mock(
++				Converter.class);
++		given(assertionValidator.convert(any(OpenSaml5AuthenticationProvider.AssertionToken.class)))
++			.willReturn(Saml2ResponseValidatorResult.success());
++		return assertionValidator;
+ 	}
+ 
+ 	private <T extends XMLObject> T build(QName qName) {
