@@ -1,0 +1,135 @@
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java
+@@ -50,10 +50,8 @@
+ 
+     @Test
+     void testInvokerGeneric() {
+-        invocation = mock(RpcInvocation.class);
+-        given(invocation.getMethodName()).willReturn("$enumlength");
+-        given(invocation.getParameterTypes()).willReturn(new Class<?>[] {Enum.class});
+-        given(invocation.getArguments()).willReturn(new Object[] {"hello"});
++        invocation = MockInvocationWithCommonStubs.createMockInvocation(
++                RpcInvocation.class, "$enumlength", new Class<?>[] {Enum.class}, new Object[] {"hello"});
+ 
+         invoker = mock(Invoker.class);
+         given(invoker.isAvailable()).willReturn(true);
+@@ -70,10 +68,11 @@
+ 
+     @Test
+     void testResultHasException() {
+-        invocation = mock(RpcInvocation.class);
+-        given(invocation.getMethodName()).willReturn("enumlength");
+-        given(invocation.getParameterTypes()).willReturn(new Class<?>[] {Enum.class});
+-        given(invocation.getArguments()).willReturn(new Object[] {"hello"});
++        invocation = MockInvocationWithCommonStubs.createMockInvocation(
++                RpcInvocation.class,
++                "enumlength",
++                new Class<?>[] {Enum.class},
++                new Object[] {"hello"});
+ 
+         invoker = mock(Invoker.class);
+         given(invoker.isAvailable()).willReturn(true);
+@@ -91,10 +90,11 @@
+ 
+     @Test
+     void testInvokerJsonPojoSerialization() throws Exception {
+-        invocation = mock(RpcInvocation.class);
+-        given(invocation.getMethodName()).willReturn("enumlength");
+-        given(invocation.getParameterTypes()).willReturn(new Class<?>[] {Type[].class});
+-        given(invocation.getArguments()).willReturn(new Object[] {"hello"});
++        invocation = MockInvocationWithCommonStubs.createMockInvocation(
++                RpcInvocation.class,
++                "enumlength",
++                new Class<?>[] {Type[].class},
++                new Object[] {"hello"});
+ 
+         invoker = mock(Invoker.class);
+         given(invoker.isAvailable()).willReturn(true);
+@@ -114,10 +114,11 @@
+ 
+     @Test
+     void testInvokerNonJsonEnumSerialization() throws Exception {
+-        invocation = mock(RpcInvocation.class);
+-        given(invocation.getMethodName()).willReturn("enumlength");
+-        given(invocation.getParameterTypes()).willReturn(new Class<?>[] {Type[].class});
+-        given(invocation.getArguments()).willReturn(new Object[] {"hello"});
++        invocation = MockInvocationWithCommonStubs.createMockInvocation(
++                RpcInvocation.class,
++                "enumlength",
++                new Class<?>[] {Type[].class},
++                new Object[] {"hello"});
+ 
+         invoker = mock(Invoker.class);
+         given(invoker.isAvailable()).willReturn(true);
+@@ -137,10 +138,11 @@
+ 
+     @Test
+     void testInvokerNonJsonNonPojoSerialization() {
+-        invocation = mock(RpcInvocation.class);
+-        given(invocation.getMethodName()).willReturn("echo");
+-        given(invocation.getParameterTypes()).willReturn(new Class<?>[] {String.class});
+-        given(invocation.getArguments()).willReturn(new Object[] {"hello"});
++        invocation = MockInvocationWithCommonStubs.createMockInvocation(
++                RpcInvocation.class,
++                "echo",
++                new Class<?>[] {String.class},
++                new Object[] {"hello"});
+ 
+         invoker = mock(Invoker.class);
+         given(invoker.isAvailable()).willReturn(true);
+@@ -157,10 +159,11 @@
+ 
+     @Test
+     void testInvokerNonJsonPojoSerialization() {
+-        invocation = mock(RpcInvocation.class);
+-        given(invocation.getMethodName()).willReturn("echo");
+-        given(invocation.getParameterTypes()).willReturn(new Class<?>[] {String.class});
+-        given(invocation.getArguments()).willReturn(new Object[] {"hello"});
++        invocation = MockInvocationWithCommonStubs.createMockInvocation(
++                RpcInvocation.class,
++                "echo",
++                new Class<?>[] {String.class},
++                new Object[] {"hello"});
+ 
+         invoker = mock(Invoker.class);
+         given(invoker.isAvailable()).willReturn(true);
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ContextFilterTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ContextFilterTest.java
+@@ -47,10 +47,7 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     void testSetContext() {
+-        invocation = mock(Invocation.class);
+-        given(invocation.getMethodName()).willReturn("$enumlength");
+-        given(invocation.getParameterTypes()).willReturn(new Class<?>[] {Enum.class});
+-        given(invocation.getArguments()).willReturn(new Object[] {"hello"});
++        invocation = MockInvocationWithCommonStubs.createMockInvocation(Invocation.class, "$enumlength", new Class<?>[] {Enum.class}, new Object[] {"hello"});
+         given(invocation.getObjectAttachments()).willReturn(null);
+ 
+         invoker = mock(Invoker.class);
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/MockInvocationWithCommonStubs.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/MockInvocationWithCommonStubs.java
+@@ -0,0 +1,23 @@
++package org.apache.dubbo.rpc.filter;
++
++import org.apache.dubbo.rpc.Invocation;
++import org.mockito.Mockito;
++
++import static org.mockito.BDDMockito.given;
++
++public final class MockInvocationWithCommonStubs {
++
++    private MockInvocationWithCommonStubs() {
++    }
++
++    public static Invocation createMockInvocation(Class<? extends Invocation> invocationClass,
++                                                   String methodName,
++                                                   Class<?>[] parameterTypes,
++                                                   Object[] arguments) {
++        Invocation invocation = Mockito.mock(invocationClass);
++        given(invocation.getMethodName()).willReturn(methodName);
++        given(invocation.getParameterTypes()).willReturn(parameterTypes);
++        given(invocation.getArguments()).willReturn(arguments);
++        return invocation;
++    }
++}
