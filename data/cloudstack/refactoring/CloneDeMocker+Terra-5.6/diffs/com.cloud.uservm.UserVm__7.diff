@@ -1,0 +1,39 @@
+--- a/server/src/test/java/org/apache/cloudstack/schedule/vm/VMScheduleWorkerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/schedule/vm/VMScheduleWorkerTest.java
+@@ -137,11 +137,10 @@
+     @Test
+     public void testProcessJobInvalidAction() {
+         ResourceScheduledJobVO job = Mockito.mock(ResourceScheduledJobVO.class);
+-        UserVm vm = Mockito.mock(UserVm.class);
+ 
+         Mockito.when(job.getResourceId()).thenReturn(1L);
+         Mockito.when(job.getActionName()).thenReturn(VMScheduleAction.START.name());
+-        Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
++        UserVm vm = createMockUserVm(VirtualMachine.State.Running);
+         Mockito.when(userVmManager.getUserVm(1L)).thenReturn(vm);
+ 
+         Long jobId = vmScheduleWorker.processJob(job);
+@@ -152,11 +151,10 @@
+     @Test
+     public void testProcessJobVMInInvalidState() {
+         ResourceScheduledJobVO job = Mockito.mock(ResourceScheduledJobVO.class);
+-        UserVm vm = Mockito.mock(UserVm.class);
+ 
+         Mockito.when(job.getResourceId()).thenReturn(1L);
+         Mockito.when(job.getActionName()).thenReturn(VMScheduleAction.START.name());
+-        Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Unknown);
++        UserVm vm = createMockUserVm(VirtualMachine.State.Unknown);
+         Mockito.when(userVmManager.getUserVm(1L)).thenReturn(vm);
+ 
+         Long jobId = vmScheduleWorker.processJob(job);
+@@ -395,4 +393,10 @@
+     public void parseActionThrowsOnUnknown() {
+         vmScheduleWorker.parseAction("BOGUS");
+     }
++
++    private static UserVm createMockUserVm(VirtualMachine.State state) {
++        UserVm vm = Mockito.mock(UserVm.class);
++        Mockito.when(vm.getState()).thenReturn(state);
++        return vm;
++    }
+ }
