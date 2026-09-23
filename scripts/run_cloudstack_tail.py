@@ -276,36 +276,70 @@ def recover_repo() -> None:
             pass
 
 
-def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5) -> bool:
-    """Commit and push a batch, surviving the other machines pushing to the same files.
+def merge_board() -> None:
+    """Resolve a COLLAB.md conflict without discarding either side's entries or stamps."""
+    ours = git("show", ":2:COLLAB.md").stdout
+    mine = git("show", ":3:COLLAB.md").stdout
+    if not ours or not mine:
+        git("checkout", "--ours", "--", "COLLAB.md")
+        git("add", "--", "COLLAB.md")
+        return
+    blocks = re.split(r"(?=^### \[)", mine, flags=re.M)
+    missing = []
+    for b in blocks:
+        if not b.startswith("### [A-"):
+            continue
+        entry_id = b[5:b.find("]")]
+        if f"### [{entry_id}]" in ours:
+            continue
+        missing.append(b)
+    for slot in ("- recv-A:", "- read-by-A:"):
+        for m in re.finditer(rf"^{re.escape(slot)}[ \t]*(\S.*)$", mine, flags=re.M):
+            value = m.group(1).strip()
+            head = mine.rfind("### [", 0, m.start())
+            if head == -1:
+                continue
+            entry_id = mine[head + 5:mine.find("]", head)]
+            at = ours.find(f"### [{entry_id}]")
+            if at == -1:
+                continue
+            stop = ours.find("- done:", at)
+            j = ours.rfind(slot, at, stop if stop != -1 else len(ours))
+            if j == -1:
+                continue
+            k = j + len(slot)
+            if not ours[k:ours.find(chr(10), k)].strip():
+                ours = ours[:k] + " " + value + ours[k:]
 
-    Takes the whole batch rather than one entry because the re-apply below has to restore
-    every row this push carries. Re-applying only the latest would silently drop the other
-    twenty-four each time a rebase resolves toward upstream -- the same single-entry-reapply
-    fault that has already cost this project data twice.
-    """
+    if missing:
+        marker = "## ACTIVE\n\n"
+        at = ours.find(marker)
+        at = at + len(marker) if at != -1 else 0
+        ours = ours[:at] + "".join(missing) + ours[at:]
+    (REPO / "COLLAB.md").write_text(ours, encoding="utf-8", newline="\n")
+    git("add", "--", "COLLAB.md")
+
+
+def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5) -> bool:
+    """Commit and push a batch, surviving the other machines pushing to the same files."""
     recover_repo()
-    git("add", "--", f"data/{PROJECT}")
+    git("add", "--", f"data/{PROJECT}", "COLLAB.md")
     if not git("diff", "--cached", "--quiet").returncode:
         return True
 
     git("commit", "-q", "-m", message)
 
     for attempt in range(1, attempts + 1):
-        if git("push", REMOTE, "main").returncode == 0:
-            return True
-
         pull = git("pull", "--rebase", REMOTE, "main")
         if pull.returncode == 0:
             check_collab_messages()
         else:
-            # Conflicted on the shared dataset files. Take upstream for them; ours is re-applied
-            # below, so nothing of this machine's is riding on this choice. During a rebase
-            # --ours is upstream, the inverse of a merge — the trap that cost the other machine
-            # four MCIs.
             for name in CONFLICT_PATHS:
                 git("checkout", "--ours", "--", str((DATASET / name).relative_to(REPO)))
                 git("add", "--", str((DATASET / name).relative_to(REPO)))
+            status_out = git("status", "--porcelain").stdout
+            if "COLLAB.md" in status_out:
+                merge_board()
             cont = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--continue"],
                                   cwd=REPO, text=True, capture_output=True, timeout=300)
             if cont.returncode != 0:
@@ -315,8 +349,6 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
                 continue
             check_collab_messages()
 
-        # Whether the rebase was clean or resolved toward upstream, re-apply every row in
-        # this batch -- not just the last one.
         for pending_entry, pending_diff in batch:
             relayer(pending_entry, pending_diff)
         git("add", "--", f"data/{PROJECT}")
