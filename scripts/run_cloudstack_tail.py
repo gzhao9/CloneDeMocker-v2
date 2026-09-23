@@ -438,6 +438,53 @@ def merge_board() -> None:
     git("add", "--", "COLLAB.md")
 
 
+def absorb_remote_rows() -> bool:
+    """Take on every row the remote has that this machine's copy lacks, before committing.
+
+    The failure this exists for is the largest one available here, and C caught it by hand
+    minutes before it happened: a runner reads and writes only its own local results file
+    and never learns of rows its peers merged upstream, so its copy drifts downward -- C's
+    held 1004 rows against the remote's 1334. Committing that copy wholesale does not merge,
+    it *replaces*: the push C stopped would have deleted ~126,000 lines and 300+ of A's and
+    B's diff files, and no conflict would have been raised, because a subset is not a
+    conflict. A's rebase path re-merges A's own rows after taking upstream, which protects
+    A only when a conflict happens to occur; nothing protected the case where A pushes first.
+
+    So: fetch, compare counts, and if the remote is ahead, adopt the remote file and merge
+    this machine's own rows back into it. Returns False if that could not be done, in which
+    case publishing waits rather than proceeding with a copy known to be short.
+    """
+    if git("fetch", REMOTE, "main", timeout=300).returncode != 0:
+        return True                      # offline: the push will fail on its own
+    remote_raw = git("show", f"FETCH_HEAD:{RESULTS.relative_to(REPO).as_posix()}")
+    if remote_raw.returncode != 0:
+        return True                      # no upstream copy yet; nothing to be short of
+    try:
+        remote_rows = json.loads(remote_raw.stdout)["results"]
+        local = json.loads(RESULTS.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, KeyError, OSError) as exc:
+        log(f"    sync: cannot compare against the remote results ({exc}); not committing")
+        return False
+
+    missing = {k: v for k, v in remote_rows.items() if k not in local["results"]}
+    if not missing:
+        return True
+    log(f"    sync: local results is short of the remote by {len(missing)} row(s); "
+        f"adopting them before committing")
+    local["results"].update(missing)
+    local["totalMcis"] = len(local["results"])
+    RESULTS.write_text(json.dumps(local, ensure_ascii=False, indent=2),
+                       encoding="utf-8", newline=chr(10))
+    # The CSV is derived from the same rows and would otherwise stay short; take the
+    # remote's, since every row this machine added is re-merged by relayer after the rebase.
+    csv = DATASET / "refactoring-results.csv"
+    remote_csv = git("show", f"FETCH_HEAD:{csv.relative_to(REPO).as_posix()}")
+    remote_lines = len(remote_csv.stdout.splitlines()) if remote_csv.returncode == 0 else 0
+    if remote_lines > len(csv.read_text(encoding="utf-8", errors="replace").splitlines()):
+        csv.write_text(remote_csv.stdout, encoding="utf-8", newline=chr(10))
+    return len(json.loads(RESULTS.read_text(encoding="utf-8"))["results"]) >= len(remote_rows)
+
+
 def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5) -> bool:
     """Commit and push a batch, surviving the other machines pushing to the same files."""
     recover_repo()
@@ -445,6 +492,8 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
     # pushed once, and every agent that pulled it then read the corpus as empty.
     if not done_ids():
         log("    sync: results file does not parse — refusing to commit it")
+        return False
+    if not absorb_remote_rows():
         return False
     # Stage only what A owns under collab/. Staging the whole tree meant every sync
     # re-committed A's stale copies of B's and C's mailboxes, silently reverting their
