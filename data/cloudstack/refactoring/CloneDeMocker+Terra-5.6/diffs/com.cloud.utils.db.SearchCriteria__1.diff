@@ -1,0 +1,43 @@
+--- a/server/src/test/java/com/cloud/user/DomainManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/DomainManagerImplTest.java
+@@ -126,6 +126,8 @@
+     GlobalLock lock;
+     @Mock
+     VMInstanceDao vmInstanceDao;
++    @Mock
++    SearchCriteria searchCriteriaMock;
+ 
+     List<AccountVO> domainAccountsForCleanup;
+     List<Long> domainNetworkIds;
+@@ -343,9 +345,8 @@
+ 
+     @Test (expected = InvalidParameterValueException.class)
+     public void validateUniqueDomainNameTestExistingNameThrowsException() {
+-        SearchCriteria scMock = Mockito.mock(SearchCriteria.class);
+         ArrayList<DomainVO> listMock = Mockito.mock(ArrayList.class);
+-        Mockito.doReturn(scMock).when(domainDaoMock).createSearchCriteria();
++        Mockito.doReturn(searchCriteriaMock).when(domainDaoMock).createSearchCriteria();
+         Mockito.doReturn(listMock).when(domainDaoMock).search(Mockito.any(SearchCriteria.class), Mockito.any());
+         Mockito.doReturn(false).when(listMock).isEmpty();
+         domainManager.validateUniqueDomainName("test", 1L);
+@@ -353,16 +354,15 @@
+ 
+     @Test
+     public void validateUniqueDomainNameTestUniqueNameDoesNotThrowException() {
+-        SearchCriteria scMock = Mockito.mock(SearchCriteria.class);
+         ArrayList<DomainVO> listMock = Mockito.mock(ArrayList.class);
+-        Mockito.doReturn(scMock).when(domainDaoMock).createSearchCriteria();
++        Mockito.doReturn(searchCriteriaMock).when(domainDaoMock).createSearchCriteria();
+         Mockito.doReturn(listMock).when(domainDaoMock).search(Mockito.any(SearchCriteria.class), Mockito.any());
+         Mockito.doReturn(true).when(listMock).isEmpty();
+         domainManager.validateUniqueDomainName("testUnique", 1L);
+         Mockito.verify(domainDaoMock).createSearchCriteria();
+-        Mockito.verify(scMock).addAnd("name", SearchCriteria.Op.EQ, "testUnique");
+-        Mockito.verify(scMock).addAnd("parent", SearchCriteria.Op.EQ, 1L);
+-        Mockito.verify(domainDaoMock).search(scMock,null);
++        Mockito.verify(searchCriteriaMock).addAnd("name", SearchCriteria.Op.EQ, "testUnique");
++        Mockito.verify(searchCriteriaMock).addAnd("parent", SearchCriteria.Op.EQ, 1L);
++        Mockito.verify(domainDaoMock).search(searchCriteriaMock,null);
+         Mockito.verify(listMock).isEmpty();
+     }
+ 
