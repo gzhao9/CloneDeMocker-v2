@@ -1,0 +1,83 @@
+--- a/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/SocketSupportTests.java
++++ b/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/SocketSupportTests.java
+@@ -38,6 +38,7 @@
+ import javax.net.ssl.SSLEngine;
+ import javax.net.ssl.SSLServerSocket;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.Mockito;
+ 
+@@ -70,6 +71,13 @@
+  * @since 2.2
+  */
+ public class SocketSupportTests implements TestApplicationContextAware {
++
++	private TcpSocketSupport mockTcpSocketSupport;
++
++	@BeforeEach
++	public void setUp() {
++		mockTcpSocketSupport = mock(TcpSocketSupport.class);
++	}
+ 
+ 	@Test
+ 	public void testNetClient() throws Exception {
+@@ -83,18 +91,17 @@
+ 		InetAddress inetAddress = InetAddress.getLocalHost();
+ 		when(socket.getInetAddress()).thenReturn(inetAddress);
+ 		when(factory.createSocket()).thenReturn(socket);
+-		TcpSocketSupport socketSupport = Mockito.mock(TcpSocketSupport.class);
+ 
+ 		TcpNetClientConnectionFactory connectionFactory = new TcpNetClientConnectionFactory("x", 0);
+ 		connectionFactory.setTcpSocketFactorySupport(factorySupport);
+-		connectionFactory.setTcpSocketSupport(socketSupport);
++		connectionFactory.setTcpSocketSupport(mockTcpSocketSupport);
+ 		connectionFactory.setApplicationEventPublisher(TEST_INTEGRATION_CONTEXT);
+ 		connectionFactory.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+ 		connectionFactory.afterPropertiesSet();
+ 		connectionFactory.start();
+ 		connectionFactory.getConnection();
+ 
+-		verify(socketSupport).postProcessSocket(socket);
++		verify(mockTcpSocketSupport).postProcessSocket(socket);
+ 		connectionFactory.stop();
+ 	}
+ 
+@@ -111,12 +118,11 @@
+ 		when(socket.getInetAddress()).thenReturn(inetAddress);
+ 		when(factory.createSocket()).thenReturn(socket);
+ 		doThrow(new SocketTimeoutException()).when(socket).connect(any(), eq(1000));
+-		TcpSocketSupport socketSupport = Mockito.mock(TcpSocketSupport.class);
+ 
+ 		TcpNetClientConnectionFactory connectionFactory = new TcpNetClientConnectionFactory("x", 0);
+ 		connectionFactory.setConnectTimeout(1);
+ 		connectionFactory.setTcpSocketFactorySupport(factorySupport);
+-		connectionFactory.setTcpSocketSupport(socketSupport);
++		connectionFactory.setTcpSocketSupport(mockTcpSocketSupport);
+ 		connectionFactory.setApplicationEventPublisher(TEST_INTEGRATION_CONTEXT);
+ 		connectionFactory.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+ 		connectionFactory.afterPropertiesSet();
+@@ -161,11 +167,10 @@
+ 			Thread.sleep(50);
+ 			return socket1;
+ 		});
+-		TcpSocketSupport socketSupport = mock(TcpSocketSupport.class);
+ 
+ 		TcpNetServerConnectionFactory connectionFactory = new TcpNetServerConnectionFactory(0);
+ 		connectionFactory.setTcpSocketFactorySupport(factorySupport);
+-		connectionFactory.setTcpSocketSupport(socketSupport);
++		connectionFactory.setTcpSocketSupport(mockTcpSocketSupport);
+ 		connectionFactory.registerListener(mock(TcpListener.class));
+ 		connectionFactory.setApplicationEventPublisher(TEST_INTEGRATION_CONTEXT);
+ 		connectionFactory.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+@@ -173,8 +178,8 @@
+ 		connectionFactory.start();
+ 
+ 		assertThat(latch1.await(10, TimeUnit.SECONDS)).isTrue();
+-		verify(socketSupport).postProcessServerSocket(serverSocket);
+-		verify(socketSupport).postProcessSocket(socket);
++		verify(mockTcpSocketSupport).postProcessServerSocket(serverSocket);
++		verify(mockTcpSocketSupport).postProcessSocket(socket);
+ 		latch2.countDown();
+ 		connectionFactory.stop();
+ 	}
