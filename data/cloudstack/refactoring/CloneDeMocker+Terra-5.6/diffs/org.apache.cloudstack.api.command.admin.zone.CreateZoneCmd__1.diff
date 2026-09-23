@@ -1,0 +1,60 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
+@@ -1353,12 +1353,17 @@
+         });
+     }
+ 
++    private static CreateZoneCmd createMockCreateZoneCmd(boolean edge, String networkType) {
++        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
++        Mockito.when(cmd.isEdge()).thenReturn(edge);
++        Mockito.when(cmd.getNetworkType()).thenReturn(networkType);
++        Mockito.when(cmd.getDomainId()).thenReturn(null);
++        return cmd;
++    }
++
+     @Test
+     public void testCreateEdgeZone() {
+-        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+-        Mockito.when(cmd.isEdge()).thenReturn(true);
+-        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Advanced.toString());
+-        Mockito.when(cmd.getDomainId()).thenReturn(null);
++        CreateZoneCmd cmd = createMockCreateZoneCmd(true, NetworkType.Advanced.toString());
+         mockPersistDatacenterForCreateZone();
+         DataCenter zone = configurationMgr.createZone(cmd);
+         Assert.assertNotNull(zone);
+@@ -1368,10 +1373,7 @@
+ 
+     @Test
+     public void testCreateCoreZone() {
+-        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+-        Mockito.when(cmd.isEdge()).thenReturn(false);
+-        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Advanced.toString());
+-        Mockito.when(cmd.getDomainId()).thenReturn(null);
++        CreateZoneCmd cmd = createMockCreateZoneCmd(false, NetworkType.Advanced.toString());
+         mockPersistDatacenterForCreateZone();
+         DataCenter zone = configurationMgr.createZone(cmd);
+         Assert.assertNotNull(zone);
+@@ -1381,10 +1383,7 @@
+ 
+     @Test
+     public void testCreateBasicZone() {
+-        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+-        Mockito.when(cmd.isEdge()).thenReturn(false);
+-        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Basic.toString());
+-        Mockito.when(cmd.getDomainId()).thenReturn(null);
++        CreateZoneCmd cmd = createMockCreateZoneCmd(false, NetworkType.Basic.toString());
+         mockPersistDatacenterForCreateZone();
+         DataCenter zone = configurationMgr.createZone(cmd);
+         Assert.assertNotNull(zone);
+@@ -1393,10 +1392,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateBasicEdgeZoneFailure() {
+-        CreateZoneCmd cmd = Mockito.mock(CreateZoneCmd.class);
+-        Mockito.when(cmd.isEdge()).thenReturn(true);
+-        Mockito.when(cmd.getNetworkType()).thenReturn(NetworkType.Basic.toString());
+-        Mockito.when(cmd.getDomainId()).thenReturn(null);
++        CreateZoneCmd cmd = createMockCreateZoneCmd(true, NetworkType.Basic.toString());
+         configurationMgr.createZone(cmd);
+     }
+ 
