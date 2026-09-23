@@ -1,0 +1,35 @@
+--- a/core/src/test/java/org/springframework/security/authentication/ProviderManagerTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/ProviderManagerTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.authentication;
+ 
++import org.mockito.Mock;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collection;
+@@ -47,6 +48,8 @@
+  * @author Ben Alex
+  */
+ public class ProviderManagerTests {
++	@Mock
++	private AuthenticationManager parent;
+ 
+ 	@Test
+ 	void authenticationFailsWithUnsupportedToken() {
+@@ -221,7 +224,6 @@
+ 		AuthenticationProvider iThrowAccountStatusException = createProviderWhichThrows(
+ 				new AccountStatusException("", new Throwable()) {
+ 				});
+-		AuthenticationManager parent = mock(AuthenticationManager.class);
+ 		ProviderManager mgr = new ProviderManager(List.of(iThrowAccountStatusException), parent);
+ 		assertThatExceptionOfType(AccountStatusException.class)
+ 			.isThrownBy(() -> mgr.authenticate(mock(Authentication.class)));
+@@ -261,7 +263,6 @@
+ 
+ 	@Test
+ 	void statusExceptionIsPublished() {
+-		AuthenticationManager parent = mock(AuthenticationManager.class);
+ 		LockedException expected = new LockedException("");
+ 		ProviderManager mgr = new ProviderManager(List.of(createProviderWhichThrows(expected)), parent);
+ 		Authentication authReq = mock(Authentication.class);

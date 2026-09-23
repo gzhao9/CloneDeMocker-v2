@@ -1,0 +1,91 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientRefreshTokenTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientRefreshTokenTokenResponseClientTests.java
+@@ -364,10 +364,9 @@
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		OAuth2RefreshTokenGrantRequest grantRequest = new OAuth2RefreshTokenGrantRequest(clientRegistration,
+ 				this.accessToken, this.refreshToken);
+-		Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> headersConverter = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.put("custom-header-name", Collections.singletonList("custom-header-value"));
+-		given(headersConverter.convert(grantRequest)).willReturn(headers);
++		Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> headersConverter = MockOAuth2RefreshTokenGrantRequestConverter.createOAuth2RefreshTokenGrantRequestConverter(grantRequest, headers);
+ 		this.tokenResponseClient.addHeadersConverter(headersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(headersConverter).convert(grantRequest);
+@@ -382,11 +381,10 @@
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		OAuth2RefreshTokenGrantRequest grantRequest = new OAuth2RefreshTokenGrantRequest(clientRegistration,
+ 				this.accessToken, this.refreshToken);
+-		Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> headersConverter = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+ 		headers.put("custom-header-name", Collections.singletonList("custom-header-value"));
+-		given(headersConverter.convert(grantRequest)).willReturn(headers);
++		Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> headersConverter = MockOAuth2RefreshTokenGrantRequestConverter.createOAuth2RefreshTokenGrantRequestConverter(grantRequest, headers);
+ 		this.tokenResponseClient.setHeadersConverter(headersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(headersConverter).convert(grantRequest);
+@@ -496,4 +494,18 @@
+ 		return "%s=%s".formatted(parameterName, URLEncoder.encode(parameterValue, StandardCharsets.UTF_8));
+ 	}
+ 
++
++	public final class MockOAuth2RefreshTokenGrantRequestConverter {
++
++		private MockOAuth2RefreshTokenGrantRequestConverter() {
++		}
++
++		public static Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> createOAuth2RefreshTokenGrantRequestConverter(
++				OAuth2RefreshTokenGrantRequest request,
++				HttpHeaders headers) {
++			Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> headersConverter = mock();
++			given(headersConverter.convert(request)).willReturn(headers);
++			return headersConverter;
++		}
++	}
+ }
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveRefreshTokenTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveRefreshTokenTokenResponseClientTests.java
+@@ -278,10 +278,9 @@
+ 	public void getTokenResponseWhenHeadersConverterAddedThenCalled() throws Exception {
+ 		OAuth2RefreshTokenGrantRequest request = new OAuth2RefreshTokenGrantRequest(
+ 				this.clientRegistrationBuilder.build(), this.accessToken, this.refreshToken);
+-		Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> addedHeadersConverter = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.put("custom-header-name", Collections.singletonList("custom-header-value"));
+-		given(addedHeadersConverter.convert(request)).willReturn(headers);
++		Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> addedHeadersConverter = MockOAuth2RefreshTokenGrantRequestConverter.createOAuth2RefreshTokenGrantRequestConverter(request, headers);
+ 		this.tokenResponseClient.addHeadersConverter(addedHeadersConverter);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.tokenResponseClient.getTokenResponse(request).block();
+@@ -298,10 +297,9 @@
+ 		OAuth2RefreshTokenGrantRequest request = new OAuth2RefreshTokenGrantRequest(
+ 				this.clientRegistrationBuilder.build(), this.accessToken, this.refreshToken);
+ 		ClientRegistration clientRegistration = request.getClientRegistration();
+-		Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> headersConverter1 = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.setBasicAuth(clientRegistration.getClientId(), clientRegistration.getClientSecret());
+-		given(headersConverter1.convert(request)).willReturn(headers);
++		Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> headersConverter1 = MockOAuth2RefreshTokenGrantRequestConverter.createOAuth2RefreshTokenGrantRequestConverter(request, headers);
+ 		this.tokenResponseClient.setHeadersConverter(headersConverter1);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.tokenResponseClient.getTokenResponse(request).block();
+@@ -439,4 +437,18 @@
+ 		return "%s=%s".formatted(parameterName, URLEncoder.encode(parameterValue, StandardCharsets.UTF_8));
+ 	}
+ 
++
++	public final class MockOAuth2RefreshTokenGrantRequestConverter {
++
++		private MockOAuth2RefreshTokenGrantRequestConverter() {
++		}
++
++		public static Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> createOAuth2RefreshTokenGrantRequestConverter(
++				OAuth2RefreshTokenGrantRequest request,
++				HttpHeaders headers) {
++			Converter<OAuth2RefreshTokenGrantRequest, HttpHeaders> headersConverter = mock();
++			given(headersConverter.convert(request)).willReturn(headers);
++			return headersConverter;
++		}
++	}
+ }
