@@ -36,7 +36,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(os.environ.get("CLONEDEMOCKER_REPO") or Path(__file__).resolve().parents[1])
 OUT = REPO / "validation" / "results" / f"model-timings-{socket.gethostname()}.json"
 RAW = REPO / "validation" / "results" / f"model-timings-{socket.gethostname()}.calls.jsonl"
 
@@ -50,15 +50,21 @@ def load_env() -> None:
                     os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
+EXPECTED_MODEL = "gpt-5.6-terra"
+models: dict[str, str | None] = {}
+
+
 def collect() -> dict[str, list[dict]]:
     """proposalId -> the calls it made, in order, from every local proposal.json."""
     found: dict[str, list[dict]] = {}
+    models.clear()
     for path in glob.glob(str(REPO / ".clonedemocker" / "runs" / "*" / "refactoring" / "*" / "proposal.json")):
         try:
             proposal = json.loads(Path(path).read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
         pid = proposal.get("proposalId") or Path(path).parent.name
+        models[pid] = proposal.get("model")
         calls, seen = [], set()
         for step in proposal.get("stageLog") or []:
             rid = step.get("responseId")
@@ -142,7 +148,13 @@ def main() -> None:
                 repair += secs
             else:
                 phase += secs
-        result[pid] = {"calls": out, "phaseSeconds": round(phase, 2), "repairSeconds": round(repair, 2),
+        # A call we could not time must never read as 0 s: a proposal with any missing call
+        # gets null totals, and one produced by another model is kept out of the numbers.
+        excluded = models.get(pid) != EXPECTED_MODEL
+        complete = not missing and not excluded
+        result[pid] = {"model": models.get(pid), "excluded": excluded, "calls": out,
+                       "phaseSeconds": round(phase, 2) if complete else None,
+                       "repairSeconds": round(repair, 2) if complete else None,
                        "missing": missing}
     OUT.write_text(json.dumps(result, indent=1), encoding="utf-8")
     bad = sum(1 for r in done.values() if r.get("created") is None)
