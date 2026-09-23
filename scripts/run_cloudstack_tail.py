@@ -434,7 +434,15 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
     if not done_ids():
         log("    sync: results file does not parse — refusing to commit it")
         return False
-    git("add", "--", f"data/{PROJECT}", "COLLAB.md", "collab")
+    # Stage only what A owns under collab/. Staging the whole tree meant every sync
+    # re-committed A's stale copies of B's and C's mailboxes, silently reverting their
+    # cleanups -- and unlike a one-off bad push, this one repeated every 25 MCIs.
+    git("add", "--", f"data/{PROJECT}", "COLLAB.md", "COLLAB_ARCHIVE.md",
+        "collab/inbox/A", "collab/status/A.md", "collab/status/A-session.md",
+        "collab/read/A.md", "collab/latest-from-A", "collab/README.md")
+    for peer in ("B", "C"):
+        for sent in sorted((REPO / "collab" / "inbox" / peer / "unread").glob("A-*.md")):
+            git("add", "--", str(sent.relative_to(REPO)).replace("\\", "/"))
     if not git("diff", "--cached", "--quiet").returncode:
         return True
 
