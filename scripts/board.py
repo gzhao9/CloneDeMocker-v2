@@ -217,7 +217,27 @@ def post_note(body: str, re_id: str | None = None, urgent: bool = False) -> str 
     text = text[:start] + block + text[start:]
     _write(text)
     _trim_active()
+    _deliver(entry_id, block)
     return entry_id
+
+
+def _deliver(entry_id: str, block: str) -> None:
+    """Drop a copy in each peer's inbox as well as the board.
+
+    Posting to COLLAB.md alone is not durable any more. B-034 -- the runner's own restart
+    notice -- was written board-only and vanished when the board was next rewritten, while
+    B-035 and B-036 survived in the inboxes from the same window. Any entry that exists in
+    exactly one rewritable file is one rewrite away from gone.
+    """
+    for peer in PEERS:
+        target = INBOX / peer / "unread"
+        try:
+            target.mkdir(parents=True, exist_ok=True)
+            path = target / f"{entry_id}.md"
+            if not path.is_file():
+                path.write_text(block.rstrip() + "\n", encoding="utf-8", newline="\n")
+        except OSError:
+            pass   # the board copy already succeeded; delivery is best-effort
 
 
 def _trim_active() -> None:
