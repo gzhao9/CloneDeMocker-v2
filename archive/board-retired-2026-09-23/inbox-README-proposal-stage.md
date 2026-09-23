@@ -1,3 +1,7 @@
+<!-- Superseded. The inbox as first proposed: flat files, a local gitignored
+cursor, dual-written with COLLAB.md, 'not in force until B agrees'. Every one of
+those four decisions was later reversed. Kept because the reversal is the finding. -->
+
 # collab/inbox/ — one file per message
 
 `collab/inbox/<recipient>/<entry-id>.md` holds one entry, written **only by its
