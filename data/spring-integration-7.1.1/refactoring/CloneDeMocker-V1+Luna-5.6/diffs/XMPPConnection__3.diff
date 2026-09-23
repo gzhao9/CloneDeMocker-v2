@@ -1,0 +1,56 @@
+--- a/spring-integration-xmpp/src/test/java/org/springframework/integration/xmpp/outbound/ChatMessageSendingMessageHandlerTests.java
++++ b/spring-integration-xmpp/src/test/java/org/springframework/integration/xmpp/outbound/ChatMessageSendingMessageHandlerTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.integration.xmpp.outbound;
+ 
++import org.mockito.Mock;
+ import org.jivesoftware.smack.XMPPConnection;
+ import org.jivesoftware.smack.packet.StanzaBuilder;
+ import org.jivesoftware.smackx.gcm.packet.GcmPacketExtension;
+@@ -52,10 +53,11 @@
+  * @author Glenn Renfro
+  */
+ public class ChatMessageSendingMessageHandlerTests {
++	@Mock
++	private XMPPConnection connection;
+ 
+ 	@Test
+ 	public void testSendMessages() throws Exception {
+-		XMPPConnection connection = mock(XMPPConnection.class);
+ 		ChatMessageSendingMessageHandler handler = new ChatMessageSendingMessageHandler(connection);
+ 		handler.setBeanFactory(mock(BeanFactory.class));
+ 		handler.afterPropertiesSet();
+@@ -109,7 +111,6 @@
+ 
+ 	@Test
+ 	public void validateMessagePostAsSmackMessage() throws Exception {
+-		XMPPConnection connection = mock(XMPPConnection.class);
+ 		ChatMessageSendingMessageHandler handler = new ChatMessageSendingMessageHandler(connection);
+ 		handler.setBeanFactory(mock(BeanFactory.class));
+ 		handler.afterPropertiesSet();
+@@ -154,7 +155,6 @@
+ 
+ 	@Test
+ 	public void testExtensionProvider() throws Exception {
+-		XMPPConnection connection = mock(XMPPConnection.class);
+ 		ChatMessageSendingMessageHandler handler = new ChatMessageSendingMessageHandler(connection);
+ 		GcmExtensionProvider extensionElementProvider = spy(new GcmExtensionProvider());
+ 		handler.setExtensionProvider(extensionElementProvider);
+@@ -186,14 +186,14 @@
+ 
+ 	@Test
+ 	public void validateFailureNoChatToUser() {
+-		ChatMessageSendingMessageHandler handler = new ChatMessageSendingMessageHandler(mock(XMPPConnection.class));
++		ChatMessageSendingMessageHandler handler = new ChatMessageSendingMessageHandler(connection);
+ 		assertThatExceptionOfType(MessageHandlingException.class)
+ 				.isThrownBy(() -> handler.handleMessage(new GenericMessage<>("hello")));
+ 	}
+ 
+ 	@Test
+ 	public void validateMessageWithUnsupportedPayload() {
+-		ChatMessageSendingMessageHandler handler = new ChatMessageSendingMessageHandler(mock(XMPPConnection.class));
++		ChatMessageSendingMessageHandler handler = new ChatMessageSendingMessageHandler(connection);
+ 		assertThatExceptionOfType(MessageHandlingException.class)
+ 				.isThrownBy(() -> handler.handleMessage(new GenericMessage<>(123)));
+ 	}

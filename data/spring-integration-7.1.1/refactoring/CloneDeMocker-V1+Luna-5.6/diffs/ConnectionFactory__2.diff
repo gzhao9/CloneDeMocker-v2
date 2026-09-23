@@ -1,0 +1,47 @@
+--- a/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/inbound/AmqpMessageSourceTests.java
++++ b/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/inbound/AmqpMessageSourceTests.java
+@@ -69,9 +69,8 @@
+ 		Connection connection = mock(Connection.class);
+ 		willReturn(true).given(connection).isOpen();
+ 		willReturn(channel).given(connection).createChannel();
+-		ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+-		willReturn(connection).given(connectionFactory).newConnection((ExecutorService) isNull(), anyString());
+ 
++		ConnectionFactory connectionFactory = createMockConnectionFactory(connection);
+ 		CachingConnectionFactory ccf = new CachingConnectionFactory(connectionFactory);
+ 		AmqpMessageSource source = new AmqpMessageSource(ccf, "foo");
+ 		source.setRawMessageHeader(true);
+@@ -120,9 +119,8 @@
+ 		Connection connection = mock(Connection.class);
+ 		willReturn(true).given(connection).isOpen();
+ 		willReturn(channel).given(connection).createChannel();
+-		ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+-		willReturn(connection).given(connectionFactory).newConnection((ExecutorService) isNull(), anyString());
+ 
++		ConnectionFactory connectionFactory = createMockConnectionFactory(connection);
+ 		CachingConnectionFactory ccf = new CachingConnectionFactory(connectionFactory);
+ 		AmqpMessageSource source = new AmqpMessageSource(ccf, "foo");
+ 		Message<?> received = source.receive();
+@@ -160,9 +158,8 @@
+ 		Connection connection = mock(Connection.class);
+ 		willReturn(true).given(connection).isOpen();
+ 		willReturn(channel).given(connection).createChannel();
+-		ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+-		willReturn(connection).given(connectionFactory).newConnection((ExecutorService) isNull(), anyString());
+ 
++		ConnectionFactory connectionFactory = createMockConnectionFactory(connection);
+ 		CachingConnectionFactory ccf = new CachingConnectionFactory(connectionFactory);
+ 		AmqpMessageSource source = new AmqpMessageSource(ccf, "foo");
+ 		Message<?> received = source.receive();
+@@ -170,4 +167,11 @@
+ 		assertThat(((List<String>) received.getPayload())).contains("test1", "test2");
+ 	}
+ 
++
++	private static ConnectionFactory createMockConnectionFactory(Connection connection) {
++		ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
++		willReturn(connection).given(connectionFactory)
++				.newConnection((ExecutorService) isNull(), anyString());
++		return connectionFactory;
++	}
+ }

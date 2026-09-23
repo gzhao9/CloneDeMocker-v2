@@ -1,0 +1,56 @@
+--- a/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/outbound/OutboundEndpointTests.java
++++ b/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/outbound/OutboundEndpointTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.integration.amqp.outbound;
+ 
++import org.mockito.Mock;
+ import java.util.Date;
+ import java.util.concurrent.atomic.AtomicReference;
+ 
+@@ -61,10 +62,11 @@
+  * @since 3.0
+  */
+ public class OutboundEndpointTests implements TestApplicationContextAware {
++	@Mock
++	private ConnectionFactory connectionFactory;
+ 
+ 	@Test
+ 	public void testDelayExpression() {
+-		ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+ 		RabbitTemplate amqpTemplate = spy(new RabbitTemplate(connectionFactory));
+ 		AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(amqpTemplate);
+ 		willDoNothing()
+@@ -98,7 +100,7 @@
+ 
+ 	@Test
+ 	public void testAsyncDelayExpression() {
+-		ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
++		// removed local mock; replaced with global field `connectionFactory`
+ 		AsyncRabbitTemplate amqpTemplate = spy(new AsyncRabbitTemplate(new RabbitTemplate(connectionFactory),
+ 				new SimpleMessageListenerContainer(connectionFactory), "replyTo"));
+ 		amqpTemplate.setTaskScheduler(mock(TaskScheduler.class));
+@@ -122,7 +124,6 @@
+ 
+ 	@Test
+ 	public void testHeaderMapperWinsAdapter() {
+-		ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+ 		RabbitTemplate amqpTemplate = spy(new RabbitTemplate(connectionFactory));
+ 		AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(amqpTemplate);
+ 		endpoint.setHeadersMappedLast(true);
+@@ -141,7 +142,6 @@
+ 
+ 	@Test
+ 	public void testHeaderMapperWinsGateway() {
+-		ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+ 		TestRabbitTemplate amqpTemplate = spy(new TestRabbitTemplate(connectionFactory));
+ 		amqpTemplate.setUseTemporaryReplyQueues(true);
+ 		AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(amqpTemplate);
+@@ -168,7 +168,6 @@
+ 
+ 	@Test
+ 	public void testReplyHeadersWin() {
+-		ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
+ 		TestRabbitTemplate amqpTemplate = spy(new TestRabbitTemplate(connectionFactory));
+ 		amqpTemplate.setUseTemporaryReplyQueues(true);
+ 		AmqpOutboundEndpoint endpoint = new AmqpOutboundEndpoint(amqpTemplate);
