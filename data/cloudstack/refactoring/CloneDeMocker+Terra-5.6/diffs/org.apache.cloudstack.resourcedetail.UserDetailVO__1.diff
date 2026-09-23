@@ -1,0 +1,27 @@
+--- a/server/src/test/java/org/apache/cloudstack/user/UserPasswordResetManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/user/UserPasswordResetManagerImplTest.java
+@@ -89,11 +89,10 @@
+ 
+         Mockito.doNothing().when(passwordReset).resetPassword(userAccount, "new_password");
+ 
+-        UserDetailVO resetTokenDetail = Mockito.mock(UserDetailVO.class);
+-        UserDetailVO resetTokenExpiryDate = Mockito.mock(UserDetailVO.class);
++        UserDetailVO resetTokenDetail = createMockResetTokenExpiryDate(null);
++        UserDetailVO resetTokenExpiryDate = createMockResetTokenExpiryDate(String.valueOf(System.currentTimeMillis() - 5 * 60 * 1000));
+         Mockito.when(userDetailsDao.findDetail(1L, PasswordResetToken)).thenReturn(resetTokenDetail);
+         Mockito.when(userDetailsDao.findDetail(1L, PasswordResetTokenExpiryDate)).thenReturn(resetTokenExpiryDate);
+-        Mockito.when(resetTokenExpiryDate.getValue()).thenReturn(String.valueOf(System.currentTimeMillis() - 5 * 60 * 1000));
+ 
+         try {
+             passwordReset.validateAndResetPassword(userAccount, "reset_token", "new_password");
+@@ -174,4 +173,10 @@
+         Mockito.verify(userDetailsDao).removeDetail(userId, UserDetailVO.PasswordChangeRequired);
+         Mockito.verify(userDao).persist(userVO);
+     }
++
++    private static UserDetailVO createMockResetTokenExpiryDate(String value) {
++        UserDetailVO resetTokenExpiryDate = Mockito.mock(UserDetailVO.class);
++        Mockito.when(resetTokenExpiryDate.getValue()).thenReturn(value);
++        return resetTokenExpiryDate;
++    }
+ }
