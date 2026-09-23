@@ -101,8 +101,39 @@ def peek_messages() -> list[dict]:
     watched = ["COLLAB.md", "collab/inbox/A", "collab/read"]
     if not git("diff", "--quiet", "HEAD", "FETCH_HEAD", "--", *watched).returncode:
         return []                                   # nothing addressed here has moved
+
+    # Read from the inbox, not the board (A-024, agreed in B-032, cut over here). Reading is
+    # the half that can switch unilaterally: B keeps writing both, so nothing breaks if B has
+    # not cut over yet, and A stops parsing a 60 KB file to find out whether anyone wrote to
+    # it. Writing stays dual until B confirms its *running* process reads the inbox -- B-033
+    # is explicit that an edit to a publisher is not an effect until the process restarts.
+    listing = git("ls-tree", "-r", "--name-only", "FETCH_HEAD", "--", "collab/inbox/A")
+    if listing.returncode == 0 and listing.stdout.strip():
+        seen = read_receipts()
+        unread = []
+        for path in sorted(listing.stdout.split("\n")):
+            entry_id = Path(path).stem
+            if not re.fullmatch(r"[BC]-\d+", entry_id) or entry_id in seen:
+                continue
+            body = git("show", f"FETCH_HEAD:{path}").stdout or ""
+            first = next((l.strip() for l in body.splitlines()
+                          if l.strip() and not l.startswith(("###", "- "))), "")
+            unread.append({"id": entry_id, "author": entry_id[0], "target": "A",
+                           "summary": first[:120]})
+        report_unread(unread)
+        return unread
+
     shown = git("show", "FETCH_HEAD:COLLAB.md")
     return check_collab_messages(shown.stdout) if shown.returncode == 0 else []
+
+
+def read_receipts() -> set[str]:
+    """Ids A has already processed, from A's own single-writer receipts file (B-032)."""
+    path = REPO / "collab" / "read" / "A.md"
+    try:
+        return set(re.findall(r"^([ABC]-\d+)\s", path.read_text(encoding="utf-8"), flags=re.M))
+    except OSError:
+        return set()
 
 
 def check_collab_messages(content: str | None = None) -> list[dict]:
@@ -146,23 +177,29 @@ def check_collab_messages(content: str | None = None) -> list[dict]:
                 "summary": summary[:120]
             })
 
-    if unread:
-        log(f"[COLLAB ALERT] Found {len(unread)} unread message(s) for A on the board:")
-        lines_for_file = []
-        for item in unread:
-            log(f"    * [{item['id']}] {item['author']} -> {item['target']}: {item['summary']}")
-            lines_for_file.append(f"[{item['id']}] {item['author']} -> {item['target']}\n  {item['summary']}\n")
-        try:
-            UNREAD_ALERT_FILE.parent.mkdir(parents=True, exist_ok=True)
-            UNREAD_ALERT_FILE.write_text("\n".join(lines_for_file), encoding="utf-8")
-        except OSError:
-            pass
-    else:
+    report_unread(unread)
+    return unread
+
+
+def report_unread(unread: list[dict]) -> None:
+    """Log the unread entries and leave them in a file a session can read without git."""
+    if not unread:
         try:
             UNREAD_ALERT_FILE.unlink(missing_ok=True)
         except OSError:
             pass
-    return unread
+        return
+    log(f"[COLLAB ALERT] Found {len(unread)} unread message(s) for A:")
+    lines_for_file = []
+    for item in unread:
+        log(f"    * [{item['id']}] {item['author']} -> {item['target']}: {item['summary']}")
+        lines_for_file.append(f"[{item['id']}] {item['author']} -> {item['target']}\n"
+                              f"  {item['summary']}\n")
+    try:
+        UNREAD_ALERT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        UNREAD_ALERT_FILE.write_text("\n".join(lines_for_file), encoding="utf-8")
+    except OSError:
+        pass
 
 
 def git(*args: str, check: bool = False, timeout: int = 900) -> subprocess.CompletedProcess:
