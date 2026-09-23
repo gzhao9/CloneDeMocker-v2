@@ -1,0 +1,132 @@
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java
+@@ -41,6 +41,7 @@
+ import java.util.Map;
+ 
+ import org.junit.jupiter.api.AfterEach;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Assertions;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.Mockito;
+@@ -65,6 +66,13 @@
+ 
+ class RegistryProtocolTest {
+ 
++    private Registry registryMock;
++
++    @BeforeEach
++    void setUp() {
++        registryMock = mock(Registry.class);
++    }
++
+     @AfterEach
+     public void tearDown() throws IOException {
+         Mockito.framework().clearInlineMocks();
+@@ -101,7 +109,6 @@
+         URL url = serviceConfigURL.addAttributes(attributes);
+ 
+         RegistryFactory registryFactory = mock(RegistryFactory.class);
+-        Registry registry = mock(Registry.class);
+ 
+         RegistryProtocol registryProtocol = new RegistryProtocol();
+ 
+@@ -121,11 +128,11 @@
+                 .thenReturn(registryProtocolListeners);
+         url = url.setScopeModel(moduleModel);
+ 
+-        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registry);
++        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registryMock);
+ 
+         Cluster cluster = mock(Cluster.class);
+ 
+-        Invoker<?> invoker = registryProtocol.doRefer(cluster, registry, DemoService.class, url, parameters);
++        Invoker<?> invoker = registryProtocol.doRefer(cluster, registryMock, DemoService.class, url, parameters);
+ 
+         Assertions.assertTrue(invoker instanceof MigrationInvoker);
+ 
+@@ -171,7 +178,6 @@
+         RegistryFactory registryFactory = mock(RegistryFactory.class);
+ 
+         RegistryProtocol registryProtocol = new RegistryProtocol();
+-        Registry registry = mock(Registry.class);
+ 
+         MigrationRuleListener migrationRuleListener = mock(MigrationRuleListener.class);
+         List<RegistryProtocolListener> registryProtocolListeners = new ArrayList<>();
+@@ -189,11 +195,11 @@
+                 .thenReturn(registryProtocolListeners);
+         url = url.setScopeModel(moduleModel);
+ 
+-        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registry);
++        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registryMock);
+ 
+         Cluster cluster = mock(Cluster.class);
+ 
+-        Invoker<?> invoker = registryProtocol.doRefer(cluster, registry, DemoService.class, url, parameters);
++        Invoker<?> invoker = registryProtocol.doRefer(cluster, registryMock, DemoService.class, url, parameters);
+ 
+         Assertions.assertTrue(invoker instanceof MigrationInvoker);
+ 
+@@ -238,7 +244,6 @@
+         URL url = serviceConfigURL.addAttributes(attributes);
+ 
+         RegistryFactory registryFactory = mock(RegistryFactory.class);
+-        Registry registry = mock(Registry.class);
+ 
+         MigrationRuleListener migrationRuleListener = mock(MigrationRuleListener.class);
+         List<RegistryProtocolListener> registryProtocolListeners = new ArrayList<>();
+@@ -259,7 +264,7 @@
+         Mockito.when(extensionLoaderMock.getAdaptiveExtension()).thenReturn(registryFactory);
+         url = url.setScopeModel(moduleModel);
+ 
+-        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registry);
++        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registryMock);
+ 
+         Invoker<?> invoker = registryProtocol.refer(DemoService.class, url);
+ 
+@@ -305,7 +310,6 @@
+         URL url = serviceConfigURL.addAttributes(attributes);
+ 
+         RegistryFactory registryFactory = mock(RegistryFactory.class);
+-        Registry registry = mock(Registry.class);
+ 
+         MigrationRuleListener migrationRuleListener = mock(MigrationRuleListener.class);
+         List<RegistryProtocolListener> registryProtocolListeners = new ArrayList<>();
+@@ -326,7 +330,7 @@
+         Mockito.when(extensionLoaderMock.getAdaptiveExtension()).thenReturn(registryFactory);
+         url = url.setScopeModel(moduleModel);
+ 
+-        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registry);
++        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registryMock);
+ 
+         Invoker<?> invoker = registryProtocol.refer(DemoService.class, url);
+ 
+@@ -505,7 +509,6 @@
+         URL url = serviceConfigURL.addAttributes(attributes);
+ 
+         RegistryFactory registryFactory = mock(RegistryFactory.class);
+-        Registry registry = mock(Registry.class);
+ 
+         ModuleModel moduleModel = Mockito.spy(ApplicationModel.defaultModel().getDefaultModule());
+         moduleModel
+@@ -519,11 +522,11 @@
+ 
+         RegistryProtocol registryProtocol = new RegistryProtocol();
+ 
+-        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registry);
++        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registryMock);
+ 
+         Cluster cluster = mock(Cluster.class);
+ 
+-        Invoker<?> invoker = registryProtocol.doRefer(cluster, registry, DemoService.class, url, parameters);
++        Invoker<?> invoker = registryProtocol.doRefer(cluster, registryMock, DemoService.class, url, parameters);
+ 
+         Assertions.assertTrue(invoker instanceof MigrationInvoker);
+ 
+@@ -542,6 +545,6 @@
+                 .addParameters(CATEGORY_KEY, CONSUMERS_CATEGORY, CHECK_KEY, String.valueOf(false))
+                 .setScopeModel(moduleModel);
+ 
+-        verify(registry, times(1)).register(registeredConsumerUrl);
++        verify(registryMock, times(1)).register(registeredConsumerUrl);
+     }
+ }
