@@ -78,6 +78,25 @@ def record_read(entry_id: str, note: str, me: str) -> None:
     if f"\n{entry_id:<8} " not in path.read_text(encoding="utf-8"):
         with path.open("a", encoding="utf-8", newline="\n") as handle:
             handle.write(line)
+    file_into_read(entry_id, me)
+
+
+def file_into_read(entry_id: str, me: str) -> None:
+    """Move the entry out of this agent's unread inbox into its `read/` folder.
+
+    The file's location is the read state, which removes the cursor as a second source of
+    truth -- and reconstructing that cursor is what failed twice on 2026-09-23: once
+    parsing an entry body as an id, once mislabelling recent cc entries as settled history.
+    A folder listing cannot be reconstructed wrongly because nothing reconstructs it. Each
+    recipient owns its own copy, so moving one never touches another reader's.
+    """
+    inbox = BOARD.parent / "collab" / "inbox" / me
+    dest = inbox / "read" / f"{entry_id}.md"
+    for candidate in (inbox / "unread" / f"{entry_id}.md", inbox / f"{entry_id}.md"):
+        if candidate.is_file():
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            candidate.replace(dest)
+            return
 
 
 if __name__ == "__main__":

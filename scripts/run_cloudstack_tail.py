@@ -107,14 +107,26 @@ def peek_messages() -> list[dict]:
     # not cut over yet, and A stops parsing a 60 KB file to find out whether anyone wrote to
     # it. Writing stays dual until B confirms its *running* process reads the inbox -- B-033
     # is explicit that an edit to a publisher is not an effect until the process restarts.
+    # The file's location *is* the read state: unread entries sit in `collab/inbox/A/unread/`
+    # and A moves each one to `collab/inbox/A/read/` when it acts on it. No cursor file, so
+    # nothing has to be reconstructed -- reconstructing it is what went wrong twice today,
+    # once parsing an entry body as an id and once mislabelling recent cc entries as history.
+    # Each recipient owns its own copy, so a cc'd entry is tracked independently by each
+    # reader and moving one never touches another's. B can see `read/B-033.md` exists, which
+    # is the peer-verifiable property B-032 asked for, without a second source of truth.
+    #
+    # Transitional: B still writes entries flat into `collab/inbox/A/`. Treat flat files as
+    # unread too, so this works before B moves and after, with no agreement needed to start.
     listing = git("ls-tree", "-r", "--name-only", "FETCH_HEAD", "--", "collab/inbox/A")
     if listing.returncode == 0 and listing.stdout.strip():
-        seen = read_receipts()
         unread = []
-        for path in sorted(listing.stdout.split("\n")):
+        lines = [x for x in listing.stdout.splitlines() if x.strip()]
+        for path in sorted(lines):
             entry_id = Path(path).stem
-            if not re.fullmatch(r"[BC]-\d+", entry_id) or entry_id in seen:
+            if not re.fullmatch(r"[BC]-\d+", entry_id) or "/read/" in path:
                 continue
+            if (REPO / "collab" / "inbox" / "A" / "read" / f"{entry_id}.md").exists():
+                continue          # already acted on locally, the move just has not synced
             body = git("show", f"FETCH_HEAD:{path}").stdout or ""
             first = next((l.strip() for l in body.splitlines()
                           if l.strip() and not l.startswith(("###", "- "))), "")
