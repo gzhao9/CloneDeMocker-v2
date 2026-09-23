@@ -1,0 +1,48 @@
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesServiceHelperImplTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesServiceHelperImplTest.java
+@@ -68,18 +68,14 @@
+ 
+     @Test
+     public void testCheckVmCanBeDestroyedNotInCluster() {
+-        UserVm vm = Mockito.mock(UserVm.class);
+-        Mockito.when(vm.getId()).thenReturn(1L);
+-        Mockito.when(vm.getUserVmType()).thenReturn(UserVmManager.CKS_NODE);
++        UserVm vm = createMockUserVm();
+         Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(null);
+         kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
+     }
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testCheckVmCanBeDestroyedInCloudManagedCluster() {
+-        UserVm vm = Mockito.mock(UserVm.class);
+-        Mockito.when(vm.getId()).thenReturn(1L);
+-        Mockito.when(vm.getUserVmType()).thenReturn(UserVmManager.CKS_NODE);
++        UserVm vm = createMockUserVm();
+         KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
+         Mockito.when(map.getClusterId()).thenReturn(1L);
+         Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(map);
+@@ -91,9 +87,7 @@
+ 
+     @Test
+     public void testCheckVmCanBeDestroyedInExternalManagedCluster() {
+-        UserVm vm = Mockito.mock(UserVm.class);
+-        Mockito.when(vm.getId()).thenReturn(1L);
+-        Mockito.when(vm.getUserVmType()).thenReturn(UserVmManager.CKS_NODE);
++        UserVm vm = createMockUserVm();
+         KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
+         Mockito.when(map.getClusterId()).thenReturn(1L);
+         Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(map);
+@@ -117,6 +111,13 @@
+     public void testIsValidNodeTypeValidNodeTypeLowercase() {
+         String nodeType = KubernetesClusterNodeType.WORKER.name().toLowerCase();
+         Assert.assertTrue(kubernetesServiceHelper.isValidNodeType(nodeType));
++    }
++
++    private static UserVm createMockUserVm() {
++        UserVm vm = Mockito.mock(UserVm.class);
++        Mockito.when(vm.getId()).thenReturn(1L);
++        Mockito.when(vm.getUserVmType()).thenReturn(UserVmManager.CKS_NODE);
++        return vm;
+     }
+ 
+     private Map<String, String> createServiceOfferingMapEntry(KubernetesClusterNodeType nodeType, String offeringUuid) {
