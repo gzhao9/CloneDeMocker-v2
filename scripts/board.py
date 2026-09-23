@@ -123,15 +123,22 @@ def unread_inbox() -> list[tuple[str, str]]:
     peers' files in without conflict and there is no upstream-vs-ours skew to reason about --
     which is the whole reason COLLAB.md needed unread_in() to read origin's copy instead.
     """
-    if not INBOX.is_dir():
+    mine = INBOX / ME
+    if not mine.is_dir():
         return []
     done = receipted()
+    # Two shapes at once: A-030 moved read state into the folder name (unread/ -> read/), and
+    # entries delivered before that sit flat in the inbox root. Scanning both means neither
+    # A's cutover nor C's not having cut over can hide a message.
+    candidates = list(mine.glob("*.md")) + list((mine / "unread").glob("*.md"))
     out = []
-    for path in sorted((INBOX / ME).glob("*.md")) if (INBOX / ME).is_dir() else []:
+    for path in sorted(set(candidates)):
         if path.name == "README.md":
             continue
         entry_id = path.stem
         if entry_id in done or entry_id.startswith(f"{ME}-"):
+            continue
+        if (mine / "read" / path.name).is_file():   # already acted on under the new shape
             continue
         body = path.read_text(encoding="utf-8")
         first = next((l for l in body.splitlines()[2:] if l.strip()), "")
