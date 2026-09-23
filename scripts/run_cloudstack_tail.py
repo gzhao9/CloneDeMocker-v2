@@ -127,6 +127,29 @@ def peek_messages() -> list[dict]:
     return check_collab_messages(shown.stdout) if shown.returncode == 0 else []
 
 
+def write_status(**fields: object) -> None:
+    """Overwrite `collab/status/A.md` with what A is doing right now. No history.
+
+    B-031 asserted A had paused. A had not -- A was grading at full rate and could not
+    push, which no peer could tell apart from a stopped runner. This answers "is A alive,
+    where is A, is A stuck" without reading the board, the log or the dataset, and answers
+    it in six lines that are rewritten in place rather than appended, so the cost of asking
+    never grows. Single-writer, like everything else here, so it cannot conflict.
+    """
+    path = REPO / "collab" / "status" / "A.md"
+    behind = git("rev-list", "--count", "HEAD..FETCH_HEAD").stdout.strip() or "?"
+    ahead = git("rev-list", "--count", "FETCH_HEAD..HEAD").stdout.strip() or "?"
+    lines = [f"# A — status at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
+             "", f"unpushed commits : {ahead}    (>0 and growing means A cannot publish)",
+             f"behind remote    : {behind}"]
+    lines += [f"{k:<17}: {v}" for k, v in fields.items()]
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    except OSError:
+        pass
+
+
 def read_receipts() -> set[str]:
     """Ids A has already processed, from A's own single-writer receipts file (B-032)."""
     path = REPO / "collab" / "read" / "A.md"
@@ -399,7 +422,7 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
     if not done_ids():
         log("    sync: results file does not parse — refusing to commit it")
         return False
-    git("add", "--", f"data/{PROJECT}", "COLLAB.md")
+    git("add", "--", f"data/{PROJECT}", "COLLAB.md", "collab")
     if not git("diff", "--cached", "--quiet").returncode:
         return True
 
@@ -597,6 +620,8 @@ def main() -> None:
         # sync commits `data/cloudstack` wholesale, so an interrupted batch is carried by the
         # following one rather than lost.
         peek_messages()          # every MCI: a fetch, no pull, no working-tree change
+        write_status(position=processed, total=len(ordered), current=mci_id,
+                     done=len(done), pending=len(pending))
         pending.append((entry, diff_source))
         if args.push and len(pending) >= BATCH_PUSH:
             sync(f"sync {len(pending)} completed MCIs to CloudStack 24.0.0-SNAPSHOT dataset",
