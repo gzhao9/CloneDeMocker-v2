@@ -1,0 +1,142 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/DelegatingAuthenticationEntryPointTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/DelegatingAuthenticationEntryPointTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.authentication;
+ 
++import org.mockito.Mock;
+ import java.io.IOException;
+ import java.util.Collections;
+ import java.util.List;
+@@ -48,6 +49,8 @@
+  * @version $Id:$
+  */
+ public class DelegatingAuthenticationEntryPointTests {
++	@Mock
++	private AuthenticationEntryPoint firstAEP;
+ 
+ 	private DelegatingAuthenticationEntryPoint daep;
+ 
+@@ -63,7 +66,6 @@
+ 	@Test
+ 	@SuppressWarnings("removal")
+ 	public void testDefaultEntryPoint() throws Exception {
+-		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher firstRM = mock(RequestMatcher.class);
+ 		given(firstRM.matches(this.request)).willReturn(false);
+ 		this.daep = new DelegatingAuthenticationEntryPoint(this.defaultEntryPoint,
+@@ -76,7 +78,6 @@
+ 	@Test
+ 	@SuppressWarnings("removal")
+ 	public void testFirstEntryPoint() throws Exception {
+-		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher firstRM = mock(RequestMatcher.class);
+ 		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher secondRM = mock(RequestMatcher.class);
+@@ -93,7 +94,7 @@
+ 	@Test
+ 	@SuppressWarnings("removal")
+ 	public void testSecondEntryPoint() throws Exception {
+-		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
++		// removed local mock; replaced with global field `firstAEP`
+ 		RequestMatcher firstRM = mock(RequestMatcher.class);
+ 		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher secondRM = mock(RequestMatcher.class);
+@@ -126,10 +127,9 @@
+ 	@Test
+ 	@SuppressWarnings("removal")
+ 	public void constructorAepListWhenNullDefaultEntryPoint() {
+-		AuthenticationEntryPoint entryPoint = mock(AuthenticationEntryPoint.class);
++		// removed local mock; replaced with global field `firstAEP`
+ 		RequestMatcher matcher = mock(RequestMatcher.class);
+-		List<RequestMatcherEntry<AuthenticationEntryPoint>> entryPoints = List
+-			.of(new RequestMatcherEntry<>(matcher, entryPoint));
++		List<RequestMatcherEntry<AuthenticationEntryPoint>> entryPoints = List.of(new RequestMatcherEntry<>(matcher, firstAEP));
+ 		assertThatIllegalArgumentException()
+ 			.isThrownBy(() -> new DelegatingAuthenticationEntryPoint(null, entryPoints));
+ 	}
+@@ -153,10 +153,8 @@
+ 	@Test
+ 	@SuppressWarnings("removal")
+ 	public void constructorAepVargsWhenNullDefaultEntryPoint() {
+-		AuthenticationEntryPoint entryPoint = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher matcher = mock(RequestMatcher.class);
+-		RequestMatcherEntry<AuthenticationEntryPoint>[] entryPoints = new RequestMatcherEntry[] {
+-				new RequestMatcherEntry<>(matcher, entryPoint) };
++		RequestMatcherEntry<AuthenticationEntryPoint>[] entryPoints = new RequestMatcherEntry[] { new RequestMatcherEntry<>(matcher, firstAEP) };
+ 		assertThatIllegalArgumentException()
+ 			.isThrownBy(() -> new DelegatingAuthenticationEntryPoint(null, entryPoints));
+ 	}
+@@ -164,7 +162,6 @@
+ 	@Test
+ 	@SuppressWarnings("removal")
+ 	public void commenceWhenNoMatchThenDefaultEntryPoint() throws Exception {
+-		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher firstRM = mock(RequestMatcher.class);
+ 		given(firstRM.matches(this.request)).willReturn(false);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> entry = new RequestMatcherEntry<>(firstRM, firstAEP);
+@@ -177,7 +174,7 @@
+ 	@Test
+ 	@SuppressWarnings("removal")
+ 	public void commenceWhenMatchFirstEntryPointThenOthersNotInvoked() throws Exception {
+-		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
++		// removed local mock; replaced with global field `firstAEP`
+ 		RequestMatcher firstRM = mock(RequestMatcher.class);
+ 		given(firstRM.matches(this.request)).willReturn(true);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> firstEntry = new RequestMatcherEntry<>(firstRM, firstAEP);
+@@ -196,7 +193,7 @@
+ 	@Test
+ 	@SuppressWarnings("removal")
+ 	public void commenceWhenSecondMatchesThenDefaultNotInvoked() throws Exception {
+-		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
++		// removed local mock; replaced with global field `firstAEP`
+ 		RequestMatcher firstRM = mock(RequestMatcher.class);
+ 		given(firstRM.matches(this.request)).willReturn(false);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> firstEntry = new RequestMatcherEntry<>(firstRM, firstAEP);
+@@ -213,19 +210,17 @@
+ 
+ 	@Test
+ 	void builderWhenDefaultNullAndSingleEntryPointThenReturnsSingle() {
+-		AuthenticationEntryPoint entryPoint = mock(AuthenticationEntryPoint.class);
++		assertThat(result).isEqualTo(firstAEP);
+ 
+ 		AuthenticationEntryPoint result = DelegatingAuthenticationEntryPoint.builder()
+ 			.addEntryPointFor(entryPoint, mock(RequestMatcher.class))
+ 			.build();
+ 
+-		assertThat(result).isEqualTo(entryPoint);
+ 	}
+ 
+ 	@Test
+ 	@SuppressWarnings("removal")
+ 	void builderWhenDefaultNullThenFirstIsDefault() throws ServletException, IOException {
+-		AuthenticationEntryPoint firstEntryPoint = mock(AuthenticationEntryPoint.class);
+ 		AuthenticationEntryPoint secondEntryPoint = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher neverMatch = mock(RequestMatcher.class);
+ 		given(neverMatch.matches(this.request)).willReturn(false);
+@@ -236,20 +231,17 @@
+ 
+ 		result.commence(this.request, null, null);
+ 
+-		verify(firstEntryPoint).commence(any(), any(), any());
++		verify(firstAEP).commence(any(), any(), any());
+ 		verifyNoInteractions(secondEntryPoint);
+ 	}
+ 
+ 	@Test
+ 	@SuppressWarnings("removal")
+ 	void builderWhenDefaultAndEmptyEntryPointsThenReturnsDefault() {
+-		AuthenticationEntryPoint defaultEntryPoint = mock(AuthenticationEntryPoint.class);
+-
+-		AuthenticationEntryPoint result = DelegatingAuthenticationEntryPoint.builder()
+-			.defaultEntryPoint(defaultEntryPoint)
+-			.build();
+-
+-		assertThat(result).isEqualTo(defaultEntryPoint);
++
++
++		AuthenticationEntryPoint result = DelegatingAuthenticationEntryPoint.builder().defaultEntryPoint(firstAEP).build();
++		assertThat(result).isEqualTo(firstAEP);
+ 	}
+ 
+ 	@Test

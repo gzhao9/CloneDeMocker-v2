@@ -1,0 +1,66 @@
+--- a/web/src/test/java/org/springframework/security/web/access/DelegatingMissingAuthorityAccessDeniedHandlerTests.java
++++ b/web/src/test/java/org/springframework/security/web/access/DelegatingMissingAuthorityAccessDeniedHandlerTests.java
+@@ -60,12 +60,15 @@
+ 	@Mock
+ 	AuthenticationEntryPoint factorEntryPoint;
+ 
++	private AuthenticationEntryPoint passwordEntryPointMock;
++
+ 	@Mock
+ 	AccessDeniedHandler defaultAccessDeniedHandler;
+ 
+ 	@BeforeEach
+ 	void setUp() {
+ 		this.builder = DelegatingMissingAuthorityAccessDeniedHandler.builder();
++		this.passwordEntryPointMock = mock(AuthenticationEntryPoint.class);
+ 		this.builder.addEntryPointFor(this.factorEntryPoint, "FACTOR");
+ 		this.request = new MockHttpServletRequest();
+ 		this.response = new MockHttpServletResponse();
+@@ -97,11 +100,10 @@
+ 
+ 	@Test
+ 	void whenMultipleAuthoritiesThenFirstMatchCommences() throws Exception {
+-		AuthenticationEntryPoint passwordEntryPoint = mock(AuthenticationEntryPoint.class);
+-		this.builder.addEntryPointFor(passwordEntryPoint, "PASSWORD");
++		this.builder.addEntryPointFor(passwordEntryPointMock, "PASSWORD");
+ 		AccessDeniedHandler accessDeniedHandler = this.builder.build();
+ 		accessDeniedHandler.handle(this.request, this.response, missingAuthorities("PASSWORD", "FACTOR"));
+-		verify(passwordEntryPoint).commence(any(), any(), any());
++		verify(passwordEntryPointMock).commence(any(), any(), any());
+ 		accessDeniedHandler.handle(this.request, this.response, missingAuthorities("FACTOR", "PASSWORD"));
+ 		verify(this.factorEntryPoint).commence(any(), any(), any());
+ 	}
+@@ -118,21 +120,19 @@
+ 
+ 	@Test
+ 	void whenKnownAuthorityButNoRequestMatchThenCommences() throws Exception {
+-		AuthenticationEntryPoint passwordEntryPoint = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher xhr = new RequestHeaderRequestMatcher("X-Requested-With");
+-		this.builder.addEntryPointFor((ep) -> ep.addEntryPointFor(passwordEntryPoint, xhr), "PASSWORD");
++		this.builder.addEntryPointFor((ep) -> ep.addEntryPointFor(passwordEntryPointMock, xhr), "PASSWORD");
+ 		AccessDeniedHandler accessDeniedHandler = this.builder.build();
+ 		accessDeniedHandler.handle(this.request, this.response, missingAuthorities("PASSWORD"));
+-		verify(passwordEntryPoint).commence(any(), any(), any());
++		verify(passwordEntryPointMock).commence(any(), any(), any());
+ 	}
+ 
+ 	@Test
+ 	void whenMultipleEntryPointsThenFirstRequestMatchCommences() throws Exception {
+-		AuthenticationEntryPoint basicPasswordEntryPoint = mock(AuthenticationEntryPoint.class);
+ 		AuthenticationEntryPoint formPasswordEntryPoint = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher xhr = new RequestHeaderRequestMatcher("X-Requested-With");
+ 		this.builder.addEntryPointFor(
+-				(ep) -> ep.addEntryPointFor(basicPasswordEntryPoint, xhr).defaultEntryPoint(formPasswordEntryPoint),
++				(ep) -> ep.addEntryPointFor(passwordEntryPointMock, xhr).defaultEntryPoint(formPasswordEntryPoint),
+ 				"PASSWORD");
+ 		AccessDeniedHandler accessDeniedHandler = this.builder.build();
+ 		accessDeniedHandler.handle(this.request, this.response, missingAuthorities("PASSWORD"));
+@@ -140,7 +140,7 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		request.addHeader("X-Requested-With", "XmlHttpRequest");
+ 		accessDeniedHandler.handle(request, this.response, missingAuthorities("PASSWORD"));
+-		verify(basicPasswordEntryPoint).commence(any(), any(), any());
++		verify(passwordEntryPointMock).commence(any(), any(), any());
+ 	}
+ 
+ 	// gh-18000

@@ -1,0 +1,74 @@
+--- a/ldap/src/test/java/org/springframework/security/ldap/LdapUtilsTests.java
++++ b/ldap/src/test/java/org/springframework/security/ldap/LdapUtilsTests.java
+@@ -42,23 +42,20 @@
+ 
+ 	@Test
+ 	public void testGetRelativeNameReturnsEmptyStringForDnEqualToBaseName() throws Exception {
+-		final DirContext mockCtx = mock(DirContext.class);
+-		given(mockCtx.getNameInNamespace()).willReturn("dc=springframework,dc=org");
++		final DirContext mockCtx = MockDirContext.createMockDirContext("dc=springframework,dc=org");
+ 		assertThat(LdapUtils.getRelativeName("dc=springframework,dc=org", mockCtx)).isEqualTo("");
+ 	}
+ 
+ 	@Test
+ 	public void testGetRelativeNameReturnsFullDnWithEmptyBaseName() throws Exception {
+-		final DirContext mockCtx = mock(DirContext.class);
+-		given(mockCtx.getNameInNamespace()).willReturn("");
++		final DirContext mockCtx = MockDirContext.createMockDirContext("");
+ 		assertThat(LdapUtils.getRelativeName("cn=jane,dc=springframework,dc=org", mockCtx))
+ 			.isEqualTo("cn=jane,dc=springframework,dc=org");
+ 	}
+ 
+ 	@Test
+ 	public void testGetRelativeNameWorksWithArbitrarySpaces() throws Exception {
+-		final DirContext mockCtx = mock(DirContext.class);
+-		given(mockCtx.getNameInNamespace()).willReturn("dc=springsecurity,dc = org");
++		final DirContext mockCtx = MockDirContext.createMockDirContext("dc=springsecurity,dc = org");
+ 		assertThat(LdapUtils.getRelativeName("cn=jane smith, dc = springsecurity , dc=org", mockCtx))
+ 			.isEqualTo("cn=jane smith");
+ 	}
+@@ -81,4 +78,16 @@
+ 			.isEqualTo("dc=springframework,dc=org/ou=blah");
+ 	}
+ 
++
++	public final class MockDirContext {
++
++		private MockDirContext() {
++		}
++
++		public static DirContext createMockDirContext(String nameInNamespace) {
++			final DirContext mockCtx = mock(DirContext.class);
++			given(mockCtx.getNameInNamespace()).willReturn(nameInNamespace);
++			return mockCtx;
++		}
++	}
+ }
+--- a/ldap/src/test/java/org/springframework/security/ldap/SpringSecurityLdapTemplateTests.java
++++ b/ldap/src/test/java/org/springframework/security/ldap/SpringSecurityLdapTemplateTests.java
+@@ -60,7 +60,7 @@
+ 		String searchResultName = "ldap://example.com/dc=springframework,dc=org";
+ 		Object[] params = new Object[] {};
+ 		DirContextAdapter searchResultObject = mock(DirContextAdapter.class);
+-		given(this.ctx.getNameInNamespace()).willReturn("dc=springframework,dc=org");
++		this.ctx = MockDirContext.createMockDirContext("dc=springframework,dc=org");
+ 		given(this.ctx.search(any(Name.class), eq(filter), eq(params), this.searchControls.capture()))
+ 			.willReturn(this.resultsEnum);
+ 		given(this.resultsEnum.hasMore()).willReturn(true, false);
+@@ -71,4 +71,16 @@
+ 		assertThat(this.searchControls.getValue().getReturningObjFlag()).isTrue();
+ 	}
+ 
++
++	public final class MockDirContext {
++
++		private MockDirContext() {
++		}
++
++		public static DirContext createMockDirContext(String nameInNamespace) {
++			final DirContext mockCtx = mock(DirContext.class);
++			given(mockCtx.getNameInNamespace()).willReturn(nameInNamespace);
++			return mockCtx;
++		}
++	}
+ }

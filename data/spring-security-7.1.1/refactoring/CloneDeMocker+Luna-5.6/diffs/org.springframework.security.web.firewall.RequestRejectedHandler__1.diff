@@ -1,0 +1,51 @@
+--- a/web/src/test/java/org/springframework/security/web/FilterChainProxyTests.java
++++ b/web/src/test/java/org/springframework/security/web/FilterChainProxyTests.java
+@@ -84,6 +84,8 @@
+ 
+ 	private Filter filter;
+ 
++	private RequestRejectedHandler requestRejectedHandler;
++
+ 	@BeforeEach
+ 	public void setup() throws Exception {
+ 		this.matcher = mock(RequestMatcher.class);
+@@ -100,6 +102,7 @@
+ 		this.request = get("/path").build();
+ 		this.response = new MockHttpServletResponse();
+ 		this.chain = mock(FilterChain.class);
++		this.requestRejectedHandler = mock(RequestRejectedHandler.class);
+ 	}
+ 
+ 	@AfterEach
+@@ -267,27 +270,25 @@
+ 	@Test
+ 	public void requestRejectedHandlerIsCalledIfFirewallThrowsRequestRejectedException() throws Exception {
+ 		HttpFirewall fw = mock(HttpFirewall.class);
+-		RequestRejectedHandler rjh = mock(RequestRejectedHandler.class);
+ 		this.fcp.setFirewall(fw);
+-		this.fcp.setRequestRejectedHandler(rjh);
++		this.fcp.setRequestRejectedHandler(requestRejectedHandler);
+ 		RequestRejectedException requestRejectedException = new RequestRejectedException("Contains illegal chars");
+ 		given(fw.getFirewalledRequest(this.request)).willThrow(requestRejectedException);
+ 		this.fcp.doFilter(this.request, this.response, this.chain);
+-		verify(rjh).handle(eq(this.request), eq(this.response), eq((requestRejectedException)));
++		verify(requestRejectedHandler).handle(eq(this.request), eq(this.response), eq((requestRejectedException)));
+ 	}
+ 
+ 	@Test
+ 	public void requestRejectedHandlerIsCalledIfFirewallThrowsWrappedRequestRejectedException() throws Exception {
+ 		HttpFirewall fw = mock(HttpFirewall.class);
+-		RequestRejectedHandler rjh = mock(RequestRejectedHandler.class);
+ 		this.fcp.setFirewall(fw);
+-		this.fcp.setRequestRejectedHandler(rjh);
++		this.fcp.setRequestRejectedHandler(requestRejectedHandler);
+ 		RequestRejectedException requestRejectedException = new RequestRejectedException("Contains illegal chars");
+ 		ServletException servletException = new ServletException(requestRejectedException);
+ 		given(fw.getFirewalledRequest(this.request)).willReturn(new MockFirewalledRequest(this.request));
+ 		willThrow(servletException).given(this.chain).doFilter(any(), any());
+ 		this.fcp.doFilter(this.request, this.response, this.chain);
+-		verify(rjh).handle(eq(this.request), eq(this.response), eq((requestRejectedException)));
++		verify(requestRejectedHandler).handle(eq(this.request), eq(this.response), eq((requestRejectedException)));
+ 	}
+ 
+ 	@Test

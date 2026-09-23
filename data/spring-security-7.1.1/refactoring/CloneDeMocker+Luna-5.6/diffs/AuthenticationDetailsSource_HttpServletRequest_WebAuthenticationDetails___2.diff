@@ -1,0 +1,62 @@
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2DeviceAuthorizationEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2DeviceAuthorizationEndpointFilterTests.java
+@@ -352,11 +352,8 @@
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		FilterChain filterChain = mock(FilterChain.class);
+ 
+-		@SuppressWarnings("unchecked")
+-		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = mock(
+-				AuthenticationDetailsSource.class);
+-		given(authenticationDetailsSource.buildDetails(any(HttpServletRequest.class)))
+-			.willReturn(new WebAuthenticationDetails(request));
++		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = MockAuthenticationDetailsSource
++				.createMockAuthenticationDetailsSource(request);
+ 		this.filter.setAuthenticationDetailsSource(authenticationDetailsSource);
+ 
+ 		this.filter.doFilter(request, response, filterChain);
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2DeviceVerificationEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2DeviceVerificationEndpointFilterTests.java
+@@ -346,11 +346,8 @@
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		FilterChain filterChain = mock(FilterChain.class);
+ 
+-		@SuppressWarnings("unchecked")
+-		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = mock(
+-				AuthenticationDetailsSource.class);
+-		given(authenticationDetailsSource.buildDetails(any(HttpServletRequest.class)))
+-			.willReturn(new WebAuthenticationDetails(request));
++		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = MockAuthenticationDetailsSource
++				.createMockAuthenticationDetailsSource(request);
+ 		this.filter.setAuthenticationDetailsSource(authenticationDetailsSource);
+ 
+ 		this.filter.doFilter(request, response, filterChain);
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/MockAuthenticationDetailsSource.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/MockAuthenticationDetailsSource.java
+@@ -0,0 +1,27 @@
++package org.springframework.security.oauth2.server.authorization.web;
++
++import jakarta.servlet.http.HttpServletRequest;
++
++import org.springframework.security.authentication.AuthenticationDetailsSource;
++import org.springframework.security.web.authentication.WebAuthenticationDetails;
++
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.mock;
++
++public final class MockAuthenticationDetailsSource {
++
++	private MockAuthenticationDetailsSource() {
++	}
++
++	@SuppressWarnings("unchecked")
++	public static AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> createMockAuthenticationDetailsSource(
++			HttpServletRequest request) {
++		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = mock(
++				AuthenticationDetailsSource.class);
++		given(authenticationDetailsSource.buildDetails(any(HttpServletRequest.class)))
++				.willReturn(new WebAuthenticationDetails(request));
++		return authenticationDetailsSource;
++	}
++
++}

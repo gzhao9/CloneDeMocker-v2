@@ -1,0 +1,32 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/AuthenticationEntryPointFailureHandlerTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/AuthenticationEntryPointFailureHandlerTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.authentication;
+ 
++import org.mockito.Mock;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.security.authentication.AuthenticationServiceException;
+@@ -28,10 +29,12 @@
+  * Tests for {@link AuthenticationEntryPointFailureHandler}
+  */
+ public class AuthenticationEntryPointFailureHandlerTests {
++	@Mock
++	private AuthenticationEntryPoint entryPoint;
+ 
+ 	@Test
+ 	void onAuthenticationFailureWhenRethrowingThenAuthenticationServiceExceptionSwallowed() throws Exception {
+-		AuthenticationEntryPoint entryPoint = mock(AuthenticationEntryPoint.class);
++		// removed local mock; replaced with global field `entryPoint`
+ 		AuthenticationEntryPointFailureHandler handler = new AuthenticationEntryPointFailureHandler(entryPoint);
+ 		handler.setRethrowAuthenticationServiceException(false);
+ 		handler.onAuthenticationFailure(null, null, new AuthenticationServiceException("fail"));
+@@ -39,7 +42,6 @@
+ 
+ 	@Test
+ 	void handleWhenDefaultsThenAuthenticationServiceExceptionRethrown() {
+-		AuthenticationEntryPoint entryPoint = mock(AuthenticationEntryPoint.class);
+ 		AuthenticationEntryPointFailureHandler handler = new AuthenticationEntryPointFailureHandler(entryPoint);
+ 		assertThatExceptionOfType(AuthenticationServiceException.class)
+ 			.isThrownBy(() -> handler.onAuthenticationFailure(null, null, new AuthenticationServiceException("fail")));

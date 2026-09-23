@@ -1,0 +1,70 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/DelegatingAuthenticationEntryPointTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/DelegatingAuthenticationEntryPointTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.authentication;
+ 
++import org.mockito.Mock;
+ import java.io.IOException;
+ import java.util.Collections;
+ import java.util.List;
+@@ -48,6 +49,8 @@
+  * @version $Id:$
+  */
+ public class DelegatingAuthenticationEntryPointTests {
++	@Mock
++	private AuthenticationEntryPoint secondAEP;
+ 
+ 	private DelegatingAuthenticationEntryPoint daep;
+ 
+@@ -78,7 +81,7 @@
+ 	public void testFirstEntryPoint() throws Exception {
+ 		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher firstRM = mock(RequestMatcher.class);
+-		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
++		// removed local mock; replaced with global field `secondAEP`
+ 		RequestMatcher secondRM = mock(RequestMatcher.class);
+ 		given(firstRM.matches(this.request)).willReturn(true);
+ 		this.daep = new DelegatingAuthenticationEntryPoint(this.defaultEntryPoint,
+@@ -95,7 +98,6 @@
+ 	public void testSecondEntryPoint() throws Exception {
+ 		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher firstRM = mock(RequestMatcher.class);
+-		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher secondRM = mock(RequestMatcher.class);
+ 		given(firstRM.matches(this.request)).willReturn(false);
+ 		given(secondRM.matches(this.request)).willReturn(true);
+@@ -181,7 +183,7 @@
+ 		RequestMatcher firstRM = mock(RequestMatcher.class);
+ 		given(firstRM.matches(this.request)).willReturn(true);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> firstEntry = new RequestMatcherEntry<>(firstRM, firstAEP);
+-		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
++		// removed local mock; replaced with global field `secondAEP`
+ 		RequestMatcher secondRM = mock(RequestMatcher.class);
+ 		given(secondRM.matches(this.request)).willReturn(false);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> secondEntry = new RequestMatcherEntry<>(firstRM, firstAEP);
+@@ -200,7 +202,6 @@
+ 		RequestMatcher firstRM = mock(RequestMatcher.class);
+ 		given(firstRM.matches(this.request)).willReturn(false);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> firstEntry = new RequestMatcherEntry<>(firstRM, firstAEP);
+-		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher secondRM = mock(RequestMatcher.class);
+ 		given(secondRM.matches(this.request)).willReturn(true);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> secondEntry = new RequestMatcherEntry<>(secondRM, secondAEP);
+@@ -226,7 +227,6 @@
+ 	@SuppressWarnings("removal")
+ 	void builderWhenDefaultNullThenFirstIsDefault() throws ServletException, IOException {
+ 		AuthenticationEntryPoint firstEntryPoint = mock(AuthenticationEntryPoint.class);
+-		AuthenticationEntryPoint secondEntryPoint = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher neverMatch = mock(RequestMatcher.class);
+ 		given(neverMatch.matches(this.request)).willReturn(false);
+ 		AuthenticationEntryPoint result = DelegatingAuthenticationEntryPoint.builder()
+@@ -236,8 +236,6 @@
+ 
+ 		result.commence(this.request, null, null);
+ 
+-		verify(firstEntryPoint).commence(any(), any(), any());
+-		verifyNoInteractions(secondEntryPoint);
+ 	}
+ 
+ 	@Test

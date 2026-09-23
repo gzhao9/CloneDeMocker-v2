@@ -1,0 +1,45 @@
+--- a/web/src/test/java/org/springframework/security/web/access/DelegatingMissingAuthorityAccessDeniedHandlerTests.java
++++ b/web/src/test/java/org/springframework/security/web/access/DelegatingMissingAuthorityAccessDeniedHandlerTests.java
+@@ -50,6 +50,8 @@
+ 
+ @ExtendWith(MockitoExtension.class)
+ class DelegatingMissingAuthorityAccessDeniedHandlerTests {
++	@Mock
++	private AuthenticationEntryPoint passwordEntryPoint;
+ 
+ 	DelegatingMissingAuthorityAccessDeniedHandler.Builder builder;
+ 
+@@ -97,7 +99,6 @@
+ 
+ 	@Test
+ 	void whenMultipleAuthoritiesThenFirstMatchCommences() throws Exception {
+-		AuthenticationEntryPoint passwordEntryPoint = mock(AuthenticationEntryPoint.class);
+ 		this.builder.addEntryPointFor(passwordEntryPoint, "PASSWORD");
+ 		AccessDeniedHandler accessDeniedHandler = this.builder.build();
+ 		accessDeniedHandler.handle(this.request, this.response, missingAuthorities("PASSWORD", "FACTOR"));
+@@ -118,7 +119,6 @@
+ 
+ 	@Test
+ 	void whenKnownAuthorityButNoRequestMatchThenCommences() throws Exception {
+-		AuthenticationEntryPoint passwordEntryPoint = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher xhr = new RequestHeaderRequestMatcher("X-Requested-With");
+ 		this.builder.addEntryPointFor((ep) -> ep.addEntryPointFor(passwordEntryPoint, xhr), "PASSWORD");
+ 		AccessDeniedHandler accessDeniedHandler = this.builder.build();
+@@ -128,7 +128,7 @@
+ 
+ 	@Test
+ 	void whenMultipleEntryPointsThenFirstRequestMatchCommences() throws Exception {
+-		AuthenticationEntryPoint basicPasswordEntryPoint = mock(AuthenticationEntryPoint.class);
++		// removed local mock; replaced with global field `passwordEntryPoint`
+ 		AuthenticationEntryPoint formPasswordEntryPoint = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher xhr = new RequestHeaderRequestMatcher("X-Requested-With");
+ 		this.builder.addEntryPointFor(
+@@ -140,7 +140,7 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		request.addHeader("X-Requested-With", "XmlHttpRequest");
+ 		accessDeniedHandler.handle(request, this.response, missingAuthorities("PASSWORD"));
+-		verify(basicPasswordEntryPoint).commence(any(), any(), any());
++		verify(passwordEntryPoint).commence(any(), any(), any());
+ 	}
+ 
+ 	// gh-18000

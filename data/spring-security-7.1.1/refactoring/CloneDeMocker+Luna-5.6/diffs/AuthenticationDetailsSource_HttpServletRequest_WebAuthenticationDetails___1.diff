@@ -1,0 +1,57 @@
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2TokenEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2TokenEndpointFilterTests.java
+@@ -558,10 +558,9 @@
+ 
+ 		MockHttpServletRequest request = createAuthorizationCodeTokenRequest(registeredClient);
+ 
+-		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = mock(
+-				AuthenticationDetailsSource.class);
+ 		WebAuthenticationDetails webAuthenticationDetails = new WebAuthenticationDetails(request);
+-		given(authenticationDetailsSource.buildDetails(any())).willReturn(webAuthenticationDetails);
++		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = org.springframework.security.oauth2.server.authorization.web.MockAuthenticationDetailsSource
++				.createMockAuthenticationDetailsSource(webAuthenticationDetails);
+ 		this.filter.setAuthenticationDetailsSource(authenticationDetailsSource);
+ 
+ 		OAuth2AccessToken accessToken = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "token",
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2TokenRevocationEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2TokenRevocationEndpointFilterTests.java
+@@ -216,10 +216,9 @@
+ 
+ 		MockHttpServletRequest request = createTokenRevocationRequest();
+ 
+-		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = mock(
+-				AuthenticationDetailsSource.class);
+ 		WebAuthenticationDetails webAuthenticationDetails = new WebAuthenticationDetails(request);
+-		given(authenticationDetailsSource.buildDetails(any())).willReturn(webAuthenticationDetails);
++		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = MockAuthenticationDetailsSource
++				.createMockAuthenticationDetailsSource(webAuthenticationDetails);
+ 		this.filter.setAuthenticationDetailsSource(authenticationDetailsSource);
+ 
+ 		OAuth2AccessToken accessToken = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "token",
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/MockAuthenticationDetailsSource.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/MockAuthenticationDetailsSource.java
+@@ -0,0 +1,24 @@
++package org.springframework.security.oauth2.server.authorization.web;
++
++import jakarta.servlet.http.HttpServletRequest;
++import org.mockito.Mockito;
++import org.springframework.security.authentication.AuthenticationDetailsSource;
++import org.springframework.security.web.authentication.WebAuthenticationDetails;
++
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.BDDMockito.given;
++
++public final class MockAuthenticationDetailsSource {
++
++	private MockAuthenticationDetailsSource() {
++	}
++
++	public static AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> createMockAuthenticationDetailsSource(
++			WebAuthenticationDetails webAuthenticationDetails) {
++		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = Mockito
++				.mock(AuthenticationDetailsSource.class);
++		given(authenticationDetailsSource.buildDetails(any())).willReturn(webAuthenticationDetails);
++		return authenticationDetailsSource;
++	}
++
++}
