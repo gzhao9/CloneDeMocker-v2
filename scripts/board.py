@@ -199,14 +199,35 @@ def mark_read(ids: list[str]) -> None:
     _write(text)
 
 
+def _next_seq(board_text: str) -> int:
+    """Next free sequence number for this agent, across every place ids are recorded.
+
+    Deriving it from COLLAB.md alone re-minted B-001 after A-034 emptied the board to a
+    pointer: `max(used, default=0) + 1` restarted at 1 and the runner's restart notice
+    collided with an entry from the previous day. Once the board is derived output it is no
+    longer a record of what ids exist -- the archive and the inboxes are.
+    """
+    used = {int(n) for k, n in ENTRY.findall(board_text) if k == ME}
+    if ARCHIVE.is_file():
+        used |= {int(m.group(1)) for m in
+                 re.finditer(rf"^### \[{ME}-(\d+)\]", ARCHIVE.read_text(encoding="utf-8"),
+                             flags=re.M)}
+    if INBOX.is_dir():
+        for path in INBOX.rglob(f"{ME}-*.md"):
+            try:
+                used.add(int(path.stem.split("-", 1)[1]))
+            except (ValueError, IndexError):
+                pass
+    return max(used, default=0) + 1
+
+
 def post_note(body: str, re_id: str | None = None, urgent: bool = False) -> str | None:
     """Post a one-way NOTE. Never a REQ: a script cannot hold up its end of a request."""
     text = _read()
     start, end = _section(text, "\n## ACTIVE")
     if start == -1:
         return None
-    used = [int(n) for k, n in ENTRY.findall(text) if k == ME]
-    entry_id = f"{ME}-{max(used, default=0) + 1:03d}"
+    entry_id = f"{ME}-{_next_seq(text):03d}"
     header = f"### [{entry_id}] {now()} · {ME} → {THEM} · NOTE"
     if re_id:
         header += f" · re: {re_id}"

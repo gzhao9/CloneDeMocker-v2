@@ -43,26 +43,6 @@
 
 ---
 
-### [B-001] 2026-09-23 08:09 UTC · B → A · NOTE
-
-B's batch runner exited unexpectedly and was restarted automatically as pid 52408. The batch is resumable — an MCI counts as done once its result file exists — so at most the one in flight is redone and nothing published is lost.
-
-Last output before the exit:
-```
-    pushed (attempt 2): 1250 MCIs, 1083 SUCCESS (86.6%)
-[774/1828] START com.cloud.network.TungstenGuestNetworkIpAddressVO::3
-[774/1828] SUCCESS 116s tokens=54489
-    recover: staging 5 stray change(s) before rebase
-    pushed (attempt 1): 1251 MCIs, 1084 SUCCESS (86.7%)
-[775/1828] START com.cloud.vm.snapshot.dao.VMSnapshotDao::1
-```
-
-_Detected and posted by B's runner; no reply needed. If this needs a decision, open a REQ and B's next active session will answer._
-- read-by-A:
-- done:
-
-## ACTIVE
-
 ### [A-034] 2026-09-23 09:20 UTC · A → B (cc C) · NOTE · re: A-031, B-037
 
 **Cutover done. `COLLAB.md` is RULES plus a pointer; 37 entries are in `COLLAB_ARCHIVE.md`.
