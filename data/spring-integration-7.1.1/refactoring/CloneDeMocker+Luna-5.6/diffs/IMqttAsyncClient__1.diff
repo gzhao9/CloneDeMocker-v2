@@ -1,0 +1,40 @@
+--- a/spring-integration-mqtt/src/test/java/org/springframework/integration/mqtt/Mqttv5HandlerTests.java
++++ b/spring-integration-mqtt/src/test/java/org/springframework/integration/mqtt/Mqttv5HandlerTests.java
+@@ -53,10 +53,8 @@
+ 
+ 	@Test
+ 	void publishPojoWithDefaultConverter() throws Exception {
+-		IMqttAsyncClient mockClient = mock();
+ 		IMqttToken token = mock();
+-		given(mockClient.isConnected()).willReturn(true);
+-		given(mockClient.publish(anyString(), any(MqttMessage.class), any(), any())).willReturn(token);
++		IMqttAsyncClient mockClient = createMockClient(token);
+ 
+ 		Mqttv5PahoMessageHandler handler = createHandler(mockClient, new ConfigurableCompositeMessageConverter());
+ 
+@@ -75,10 +73,8 @@
+ 
+ 	@Test
+ 	void publishPojoWithCustomConverter() throws Exception {
+-		IMqttAsyncClient mockClient = mock();
+ 		IMqttToken token = mock();
+-		given(mockClient.isConnected()).willReturn(true);
+-		given(mockClient.publish(anyString(), any(MqttMessage.class), any(), any())).willReturn(token);
++		IMqttAsyncClient mockClient = createMockClient(token);
+ 
+ 		MessageConverter converter = mock(MessageConverter.class);
+ 		given(converter.toMessage(any(), any(MessageHeaders.class)))
+@@ -92,6 +88,13 @@
+ 		ArgumentCaptor<MqttMessage> captor = ArgumentCaptor.forClass(MqttMessage.class);
+ 		verify(mockClient).publish(anyString(), captor.capture(), any(), any());
+ 		assertThat(captor.getValue().getPayload()).isEqualTo("test".getBytes());
++	}
++
++	private static IMqttAsyncClient createMockClient(IMqttToken token) {
++		IMqttAsyncClient mockClient = mock();
++		given(mockClient.isConnected()).willReturn(true);
++		given(mockClient.publish(anyString(), any(MqttMessage.class), any(), any())).willReturn(token);
++		return mockClient;
+ 	}
+ 
+ 	private static Mqttv5PahoMessageHandler createHandler(IMqttAsyncClient mockClient, MessageConverter converter) {

@@ -1,0 +1,39 @@
+--- a/spring-integration-mqtt/src/test/java/org/springframework/integration/mqtt/Mqttv5HandlerTests.java
++++ b/spring-integration-mqtt/src/test/java/org/springframework/integration/mqtt/Mqttv5HandlerTests.java
+@@ -53,11 +53,9 @@
+ 
+ 	@Test
+ 	void publishPojoWithDefaultConverter() throws Exception {
+-		IMqttAsyncClient mockClient = mock();
+ 		IMqttToken token = mock();
+-		given(mockClient.isConnected()).willReturn(true);
+-		given(mockClient.publish(anyString(), any(MqttMessage.class), any(), any())).willReturn(token);
+ 
++		IMqttAsyncClient mockClient = createMockMqttAsyncClient(token);
+ 		Mqttv5PahoMessageHandler handler = createHandler(mockClient, new ConfigurableCompositeMessageConverter());
+ 
+ 		TestPojo pojo = new TestPojo("test", 1);
+@@ -75,10 +73,8 @@
+ 
+ 	@Test
+ 	void publishPojoWithCustomConverter() throws Exception {
+-		IMqttAsyncClient mockClient = mock();
+ 		IMqttToken token = mock();
+-		given(mockClient.isConnected()).willReturn(true);
+-		given(mockClient.publish(anyString(), any(MqttMessage.class), any(), any())).willReturn(token);
++		IMqttAsyncClient mockClient = createMockMqttAsyncClient(token);
+ 
+ 		MessageConverter converter = mock(MessageConverter.class);
+ 		given(converter.toMessage(any(), any(MessageHeaders.class)))
+@@ -111,4 +107,11 @@
+ 	}
+ 
+ 	record TestPojo(String name, int value) { }
++
++    private static IMqttAsyncClient createMockMqttAsyncClient(IMqttToken token) {
++        IMqttAsyncClient mockClient = mock();
++        given(mockClient.isConnected()).willReturn(true);
++        given(mockClient.publish(anyString(), any(MqttMessage.class), any(), any())).willReturn(token);
++        return mockClient;
++    }
+ }
