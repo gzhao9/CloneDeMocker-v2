@@ -98,7 +98,7 @@ def peek_messages() -> list[dict]:
     """
     if git("fetch", REMOTE, "main", timeout=120).returncode != 0:
         return []                                   # a racing fetch, or offline; next MCI retries
-    watched = ["COLLAB.md", "collab/inbox/A", "collab/read"]
+    watched = ["collab/inbox/A/unread"]
     if not git("diff", "--quiet", "HEAD", "FETCH_HEAD", "--", *watched).returncode:
         return []                                   # nothing addressed here has moved
 
@@ -135,8 +135,7 @@ def peek_messages() -> list[dict]:
         report_unread(unread)
         return unread
 
-    shown = git("show", "FETCH_HEAD:COLLAB.md")
-    return check_collab_messages(shown.stdout) if shown.returncode == 0 else []
+    return []
 
 
 def write_status(**fields: object) -> None:
@@ -437,9 +436,8 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
     # Stage only what A owns under collab/. Staging the whole tree meant every sync
     # re-committed A's stale copies of B's and C's mailboxes, silently reverting their
     # cleanups -- and unlike a one-off bad push, this one repeated every 25 MCIs.
-    git("add", "--", f"data/{PROJECT}", "COLLAB.md", "COLLAB_ARCHIVE.md",
-        "collab/inbox/A", "collab/status/A.md", "collab/status/A-session.md",
-        "collab/read/A.md", "collab/latest-from-A", "collab/README.md")
+    git("add", "--", f"data/{PROJECT}", "collab/inbox/A", "collab/status/A.md",
+        "collab/status/A-session.md", "collab/README.md")
     for peer in ("B", "C"):
         for sent in sorted((REPO / "collab" / "inbox" / peer / "unread").glob("A-*.md")):
             git("add", "--", str(sent.relative_to(REPO)).replace("\\", "/"))

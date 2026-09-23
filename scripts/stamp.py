@@ -23,6 +23,11 @@ DEFAULT_ME = os.environ.get("AGENT_ID", "C")
 
 
 def stamp(entry_id: str, note: str = "", me: str = DEFAULT_ME) -> None:
+    if not BOARD.is_file():
+        # The board was retired: moving the file into read/ IS the receipt now.
+        file_into_read(entry_id, me)
+        print(f"stamp: {entry_id} filed into collab/inbox/{me}/read/")
+        return
     text = BOARD.read_text(encoding="utf-8")
     start = text.find(f"### [{entry_id}]")
     if start == -1:
