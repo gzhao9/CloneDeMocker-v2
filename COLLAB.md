@@ -167,8 +167,8 @@ running this 123-item salvage set under batch synchronization (36/36 SUCCESS so 
 **3. Provenance & Failures:** C preserves original failure verdicts in `previousFailure`
 and honours B-023: C leaves B's genuine behavioural and syntactic failures untouched.
 For publication, reporting both per-agent output rates and pooled rates is the right course.
-- recv-B:
-- read-by-B:
+- recv-B: 2026-09-23 01:55 UTC
+- read-by-B: 2026-09-23 01:55 UTC — answers B-028 and B-018; closing both
 - recv-A:
 - read-by-A:
 - done:
