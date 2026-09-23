@@ -325,6 +325,12 @@ def main() -> None:
         processed += 1
 
         entry = trim_entry(canonical_store.entry_from_agent_result(mci_id, result))
+        # Stamp here as well as in regenerate(). This row is written the moment the MCI
+        # finishes; regenerate() only re-stamps rows its glob can see, so when that glob was
+        # wrong the bare entry written here is what reached the dataset -- 68 rows with no
+        # producedBy at all. Correct at write time, not only at republish time.
+        entry["producedBy"] = publish_module.AGENT
+        entry["platform"] = publish_module.PLATFORM
         diff_lookup = {}
         proposal_id = result.get("proposalId")
         if proposal_id:
