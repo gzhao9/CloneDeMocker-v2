@@ -1,0 +1,73 @@
+--- a/spring-integration-ws/src/test/java/org/springframework/integration/ws/inbound/MarshallingWebServiceIntegrationTests.java
++++ b/spring-integration-ws/src/test/java/org/springframework/integration/ws/inbound/MarshallingWebServiceIntegrationTests.java
+@@ -90,9 +90,7 @@
+ 
+ 	@Test
+ 	public void sendString() throws Exception {
+-		when(context.getResponse()).thenReturn(response);
+-		when(context.getRequest()).thenReturn(request);
+-		when(context.getPropertyNames()).thenReturn(new String[0]);
++		context = MockMessageContext.createMockMessageContext(request, response);
+ 		when(request.getPayloadSource()).thenReturn(stringSource);
+ 		when(response.getPayloadResult()).thenReturn(stringResult);
+ 		gateway.invoke(context);
+@@ -134,4 +132,17 @@
+ 
+ 	}
+ 
++
++    public final class MockMessageContext {
++        private MockMessageContext() {
++        }
++
++        public static MessageContext createMockMessageContext(Object request, Object response) {
++            MessageContext context = Mockito.mock(MessageContext.class);
++            when(context.getPropertyNames()).thenReturn(new String[0]);
++            when((Object) context.getRequest()).thenReturn(request);
++            when((Object) context.getResponse()).thenReturn(response);
++            return context;
++        }
++    }
+ }
+--- a/spring-integration-ws/src/test/java/org/springframework/integration/ws/inbound/WebServiceInboundGatewayJavaConfigTests.java
++++ b/spring-integration-ws/src/test/java/org/springframework/integration/ws/inbound/WebServiceInboundGatewayJavaConfigTests.java
+@@ -85,7 +85,6 @@
+ 
+ 	@Test
+ 	public void testWebServiceInboundGatewayJavaConfig() throws Exception {
+-		MessageContext context = mock();
+ 		SoapMessage request = mock();
+ 		SoapMessage response = mock();
+ 		SoapBody soapBody = mock();
+@@ -95,12 +94,10 @@
+ 		StringWriter output = new StringWriter();
+ 		Result payloadResult = new StreamResult(output);
+ 
+-		when(context.getResponse()).thenReturn(response);
++		MessageContext context = MockMessageContext.createMockMessageContext(request, response);
+ 		when(response.getPayloadResult()).thenReturn(payloadResult);
+ 		when(response.getSoapBody()).thenReturn(soapBody);
+-		when(context.getRequest()).thenReturn(request);
+ 		when(request.getPayloadSource()).thenReturn(payloadSource);
+-		when(context.getPropertyNames()).thenReturn(new String[0]);
+ 
+ 		this.messageReceiver.receive(context);
+ 
+@@ -183,4 +180,17 @@
+ 
+ 	}
+ 
++
++    public final class MockMessageContext {
++        private MockMessageContext() {
++        }
++
++        public static MessageContext createMockMessageContext(Object request, Object response) {
++            MessageContext context = Mockito.mock(MessageContext.class);
++            when(context.getPropertyNames()).thenReturn(new String[0]);
++            when((Object) context.getRequest()).thenReturn(request);
++            when((Object) context.getResponse()).thenReturn(response);
++            return context;
++        }
++    }
+ }
