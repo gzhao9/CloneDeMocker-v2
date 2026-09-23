@@ -1,0 +1,44 @@
+--- a/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
++++ b/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
+@@ -59,6 +59,8 @@
+ 
+ 	private Saml2WebSsoAuthenticationFilter filter;
+ 
++	private AuthenticationConverter authenticationConverterMock;
++
+ 	private RelyingPartyRegistrationRepository repository = mock(RelyingPartyRegistrationRepository.class);
+ 
+ 	private MockHttpServletRequest request = new MockHttpServletRequest();
+@@ -69,6 +71,7 @@
+ 
+ 	@BeforeEach
+ 	public void setup() {
++		this.authenticationConverterMock = mock(AuthenticationConverter.class);
+ 		this.filter = new Saml2WebSsoAuthenticationFilter(this.repository);
+ 		this.request.setRequestURI("/login/saml2/sso/idp-registration-id");
+ 		this.request.setPathInfo("/login/saml2/sso/idp-registration-id");
+@@ -90,8 +93,7 @@
+ 
+ 	@Test
+ 	public void constructingFilterWithMissingRegistrationIdVariableAndCustomAuthenticationConverterThenSucceeds() {
+-		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
+-		this.filter = new Saml2WebSsoAuthenticationFilter(authenticationConverter, "/url/missing/variable");
++		this.filter = new Saml2WebSsoAuthenticationFilter(authenticationConverterMock, "/url/missing/variable");
+ 	}
+ 
+ 	@Test
+@@ -210,12 +212,11 @@
+ 
+ 	@Test
+ 	public void setAuthenticationRequestRepositoryWhenNotExpectedAuthenticationConverterTypeThenDoNotSet() {
+-		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
+ 		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+ 				Saml2AuthenticationRequestRepository.class);
+-		this.filter = new Saml2WebSsoAuthenticationFilter(authenticationConverter, "/some/other/path/{registrationId}");
++		this.filter = new Saml2WebSsoAuthenticationFilter(authenticationConverterMock, "/some/other/path/{registrationId}");
+ 		this.filter.setAuthenticationRequestRepository(authenticationRequestRepository);
+-		verifyNoInteractions(authenticationConverter);
++		verifyNoInteractions(authenticationConverterMock);
+ 	}
+ 
+ 	@Test

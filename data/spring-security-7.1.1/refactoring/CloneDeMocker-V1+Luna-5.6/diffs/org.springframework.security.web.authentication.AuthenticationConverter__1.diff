@@ -1,0 +1,35 @@
+--- a/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
++++ b/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
+@@ -151,8 +151,7 @@
+ 	public void attemptAuthenticationWhenSavedAuthnRequestThenRemovesAuthnRequest() {
+ 		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+ 				Saml2AuthenticationRequestRepository.class);
+-		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
+-		given(authenticationConverter.convert(this.request)).willReturn(TestSaml2AuthenticationTokens.token());
++		AuthenticationConverter authenticationConverter = createAuthenticationConverter(this.request, TestSaml2AuthenticationTokens.token());
+ 		this.filter = new Saml2WebSsoAuthenticationFilter(authenticationConverter, "/some/other/path/{registrationId}");
+ 		this.filter.setAuthenticationManager((authentication) -> null);
+ 		this.request.setRequestURI("/some/other/path/idp-registration-id");
+@@ -164,9 +163,8 @@
+ 
+ 	@Test
+ 	public void attemptAuthenticationAddsDetails() {
+-		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
+ 		final Saml2AuthenticationToken token = TestSaml2AuthenticationTokens.token();
+-		given(authenticationConverter.convert(this.request)).willReturn(token);
++		AuthenticationConverter authenticationConverter = createAuthenticationConverter(this.request, token);
+ 		final AuthenticationDetailsSource authenticationDetailsSource = mock(AuthenticationDetailsSource.class);
+ 		final WebAuthenticationDetails details = mock(WebAuthenticationDetails.class);
+ 		given(authenticationDetailsSource.buildDetails(this.request)).willReturn(details);
+@@ -258,4 +256,11 @@
+ 
+ 	}
+ 
++
++	private static AuthenticationConverter createAuthenticationConverter(
++			HttpServletRequest request, Authentication authentication) {
++		AuthenticationConverter authenticationConverter = mock(AuthenticationConverter.class);
++		given(authenticationConverter.convert(request)).willReturn(authentication);
++		return authenticationConverter;
++	}
+ }

@@ -1,0 +1,41 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/logout/SecurityContextLogoutHandlerTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/logout/SecurityContextLogoutHandlerTests.java
+@@ -49,11 +49,14 @@
+ 
+ 	private SecurityContextLogoutHandler handler;
+ 
++	private SecurityContextRepository repositoryMock;
++
+ 	@BeforeEach
+ 	public void setUp() {
+ 		this.request = new MockHttpServletRequest();
+ 		this.response = new MockHttpServletResponse();
+ 		this.handler = new SecurityContextLogoutHandler();
++		this.repositoryMock = mock(SecurityContextRepository.class);
+ 		SecurityContext context = SecurityContextHolder.createEmptyContext();
+ 		context.setAuthentication(
+ 				new TestingAuthenticationToken("user", "password", AuthorityUtils.createAuthorityList("ROLE_USER")));
+@@ -85,19 +88,17 @@
+ 
+ 	@Test
+ 	public void logoutWhenSecurityContextRepositoryThenSaveEmptyContext() {
+-		SecurityContextRepository repository = mock(SecurityContextRepository.class);
+-		this.handler.setSecurityContextRepository(repository);
++		this.handler.setSecurityContextRepository(repositoryMock);
+ 		this.handler.logout(this.request, this.response, SecurityContextHolder.getContext().getAuthentication());
+-		verify(repository).saveContext(eq(SecurityContextHolder.createEmptyContext()), any(), any());
++		verify(repositoryMock).saveContext(eq(SecurityContextHolder.createEmptyContext()), any(), any());
+ 	}
+ 
+ 	@Test
+ 	public void logoutWhenClearAuthenticationFalseThenSaveEmptyContext() {
+-		SecurityContextRepository repository = mock(SecurityContextRepository.class);
+-		this.handler.setSecurityContextRepository(repository);
++		this.handler.setSecurityContextRepository(repositoryMock);
+ 		this.handler.setClearAuthentication(false);
+ 		this.handler.logout(this.request, this.response, SecurityContextHolder.getContext().getAuthentication());
+-		verify(repository).saveContext(eq(SecurityContextHolder.createEmptyContext()), any(), any());
++		verify(repositoryMock).saveContext(eq(SecurityContextHolder.createEmptyContext()), any(), any());
+ 	}
+ 
+ 	@Test
