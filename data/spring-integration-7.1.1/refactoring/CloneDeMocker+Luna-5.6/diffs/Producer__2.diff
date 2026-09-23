@@ -1,0 +1,89 @@
+--- a/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/outbound/KafkaProducerMessageHandlerTests.java
++++ b/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/outbound/KafkaProducerMessageHandlerTests.java
+@@ -488,9 +488,8 @@
+ 	void testTransaction() {
+ 		ProducerFactory pf = mock();
+ 		given(pf.transactionCapable()).willReturn(true);
+-		Producer producer = mock();
++		Producer producer = createMockProducer();
+ 		given(pf.createProducer(isNull())).willReturn(producer);
+-		willReturn(mock(Future.class)).given(producer).send(any(ProducerRecord.class), any(Callback.class));
+ 		KafkaTemplate template = new KafkaTemplate(pf);
+ 		KafkaProducerMessageHandler handler = new KafkaProducerMessageHandler(template);
+ 		handler.setTopicExpression(new LiteralExpression("bar"));
+@@ -583,7 +582,7 @@
+ 	@SuppressWarnings({"rawtypes", "unchecked"})
+ 	@Test
+ 	void testTransactionTxIdOverride() {
+-		Producer producer = mock();
++		Producer producer = createMockProducer();
+ 		AtomicReference<String> txId = new AtomicReference<>();
+ 		DefaultKafkaProducerFactory pf = new DefaultKafkaProducerFactory(Collections.emptyMap()) {
+ 
+@@ -595,7 +594,6 @@
+ 
+ 		};
+ 		pf.setTransactionIdPrefix("default.tx.id.");
+-		willReturn(mock(Future.class)).given(producer).send(any(ProducerRecord.class), any(Callback.class));
+ 		KafkaTemplate template = new KafkaTemplate(pf);
+ 		template.setTransactionIdPrefix("overridden.tx.id.");
+ 		KafkaProducerMessageHandler handler = new KafkaProducerMessageHandler(template);
+@@ -615,11 +613,10 @@
+ 	@SuppressWarnings({"rawtypes", "unchecked"})
+ 	@Test
+ 	void testTransactionSynch() {
+-		Producer producer = mock();
++		Producer producer = createMockProducer();
+ 		ProducerFactory pf = mock();
+ 		given(pf.transactionCapable()).willReturn(true);
+ 		given(pf.createProducer(isNull())).willReturn(producer);
+-		willReturn(mock(Future.class)).given(producer).send(any(ProducerRecord.class), any(Callback.class));
+ 		KafkaTemplate template = new KafkaTemplate(pf);
+ 		KafkaProducerMessageHandler handler = new KafkaProducerMessageHandler(template);
+ 		handler.setTopicExpression(new LiteralExpression("bar"));
+@@ -747,9 +744,8 @@
+ 	@Test
+ 	void testFlush() {
+ 		ProducerFactory pf = mock();
+-		Producer producer = mock();
++		Producer producer = createMockProducer();
+ 		given(pf.createProducer()).willReturn(producer);
+-		willReturn(mock(Future.class)).given(producer).send(any(ProducerRecord.class), any(Callback.class));
+ 		KafkaTemplate template = new KafkaTemplate(pf);
+ 		KafkaProducerMessageHandler handler = new KafkaProducerMessageHandler(template);
+ 		handler.setTopicExpression(new LiteralExpression("bar"));
+@@ -770,9 +766,8 @@
+ 	@Test
+ 	void testNoFlush() {
+ 		ProducerFactory pf = mock();
+-		Producer producer = mock();
++		Producer producer = createMockProducer();
+ 		given(pf.createProducer()).willReturn(producer);
+-		willReturn(mock(Future.class)).given(producer).send(any(ProducerRecord.class), any(Callback.class));
+ 		KafkaTemplate template = new KafkaTemplate(pf);
+ 		KafkaProducerMessageHandler handler = new KafkaProducerMessageHandler(template);
+ 		handler.setTopicExpression(new LiteralExpression("bar"));
+@@ -790,9 +785,8 @@
+ 	@Test
+ 	void conversion() {
+ 		ProducerFactory pf = mock();
+-		Producer producer = mock();
++		Producer producer = createMockProducer();
+ 		given(pf.createProducer()).willReturn(producer);
+-		willReturn(mock(Future.class)).given(producer).send(any(ProducerRecord.class), any(Callback.class));
+ 		KafkaTemplate template = new KafkaTemplate(pf);
+ 		RecordMessageConverter converter = mock(RecordMessageConverter.class);
+ 		ProducerRecord recordFromConverter = mock(ProducerRecord.class);
+@@ -818,6 +812,12 @@
+ 		handler.stop();
+ 	}
+ 
++	private static Producer createMockProducer() {
++		Producer producer = mock();
++		willReturn(mock(Future.class)).given(producer).send(any(ProducerRecord.class), any(Callback.class));
++		return producer;
++	}
++
+ 	@SuppressWarnings("serial")
+ 	static class SomeOtherTransactionManager extends AbstractPlatformTransactionManager {
+ 
