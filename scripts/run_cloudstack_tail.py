@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -63,10 +64,71 @@ SKIPPED = REPO / "validation/cloudstack_tail_skipped.json"
 # describe this host rather than the subject. An id is removed from the file once its re-run
 # lands, so a restart resumes instead of repeating.
 RERUN = REPO / "validation/cloudstack_rerun_ids.txt"
+BOARD = REPO / "COLLAB.md"
+UNREAD_ALERT_FILE = REPO / "validation/results/collab_unread_for_A.txt"
 
 
 def log(message: str) -> None:
     print(f"{datetime.now().strftime('%m-%d %H:%M:%S')} {message}", flush=True)
+
+
+def check_collab_messages() -> list[dict]:
+    """Inspect COLLAB.md after a pull and report any unread entries addressed to or cc'ing A."""
+    if not BOARD.is_file():
+        return []
+    try:
+        content = BOARD.read_text(encoding="utf-8")
+    except OSError:
+        return []
+
+    start = content.find("## ACTIVE")
+    end = content.find("\n## Section:", start)
+    if end == -1:
+        end = len(content)
+    active_text = content[start:end]
+
+    unread = []
+    blocks = re.split(r"(?=^### \[)", active_text, flags=re.M)
+    for b in blocks:
+        header_m = re.match(r"^### \[([BC]-\d+)\].*?[·\s]+([BC])\s*→\s*(.*?)(?:\n|$)", b)
+        if not header_m:
+            continue
+        entry_id = header_m.group(1)
+        author = header_m.group(2)
+        target = header_m.group(3).strip()
+
+        read_by_a = re.search(r"^- read-by-A:(.*)$", b, re.M)
+        if read_by_a and not read_by_a.group(1).strip():
+            summary = ""
+            for line in b.splitlines():
+                line = line.strip()
+                if line and not line.startswith("###") and not line.startswith("- "):
+                    summary = line
+                    break
+            unread.append({
+                "id": entry_id,
+                "author": author,
+                "target": target,
+                "summary": summary[:120]
+            })
+
+    if unread:
+        log(f"🔔 [COLLAB ALERT] Found {len(unread)} unread message(s) for A on the board:")
+        lines_for_file = []
+        for item in unread:
+            log(f"    * [{item['id']}] {item['author']} -> {item['target']}: {item['summary']}")
+            lines_for_file.append(f"[{item['id']}] {item['author']} -> {item['target']}\n  {item['summary']}\n")
+        try:
+            UNREAD_ALERT_FILE.parent.mkdir(parents=True, exist_ok=True)
+            UNREAD_ALERT_FILE.write_text("\n".join(lines_for_file), encoding="utf-8")
+        except OSError:
+            pass
+    else:
+        try:
+            UNREAD_ALERT_FILE.unlink(missing_ok=True)
+        except OSError:
+            pass
+    return unread
 
 
 def git(*args: str, check: bool = False, timeout: int = 900) -> subprocess.CompletedProcess:
@@ -230,11 +292,10 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
     git("commit", "-q", "-m", message)
 
     for attempt in range(1, attempts + 1):
-        if git("push", REMOTE, "main").returncode == 0:
-            return True
-
         pull = git("pull", "--rebase", REMOTE, "main")
-        if pull.returncode != 0:
+        if pull.returncode == 0:
+            check_collab_messages()
+        else:
             # Conflicted on the shared dataset files. Take upstream for them; ours is re-applied
             # below, so nothing of this machine's is riding on this choice. During a rebase
             # --ours is upstream, the inverse of a merge — the trap that cost the other machine
@@ -249,6 +310,7 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
                 log(f"    sync: rebase unresolved on attempt {attempt}, retrying")
                 time.sleep(5 * attempt)
                 continue
+            check_collab_messages()
 
         # Whether the rebase was clean or resolved toward upstream, re-apply every row in
         # this batch -- not just the last one.
@@ -257,6 +319,10 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
         git("add", "--", f"data/{PROJECT}")
         if git("diff", "--cached", "--quiet").returncode:
             git("commit", "-q", "-m", f"Re-apply {len(batch)} MCIs after rebase")
+
+        if git("push", REMOTE, "main").returncode == 0:
+            return True
+
         time.sleep(2 * attempt)
 
     log("    sync: giving up for now; the next MCI carries it forward")
@@ -274,6 +340,7 @@ def main() -> None:
         log("OPENAI_API_KEY is not set")
         sys.exit(2)
     check_environment()
+    check_collab_messages()
 
     service = DetectionService(REPO)
     _, raw = service.load_raw_detection(RUN_ID)
