@@ -1,0 +1,49 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/authentication/OAuth2LoginAuthenticationProviderTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/authentication/OAuth2LoginAuthenticationProviderTests.java
+@@ -161,9 +161,8 @@
+ 	public void authenticateWhenLoginSuccessThenReturnAuthentication() {
+ 		OAuth2AccessTokenResponse accessTokenResponse = this.accessTokenSuccessResponse();
+ 		given(this.accessTokenResponseClient.getTokenResponse(any())).willReturn(accessTokenResponse);
+-		OAuth2User principal = mock(OAuth2User.class);
+ 		List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_USER");
+-		given(principal.getAuthorities()).willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> authorities);
++		OAuth2User principal = createMockOAuth2User();
+ 		given(this.userService.loadUser(any())).willReturn(principal);
+ 		OAuth2LoginAuthenticationToken authentication = (OAuth2LoginAuthenticationToken) this.authenticationProvider
+ 			.authenticate(new OAuth2LoginAuthenticationToken(this.clientRegistration, this.authorizationExchange));
+@@ -181,9 +180,7 @@
+ 	public void authenticateWhenAuthoritiesMapperSetThenReturnMappedAuthorities() {
+ 		OAuth2AccessTokenResponse accessTokenResponse = this.accessTokenSuccessResponse();
+ 		given(this.accessTokenResponseClient.getTokenResponse(any())).willReturn(accessTokenResponse);
+-		OAuth2User principal = mock(OAuth2User.class);
+-		List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_USER");
+-		given(principal.getAuthorities()).willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> authorities);
++		OAuth2User principal = createMockOAuth2User();
+ 		given(this.userService.loadUser(any())).willReturn(principal);
+ 		List<GrantedAuthority> mappedAuthorities = AuthorityUtils.createAuthorityList("ROLE_OAUTH2_USER");
+ 		GrantedAuthoritiesMapper authoritiesMapper = mock(GrantedAuthoritiesMapper.class);
+@@ -201,9 +198,7 @@
+ 	public void authenticateWhenTokenSuccessResponseThenAdditionalParametersAddedToUserRequest() {
+ 		OAuth2AccessTokenResponse accessTokenResponse = this.accessTokenSuccessResponse();
+ 		given(this.accessTokenResponseClient.getTokenResponse(any())).willReturn(accessTokenResponse);
+-		OAuth2User principal = mock(OAuth2User.class);
+-		List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_USER");
+-		given(principal.getAuthorities()).willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> authorities);
++		OAuth2User principal = createMockOAuth2User();
+ 		ArgumentCaptor<OAuth2UserRequest> userRequestArgCaptor = ArgumentCaptor.forClass(OAuth2UserRequest.class);
+ 		given(this.userService.loadUser(userRequestArgCaptor.capture())).willReturn(principal);
+ 		this.authenticationProvider
+@@ -221,6 +216,13 @@
+ 				this.authorizationExchange);
+ 		Authentication result = this.authenticationProvider.authenticate(request);
+ 		SecurityAssertions.assertThat(result).hasAuthority(FactorGrantedAuthority.AUTHORIZATION_CODE_AUTHORITY);
++	}
++
++	private static OAuth2User createMockOAuth2User() {
++		OAuth2User principal = mock(OAuth2User.class);
++		List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList("ROLE_USER");
++		given(principal.getAuthorities()).willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> authorities);
++		return principal;
+ 	}
+ 
+ 	private OAuth2AccessTokenResponse accessTokenSuccessResponse() {

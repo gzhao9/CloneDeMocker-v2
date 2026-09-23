@@ -1,0 +1,37 @@
+--- a/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/MappedJwtClaimSetConverterTests.java
++++ b/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/MappedJwtClaimSetConverterTests.java
+@@ -101,10 +101,9 @@
+ 
+ 	@Test
+ 	public void convertWhenUsingCustomConverterThenAllOtherDefaultsAreStillUsed() {
+-		Converter<Object, String> claimConverter = mock(Converter.class);
++		Converter<Object, String> claimConverter = createMockConverter();
+ 		MappedJwtClaimSetConverter converter = MappedJwtClaimSetConverter
+ 			.withDefaults(Collections.singletonMap(JwtClaimNames.SUB, claimConverter));
+-		given(claimConverter.convert(any(Object.class))).willReturn("1234");
+ 		Map<String, Object> source = new HashMap<>();
+ 		source.put(JwtClaimNames.JTI, 1);
+ 		source.put(JwtClaimNames.AUD, "audience");
+@@ -154,10 +153,9 @@
+ 
+ 	@Test
+ 	public void convertWhenUsingConstructorThenOnlyConvertersInThatMapAreUsedForConversion() {
+-		Converter<Object, String> claimConverter = mock(Converter.class);
++		Converter<Object, String> claimConverter = createMockConverter();
+ 		MappedJwtClaimSetConverter converter = new MappedJwtClaimSetConverter(
+ 				Collections.singletonMap(JwtClaimNames.SUB, claimConverter));
+-		given(claimConverter.convert(any(Object.class))).willReturn("1234");
+ 		Map<String, Object> source = new HashMap<>();
+ 		source.put(JwtClaimNames.JTI, new Object());
+ 		source.put(JwtClaimNames.AUD, new Object());
+@@ -217,4 +215,10 @@
+ 		assertThatIllegalArgumentException().isThrownBy(() -> MappedJwtClaimSetConverter.withDefaults(null));
+ 	}
+ 
++
++	private static Converter<Object, String> createMockConverter() {
++		Converter<Object, String> claimConverter = mock(Converter.class);
++		given(claimConverter.convert(any(Object.class))).willReturn("1234");
++		return claimConverter;
++	}
+ }

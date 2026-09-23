@@ -1,0 +1,48 @@
+--- a/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/MappedJwtClaimSetConverterTests.java
++++ b/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/MappedJwtClaimSetConverterTests.java
+@@ -101,10 +101,10 @@
+ 
+ 	@Test
+ 	public void convertWhenUsingCustomConverterThenAllOtherDefaultsAreStillUsed() {
+-		Converter<Object, String> claimConverter = mock(Converter.class);
++		Converter<Object, String> claimConverter = createMockClaimConverter();
+ 		MappedJwtClaimSetConverter converter = MappedJwtClaimSetConverter
+ 			.withDefaults(Collections.singletonMap(JwtClaimNames.SUB, claimConverter));
+-		given(claimConverter.convert(any(Object.class))).willReturn("1234");
++
+ 		Map<String, Object> source = new HashMap<>();
+ 		source.put(JwtClaimNames.JTI, 1);
+ 		source.put(JwtClaimNames.AUD, "audience");
+@@ -143,7 +143,7 @@
+ 
+ 	@Test
+ 	public void convertWhenConverterReturnsValueWhenEntryIsMissingThenEntryIsAdded() {
+-		Converter<Object, String> claimConverter = mock(Converter.class);
++		Converter<Object, String> claimConverter = createMockClaimConverter();
+ 		MappedJwtClaimSetConverter converter = MappedJwtClaimSetConverter
+ 			.withDefaults(Collections.singletonMap("custom-claim", claimConverter));
+ 		given(claimConverter.convert(any())).willReturn("custom-value");
+@@ -154,10 +154,10 @@
+ 
+ 	@Test
+ 	public void convertWhenUsingConstructorThenOnlyConvertersInThatMapAreUsedForConversion() {
+-		Converter<Object, String> claimConverter = mock(Converter.class);
++		Converter<Object, String> claimConverter = createMockClaimConverter();
+ 		MappedJwtClaimSetConverter converter = new MappedJwtClaimSetConverter(
+ 				Collections.singletonMap(JwtClaimNames.SUB, claimConverter));
+-		given(claimConverter.convert(any(Object.class))).willReturn("1234");
++
+ 		Map<String, Object> source = new HashMap<>();
+ 		source.put(JwtClaimNames.JTI, new Object());
+ 		source.put(JwtClaimNames.AUD, new Object());
+@@ -217,4 +217,10 @@
+ 		assertThatIllegalArgumentException().isThrownBy(() -> MappedJwtClaimSetConverter.withDefaults(null));
+ 	}
+ 
++	private static Converter<Object, String> createMockClaimConverter() {
++		Converter<Object, String> claimConverter = createMockClaimConverter();
++
++		return claimConverter;
++	}
++
+ }

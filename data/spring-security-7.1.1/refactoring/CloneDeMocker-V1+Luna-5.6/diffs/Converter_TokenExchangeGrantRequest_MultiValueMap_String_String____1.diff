@@ -1,0 +1,95 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientTokenExchangeTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientTokenExchangeTokenResponseClientTests.java
+@@ -482,10 +482,9 @@
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		TokenExchangeGrantRequest grantRequest = new TokenExchangeGrantRequest(clientRegistration, this.subjectToken,
+ 				this.actorToken);
+-		Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>> parametersConverter = MockTokenExchangeGrantRequestConverter.createMockTokenExchangeGrantRequestConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.setParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(parametersConverter).convert(grantRequest);
+@@ -527,10 +526,9 @@
+ 		Set<String> scopes = clientRegistration.getScopes();
+ 		TokenExchangeGrantRequest grantRequest = new TokenExchangeGrantRequest(clientRegistration, this.subjectToken,
+ 				this.actorToken);
+-		Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>> parametersConverter = MockTokenExchangeGrantRequestConverter.createMockTokenExchangeGrantRequestConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.addParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(parametersConverter).convert(grantRequest);
+@@ -577,4 +575,20 @@
+ 		return "%s=%s".formatted(parameterName, URLEncoder.encode(parameterValue, StandardCharsets.UTF_8));
+ 	}
+ 
++
++	public final class MockTokenExchangeGrantRequestConverter {
++
++		private MockTokenExchangeGrantRequestConverter() {
++		}
++
++		public static Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>>
++				createMockTokenExchangeGrantRequestConverter(
++						TokenExchangeGrantRequest grantRequest,
++						MultiValueMap<String, String> parameters) {
++			Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>> parametersConverter =
++					Mockito.mock(Converter.class);
++			given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++			return parametersConverter;
++		}
++	}
+ }
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveTokenExchangeTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveTokenExchangeTokenResponseClientTests.java
+@@ -469,10 +469,9 @@
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		TokenExchangeGrantRequest grantRequest = new TokenExchangeGrantRequest(this.clientRegistration.build(),
+ 				this.subjectToken, this.actorToken);
+-		Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>> parametersConverter = MockTokenExchangeGrantRequestConverter.createMockTokenExchangeGrantRequestConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.setParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest).block();
+ 		verify(parametersConverter).convert(grantRequest);
+@@ -509,10 +508,10 @@
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		TokenExchangeGrantRequest grantRequest = new TokenExchangeGrantRequest(this.clientRegistration.build(),
+ 				this.subjectToken, this.actorToken);
+-		Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>> parametersConverter =
++		        MockTokenExchangeGrantRequestConverter.createMockTokenExchangeGrantRequestConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.addParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest).block();
+ 		verify(parametersConverter).convert(grantRequest);
+@@ -573,4 +572,20 @@
+ 		return "%s=%s".formatted(parameterName, URLEncoder.encode(parameterValue, StandardCharsets.UTF_8));
+ 	}
+ 
++
++	public final class MockTokenExchangeGrantRequestConverter {
++
++		private MockTokenExchangeGrantRequestConverter() {
++		}
++
++		public static Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>>
++				createMockTokenExchangeGrantRequestConverter(
++						TokenExchangeGrantRequest grantRequest,
++						MultiValueMap<String, String> parameters) {
++			Converter<TokenExchangeGrantRequest, MultiValueMap<String, String>> parametersConverter =
++					Mockito.mock(Converter.class);
++			given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++			return parametersConverter;
++		}
++	}
+ }
