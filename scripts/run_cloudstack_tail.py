@@ -357,21 +357,38 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
             # may run the same MCI and write the same path with different content. Leaving
             # one of those unresolved made `rebase --continue` fail every attempt, which read
             # in the log as "rebase unresolved" and stopped A publishing for hours.
-            unresolved = [p for p in git("diff", "--name-only", "--diff-filter=U")
-                          .stdout.split("\n") if p.strip()]
-            for path in unresolved:
-                if path.endswith("COLLAB.md"):
-                    merge_board()          # keeps both sides' entries and stamps
-                    continue
-                git("checkout", "--ours", "--", path)   # upstream wins; relayer re-applies ours
-                git("add", "--", path)
-            cont = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--continue"],
-                                  cwd=REPO, text=True, capture_output=True, timeout=300)
-            if cont.returncode != 0 and "empty" in (cont.stdout + cont.stderr).lower():
-                # Taking upstream wholesale can leave nothing to commit; that is a resolved
-                # rebase, not a failed one.
-                cont = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--skip"],
+            # Keep resolving until the rebase is finished, not just until the first conflict
+            # is. A rebase replays *every* unpushed commit, and when A is several board
+            # entries behind, each one conflicts with the entries B pushed meanwhile. The
+            # earlier version resolved one, called `rebase --continue`, and read the *next*
+            # commit's conflict as a failure -- so it aborted the whole rebase and retried
+            # from scratch, five times, forever. Eight commits took eight rounds to land.
+            cont = None
+            for _ in range(len(batch) + 40):
+                unresolved = [p for p in git("diff", "--name-only", "--diff-filter=U")
+                              .stdout.split("\n") if p.strip()]
+                if not unresolved:
+                    break
+                for path in unresolved:
+                    if path.endswith("COLLAB.md"):
+                        merge_board()      # keeps both sides' entries and stamps
+                        continue
+                    git("checkout", "--ours", "--", path)  # upstream wins; relayer re-adds ours
+                    git("add", "--", path)
+                cont = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--continue"],
                                       cwd=REPO, text=True, capture_output=True, timeout=300)
+                if cont.returncode != 0 and "empty" in (cont.stdout + cont.stderr).lower():
+                    # Taking upstream wholesale can leave nothing to commit; that is a
+                    # resolved rebase, not a failed one.
+                    cont = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--skip"],
+                                          cwd=REPO, text=True, capture_output=True, timeout=300)
+            if cont is None:
+                # The pull failed with nothing conflicted -- an unstaged file refusing the
+                # rebase, most often. Say so, instead of calling it a conflict.
+                why = (pull.stderr or pull.stdout).strip().split("\n")[-1][:160]
+                log(f"    sync: pull failed with nothing to resolve ({why}), retrying")
+                time.sleep(5 * attempt)
+                continue
             if cont.returncode != 0:
                 git("rebase", "--abort")
                 why = (cont.stderr or cont.stdout).strip().split("\n")[-1][:160]
