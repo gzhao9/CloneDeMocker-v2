@@ -1,0 +1,52 @@
+--- a/config/src/test/java/org/springframework/security/config/annotation/web/configuration/RegisterMissingBeanPostProcessorTests.java
++++ b/config/src/test/java/org/springframework/security/config/annotation/web/configuration/RegisterMissingBeanPostProcessorTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.config.annotation.web.configuration;
+ 
++import org.mockito.Mock;
+ import java.util.function.Supplier;
+ 
+ import org.junit.jupiter.api.Test;
+@@ -38,6 +39,8 @@
+  * @author Steve Riesenberg
+  */
+ public class RegisterMissingBeanPostProcessorTests {
++	@Mock
++	private BeanDefinitionRegistry beanDefinitionRegistry;
+ 
+ 	private final RegisterMissingBeanPostProcessor postProcessor = new RegisterMissingBeanPostProcessor();
+ 
+@@ -46,7 +49,6 @@
+ 		this.postProcessor.addBeanDefinition(SimpleBean.class, null);
+ 		this.postProcessor.setBeanFactory(new DefaultListableBeanFactory());
+ 
+-		BeanDefinitionRegistry beanDefinitionRegistry = mock(BeanDefinitionRegistry.class);
+ 		this.postProcessor.postProcessBeanDefinitionRegistry(beanDefinitionRegistry);
+ 
+ 		ArgumentCaptor<BeanDefinition> beanDefinitionCaptor = ArgumentCaptor.forClass(BeanDefinition.class);
+@@ -63,7 +65,6 @@
+ 		this.postProcessor.addBeanDefinition(SimpleBean.class, beanSupplier);
+ 		this.postProcessor.setBeanFactory(new DefaultListableBeanFactory());
+ 
+-		BeanDefinitionRegistry beanDefinitionRegistry = mock(BeanDefinitionRegistry.class);
+ 		this.postProcessor.postProcessBeanDefinitionRegistry(beanDefinitionRegistry);
+ 
+ 		ArgumentCaptor<BeanDefinition> beanDefinitionCaptor = ArgumentCaptor.forClass(BeanDefinition.class);
+@@ -78,7 +79,6 @@
+ 	public void postProcessBeanDefinitionRegistryWhenNoBeanDefinitionsAddedThenNoneRegistered() {
+ 		this.postProcessor.setBeanFactory(new DefaultListableBeanFactory());
+ 
+-		BeanDefinitionRegistry beanDefinitionRegistry = mock(BeanDefinitionRegistry.class);
+ 		this.postProcessor.postProcessBeanDefinitionRegistry(beanDefinitionRegistry);
+ 		verifyNoInteractions(beanDefinitionRegistry);
+ 	}
+@@ -90,7 +90,7 @@
+ 		beanFactory.registerBeanDefinition("simpleBean", new RootBeanDefinition(SimpleBean.class));
+ 		this.postProcessor.setBeanFactory(beanFactory);
+ 
+-		BeanDefinitionRegistry beanDefinitionRegistry = mock(BeanDefinitionRegistry.class);
++		// removed local mock; replaced with global field `beanDefinitionRegistry`
+ 		this.postProcessor.postProcessBeanDefinitionRegistry(beanDefinitionRegistry);
+ 		verifyNoInteractions(beanDefinitionRegistry);
+ 	}

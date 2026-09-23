@@ -1,0 +1,77 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientJwtBearerTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientJwtBearerTokenResponseClientTests.java
+@@ -320,10 +320,9 @@
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		JwtBearerGrantRequest grantRequest = new JwtBearerGrantRequest(clientRegistration, this.jwtAssertion);
+-		Converter<JwtBearerGrantRequest, HttpHeaders> headersConverter = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.put("custom-header-name", Collections.singletonList("custom-header-value"));
+-		given(headersConverter.convert(grantRequest)).willReturn(headers);
++		Converter<JwtBearerGrantRequest, HttpHeaders> headersConverter = MockJwtBearerHeadersConverter.createMockJwtBearerHeadersConverter(grantRequest, headers);
+ 		this.tokenResponseClient.addHeadersConverter(headersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(headersConverter).convert(grantRequest);
+@@ -337,11 +336,10 @@
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		JwtBearerGrantRequest grantRequest = new JwtBearerGrantRequest(clientRegistration, this.jwtAssertion);
+-		Converter<JwtBearerGrantRequest, HttpHeaders> headersConverter = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+ 		headers.put("custom-header-name", Collections.singletonList("custom-header-value"));
+-		given(headersConverter.convert(grantRequest)).willReturn(headers);
++		Converter<JwtBearerGrantRequest, HttpHeaders> headersConverter = MockJwtBearerHeadersConverter.createMockJwtBearerHeadersConverter(grantRequest, headers);
+ 		this.tokenResponseClient.setHeadersConverter(headersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(headersConverter).convert(grantRequest);
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveJwtBearerTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveJwtBearerTokenResponseClientTests.java
+@@ -190,10 +190,9 @@
+ 	public void getTokenResponseWhenHeadersConverterSetThenCalled() throws Exception {
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		JwtBearerGrantRequest request = new JwtBearerGrantRequest(clientRegistration, this.jwtAssertion);
+-		Converter<JwtBearerGrantRequest, HttpHeaders> headersConverter = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.setBasicAuth(clientRegistration.getClientId(), clientRegistration.getClientSecret());
+-		given(headersConverter.convert(request)).willReturn(headers);
++		Converter<JwtBearerGrantRequest, HttpHeaders> headersConverter = MockJwtBearerHeadersConverter.createMockJwtBearerHeadersConverter(request, headers);
+ 		this.client.setHeadersConverter(headersConverter);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.client.getTokenResponse(request).block();
+@@ -207,10 +206,9 @@
+ 	public void getTokenResponseWhenHeadersConverterAddedThenCalled() throws Exception {
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		JwtBearerGrantRequest request = new JwtBearerGrantRequest(clientRegistration, this.jwtAssertion);
+-		Converter<JwtBearerGrantRequest, HttpHeaders> addedHeadersConverter = mock();
+ 		HttpHeaders headers = new HttpHeaders();
+ 		headers.put("custom-header-name", Collections.singletonList("custom-header-value"));
+-		given(addedHeadersConverter.convert(request)).willReturn(headers);
++		Converter<JwtBearerGrantRequest, HttpHeaders> addedHeadersConverter = MockJwtBearerHeadersConverter.createMockJwtBearerHeadersConverter(request, headers);
+ 		this.client.addHeadersConverter(addedHeadersConverter);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.client.getTokenResponse(request).block();
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/MockJwtBearerHeadersConverter.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/MockJwtBearerHeadersConverter.java
+@@ -0,0 +1,21 @@
++package org.springframework.security.oauth2.client.endpoint;
++
++import org.mockito.Mockito;
++import org.springframework.core.convert.converter.Converter;
++import org.springframework.http.HttpHeaders;
++
++import static org.mockito.BDDMockito.given;
++
++public final class MockJwtBearerHeadersConverter {
++
++	private MockJwtBearerHeadersConverter() {
++	}
++
++	public static Converter<JwtBearerGrantRequest, HttpHeaders> createMockJwtBearerHeadersConverter(
++			JwtBearerGrantRequest request, HttpHeaders headers) {
++		Converter<JwtBearerGrantRequest, HttpHeaders> headersConverter = Mockito.mock();
++		given(headersConverter.convert(request)).willReturn(headers);
++		return headersConverter;
++	}
++
++}

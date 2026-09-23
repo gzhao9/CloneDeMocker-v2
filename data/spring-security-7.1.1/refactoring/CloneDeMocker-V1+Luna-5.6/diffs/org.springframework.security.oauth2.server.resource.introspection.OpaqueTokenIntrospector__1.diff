@@ -1,0 +1,54 @@
+--- a/oauth2/oauth2-resource-server/src/test/java/org/springframework/security/oauth2/server/resource/authentication/OpaqueTokenAuthenticationProviderTests.java
++++ b/oauth2/oauth2-resource-server/src/test/java/org/springframework/security/oauth2/server/resource/authentication/OpaqueTokenAuthenticationProviderTests.java
+@@ -59,8 +59,7 @@
+ 	public void authenticateWhenActiveTokenThenOk() throws Exception {
+ 		OAuth2AuthenticatedPrincipal principal = TestOAuth2AuthenticatedPrincipals
+ 			.active((attributes) -> attributes.put("extension_field", "twenty-seven"));
+-		OpaqueTokenIntrospector introspector = mock(OpaqueTokenIntrospector.class);
+-		given(introspector.introspect(any())).willReturn(principal);
++		OpaqueTokenIntrospector introspector = createOpaqueTokenIntrospector(principal);
+ 		OpaqueTokenAuthenticationProvider provider = new OpaqueTokenAuthenticationProvider(introspector);
+ 		Authentication result = provider.authenticate(new BearerTokenAuthenticationToken("token"));
+ 		assertThat(result.getPrincipal()).isInstanceOf(OAuth2IntrospectionAuthenticatedPrincipal.class);
+@@ -87,8 +86,7 @@
+ 	public void authenticateWhenMissingScopeAttributeThenNoAuthorities() {
+ 		OAuth2AuthenticatedPrincipal principal = new OAuth2IntrospectionAuthenticatedPrincipal(
+ 				Collections.singletonMap("claim", "value"), null);
+-		OpaqueTokenIntrospector introspector = mock(OpaqueTokenIntrospector.class);
+-		given(introspector.introspect(any())).willReturn(principal);
++		OpaqueTokenIntrospector introspector = createOpaqueTokenIntrospector(principal);
+ 		OpaqueTokenAuthenticationProvider provider = new OpaqueTokenAuthenticationProvider(introspector);
+ 		Authentication result = provider.authenticate(new BearerTokenAuthenticationToken("token"));
+ 		assertThat(result.getPrincipal()).isInstanceOf(OAuth2AuthenticatedPrincipal.class);
+@@ -131,9 +129,8 @@
+ 
+ 	@Test
+ 	public void authenticateWhenCustomAuthenticationConverterThenUses() {
+-		OpaqueTokenIntrospector introspector = mock(OpaqueTokenIntrospector.class);
+ 		OAuth2AuthenticatedPrincipal principal = TestOAuth2AuthenticatedPrincipals.active();
+-		given(introspector.introspect(any())).willReturn(principal);
++		OpaqueTokenIntrospector introspector = createOpaqueTokenIntrospector(principal);
+ 		OpaqueTokenAuthenticationProvider provider = new OpaqueTokenAuthenticationProvider(introspector);
+ 		OpaqueTokenAuthenticationConverter authenticationConverter = mock(OpaqueTokenAuthenticationConverter.class);
+ 		given(authenticationConverter.convert(any(), any(OAuth2AuthenticatedPrincipal.class)))
+@@ -150,8 +147,7 @@
+ 	@Test
+ 	void authenticateWhenSuccessThenIssuesFactor() {
+ 		OAuth2AuthenticatedPrincipal principal = TestOAuth2AuthenticatedPrincipals.active();
+-		OpaqueTokenIntrospector introspector = mock(OpaqueTokenIntrospector.class);
+-		given(introspector.introspect(any())).willReturn(principal);
++		OpaqueTokenIntrospector introspector = createOpaqueTokenIntrospector(principal);
+ 		OpaqueTokenAuthenticationProvider provider = new OpaqueTokenAuthenticationProvider(introspector);
+ 		Authentication request = new BearerTokenAuthenticationToken("token");
+ 		Authentication result = provider.authenticate(request);
+@@ -162,4 +158,10 @@
+ 		return (a) -> a.getAuthority().startsWith("SCOPE_");
+ 	}
+ 
++
++	private static OpaqueTokenIntrospector createOpaqueTokenIntrospector(OAuth2AuthenticatedPrincipal principal) {
++		OpaqueTokenIntrospector introspector = mock(OpaqueTokenIntrospector.class);
++		given(introspector.introspect(any())).willReturn(principal);
++		return introspector;
++	}
+ }

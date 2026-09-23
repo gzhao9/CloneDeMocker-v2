@@ -1,0 +1,49 @@
+--- a/test/src/test/java/org/springframework/security/test/context/support/WithSecurityContextTestExcecutionListenerTests.java
++++ b/test/src/test/java/org/springframework/security/test/context/support/WithSecurityContextTestExcecutionListenerTests.java
+@@ -98,9 +98,8 @@
+ 	public void beforeTestMethodInnerClass() throws Exception {
+ 		Class testClass = OuterClass.InnerClass.class;
+ 		Method testNoAnnotation = ReflectionUtils.findMethod(testClass, "testNoAnnotation");
+-		given(this.testContext.getTestClass()).willReturn(testClass);
+-		given(this.testContext.getTestMethod()).willReturn(testNoAnnotation);
+-		given(this.testContext.getApplicationContext()).willThrow(new IllegalStateException(""));
++		this.testContext = createMockTestContext(testNoAnnotation);
++		given(this.testContext.getTestClass()).willReturn(testClass);
+ 		this.listener.beforeTestMethod(this.testContext);
+ 		assertThat(TestSecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo("user");
+ 	}
+@@ -110,9 +109,8 @@
+ 	public void beforeTestMethodInnerInnerClass() throws Exception {
+ 		Class testClass = OuterClass.InnerClass.InnerInnerClass.class;
+ 		Method testNoAnnotation = ReflectionUtils.findMethod(testClass, "testNoAnnotation");
+-		given(this.testContext.getTestClass()).willReturn(testClass);
+-		given(this.testContext.getTestMethod()).willReturn(testNoAnnotation);
+-		given(this.testContext.getApplicationContext()).willThrow(new IllegalStateException(""));
++		this.testContext = createMockTestContext(testNoAnnotation);
++		given(this.testContext.getTestClass()).willReturn(testClass);
+ 		this.listener.beforeTestMethod(this.testContext);
+ 		assertThat(TestSecurityContextHolder.getContext().getAuthentication().getName()).isEqualTo("user");
+ 	}
+@@ -155,9 +153,7 @@
+ 	public void handlesGenericAnnotation() throws Exception {
+ 		Method method = ReflectionUtils.findMethod(WithSecurityContextTestExcecutionListenerTests.class,
+ 				"handlesGenericAnnotationTestMethod");
+-		TestContext testContext = mock(TestContext.class);
+-		given(testContext.getTestMethod()).willReturn(method);
+-		given(testContext.getApplicationContext()).willThrow(new IllegalStateException(""));
++		TestContext testContext = createMockTestContext(method);
+ 		this.listener.beforeTestMethod(testContext);
+ 		assertThat(SecurityContextHolder.getContext().getAuthentication().getPrincipal())
+ 			.isInstanceOf(WithSuperClassWithSecurityContext.class);
+@@ -241,4 +237,11 @@
+ 
+ 	}
+ 
++
++	private static TestContext createMockTestContext(Method method) {
++		TestContext testContext = mock(TestContext.class);
++		given(testContext.getTestMethod()).willReturn(method);
++		given(testContext.getApplicationContext()).willThrow(new IllegalStateException(""));
++		return testContext;
++	}
+ }

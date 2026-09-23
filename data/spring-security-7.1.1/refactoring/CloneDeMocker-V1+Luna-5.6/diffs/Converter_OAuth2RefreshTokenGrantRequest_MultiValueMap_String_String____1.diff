@@ -1,0 +1,92 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientRefreshTokenTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientRefreshTokenTokenResponseClientTests.java
+@@ -401,10 +401,9 @@
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		OAuth2RefreshTokenGrantRequest grantRequest = new OAuth2RefreshTokenGrantRequest(clientRegistration,
+ 				this.accessToken, this.refreshToken);
+-		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = MockOAuth2RefreshTokenGrantRequestConverter.createMockOAuth2RefreshTokenGrantRequestConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.setParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(parametersConverter).convert(grantRequest);
+@@ -445,10 +444,9 @@
+ 		Set<String> scopes = clientRegistration.getScopes();
+ 		OAuth2RefreshTokenGrantRequest grantRequest = new OAuth2RefreshTokenGrantRequest(clientRegistration,
+ 				this.accessToken, this.refreshToken, scopes);
+-		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = MockOAuth2RefreshTokenGrantRequestConverter.createMockOAuth2RefreshTokenGrantRequestConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.addParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(parametersConverter).convert(grantRequest);
+@@ -496,4 +494,19 @@
+ 		return "%s=%s".formatted(parameterName, URLEncoder.encode(parameterValue, StandardCharsets.UTF_8));
+ 	}
+ 
++
++	public final class MockOAuth2RefreshTokenGrantRequestConverter {
++
++		private MockOAuth2RefreshTokenGrantRequestConverter() {
++		}
++
++		public static Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>>
++				createMockOAuth2RefreshTokenGrantRequestConverter(
++						OAuth2RefreshTokenGrantRequest request,
++						MultiValueMap<String, String> parameters) {
++			Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> converter = mock();
++			given(converter.convert(request)).willReturn((MultiValueMap<String, String>) parameters);
++			return converter;
++		}
++	}
+ }
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveRefreshTokenTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveRefreshTokenTokenResponseClientTests.java
+@@ -327,10 +327,9 @@
+ 	public void getTokenResponseWhenParametersConverterAddedThenCalled() throws Exception {
+ 		OAuth2RefreshTokenGrantRequest request = new OAuth2RefreshTokenGrantRequest(
+ 				this.clientRegistrationBuilder.build(), this.accessToken, this.refreshToken);
+-		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> addedParametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(addedParametersConverter.convert(request)).willReturn(parameters);
++		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> addedParametersConverter = MockOAuth2RefreshTokenGrantRequestConverter.createMockOAuth2RefreshTokenGrantRequestConverter(request, parameters);
+ 		this.tokenResponseClient.addParametersConverter(addedParametersConverter);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.tokenResponseClient.getTokenResponse(request).block();
+@@ -344,10 +343,9 @@
+ 	public void getTokenResponseWhenParametersConverterSetThenCalled() throws Exception {
+ 		OAuth2RefreshTokenGrantRequest request = new OAuth2RefreshTokenGrantRequest(
+ 				this.clientRegistrationBuilder.build(), this.accessToken, this.refreshToken);
+-		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(request)).willReturn(parameters);
++		Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> parametersConverter = MockOAuth2RefreshTokenGrantRequestConverter.createMockOAuth2RefreshTokenGrantRequestConverter(request, parameters);
+ 		this.tokenResponseClient.setParametersConverter(parametersConverter);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.tokenResponseClient.getTokenResponse(request).block();
+@@ -439,4 +437,19 @@
+ 		return "%s=%s".formatted(parameterName, URLEncoder.encode(parameterValue, StandardCharsets.UTF_8));
+ 	}
+ 
++
++	public final class MockOAuth2RefreshTokenGrantRequestConverter {
++
++		private MockOAuth2RefreshTokenGrantRequestConverter() {
++		}
++
++		public static Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>>
++				createMockOAuth2RefreshTokenGrantRequestConverter(
++						OAuth2RefreshTokenGrantRequest request,
++						MultiValueMap<String, String> parameters) {
++			Converter<OAuth2RefreshTokenGrantRequest, MultiValueMap<String, String>> converter = mock();
++			given(converter.convert(request)).willReturn((MultiValueMap<String, String>) parameters);
++			return converter;
++		}
++	}
+ }

@@ -1,0 +1,44 @@
+--- a/web/src/test/java/org/springframework/security/web/server/authentication/SwitchUserWebFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authentication/SwitchUserWebFilterTests.java
+@@ -80,11 +80,14 @@
+ 	@Mock
+ 	private ServerAuthenticationFailureHandler failureHandler;
+ 
++	private ServerAuthenticationFailureHandler serverAuthenticationFailureHandler;
++
+ 	@Mock
+ 	private ServerSecurityContextRepository serverSecurityContextRepository;
+ 
+ 	@BeforeEach
+ 	public void setUp() {
++		this.serverAuthenticationFailureHandler = mock(ServerAuthenticationFailureHandler.class);
+ 		this.switchUserWebFilter = new SwitchUserWebFilter(this.userDetailsService, this.successHandler,
+ 				this.failureHandler);
+ 		this.switchUserWebFilter.setSecurityContextRepository(this.serverSecurityContextRepository);
+@@ -290,7 +293,7 @@
+ 	public void constructorUserDetailsServiceRequired() {
+ 		assertThatIllegalArgumentException()
+ 			.isThrownBy(() -> this.switchUserWebFilter = new SwitchUserWebFilter(null,
+-					mock(ServerAuthenticationSuccessHandler.class), mock(ServerAuthenticationFailureHandler.class)))
++					mock(ServerAuthenticationSuccessHandler.class), serverAuthenticationFailureHandler))
+ 			.withMessage("userDetailsService must be specified");
+ 	}
+ 
+@@ -298,7 +301,7 @@
+ 	public void constructorServerAuthenticationSuccessHandlerRequired() {
+ 		assertThatIllegalArgumentException()
+ 			.isThrownBy(() -> this.switchUserWebFilter = new SwitchUserWebFilter(mock(ReactiveUserDetailsService.class),
+-					null, mock(ServerAuthenticationFailureHandler.class)))
++					null, serverAuthenticationFailureHandler))
+ 			.withMessage("successHandler must be specified");
+ 	}
+ 
+@@ -313,7 +316,7 @@
+ 	@Test
+ 	public void constructorFirstDefaultValues() {
+ 		this.switchUserWebFilter = new SwitchUserWebFilter(mock(ReactiveUserDetailsService.class),
+-				mock(ServerAuthenticationSuccessHandler.class), mock(ServerAuthenticationFailureHandler.class));
++				mock(ServerAuthenticationSuccessHandler.class), this.serverAuthenticationFailureHandler);
+ 		final Object securityContextRepository = ReflectionTestUtils.getField(this.switchUserWebFilter,
+ 				"securityContextRepository");
+ 		assertThat(securityContextRepository).isInstanceOf(WebSessionServerSecurityContextRepository.class);
