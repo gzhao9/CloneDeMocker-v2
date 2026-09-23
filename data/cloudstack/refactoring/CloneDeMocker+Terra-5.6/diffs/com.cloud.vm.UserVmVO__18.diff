@@ -1,0 +1,139 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -768,7 +768,6 @@
+      */
+     @Test
+     public void testAttachVolumeToVMPerformsResourceReservation() throws NoSuchFieldException, IllegalAccessException, ResourceAllocationException {
+-        UserVmVO vm = Mockito.mock(UserVmVO.class);
+         AccountVO acc = Mockito.mock(AccountVO.class);
+         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
+         lenient().when(volumeToAttach.getId()).thenReturn(9L);
+@@ -777,9 +776,9 @@
+         when(volumeToAttach.getInstanceId()).thenReturn(null);
+         when(volumeToAttach.getAccountId()).thenReturn(3L);
+         when(_accountDao.findById(anyLong())).thenReturn(acc);
++        UserVmVO vm = createMockUserVm(State.Running);
+         when(userVmDaoMock.findById(anyLong())).thenReturn(vm);
+         when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+-        when(vm.getState()).thenReturn(State.Running);
+         when(vm.getDataCenterId()).thenReturn(34L);
+         when(vm.getBackupOfferingId()).thenReturn(null);
+         when(volumeDaoMock.findByInstanceAndType(anyLong(), any(Volume.Type.class))).thenReturn(new ArrayList<>(10));
+@@ -1816,9 +1815,8 @@
+         lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+ 
+         when(volume.getInstanceId()).thenReturn(1L);
+-        UserVmVO vm = mock(UserVmVO.class);
++        UserVmVO vm = createMockUserVm(State.Stopped);
+         when(userVmDaoMock.findById(1L)).thenReturn(vm);
+-        when(vm.getState()).thenReturn(State.Stopped);
+         when(volume.getState()).thenReturn(Volume.State.Ready);
+         when(volume.getId()).thenReturn(1L);
+         when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.KVM);
+@@ -1838,9 +1836,8 @@
+         lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+ 
+         when(volume.getInstanceId()).thenReturn(1L);
+-        UserVmVO vm = mock(UserVmVO.class);
++        UserVmVO vm = createMockUserVm(State.Running);
+         when(userVmDaoMock.findById(1L)).thenReturn(vm);
+-        when(vm.getState()).thenReturn(State.Running);
+ 
+         volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
+     }
+@@ -1872,9 +1869,8 @@
+         lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+ 
+         when(volume.getInstanceId()).thenReturn(1L);
+-        UserVmVO vm = mock(UserVmVO.class);
++        UserVmVO vm = createMockUserVm(State.Stopped);
+         when(userVmDaoMock.findById(1L)).thenReturn(vm);
+-        when(vm.getState()).thenReturn(State.Stopped);
+         when(volume.getState()).thenReturn(Volume.State.Allocated);
+ 
+         volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
+@@ -1891,9 +1887,8 @@
+         lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+ 
+         when(volume.getInstanceId()).thenReturn(1L);
+-        UserVmVO vm = mock(UserVmVO.class);
++        UserVmVO vm = createMockUserVm(State.Stopped);
+         when(userVmDaoMock.findById(1L)).thenReturn(vm);
+-        when(vm.getState()).thenReturn(State.Stopped);
+         when(volume.getState()).thenReturn(Volume.State.Ready);
+         when(volume.getId()).thenReturn(1L);
+         when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.VMware);
+@@ -1956,9 +1951,8 @@
+         lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+ 
+         when(volume.getInstanceId()).thenReturn(1L);
+-        UserVmVO vm = mock(UserVmVO.class);
++        UserVmVO vm = createMockUserVm(State.Stopped);
+         when(userVmDaoMock.findById(1L)).thenReturn(vm);
+-        when(vm.getState()).thenReturn(State.Stopped);
+         when(volume.getState()).thenReturn(Volume.State.Ready);
+         when(volume.getId()).thenReturn(1L);
+         when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.KVM);
+@@ -2304,8 +2298,7 @@
+     public void testCreateVolumeOnSecondaryForAttachIfNeeded_NoSuitablePool_ReturnsSameVolumeInfo() {
+         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
+         Mockito.when(volumeToAttach.getState()).thenReturn(Volume.State.Allocated);
+-        UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        Mockito.when(vm.getState()).thenReturn(State.Stopped);
++        UserVmVO vm = createMockUserVm(State.Stopped);
+         Mockito.doReturn(null).when(volumeApiServiceImpl)
+                 .getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+         VolumeInfo result = volumeApiServiceImpl.createVolumeOnPrimaryForAttachIfNeeded(volumeToAttach, vm, null);
+@@ -2755,10 +2748,9 @@
+         // snapshotDaoMock returns an empty list by default (Mockito default behaviour)
+         when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+ 
+-        UserVmVO stoppedVm = Mockito.mock(UserVmVO.class);
+         // Authoritative cloud state: Stopped.
+         // getPowerState() is NOT stubbed – power_state lag scenario.
+-        when(stoppedVm.getState()).thenReturn(State.Stopped);
++        UserVmVO stoppedVm = createMockUserVm(State.Stopped);
+         when(userVmDaoMock.findById(vmId)).thenReturn(stoppedVm);
+ 
+         long currentSizeBytes = 10L << 30; // 10 GiB
+@@ -2788,8 +2780,7 @@
+ 
+         when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+ 
+-        UserVmVO runningVm = Mockito.mock(UserVmVO.class);
+-        when(runningVm.getState()).thenReturn(State.Running);
++        UserVmVO runningVm = createMockUserVm(State.Running);
+         when(userVmDaoMock.findById(vmId)).thenReturn(runningVm);
+ 
+         long currentSizeBytes = 10L << 30;
+@@ -2820,8 +2811,7 @@
+         when(volume.getInstanceId()).thenReturn(vmId);
+         when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+ 
+-        UserVmVO stoppedVm = Mockito.mock(UserVmVO.class);
+-        when(stoppedVm.getState()).thenReturn(State.Stopped); // authoritative cloud state
++        UserVmVO stoppedVm = createMockUserVm(State.Stopped); // authoritative cloud state
+         // getPowerState() deliberately NOT stubbed – power_state lag scenario
+         when(userVmDaoMock.findById(vmId)).thenReturn(stoppedVm);
+ 
+@@ -2876,8 +2866,7 @@
+         when(volume.getInstanceId()).thenReturn(vmId);
+         when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+ 
+-        UserVmVO runningVm = Mockito.mock(UserVmVO.class);
+-        when(runningVm.getState()).thenReturn(State.Running);
++        UserVmVO runningVm = createMockUserVm(State.Running);
+         when(userVmDaoMock.findById(vmId)).thenReturn(runningVm);
+ 
+         when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+@@ -2896,4 +2885,10 @@
+                     e.getMessage() != null && e.getMessage().contains("VM should be in"));
+         }
+     }
++
++    private static UserVmVO createMockUserVm(State state) {
++        UserVmVO vm = Mockito.mock(UserVmVO.class);
++        when(vm.getState()).thenReturn(state);
++        return vm;
++    }
+ }
