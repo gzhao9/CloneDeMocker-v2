@@ -1,0 +1,37 @@
+--- a/spring-integration-mqtt/src/test/java/org/springframework/integration/mqtt/Mqttv5ReconnectionConditionTests.java
++++ b/spring-integration-mqtt/src/test/java/org/springframework/integration/mqtt/Mqttv5ReconnectionConditionTests.java
+@@ -59,8 +59,8 @@
+ 	@Test
+ 	public void testConnectAfterSingleInProgress() throws Exception {
+ 		IMqttAsyncClient mockClient = mock();
+-		IMqttToken mockConnectToken = mock();
+-		IMqttToken mockPublishToken = mock();
++		IMqttToken mockConnectToken = createMockMqttToken();
++		IMqttToken mockPublishToken = createMockMqttToken();
+ 
+ 		AtomicInteger connectAttempts = new AtomicInteger(0);
+ 		AtomicBoolean connectionCompleted = new AtomicBoolean(false);
+@@ -81,12 +81,10 @@
+ 			return mockConnectToken;
+ 		}).given(mockClient).connect(any(MqttConnectionOptions.class));
+ 
+-		willDoNothing().given(mockConnectToken).waitForCompletion(anyLong());
+ 
+ 		given(mockClient.publish(anyString(), any(MqttMessage.class), any(), any()))
+ 				.willReturn(mockPublishToken);
+ 
+-		willDoNothing().given(mockPublishToken).waitForCompletion(anyLong());
+ 		given(mockPublishToken.getMessageId()).willReturn(1);
+ 
+ 		Mqttv5PahoMessageHandler handler = createHandler(mockClient);
+@@ -156,4 +154,10 @@
+ 
+ 	}
+ 
++
++	private static IMqttToken createMockMqttToken() {
++		IMqttToken mockToken = mock();
++		willDoNothing().given(mockToken).waitForCompletion(anyLong());
++		return mockToken;
++	}
+ }
