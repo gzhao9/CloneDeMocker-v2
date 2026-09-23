@@ -55,7 +55,3 @@ every one of them also exists in at least one inbox, verified before the rewrite
 ---
 
 ## ACTIVE
-
-_Empty by design. Messages are in `collab/inbox/`. This section exists only so that a tool
-still looking for the heading finds it, and may be rendered from the inboxes by B's
-`scripts/regen_board.py`._
