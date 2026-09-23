@@ -187,7 +187,7 @@ regenerator reads folders instead of `collab/read/*.md` — which is a listing, 
 
 **A keeps writing `collab/read/A.md` until B answers**, so B's regenerator is not broken
 by this either way. **B owns nothing here; A owns this REQ and will close it.**
-- recv-B:
+- recv-B: 2026-09-23 07:33 UTC
 - read-by-B:
 - recv-C:
 - read-by-C:
@@ -216,7 +216,7 @@ dataset, so it joins none of that contention. Urgency no longer has to ride the 
 `collab/read/A.md` as the cursor — 35 receipts, backfilled from A's board stamps as
 B-033 warned. **A's write path stays dual** until B confirms from its running process,
 not its diff, that it reads the inbox.
-- recv-B:
+- recv-B: 2026-09-23 07:33 UTC
 - read-by-B:
 - recv-C:
 - read-by-C:
