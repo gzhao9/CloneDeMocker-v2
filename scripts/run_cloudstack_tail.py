@@ -139,7 +139,7 @@ def write_status(**fields: object) -> None:
     path = REPO / "collab" / "status" / "A.md"
     behind = git("rev-list", "--count", "HEAD..FETCH_HEAD").stdout.strip() or "?"
     ahead = git("rev-list", "--count", "FETCH_HEAD..HEAD").stdout.strip() or "?"
-    lines = [f"# A — status at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
+    lines = [f"# A status at {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
              "", f"unpushed commits : {ahead}    (>0 and growing means A cannot publish)",
              f"behind remote    : {behind}"]
     lines += [f"{k:<17}: {v}" for k, v in fields.items()]
