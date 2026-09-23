@@ -1,0 +1,105 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -1042,6 +1042,12 @@
+         Mockito.verify(volumeServiceMock, Mockito.times(1)).destroyVolume(volumeMockId);
+     }
+ 
++    private static DiskOfferingVO createMockDiskOfferingVo(String tags) {
++        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
++        Mockito.doReturn(tags).when(diskOfferingVoMock).getTags();
++        return diskOfferingVoMock;
++    }
++
+     private void verifyMocksForTestDestroyVolumeWhenVolumeIsNotInRightState() {
+         Mockito.verify(volumeServiceMock, Mockito.times(0)).destroyVolume(volumeMockId);
+         Mockito.verify(resourceLimitServiceMock, Mockito.times(0)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock, null);
+@@ -1287,8 +1293,7 @@
+ 
+     @Test
+     public void doesTargetStorageSupportDiskOfferingTestDiskOfferingMoreTagsThanStorageTags() {
+-        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+-        Mockito.doReturn("A,B,C").when(diskOfferingVoMock).getTags();
++        DiskOfferingVO diskOfferingVoMock = createMockDiskOfferingVo("A,B,C");
+ 
+         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+         Mockito.doReturn(new Pair<>(List.of("A"), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+@@ -1300,8 +1305,7 @@
+ 
+     @Test
+     public void doesTargetStorageSupportDiskOfferingTestDiskOfferingTagsIsSubSetOfStorageTags() {
+-        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+-        Mockito.doReturn("A,B,C").when(diskOfferingVoMock).getTags();
++        DiskOfferingVO diskOfferingVoMock = createMockDiskOfferingVo("A,B,C");
+ 
+         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+         Mockito.doReturn(new Pair<>(List.of("A","B","C","D","X","Y"), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+@@ -1313,8 +1317,7 @@
+ 
+     @Test
+     public void doesTargetStorageSupportDiskOfferingTestDiskOfferingTagsEmptyAndStorageTagsNotEmpty() {
+-        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+-        Mockito.doReturn("").when(diskOfferingVoMock).getTags();
++        DiskOfferingVO diskOfferingVoMock = createMockDiskOfferingVo("");
+ 
+         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+         Mockito.lenient().doReturn(new Pair<>(List.of("A,B,C,D,X,Y"), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+@@ -1326,8 +1329,7 @@
+ 
+     @Test
+     public void doesTargetStorageSupportDiskOfferingTestDiskOfferingTagsNotEmptyAndStorageTagsEmpty() {
+-        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+-        Mockito.doReturn("A").when(diskOfferingVoMock).getTags();
++        DiskOfferingVO diskOfferingVoMock = createMockDiskOfferingVo("A");
+ 
+         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+         Mockito.doReturn(new Pair<>(List.of(""), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+@@ -1339,8 +1341,7 @@
+ 
+     @Test
+     public void doesTargetStorageSupportDiskOfferingTestDiskOfferingTagsEmptyAndStorageTagsEmpty() {
+-        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+-        Mockito.doReturn("").when(diskOfferingVoMock).getTags();
++        DiskOfferingVO diskOfferingVoMock = createMockDiskOfferingVo("");
+ 
+         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+         Mockito.lenient().doReturn(new Pair<>(List.of(""), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+@@ -1352,8 +1353,7 @@
+ 
+     @Test
+     public void doesTargetStorageSupportDiskOfferingTestDiskOfferingTagsDifferentFromdStorageTags() {
+-        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+-        Mockito.doReturn("A,B").when(diskOfferingVoMock).getTags();
++        DiskOfferingVO diskOfferingVoMock = createMockDiskOfferingVo("A,B");
+ 
+         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+         Mockito.doReturn(new Pair<>(List.of("C,D"), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+@@ -1365,8 +1365,7 @@
+ 
+     @Test
+     public void doesTargetStorageSupportDiskOfferingTestDiskOfferingTagsEqualsStorageTags() {
+-        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+-        Mockito.doReturn("A").when(diskOfferingVoMock).getTags();
++        DiskOfferingVO diskOfferingVoMock = createMockDiskOfferingVo("A");
+ 
+         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+         Mockito.doReturn(new Pair<>(List.of("A"), false)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+@@ -1378,8 +1377,7 @@
+ 
+     @Test
+     public void doesTargetStorageSupportDiskOfferingTestStorageRuleTagWithDiskOfferingTagThatMatches() {
+-        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+-        Mockito.doReturn("A").when(diskOfferingVoMock).getTags();
++        DiskOfferingVO diskOfferingVoMock = createMockDiskOfferingVo("A");
+ 
+         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+         Mockito.doReturn(new Pair<>(List.of("tags[0] == 'A'"), true)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+@@ -1391,8 +1389,7 @@
+ 
+     @Test
+     public void doesTargetStorageSupportDiskOfferingTestStorageRuleTagWithDiskOfferingTagThatDoesNotMatch() {
+-        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+-        Mockito.doReturn("'").when(diskOfferingVoMock).getTags();
++        DiskOfferingVO diskOfferingVoMock = createMockDiskOfferingVo("'");
+ 
+         StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+         Mockito.doReturn(new Pair<>(List.of("tags[0] == 'A'"), true)).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
