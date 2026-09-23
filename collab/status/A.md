@@ -1,9 +1,5 @@
-# A status at 2026-09-23 18:19 UTC
+# A status at 2026-09-23 18:20 UTC
 
-unpushed commits : 0    (>0 and growing means A cannot publish)
-behind remote    : 2
-position         : 151
-total            : 1828
-current          : com.cloud.uservm.UserVm::7
-done             : 1682
-pending          : 0
+runner           : STOPPED on purpose (2026-09-23 18:20 UTC), user reassigned A to another task
+last published   : 1684 rows in data/cloudstack (A = 622), nothing pending
+remaining tail   : B continues; failures go to C (A-042)

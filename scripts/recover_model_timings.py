@@ -68,12 +68,13 @@ def collect() -> dict[str, list[dict]]:
         calls, seen = [], set()
         for step in proposal.get("stageLog") or []:
             rid = step.get("responseId")
-            if rid and rid not in seen:
+            if rid and rid.startswith("resp_") and rid not in seen:
                 seen.add(rid)
                 calls.append({"id": rid, "stage": step.get("stage"), "variant": step.get("variant"),
                               "attempt": step.get("attempt")})
         last = proposal.get("responseId")
-        if last and last not in seen:
+        # A cache replay records a "cache-..." placeholder, not a call: nothing to time.
+        if last and last.startswith("resp_") and last not in seen:
             # Not one of the phase calls, so it came after them: the repair call.
             calls.append({"id": last, "stage": "REPAIR", "variant": None,
                           "attempt": proposal.get("repairAttemptsUsed")})
