@@ -1,0 +1,193 @@
+--- a/plugins/storage/volume/linstor/src/test/java/org/apache/cloudstack/storage/datastore/driver/LinstorPrimaryDataStoreDriverImplTest.java
++++ b/plugins/storage/volume/linstor/src/test/java/org/apache/cloudstack/storage/datastore/driver/LinstorPrimaryDataStoreDriverImplTest.java
+@@ -141,9 +141,8 @@
+         when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
+         when(snapshot.getDataStore()).thenReturn(primaryStore);
+ 
+-        VolumeInfo volume = mock(VolumeInfo.class);
++        VolumeInfo volume = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(primaryStore);
+         when(volume.getType()).thenReturn(DataObjectType.VOLUME);
+-        when(volume.getDataStore()).thenReturn(primaryStore);
+ 
+         StoragePoolVO pool = mock(StoragePoolVO.class);
+         when(pool.getStorageProviderName()).thenReturn("SomeOtherProvider");
+@@ -167,9 +166,8 @@
+         when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
+         when(snapshot.getDataStore()).thenReturn(srcStore);
+ 
+-        VolumeInfo volume = mock(VolumeInfo.class);
++        VolumeInfo volume = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(destStore);
+         when(volume.getType()).thenReturn(DataObjectType.VOLUME);
+-        when(volume.getDataStore()).thenReturn(destStore);
+ 
+         Assert.assertFalse("canCopy should return false for SNAPSHOT -> VOLUME across different primary stores",
+                 linstorPrimaryDataStoreDriver.canCopy(snapshot, volume));
+@@ -187,9 +185,8 @@
+         when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
+         when(snapshot.getDataStore()).thenReturn(primaryStore);
+ 
+-        VolumeInfo volume = mock(VolumeInfo.class);
++        VolumeInfo volume = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(imageStore);
+         when(volume.getType()).thenReturn(DataObjectType.VOLUME);
+-        when(volume.getDataStore()).thenReturn(imageStore);
+ 
+         Assert.assertFalse("canCopy should return false when destination is Image store",
+                 linstorPrimaryDataStoreDriver.canCopy(snapshot, volume));
+--- a/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/ScaleIOPrimaryDataStoreDriverTest.java
++++ b/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/ScaleIOPrimaryDataStoreDriverTest.java
+@@ -190,14 +190,11 @@
+ 
+     @Test
+     public void testMigrateVolumeWithinSameScaleIOClusterSuccess() throws Exception {
+-        VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+-        VolumeInfo destData = Mockito.mock(VolumeInfo.class);
+-
+-        DataStore srcStore = Mockito.mock(DataStore.class);
+-        DataStore destStore = Mockito.mock(DataStore.class);
+-
+-        when(srcData.getDataStore()).thenReturn(srcStore);
+-        when(destData.getDataStore()).thenReturn(destStore);
++        DataStore srcStore = Mockito.mock(DataStore.class);
++        DataStore destStore = Mockito.mock(DataStore.class);
++
++        VolumeInfo srcData = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(srcStore);
++        VolumeInfo destData = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(destStore);
+ 
+         fillSrcVolumeDetails(srcData, srcStore);
+         fillDestVolumeDetails(destData, destStore);
+@@ -241,14 +238,11 @@
+ 
+     @Test
+     public void testMigrateVolumeWithinSameScaleIOClusterFailure() throws Exception {
+-        VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+-        VolumeInfo destData = Mockito.mock(VolumeInfo.class);
+-
+-        DataStore srcStore = Mockito.mock(DataStore.class);
+-        DataStore destStore = Mockito.mock(DataStore.class);
+-
+-        when(srcData.getDataStore()).thenReturn(srcStore);
+-        when(destData.getDataStore()).thenReturn(destStore);
++        DataStore srcStore = Mockito.mock(DataStore.class);
++        DataStore destStore = Mockito.mock(DataStore.class);
++
++        VolumeInfo srcData = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(srcStore);
++        VolumeInfo destData = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(destStore);
+ 
+         fillSrcVolumeDetails(srcData, srcStore);
+         fillDestVolumeDetails(destData, destStore);
+@@ -375,7 +369,8 @@
+         //Either destination volume delete success or failure, DB operations should get revert
+ 
+         VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+-        VolumeInfo destData = Mockito.mock(VolumeInfo.class);
++        DataStore destStore = Mockito.mock(DataStore.class);
++        VolumeInfo destData = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(destStore);
+         Host host = Mockito.mock(Host.class);
+         String destVolumePath = "01b332b300000007:vol-11-b9e2-10ee";
+ 
+@@ -385,8 +380,6 @@
+ 
+         when(srcData.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
+         when(srcData.getFolder()).thenReturn("921c364500000007");
+-        DataStore destStore = Mockito.mock(DataStore.class);
+-        when(destData.getDataStore()).thenReturn(destStore);
+         doNothing().when(scaleIOPrimaryDataStoreDriver)
+                 .revokeAccess(any(), any(), any());
+ 
+@@ -411,7 +404,8 @@
+         //Either destination volume delete success or failure, DB operations should get revert
+ 
+         VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+-        VolumeInfo destData = Mockito.mock(VolumeInfo.class);
++        DataStore destStore = Mockito.mock(DataStore.class);
++        VolumeInfo destData = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(destStore);
+         Host host = Mockito.mock(Host.class);
+         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
+         String destVolumePath = "01b332b300000007:vol-11-b9e2-10ee";
+@@ -422,8 +416,6 @@
+ 
+         when(srcData.getPath()).thenReturn(srcVolumePath);
+         when(srcData.getFolder()).thenReturn("921c364500000007");
+-        DataStore destStore = Mockito.mock(DataStore.class);
+-        when(destData.getDataStore()).thenReturn(destStore);
+         doNothing().when(scaleIOPrimaryDataStoreDriver).revokeAccess(any(), any(), any());
+ 
+         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
+@@ -446,13 +438,12 @@
+     public void deleteSourceVolumeSuccessScenarioAfterSuccessfulBlockCopy() throws Exception {
+         // Either Volume deletion success or failure method should complete
+ 
+-        VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+         Host host = Mockito.mock(Host.class);
+         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
+ 
+         DataStore srcStore = Mockito.mock(DataStore.class);
+         DataTO volumeTO = Mockito.mock(DataTO.class);
+-        when(srcData.getDataStore()).thenReturn(srcStore);
++        VolumeInfo srcData = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(srcStore);
+         when(srcData.getTO()).thenReturn(volumeTO);
+         when(volumeTO.getPath()).thenReturn(srcVolumePath);
+         doNothing().when(scaleIOPrimaryDataStoreDriver).revokeVolumeAccess(any(), any(), any());
+@@ -469,13 +460,12 @@
+     public void deleteSourceVolumeFailureScenarioAfterSuccessfulBlockCopy() throws Exception {
+         // Either Volume deletion success or failure method should complete
+ 
+-        VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+         Host host = Mockito.mock(Host.class);
+         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
+ 
+         DataStore srcStore = Mockito.mock(DataStore.class);
+         DataTO volumeTO = Mockito.mock(DataTO.class);
+-        when(srcData.getDataStore()).thenReturn(srcStore);
++        VolumeInfo srcData = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(srcStore);
+         when(srcData.getTO()).thenReturn(volumeTO);
+         when(volumeTO.getPath()).thenReturn(srcVolumePath);
+         String sdcId = "7332760565f6340f";
+@@ -494,14 +484,13 @@
+     public void deleteSourceVolumeFailureScenarioWhenNoSDCisFound() {
+         // Either Volume deletion success or failure method should complete
+ 
+-        VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+         Host host = Mockito.mock(Host.class);
+         when(host.getId()).thenReturn(1L);
+         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
+ 
+         DataStore srcStore = Mockito.mock(DataStore.class);
+         DataTO volumeTO = Mockito.mock(DataTO.class);
+-        when(srcData.getDataStore()).thenReturn(srcStore);
++        VolumeInfo srcData = MockVolumeInfoWithDataStore.createMockVolumeInfoWithDataStore(srcStore);
+         when(srcData.getTO()).thenReturn(volumeTO);
+         when(volumeTO.getPath()).thenReturn(srcVolumePath);
+         String sdcId = "7332760565f6340f";
+--- a/plugins/storage/volume/linstor/src/test/java/org/apache/cloudstack/storage/datastore/driver/MockVolumeInfoWithDataStore.java
++++ b/plugins/storage/volume/linstor/src/test/java/org/apache/cloudstack/storage/datastore/driver/MockVolumeInfoWithDataStore.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.storage.datastore.driver;
++
++import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
++import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
++import org.mockito.Mockito;
++
++public class MockVolumeInfoWithDataStore {
++    public static VolumeInfo createMockVolumeInfoWithDataStore(DataStore dataStore) {
++        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
++        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
++        return volumeInfo;
++    }
++}
+--- a/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/MockVolumeInfoWithDataStore.java
++++ b/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/MockVolumeInfoWithDataStore.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.storage.datastore.driver;
++
++import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
++import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
++import org.mockito.Mockito;
++
++public class MockVolumeInfoWithDataStore {
++    public static VolumeInfo createMockVolumeInfoWithDataStore(DataStore dataStore) {
++        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
++        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
++        return volumeInfo;
++    }
++}
