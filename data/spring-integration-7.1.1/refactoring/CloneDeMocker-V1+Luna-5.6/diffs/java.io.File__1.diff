@@ -1,0 +1,44 @@
+--- a/spring-integration-file/src/test/java/org/springframework/integration/file/inbound/FileReadingMessageSourceTests.java
++++ b/spring-integration-file/src/test/java/org/springframework/integration/file/inbound/FileReadingMessageSourceTests.java
+@@ -94,9 +94,7 @@
+ 
+ 	@Test
+ 	public void scanEachPoll() throws IOException {
+-		File anotherFileMock = mock();
+-		when(anotherFileMock.toPath()).thenReturn(Path.of("[dir]/anotherFileMock"));
+-		when(anotherFileMock.getCanonicalFile()).thenReturn(anotherFileMock);
++		File anotherFileMock = createMockFile(Path.of("[dir]/anotherFileMock"));
+ 		when(inputDirectoryMock.listFiles()).thenReturn(new File[] {fileMock, anotherFileMock});
+ 		source.setScanEachPoll(true);
+ 		assertThat(source.receive()).isNotNull();
+@@ -141,15 +139,9 @@
+ 
+ 	@Test
+ 	public void orderedReception() throws IOException {
+-		File file1 = mock();
+-		when(file1.toPath()).thenReturn(Path.of("[dir]/file1"));
+-		when(file1.getCanonicalFile()).thenReturn(file1);
+-		File file2 = mock();
+-		when(file2.toPath()).thenReturn(Path.of("[dir]/file2"));
+-		when(file2.getCanonicalFile()).thenReturn(file2);
+-		File file3 = mock();
+-		when(file3.toPath()).thenReturn(Path.of("[dir]/file3"));
+-		when(file3.getCanonicalFile()).thenReturn(file3);
++		File file1 = createMockFile(Path.of("[dir]/file1"));
++		File file2 = createMockFile(Path.of("[dir]/file2"));
++		File file3 = createMockFile(Path.of("[dir]/file3"));
+ 
+ 		// record the comparator to reverse order the files
+ 		when(comparator.compare(file1, file2)).thenReturn(1);
+@@ -164,4 +156,11 @@
+ 		verify(inputDirectoryMock, times(2)).listFiles();
+ 	}
+ 
++
++	private static File createMockFile(Path path) {
++		File file = mock();
++		when(file.toPath()).thenReturn(path);
++		when(file.getCanonicalFile()).thenReturn(file);
++		return file;
++	}
+ }
