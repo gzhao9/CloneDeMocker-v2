@@ -5,7 +5,7 @@
          when(accountDetailsDao.findDetail(anyLong(),anyString())).
                  thenReturn(new AccountDetailVO(1L, "abc","def"));
 -        when(bucketDao.findById(anyLong())).thenReturn(new BucketVO(bucket.getName()));
-+        bucketDao = MockBucketDaoFactory.createMockBucketDao(new BucketVO(bucket.getName()));
++        BucketDaoTestHelper.stubFindById(bucketDao, new BucketVO(bucket.getName()));
          Bucket bucketRet = cephObjectStoreDriverImpl.createBucket(bucket, false);
          assertEquals(bucketRet.getName(), bucket.getName());
          verify(rgwClient, times(1)).doesBucketExistV2(anyString());
@@ -16,83 +16,75 @@
      public void testCreateBucket() throws Exception {
          doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3Client(anyString(), anyString(), anyString());
 -        when(bucketDao.findById(anyLong())).thenReturn(bucketVo);
-+        bucketDao = MockBucketDaoFactory.createMockBucketDao(bucketVo);
++        BucketDaoTestHelper.stubFindById(bucketDao, bucketVo);
  
          // Actual Test
          Bucket bucketRet = cloudianHyperStoreObjectStoreDriverImpl.createBucket(bucketVo, false);
 --- a/plugins/storage/object/minio/src/test/java/org/apache/cloudstack/storage/datastore/driver/MinIOObjectStoreDriverImplTest.java
 +++ b/plugins/storage/object/minio/src/test/java/org/apache/cloudstack/storage/datastore/driver/MinIOObjectStoreDriverImplTest.java
-@@ -114,12 +114,12 @@
-     public void testCreateBucket() throws Exception {
-         doReturn(minioClient).when(minioObjectStoreDriverImpl).getMinIOClient(anyLong());
-         doReturn(minioAdminClient).when(minioObjectStoreDriverImpl).getMinIOAdminClient(anyLong());
-+        bucketDao = MockBucketDaoFactory.createMockBucketDao(new BucketVO());
-         when(bucketDao.listByObjectStoreIdAndAccountId(anyLong(), anyLong())).thenReturn(new ArrayList<BucketVO>());
-         when(account.getUuid()).thenReturn(UUID.randomUUID().toString());
+@@ -119,7 +119,7 @@
          when(accountDao.findById(anyLong())).thenReturn(account);
          when(accountDetailsDao.findDetail(anyLong(),anyString())).
                  thenReturn(new AccountDetailVO(1L, "abc","def"));
 -        when(bucketDao.findById(anyLong())).thenReturn(new BucketVO());
++        BucketDaoTestHelper.stubFindById(bucketDao, new BucketVO());
          Bucket bucketRet = minioObjectStoreDriverImpl.createBucket(bucket, false);
          assertEquals(bucketRet.getName(), bucket.getName());
          verify(minioClient, times(1)).bucketExists(any());
---- a/plugins/storage/object/ceph/src/test/java/org/apache/cloudstack/storage/datastore/driver/MockBucketDaoFactory.java
-+++ b/plugins/storage/object/ceph/src/test/java/org/apache/cloudstack/storage/datastore/driver/MockBucketDaoFactory.java
-@@ -0,0 +1,17 @@
+--- a/plugins/storage/object/ceph/src/test/java/org/apache/cloudstack/storage/datastore/driver/BucketDaoTestHelper.java
++++ b/plugins/storage/object/ceph/src/test/java/org/apache/cloudstack/storage/datastore/driver/BucketDaoTestHelper.java
+@@ -0,0 +1,16 @@
 +package org.apache.cloudstack.storage.datastore.driver;
 +
-+import static org.mockito.Mockito.anyLong;
++import static org.mockito.ArgumentMatchers.anyLong;
 +import static org.mockito.Mockito.when;
 +
 +import com.cloud.storage.BucketVO;
 +import com.cloud.storage.dao.BucketDao;
 +
-+import org.mockito.Mockito;
++public final class BucketDaoTestHelper {
++    private BucketDaoTestHelper() {
++    }
 +
-+public class MockBucketDaoFactory {
-+    public static BucketDao createMockBucketDao(BucketVO bucketVo) {
-+        BucketDao bucketDao = Mockito.mock(BucketDao.class);
++    public static void stubFindById(BucketDao bucketDao, BucketVO bucketVo) {
 +        when(bucketDao.findById(anyLong())).thenReturn(bucketVo);
-+        return bucketDao;
 +    }
 +}
---- a/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/MockBucketDaoFactory.java
-+++ b/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/MockBucketDaoFactory.java
-@@ -0,0 +1,17 @@
+--- a/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/BucketDaoTestHelper.java
++++ b/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/BucketDaoTestHelper.java
+@@ -0,0 +1,16 @@
 +package org.apache.cloudstack.storage.datastore.driver;
 +
-+import static org.mockito.Mockito.anyLong;
++import static org.mockito.ArgumentMatchers.anyLong;
 +import static org.mockito.Mockito.when;
 +
 +import com.cloud.storage.BucketVO;
 +import com.cloud.storage.dao.BucketDao;
 +
-+import org.mockito.Mockito;
++public final class BucketDaoTestHelper {
++    private BucketDaoTestHelper() {
++    }
 +
-+public class MockBucketDaoFactory {
-+    public static BucketDao createMockBucketDao(BucketVO bucketVo) {
-+        BucketDao bucketDao = Mockito.mock(BucketDao.class);
++    public static void stubFindById(BucketDao bucketDao, BucketVO bucketVo) {
 +        when(bucketDao.findById(anyLong())).thenReturn(bucketVo);
-+        return bucketDao;
 +    }
 +}
---- a/plugins/storage/object/minio/src/test/java/org/apache/cloudstack/storage/datastore/driver/MockBucketDaoFactory.java
-+++ b/plugins/storage/object/minio/src/test/java/org/apache/cloudstack/storage/datastore/driver/MockBucketDaoFactory.java
-@@ -0,0 +1,17 @@
+--- a/plugins/storage/object/minio/src/test/java/org/apache/cloudstack/storage/datastore/driver/BucketDaoTestHelper.java
++++ b/plugins/storage/object/minio/src/test/java/org/apache/cloudstack/storage/datastore/driver/BucketDaoTestHelper.java
+@@ -0,0 +1,16 @@
 +package org.apache.cloudstack.storage.datastore.driver;
 +
-+import static org.mockito.Mockito.anyLong;
++import static org.mockito.ArgumentMatchers.anyLong;
 +import static org.mockito.Mockito.when;
 +
 +import com.cloud.storage.BucketVO;
 +import com.cloud.storage.dao.BucketDao;
 +
-+import org.mockito.Mockito;
++public final class BucketDaoTestHelper {
++    private BucketDaoTestHelper() {
++    }
 +
-+public class MockBucketDaoFactory {
-+    public static BucketDao createMockBucketDao(BucketVO bucketVo) {
-+        BucketDao bucketDao = Mockito.mock(BucketDao.class);
++    public static void stubFindById(BucketDao bucketDao, BucketVO bucketVo) {
 +        when(bucketDao.findById(anyLong())).thenReturn(bucketVo);
-+        return bucketDao;
 +    }
 +}
