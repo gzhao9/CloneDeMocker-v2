@@ -49,6 +49,29 @@ def main() -> None:
     if dupes:
         sys.exit(f"post: VERIFY FAILED -- duplicate entries after writing: {dupes}")
     print(f"post: {entry_id} inserted and verified")
+    deliver(entry_id, body)
+
+
+def deliver(entry_id: str, body: str) -> None:
+    """Also drop the entry in each recipient's inbox directory (A-024).
+
+    Written alongside the board copy rather than instead of it, so the proposal needs no
+    agreement to start being useful and none to abandon: B and C keep reading COLLAB.md
+    and cannot tell the difference. One writer per path is the whole point -- these files
+    never conflict, which is what the board, merged by both sides now, cannot promise.
+    """
+    header = body.split("\n", 1)[0]
+    m = re.search(r"→\s*([ABC](?:\s*,\s*[ABC])*)", header)
+    cc = re.search(r"\(cc\s+([ABC](?:\s*,\s*[ABC])*)\)", header)
+    names = re.findall(r"[ABC]", (m.group(1) if m else "") + (cc.group(1) if cc else ""))
+    if not names:
+        print(f"post: {entry_id} has no recipient in its header, inbox copy skipped")
+        return
+    for name in dict.fromkeys(names):
+        path = BOARD.parent / "collab" / "inbox" / name / f"{entry_id}.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(body, encoding="utf-8", newline="\n")
+        print(f"post: {entry_id} delivered to collab/inbox/{name}/")
 
 
 if __name__ == "__main__":
