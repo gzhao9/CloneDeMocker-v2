@@ -1,0 +1,40 @@
+--- a/dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosNamingServiceWrapperTest.java
++++ b/dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosNamingServiceWrapperTest.java
+@@ -37,10 +37,9 @@
+ class NacosNamingServiceWrapperTest {
+     @Test
+     void testSubscribe() throws NacosException {
+-        NacosConnectionManager connectionManager = Mockito.mock(NacosConnectionManager.class);
+         NamingService namingService = Mockito.mock(NamingService.class);
+-        Mockito.when(connectionManager.getNamingService()).thenReturn(namingService);
+-
++
++        NacosConnectionManager connectionManager = createMockNacosConnectionManager(namingService);
+         NacosNamingServiceWrapper nacosNamingServiceWrapper = new NacosNamingServiceWrapper(connectionManager, 0, 0);
+ 
+         EventListener eventListener = Mockito.mock(EventListener.class);
+@@ -555,12 +554,11 @@
+ 
+     @Test
+     void testConcurrency() throws NacosException, InterruptedException {
+-        NacosConnectionManager connectionManager = Mockito.mock(NacosConnectionManager.class);
++        NacosConnectionManager connectionManager = createMockNacosConnectionManager(namingService);
+ 
+         CountDownLatch startLatch = new CountDownLatch(1);
+         CountDownLatch stopLatch = new CountDownLatch(1);
+         NamingService namingService = Mockito.mock(NamingService.class);
+-        Mockito.when(connectionManager.getNamingService()).thenReturn(namingService);
+ 
+         NacosNamingServiceWrapper nacosNamingServiceWrapper =
+                 new NacosNamingServiceWrapper(connectionManager, false, 0, 0);
+@@ -748,4 +746,10 @@
+             Assertions.fail(e);
+         }
+     }
++
++    private static NacosConnectionManager createMockNacosConnectionManager(NamingService namingService) {
++        NacosConnectionManager connectionManager = Mockito.mock(NacosConnectionManager.class);
++        Mockito.when(connectionManager.getNamingService()).thenReturn(namingService);
++        return connectionManager;
++    }
+ }

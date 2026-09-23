@@ -1,0 +1,62 @@
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/LogUtilTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/LogUtilTest.java
+@@ -43,9 +43,8 @@
+ 
+     @Test
+     void testCheckNoError() {
+-        Log log = mock(Log.class);
++        Log log = createMockLog(Level.ERROR);
+         DubboAppender.logList.add(log);
+-        when(log.getLogLevel()).thenReturn(Level.ERROR);
+         assertThat(LogUtil.checkNoError(), is(false));
+         when(log.getLogLevel()).thenReturn(Level.INFO);
+         assertThat(LogUtil.checkNoError(), is(true));
+@@ -61,22 +60,19 @@
+ 
+     @Test
+     void testFindLevel() {
+-        Log log = mock(Log.class);
++        Log log = createMockLog(Level.ERROR);
+         DubboAppender.logList.add(log);
+-        when(log.getLogLevel()).thenReturn(Level.ERROR);
+         assertThat(LogUtil.findLevel(Level.ERROR), equalTo(1));
+         assertThat(LogUtil.findLevel(Level.INFO), equalTo(0));
+     }
+ 
+     @Test
+     void testFindLevelWithThreadName() {
+-        Log log = mock(Log.class);
++        Log log = createMockLog(Level.ERROR);
+         DubboAppender.logList.add(log);
+-        when(log.getLogLevel()).thenReturn(Level.ERROR);
+         when(log.getLogThread()).thenReturn("thread-1");
+-        log = mock(Log.class);
++        log = createMockLog(Level.ERROR);
+         DubboAppender.logList.add(log);
+-        when(log.getLogLevel()).thenReturn(Level.ERROR);
+         when(log.getLogThread()).thenReturn("thread-2");
+         assertThat(LogUtil.findLevelWithThreadName(Level.ERROR, "thread-2"), equalTo(1));
+     }
+@@ -99,14 +95,18 @@
+ 
+     @Test
+     void testFindMessage2() {
+-        Log log = mock(Log.class);
++        Log log = createMockLog(Level.ERROR);
+         DubboAppender.logList.add(log);
+         when(log.getLogMessage()).thenReturn("message");
+-        when(log.getLogLevel()).thenReturn(Level.ERROR);
+-        log = mock(Log.class);
++        log = createMockLog(Level.INFO);
+         DubboAppender.logList.add(log);
+         when(log.getLogMessage()).thenReturn("message");
+-        when(log.getLogLevel()).thenReturn(Level.INFO);
+         assertThat(LogUtil.findMessage(Level.ERROR, "message"), equalTo(1));
+     }
++
++    private static Log createMockLog(Level logLevel) {
++        Log log = mock(Log.class);
++        when(log.getLogLevel()).thenReturn(logLevel);
++        return log;
++    }
+ }

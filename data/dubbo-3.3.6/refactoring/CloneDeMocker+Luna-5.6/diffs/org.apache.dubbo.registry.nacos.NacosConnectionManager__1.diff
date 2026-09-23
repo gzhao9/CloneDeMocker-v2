@@ -1,0 +1,40 @@
+--- a/dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosNamingServiceWrapperTest.java
++++ b/dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosNamingServiceWrapperTest.java
+@@ -37,9 +37,8 @@
+ class NacosNamingServiceWrapperTest {
+     @Test
+     void testSubscribe() throws NacosException {
+-        NacosConnectionManager connectionManager = Mockito.mock(NacosConnectionManager.class);
+         NamingService namingService = Mockito.mock(NamingService.class);
+-        Mockito.when(connectionManager.getNamingService()).thenReturn(namingService);
++        NacosConnectionManager connectionManager = createMockConnectionManager(namingService);
+ 
+         NacosNamingServiceWrapper nacosNamingServiceWrapper = new NacosNamingServiceWrapper(connectionManager, 0, 0);
+ 
+@@ -555,12 +554,10 @@
+ 
+     @Test
+     void testConcurrency() throws NacosException, InterruptedException {
+-        NacosConnectionManager connectionManager = Mockito.mock(NacosConnectionManager.class);
+-
+         CountDownLatch startLatch = new CountDownLatch(1);
+         CountDownLatch stopLatch = new CountDownLatch(1);
+         NamingService namingService = Mockito.mock(NamingService.class);
+-        Mockito.when(connectionManager.getNamingService()).thenReturn(namingService);
++        NacosConnectionManager connectionManager = createMockConnectionManager(namingService);
+ 
+         NacosNamingServiceWrapper nacosNamingServiceWrapper =
+                 new NacosNamingServiceWrapper(connectionManager, false, 0, 0);
+@@ -654,6 +651,12 @@
+         Assertions.assertNotEquals(instancesInfo, instancesInfoNew);
+     }
+ 
++    private static NacosConnectionManager createMockConnectionManager(NamingService namingService) {
++        NacosConnectionManager connectionManager = Mockito.mock(NacosConnectionManager.class);
++        Mockito.when(connectionManager.getNamingService()).thenReturn(namingService);
++        return connectionManager;
++    }
++
+     @Test
+     void testSuccess() {
+         NamingService namingService = new MockNamingService() {
