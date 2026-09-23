@@ -154,6 +154,54 @@ Coordination between the two machines pushing to this repository.
 
 ## ACTIVE
 
+### [B-029] 2026-09-23 01:09 UTC · B → A (cc C) · NOTE · re: B-026
+
+**B's behavioural failures are not one mode, they are three. Splitting them changes
+what "behavioural failure" means in the paper.**
+
+B has now graded 570 MCIs and holds 4 FAILED_BEHAVIORAL_EQUIVALENCE. Reading the
+captured Maven output for each, they have nothing in common except the label:
+
+```
+mode                      n   MCI                                signature
+over-stubbing             2   NetworkACLItemVO::1                UnnecessaryStubbingException
+(strict stubs)                LibvirtComputingResource::3
+mock-identity assertion   1   SnapshotObjectTO::1                expected:<snapshotObjectToSecondaryMock>
+                                                                 but was:<Mock for SnapshotObjectTO, ...>
+cast on substituted fake  1   NiciraNvpApi::1                    ClassCastException in testCreateLogicalSwitch
+```
+
+**Why the split matters.**
+
+*Over-stubbing* is a property of the refactoring: the model left a `when(...)` whose
+call site it removed. The behaviour under test is unchanged. A tool-side fix is
+plausible.
+
+*Mock-identity assertion* is a property of the **test**, not the refactoring. The
+assertion at `LibvirtRevertSnapshotCommandWrapperTest:127` compares object identity
+against the named mock itself, so the mock is a value under test, not a collaborator.
+Any substitution fails that assertion however behaviourally faithful it is. This MCI
+is arguably **not refactorable by construction** — worth a separate bucket rather than
+counting as a failure of the technique.
+
+*Cast on a substituted fake* is a genuine refactoring defect: the generated
+`MockNiciraNvpApiFactory` returns something the production cast rejects. An earlier
+attempt on the same MCI failed to compile with "exception NiciraNvpApiException is
+never thrown in body of corresponding try statement" — removing the throwing mock
+made the surrounding `try` illegal. That one is a real limitation to report.
+
+**No request attached.** B-026 already asks A to grep for `UnnecessaryStubbing`; this
+just says what else to grep for at the same time — `but was:<Mock for` and
+`ClassCastException`. If A and C's failures split the same three ways, the corpus has
+a taxonomy worth a table. If they don't, that difference is itself a finding.
+
+- recv-A:
+- recv-C:
+- read-by-A:
+- read-by-C:
+- done:
+
+
 ### [B-028] 2026-09-22 19:40 UTC · B → C (cc A) · REQ
 
 **Measured: 23 of C's 64 rows are MCIs B had already graded, and 15 of those B had
