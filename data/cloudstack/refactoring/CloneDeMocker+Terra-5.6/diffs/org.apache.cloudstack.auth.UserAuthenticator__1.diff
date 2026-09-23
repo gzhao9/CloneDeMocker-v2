@@ -1,0 +1,38 @@
+--- a/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
+@@ -1036,6 +1036,12 @@
+         return expectedUserPasswordAfterEncoded;
+     }
+ 
++    private static UserAuthenticator createMockUserAuthenticator(Pair<Boolean, ActionOnFailedAuthentication> authenticationResult, String username, String currentPassword, long domainId) {
++        UserAuthenticator authenticatorMock = Mockito.mock(UserAuthenticator.class);
++        Mockito.doReturn(authenticationResult).when(authenticatorMock).authenticate(username, currentPassword, domainId, null);
++        return authenticatorMock;
++    }
++
+     @Test(expected = InvalidParameterValueException.class)
+     public void validateCurrentPasswordTestUserNotAuthenticatedWithProvidedCurrentPassword() {
+         Mockito.doReturn(Mockito.mock(AccountVO.class)).when(_accountDao).findById(accountMockId);
+@@ -1086,16 +1092,15 @@
+ 
+         accountManagerImpl._userPasswordEncoders = new ArrayList<>();
+         UserAuthenticator authenticatorMock1 = Mockito.mock(UserAuthenticator.class);
+-        UserAuthenticator authenticatorMock2 = Mockito.mock(UserAuthenticator.class);
++
++        Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = new Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication>(true,
++                UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
++
++        String currentPassword = "currentPassword";
++        UserAuthenticator authenticatorMock2 = createMockUserAuthenticator(authenticationResult, username, currentPassword, domainId);
+ 
+         accountManagerImpl._userPasswordEncoders.add(authenticatorMock1);
+         accountManagerImpl._userPasswordEncoders.add(authenticatorMock2);
+-
+-        Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = new Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication>(true,
+-                UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+-
+-        String currentPassword = "currentPassword";
+-        Mockito.doReturn(authenticationResult).when(authenticatorMock2).authenticate(username, currentPassword, domainId, null);
+ 
+         accountManagerImpl.validateCurrentPassword(userVoMock, currentPassword);
+ 

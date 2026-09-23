@@ -1,0 +1,41 @@
+--- a/server/src/test/java/com/cloud/network/router/VirtualNetworkApplianceManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/router/VirtualNetworkApplianceManagerImplTest.java
+@@ -264,6 +264,9 @@
+     private BGPService bgpService;
+ 
+     @Mock
++    private List<? extends BgpPeer> bgpPeersMock;
++
++    @Mock
+     private LoadBalancingRulesManager _lbMgr;
+ 
+     //    @InjectMocks
+@@ -371,11 +374,10 @@
+         when(_networkDao.findById(guestNetworkId)).thenReturn(network);
+         when(network.getVpcId()).thenReturn(null);
+         when(routedIpv4Manager.isDynamicRoutedNetwork(network)).thenReturn(true);
+-        List<? extends BgpPeer> bgpPeers = Mockito.mock(List.class);
+-        doReturn(bgpPeers).when(bgpService).getBgpPeersForNetwork(network);
++        doReturn(bgpPeersMock).when(bgpService).getBgpPeersForNetwork(network);
+         virtualNetworkApplianceManagerImpl.finalizeNetworkRulesForNetwork(cmds, router, Network.Provider.VirtualRouter, guestNetworkId);
+ 
+-        Mockito.verify(_commandSetupHelper).createBgpPeersCommands(bgpPeers, router, cmds, network);
++        Mockito.verify(_commandSetupHelper).createBgpPeersCommands(bgpPeersMock, router, cmds, network);
+     }
+ 
+     @Test
+@@ -391,12 +393,11 @@
+         VpcVO vpc = Mockito.mock(VpcVO.class);
+         when(_vpcDao.findById(vpcId)).thenReturn(vpc);
+         when(routedIpv4Manager.isDynamicRoutedVpc(vpc)).thenReturn(true);
+-        List<? extends BgpPeer> bgpPeers = Mockito.mock(List.class);
+-        doReturn(bgpPeers).when(bgpService).getBgpPeersForVpc(vpc);
++        doReturn(bgpPeersMock).when(bgpService).getBgpPeersForVpc(vpc);
+ 
+         virtualNetworkApplianceManagerImpl.finalizeNetworkRulesForNetwork(cmds, router, Network.Provider.VirtualRouter, guestNetworkId);
+ 
+-        Mockito.verify(_commandSetupHelper).createBgpPeersCommands(bgpPeers, router, cmds, network);
++        Mockito.verify(_commandSetupHelper).createBgpPeersCommands(bgpPeersMock, router, cmds, network);
+     }
+ 
+     @Test
