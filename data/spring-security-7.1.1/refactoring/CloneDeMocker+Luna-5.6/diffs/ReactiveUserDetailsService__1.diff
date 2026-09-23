@@ -1,0 +1,47 @@
+--- a/web/src/test/java/org/springframework/security/web/server/authentication/SwitchUserWebFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authentication/SwitchUserWebFilterTests.java
+@@ -75,6 +75,9 @@
+ 	private ReactiveUserDetailsService userDetailsService;
+ 
+ 	@Mock
++	private ReactiveUserDetailsService reactiveUserDetailsService;
++
++	@Mock
+ 	ServerAuthenticationSuccessHandler successHandler;
+ 
+ 	@Mock
+@@ -297,7 +300,7 @@
+ 	@Test
+ 	public void constructorServerAuthenticationSuccessHandlerRequired() {
+ 		assertThatIllegalArgumentException()
+-			.isThrownBy(() -> this.switchUserWebFilter = new SwitchUserWebFilter(mock(ReactiveUserDetailsService.class),
++			.isThrownBy(() -> this.switchUserWebFilter = new SwitchUserWebFilter(this.reactiveUserDetailsService,
+ 					null, mock(ServerAuthenticationFailureHandler.class)))
+ 			.withMessage("successHandler must be specified");
+ 	}
+@@ -305,14 +308,14 @@
+ 	@Test
+ 	public void constructorSuccessTargetUrlRequired() {
+ 		assertThatIllegalArgumentException()
+-			.isThrownBy(() -> this.switchUserWebFilter = new SwitchUserWebFilter(mock(ReactiveUserDetailsService.class),
++			.isThrownBy(() -> this.switchUserWebFilter = new SwitchUserWebFilter(reactiveUserDetailsService,
+ 					null, "failure/target/url"))
+ 			.withMessage("successTargetUrl must be specified");
+ 	}
+ 
+ 	@Test
+ 	public void constructorFirstDefaultValues() {
+-		this.switchUserWebFilter = new SwitchUserWebFilter(mock(ReactiveUserDetailsService.class),
++		this.switchUserWebFilter = new SwitchUserWebFilter(reactiveUserDetailsService,
+ 				mock(ServerAuthenticationSuccessHandler.class), mock(ServerAuthenticationFailureHandler.class));
+ 		final Object securityContextRepository = ReflectionTestUtils.getField(this.switchUserWebFilter,
+ 				"securityContextRepository");
+@@ -323,7 +326,7 @@
+ 
+ 	@Test
+ 	public void constructorSecondDefaultValues() {
+-		this.switchUserWebFilter = new SwitchUserWebFilter(mock(ReactiveUserDetailsService.class), "success/target/url",
++		this.switchUserWebFilter = new SwitchUserWebFilter(this.reactiveUserDetailsService, "success/target/url",
+ 				"failure/target/url");
+ 		final Object successHandler = ReflectionTestUtils.getField(this.switchUserWebFilter, "successHandler");
+ 		assertThat(successHandler).isInstanceOf(RedirectServerAuthenticationSuccessHandler.class);

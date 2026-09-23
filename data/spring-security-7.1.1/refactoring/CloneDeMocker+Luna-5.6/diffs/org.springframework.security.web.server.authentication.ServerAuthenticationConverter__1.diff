@@ -1,0 +1,46 @@
+--- a/web/src/test/java/org/springframework/security/web/server/authentication/AuthenticationConverterServerWebExchangeMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authentication/AuthenticationConverterServerWebExchangeMatcherTests.java
+@@ -72,7 +72,7 @@
+ 
+ 	@Test
+ 	public void matchesWhenEmptyThenReturnFalse() {
+-		given(this.converter.convert(any())).willReturn(Mono.empty());
++		this.converter = createMockServerAuthenticationConverter();
+ 		assertThat(this.matcher.matches(this.exchange).block().isMatch()).isFalse();
+ 	}
+ 
+--- a/web/src/test/java/org/springframework/security/web/server/authentication/AuthenticationWebFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authentication/AuthenticationWebFilterTests.java
+@@ -227,7 +227,8 @@
+ 
+ 	@Test
+ 	public void filterWhenConvertEmptyThenOk() {
+-		given(this.authenticationConverter.convert(any())).willReturn(Mono.empty());
++		this.authenticationConverter = createMockServerAuthenticationConverter();
++		this.filter.setServerAuthenticationConverter(this.authenticationConverter);
+ 		WebTestClient client = WebTestClientBuilder.bindToWebFilters(this.filter).build();
+ 		client.get()
+ 			.uri("/")
+--- a/web/src/test/java/org/springframework/security/web/server/authentication/MockServerAuthenticationConverter.java
++++ b/web/src/test/java/org/springframework/security/web/server/authentication/MockServerAuthenticationConverter.java
+@@ -0,0 +1,20 @@
++package org.springframework.security.web.server.authentication;
++
++import reactor.core.publisher.Mono;
++
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.mock;
++
++public final class MockServerAuthenticationConverter {
++
++	private MockServerAuthenticationConverter() {
++	}
++
++	public static ServerAuthenticationConverter createMockServerAuthenticationConverter() {
++		ServerAuthenticationConverter authenticationConverter = mock(ServerAuthenticationConverter.class);
++		given(authenticationConverter.convert(any())).willReturn(Mono.empty());
++		return authenticationConverter;
++	}
++
++}

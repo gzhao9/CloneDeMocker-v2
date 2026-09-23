@@ -1,0 +1,71 @@
+--- a/rsocket/src/test/java/org/springframework/security/rsocket/authorization/PayloadExchangeMatcherReactiveAuthorizationManagerTests.java
++++ b/rsocket/src/test/java/org/springframework/security/rsocket/authorization/PayloadExchangeMatcherReactiveAuthorizationManagerTests.java
+@@ -19,6 +19,7 @@
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.extension.ExtendWith;
+ import org.mockito.Mock;
++import org.mockito.Mockito;
+ import org.mockito.junit.jupiter.MockitoExtension;
+ import reactor.core.publisher.Mono;
+ 
+@@ -40,11 +41,6 @@
+ @ExtendWith(MockitoExtension.class)
+ public class PayloadExchangeMatcherReactiveAuthorizationManagerTests {
+ 
+-	@Mock
+-	private ReactiveAuthorizationManager<PayloadExchangeAuthorizationContext> authz;
+-
+-	@Mock
+-	private ReactiveAuthorizationManager<PayloadExchangeAuthorizationContext> authz2;
+ 
+ 	@Mock
+ 	private PayloadExchange exchange;
+@@ -52,7 +48,7 @@
+ 	@Test
+ 	public void checkWhenGrantedThenGranted() {
+ 		AuthorizationDecision expected = new AuthorizationDecision(true);
+-		given(this.authz.authorize(any(), any())).willReturn(Mono.just(expected));
++		this.authz = createMockReactiveAuthorizationManager(expected);
+ 		PayloadExchangeMatcherReactiveAuthorizationManager manager = PayloadExchangeMatcherReactiveAuthorizationManager
+ 			.builder()
+ 			.add(new PayloadExchangeMatcherEntry<>(PayloadExchangeMatchers.anyExchange(), this.authz))
+@@ -63,7 +59,7 @@
+ 	@Test
+ 	public void checkWhenDeniedThenDenied() {
+ 		AuthorizationDecision expected = new AuthorizationDecision(false);
+-		given(this.authz.authorize(any(), any())).willReturn(Mono.just(expected));
++		this.authz = createMockReactiveAuthorizationManager(expected);
+ 		PayloadExchangeMatcherReactiveAuthorizationManager manager = PayloadExchangeMatcherReactiveAuthorizationManager
+ 			.builder()
+ 			.add(new PayloadExchangeMatcherEntry<>(PayloadExchangeMatchers.anyExchange(), this.authz))
+@@ -74,7 +70,7 @@
+ 	@Test
+ 	public void checkWhenFirstMatchThenSecondUsed() {
+ 		AuthorizationDecision expected = new AuthorizationDecision(true);
+-		given(this.authz.authorize(any(), any())).willReturn(Mono.just(expected));
++		this.authz = createMockReactiveAuthorizationManager(expected);
+ 		PayloadExchangeMatcherReactiveAuthorizationManager manager = PayloadExchangeMatcherReactiveAuthorizationManager
+ 			.builder()
+ 			.add(new PayloadExchangeMatcherEntry<>(PayloadExchangeMatchers.anyExchange(), this.authz))
+@@ -86,7 +82,7 @@
+ 	@Test
+ 	public void checkWhenSecondMatchThenSecondUsed() {
+ 		AuthorizationDecision expected = new AuthorizationDecision(true);
+-		given(this.authz2.authorize(any(), any())).willReturn(Mono.just(expected));
++		this.authz2 = createMockReactiveAuthorizationManager(expected);
+ 		PayloadExchangeMatcherReactiveAuthorizationManager manager = PayloadExchangeMatcherReactiveAuthorizationManager
+ 			.builder()
+ 			.add(new PayloadExchangeMatcherEntry<>((e) -> PayloadExchangeMatcher.MatchResult.notMatch(), this.authz))
+@@ -95,4 +91,12 @@
+ 		assertThat(manager.authorize(Mono.empty(), this.exchange).block()).isEqualTo(expected);
+ 	}
+ 
++	private static ReactiveAuthorizationManager<PayloadExchangeAuthorizationContext> createMockReactiveAuthorizationManager(
++			AuthorizationDecision expected) {
++		ReactiveAuthorizationManager<PayloadExchangeAuthorizationContext> authz = Mockito
++			.mock(ReactiveAuthorizationManager.class);
++		given(authz.authorize(any(), any())).willReturn(Mono.just(expected));
++		return authz;
++	}
++
+ }

@@ -1,0 +1,55 @@
+--- a/web/src/test/java/org/springframework/security/web/server/authentication/AuthenticationConverterServerWebExchangeMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authentication/AuthenticationConverterServerWebExchangeMatcherTests.java
+@@ -72,7 +72,7 @@
+ 
+ 	@Test
+ 	public void matchesWhenEmptyThenReturnFalse() {
+-		given(this.converter.convert(any())).willReturn(Mono.empty());
++		this.converter = MockServerAuthenticationConverter.createMockServerAuthenticationConverter();
+ 		assertThat(this.matcher.matches(this.exchange).block().isMatch()).isFalse();
+ 	}
+ 
+@@ -94,4 +94,15 @@
+ 		assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> this.matcher.matches(this.exchange).block());
+ 	}
+ 
++
++	public final class MockServerAuthenticationConverter {
++		private MockServerAuthenticationConverter() {
++		}
++
++		public static ServerAuthenticationConverter createMockServerAuthenticationConverter() {
++			ServerAuthenticationConverter converter = Mockito.mock(ServerAuthenticationConverter.class);
++			given(converter.convert(any())).willReturn(Mono.empty());
++			return converter;
++		}
++	}
+ }
+--- a/web/src/test/java/org/springframework/security/web/server/authentication/AuthenticationWebFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authentication/AuthenticationWebFilterTests.java
+@@ -227,7 +227,8 @@
+ 
+ 	@Test
+ 	public void filterWhenConvertEmptyThenOk() {
+-		given(this.authenticationConverter.convert(any())).willReturn(Mono.empty());
++		this.authenticationConverter = MockServerAuthenticationConverter.createMockServerAuthenticationConverter();
++		this.filter.setServerAuthenticationConverter(this.authenticationConverter);
+ 		WebTestClient client = WebTestClientBuilder.bindToWebFilters(this.filter).build();
+ 		client.get()
+ 			.uri("/")
+@@ -342,4 +343,15 @@
+ 
+ 	}
+ 
++
++	public final class MockServerAuthenticationConverter {
++		private MockServerAuthenticationConverter() {
++		}
++
++		public static ServerAuthenticationConverter createMockServerAuthenticationConverter() {
++			ServerAuthenticationConverter converter = Mockito.mock(ServerAuthenticationConverter.class);
++			given(converter.convert(any())).willReturn(Mono.empty());
++			return converter;
++		}
++	}
+ }

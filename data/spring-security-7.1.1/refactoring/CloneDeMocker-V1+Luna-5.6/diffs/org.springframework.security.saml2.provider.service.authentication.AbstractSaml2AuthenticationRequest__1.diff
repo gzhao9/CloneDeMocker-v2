@@ -1,0 +1,74 @@
+--- a/saml2/saml2-service-provider/src/opensaml5Test/java/org/springframework/security/saml2/provider/service/web/OpenSaml5AuthenticationTokenConverterTests.java
++++ b/saml2/saml2-service-provider/src/opensaml5Test/java/org/springframework/security/saml2/provider/service/web/OpenSaml5AuthenticationTokenConverterTests.java
+@@ -160,8 +160,7 @@
+ 	public void convertWhenSavedAuthenticationRequestThenToken() {
+ 		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+ 				Saml2AuthenticationRequestRepository.class);
+-		AbstractSaml2AuthenticationRequest authenticationRequest = mock(AbstractSaml2AuthenticationRequest.class);
+-		given(authenticationRequest.getRelyingPartyRegistrationId()).willReturn(this.registration.getRegistrationId());
++		AbstractSaml2AuthenticationRequest authenticationRequest = MockAbstractSaml2AuthenticationRequest.createAbstractSaml2AuthenticationRequest(this.registration.getRegistrationId());
+ 		OpenSaml5AuthenticationTokenConverter converter = new OpenSaml5AuthenticationTokenConverter(this.registrations);
+ 		converter.setAuthenticationRequestRepository(authenticationRequestRepository);
+ 		given(this.registrations.findByRegistrationId(any())).willReturn(this.registration);
+@@ -240,4 +239,18 @@
+ 		return this.saml.serialize(object).serialize();
+ 	}
+ 
++
++	public final class MockAbstractSaml2AuthenticationRequest {
++
++		private MockAbstractSaml2AuthenticationRequest() {
++		}
++
++		public static org.springframework.security.saml2.provider.service.authentication.AbstractSaml2AuthenticationRequest createAbstractSaml2AuthenticationRequest(
++				String relyingPartyRegistrationId) {
++			org.springframework.security.saml2.provider.service.authentication.AbstractSaml2AuthenticationRequest authenticationRequest =
++					mock(org.springframework.security.saml2.provider.service.authentication.AbstractSaml2AuthenticationRequest.class);
++			given(authenticationRequest.getRelyingPartyRegistrationId()).willReturn(relyingPartyRegistrationId);
++			return authenticationRequest;
++		}
++	}
+ }
+--- a/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/Saml2AuthenticationTokenConverterTests.java
++++ b/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/Saml2AuthenticationTokenConverterTests.java
+@@ -173,9 +173,7 @@
+ 	public void convertWhenSavedAuthenticationRequestThenToken() {
+ 		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+ 				Saml2AuthenticationRequestRepository.class);
+-		AbstractSaml2AuthenticationRequest authenticationRequest = mock(AbstractSaml2AuthenticationRequest.class);
+-		given(authenticationRequest.getRelyingPartyRegistrationId())
+-			.willReturn(this.relyingPartyRegistration.getRegistrationId());
++		AbstractSaml2AuthenticationRequest authenticationRequest = MockAbstractSaml2AuthenticationRequest.createAbstractSaml2AuthenticationRequest(this.relyingPartyRegistration.getRegistrationId());
+ 		Saml2AuthenticationTokenConverter converter = new Saml2AuthenticationTokenConverter(
+ 				this.relyingPartyRegistrationResolver);
+ 		converter.setAuthenticationRequestRepository(authenticationRequestRepository);
+@@ -198,9 +196,7 @@
+ 			@Mock RelyingPartyRegistrationResolver resolver) {
+ 		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+ 				Saml2AuthenticationRequestRepository.class);
+-		AbstractSaml2AuthenticationRequest authenticationRequest = mock(AbstractSaml2AuthenticationRequest.class);
+-		given(authenticationRequest.getRelyingPartyRegistrationId())
+-			.willReturn(this.relyingPartyRegistration.getRegistrationId());
++		AbstractSaml2AuthenticationRequest authenticationRequest = MockAbstractSaml2AuthenticationRequest.createAbstractSaml2AuthenticationRequest(this.relyingPartyRegistration.getRegistrationId());
+ 		Saml2AuthenticationTokenConverter converter = new Saml2AuthenticationTokenConverter(resolver);
+ 		converter.setAuthenticationRequestRepository(authenticationRequestRepository);
+ 		given(resolver.resolve(any(HttpServletRequest.class), any())).willReturn(this.relyingPartyRegistration);
+@@ -257,4 +253,18 @@
+ 		return UriUtils.decode(response, StandardCharsets.UTF_8);
+ 	}
+ 
++
++	public final class MockAbstractSaml2AuthenticationRequest {
++
++		private MockAbstractSaml2AuthenticationRequest() {
++		}
++
++		public static org.springframework.security.saml2.provider.service.authentication.AbstractSaml2AuthenticationRequest createAbstractSaml2AuthenticationRequest(
++				String relyingPartyRegistrationId) {
++			org.springframework.security.saml2.provider.service.authentication.AbstractSaml2AuthenticationRequest authenticationRequest =
++					mock(org.springframework.security.saml2.provider.service.authentication.AbstractSaml2AuthenticationRequest.class);
++			given(authenticationRequest.getRelyingPartyRegistrationId()).willReturn(relyingPartyRegistrationId);
++			return authenticationRequest;
++		}
++	}
+ }

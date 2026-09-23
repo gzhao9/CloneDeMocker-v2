@@ -1,0 +1,60 @@
+--- a/taglibs/src/test/java/org/springframework/security/taglibs/authz/AbstractAuthorizeTagTests.java
++++ b/taglibs/src/test/java/org/springframework/security/taglibs/authz/AbstractAuthorizeTagTests.java
+@@ -78,9 +78,8 @@
+ 
+ 	@Test
+ 	public void privilegeEvaluatorFromRequest() throws IOException {
+-		WebApplicationContext wac = mock(WebApplicationContext.class);
++		WebApplicationContext wac = createWebApplicationContext();
+ 		this.servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, wac);
+-		given(wac.getBeanNamesForType(SecurityContextHolderStrategy.class)).willReturn(new String[0]);
+ 		String uri = "/something";
+ 		WebInvocationPrivilegeEvaluator expected = mock(WebInvocationPrivilegeEvaluator.class);
+ 		this.tag.setUrl(uri);
+@@ -112,10 +111,9 @@
+ 		String uri = "/something";
+ 		WebInvocationPrivilegeEvaluator expected = mock(WebInvocationPrivilegeEvaluator.class);
+ 		this.tag.setUrl(uri);
+-		WebApplicationContext wac = mock(WebApplicationContext.class);
++		WebApplicationContext wac = createWebApplicationContext();
+ 		given(wac.getBeansOfType(WebInvocationPrivilegeEvaluator.class))
+ 			.willReturn(Collections.singletonMap("wipe", expected));
+-		given(wac.getBeanNamesForType(SecurityContextHolderStrategy.class)).willReturn(new String[0]);
+ 		this.servletContext.setAttribute("org.springframework.web.servlet.FrameworkServlet.CONTEXT.dispatcher", wac);
+ 		this.tag.authorizeUsingUrlCheck();
+ 		verify(expected).isAllowed(eq(""), eq(uri), eq("GET"), any());
+@@ -127,10 +125,9 @@
+ 		SecurityContextHolder.getContext().setAuthentication(new TestingAuthenticationToken("user", "pass", "USER"));
+ 		DefaultWebSecurityExpressionHandler expected = new DefaultWebSecurityExpressionHandler();
+ 		this.tag.setAccess("permitAll");
+-		WebApplicationContext wac = mock(WebApplicationContext.class);
++		WebApplicationContext wac = createWebApplicationContext();
+ 		given(wac.getBeansOfType(SecurityExpressionHandler.class))
+ 			.willReturn(Collections.<String, SecurityExpressionHandler>singletonMap("wipe", expected));
+-		given(wac.getBeanNamesForType(SecurityContextHolderStrategy.class)).willReturn(new String[0]);
+ 		this.servletContext.setAttribute("org.springframework.web.servlet.FrameworkServlet.CONTEXT.dispatcher", wac);
+ 		assertThat(this.tag.authorize()).isTrue();
+ 	}
+@@ -140,10 +137,9 @@
+ 	public void expressionWhenApplicationContextAttributeIsSetThenUsed() throws IOException {
+ 		SecurityContextHolder.getContext().setAuthentication(new TestingAuthenticationToken("user", "pass", "USER"));
+ 		DefaultWebSecurityExpressionHandler expected = new DefaultWebSecurityExpressionHandler();
+-		WebApplicationContext context = mock(WebApplicationContext.class);
++		WebApplicationContext context = createWebApplicationContext();
+ 		given(context.getBeansOfType(SecurityExpressionHandler.class))
+ 			.willReturn(Collections.<String, SecurityExpressionHandler>singletonMap("wipe", expected));
+-		given(context.getBeanNamesForType(SecurityContextHolderStrategy.class)).willReturn(new String[0]);
+ 		this.request.setAttribute(WebAttributes.APPLICATION_CONTEXT_ATTRIBUTE, context);
+ 		this.tag.setAccess("permitAll");
+ 		assertThat(this.tag.authorize()).isTrue();
+@@ -176,4 +172,10 @@
+ 
+ 	}
+ 
++
++	private static WebApplicationContext createWebApplicationContext() {
++		WebApplicationContext context = mock(WebApplicationContext.class);
++		given(context.getBeanNamesForType(SecurityContextHolderStrategy.class)).willReturn(new String[0]);
++		return context;
++	}
+ }

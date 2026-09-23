@@ -1,0 +1,86 @@
+--- a/web/src/test/java/org/springframework/security/web/concurrent/ConcurrentSessionFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/concurrent/ConcurrentSessionFilterTests.java
+@@ -22,6 +22,7 @@
+ import jakarta.servlet.FilterChain;
+ import jakarta.servlet.http.HttpServletRequest;
+ import org.junit.jupiter.api.AfterEach;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.mock.web.MockFilterChain;
+@@ -63,6 +64,13 @@
+  */
+ public class ConcurrentSessionFilterTests {
+ 
++	private RedirectStrategy redirectStrategy;
++
++	@BeforeEach
++	public void setup() {
++		this.redirectStrategy = mock(RedirectStrategy.class);
++	}
++
+ 	@AfterEach
+ 	public void cleanup() {
+ 		SecurityContextHolder.clearContext();
+@@ -164,10 +172,9 @@
+ 	public void doFilterWhenNoSessionThenChainIsContinued() throws Exception {
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		RedirectStrategy redirect = mock(RedirectStrategy.class);
+ 		String expiredUrl = "/expired";
+ 		ConcurrentSessionFilter filter = new ConcurrentSessionFilter(mockSessionRegistry(), expiredUrl);
+-		filter.setRedirectStrategy(redirect);
++		filter.setRedirectStrategy(redirectStrategy);
+ 		MockFilterChain chain = new MockFilterChain();
+ 		filter.doFilter(request, response, chain);
+ 		assertThat(chain.getRequest()).isNotNull();
+@@ -178,11 +185,10 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		request.setSession(new MockHttpSession());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		RedirectStrategy redirect = mock(RedirectStrategy.class);
+ 		SessionRegistry registry = mock(SessionRegistry.class);
+ 		String expiredUrl = "/expired";
+ 		ConcurrentSessionFilter filter = new ConcurrentSessionFilter(registry, expiredUrl);
+-		filter.setRedirectStrategy(redirect);
++		filter.setRedirectStrategy(redirectStrategy);
+ 		MockFilterChain chain = new MockFilterChain();
+ 		filter.doFilter(request, response, chain);
+ 		assertThat(chain.getRequest()).isNotNull();
+@@ -194,12 +200,11 @@
+ 		MockHttpSession session = new MockHttpSession();
+ 		request.setSession(session);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		RedirectStrategy redirect = mock(RedirectStrategy.class);
+ 		String expiredUrl = "/expired";
+ 		ConcurrentSessionFilter filter = new ConcurrentSessionFilter(mockSessionRegistry(), expiredUrl);
+-		filter.setRedirectStrategy(redirect);
+-		filter.doFilter(request, response, new MockFilterChain());
+-		verify(redirect).sendRedirect(request, response, expiredUrl);
++		filter.setRedirectStrategy(redirectStrategy);
++		filter.doFilter(request, response, new MockFilterChain());
++		verify(redirectStrategy).sendRedirect(request, response, expiredUrl);
+ 	}
+ 
+ 	@Test
+@@ -208,7 +213,6 @@
+ 		MockHttpSession session = new MockHttpSession();
+ 		request.setSession(session);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		RedirectStrategy redirect = mock(RedirectStrategy.class);
+ 		final String expiredUrl = "/expired";
+ 		ConcurrentSessionFilter filter = new ConcurrentSessionFilter(mockSessionRegistry(),
+ 				expiredUrl + "will-be-overrridden") {
+@@ -217,9 +221,9 @@
+ 				return expiredUrl;
+ 			}
+ 		};
+-		filter.setRedirectStrategy(redirect);
+-		filter.doFilter(request, response, new MockFilterChain());
+-		verify(redirect).sendRedirect(request, response, expiredUrl);
++		filter.setRedirectStrategy(redirectStrategy);
++		filter.doFilter(request, response, new MockFilterChain());
++		verify(redirectStrategy).sendRedirect(request, response, expiredUrl);
+ 	}
+ 
+ 	@Test
