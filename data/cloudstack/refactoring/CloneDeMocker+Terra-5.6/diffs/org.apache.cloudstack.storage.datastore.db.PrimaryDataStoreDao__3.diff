@@ -1,0 +1,67 @@
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
+@@ -336,7 +336,7 @@
+ 
+         StoragePoolVO storagePool = mock(StoragePoolVO.class);
+         Mockito.when(storagePool.getClusterId()).thenReturn(clusterId);
+-        Mockito.when(storagePoolDao.findById(poolId)).thenReturn(storagePool);
++        MockPrimaryDataStoreDao.stubFindById(storagePoolDao, poolId, storagePool);
+ 
+         HostVO upHostInCluster = mock(HostVO.class);
+         Mockito.when(upHostInCluster.getId()).thenReturn(4L);
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -1372,10 +1372,10 @@
+         when(hostDao.findById(hostId)).thenReturn(host);
+         StoragePoolVO pool = mock(StoragePoolVO.class);
+         when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
+-        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
++        MockPrimaryDataStoreDao.stubFindById(primaryDataStoreDao, poolId, pool);
+         when(rootVolume.getPoolId()).thenReturn(poolId);
+         when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
+-        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
++        MockPrimaryDataStoreDao.stubFindById(primaryDataStoreDao, poolId, pool);
+         when(backupProvider.restoreBackupToVM(vm, backup, null, null, false)).thenReturn(new Pair<>(true, null));
+ 
+         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+@@ -1428,10 +1428,10 @@
+         when(hostDao.findById(hostId)).thenReturn(host);
+         StoragePoolVO pool = mock(StoragePoolVO.class);
+         when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
+-        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
++        MockPrimaryDataStoreDao.stubFindById(primaryDataStoreDao, poolId, pool);
+         when(rootVolume.getPoolId()).thenReturn(poolId);
+         when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
+-        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
++        MockPrimaryDataStoreDao.stubFindById(primaryDataStoreDao, poolId, pool);
+         when(backupProvider.restoreBackupToVM(vm, backup, null, null, false)).thenReturn(new Pair<>(false, null));
+ 
+         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/MockPrimaryDataStoreDao.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/MockPrimaryDataStoreDao.java
+@@ -0,0 +1,11 @@
++package org.apache.cloudstack.backup;
++
++import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
++import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
++import org.mockito.Mockito;
++
++public class MockPrimaryDataStoreDao {
++    public static void stubFindById(PrimaryDataStoreDao primaryDataStoreDao, Long poolId, StoragePoolVO pool) {
++        Mockito.when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
++    }
++}
+--- a/server/src/test/java/org/apache/cloudstack/backup/MockPrimaryDataStoreDao.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/MockPrimaryDataStoreDao.java
+@@ -0,0 +1,11 @@
++package org.apache.cloudstack.backup;
++
++import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
++import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
++import org.mockito.Mockito;
++
++public class MockPrimaryDataStoreDao {
++    public static void stubFindById(PrimaryDataStoreDao primaryDataStoreDao, Long poolId, StoragePoolVO pool) {
++        Mockito.when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
++    }
++}
