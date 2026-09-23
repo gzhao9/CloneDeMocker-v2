@@ -61,8 +61,10 @@ def log(message: str, log_file: Path) -> None:
 
 
 def git(*args: str, timeout: int = 120) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=REPO, text=True,
-                          capture_output=True, timeout=timeout)
+    # utf-8, not the locale codepage: git speaks UTF-8 and a GBK console must not be
+    # able to kill a monitor by failing to decode a peer's commit message.
+    return subprocess.run(["git", *args], cwd=REPO, capture_output=True,
+                          timeout=timeout, encoding="utf-8", errors="replace")
 
 
 def unread_ids() -> list[str] | None:

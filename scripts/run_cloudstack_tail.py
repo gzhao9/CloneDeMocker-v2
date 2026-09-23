@@ -237,8 +237,21 @@ def report_unread(unread: list[dict]) -> None:
 
 
 def git(*args: str, check: bool = False, timeout: int = 900) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=REPO, text=True, capture_output=True,
+    """Run git, decoding its output as UTF-8 regardless of the console's codepage.
+
+    `text=True` decodes with the locale encoding, which is GBK on this host, so the first
+    piece of UTF-8 in git's output -- a peer's Chinese commit message, an entry body --
+    raised UnicodeDecodeError *inside subprocess's reader thread* and killed the run. This
+    is the mirror of the encode-side crash fixed this morning in log(); the same host
+    encoding, the opposite direction, and it cost a second outage because only one half
+    was fixed. Git speaks UTF-8; decode it as UTF-8 and never let a byte stop the run.
+    """
+    proc = subprocess.run(["git", *args], cwd=REPO, capture_output=True,
                           check=check, timeout=timeout)
+    return subprocess.CompletedProcess(
+        proc.args, proc.returncode,
+        proc.stdout.decode("utf-8", "replace") if proc.stdout is not None else "",
+        proc.stderr.decode("utf-8", "replace") if proc.stderr is not None else "")
 
 
 def load_env() -> None:
@@ -475,12 +488,14 @@ def sync(message: str, batch: list[tuple[dict, Path | None]], attempts: int = 5)
                     git("checkout", "--ours", "--", path)  # upstream wins; relayer re-adds ours
                     git("add", "--", path)
                 cont = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--continue"],
-                                      cwd=REPO, text=True, capture_output=True, timeout=300)
+                                      cwd=REPO, capture_output=True, timeout=300,
+                                  encoding="utf-8", errors="replace")
                 if cont.returncode != 0 and "empty" in (cont.stdout + cont.stderr).lower():
                     # Taking upstream wholesale can leave nothing to commit; that is a
                     # resolved rebase, not a failed one.
                     cont = subprocess.run(["git", "-c", "core.editor=true", "rebase", "--skip"],
-                                          cwd=REPO, text=True, capture_output=True, timeout=300)
+                                          cwd=REPO, capture_output=True, timeout=300,
+                                  encoding="utf-8", errors="replace")
             if cont is None:
                 # The pull failed with nothing conflicted -- an unstaged file refusing the
                 # rebase, most often. Say so, instead of calling it a conflict.

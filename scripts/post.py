@@ -113,7 +113,8 @@ def publish_now(entry_id: str, extra: list[str] | None = None) -> None:
 
     def git(*a, **kw):
         env = {**os.environ, **kw.pop("env", {})}
-        return subprocess.run(["git", *a], cwd=repo, text=True, capture_output=True, env=env)
+        return subprocess.run(["git", *a], cwd=repo, capture_output=True, env=env,
+                              encoding="utf-8", errors="replace")
 
     # Retry: the runner pushes to the same branch, so a build can be raced between the
     # fetch and the push. Rebuilding on the new tip is correct and cheap; forcing is not.
