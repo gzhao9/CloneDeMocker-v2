@@ -120,10 +120,38 @@ def clear_conflicts() -> None:
     """
     for path in git("diff", "--name-only", "--diff-filter=U").stdout.split():
         if path.endswith("COLLAB.md"):
-            _merge_board()          # losing a board entry is unrecoverable; see below
+            # A-034 completed the cutover: COLLAB.md is derived from collab/inbox/**, so a
+            # conflict on it carries no information of its own. Take upstream and rebuild.
+            # _merge_board() is kept only for the case where the regenerator cannot run --
+            # it was wrong twice (B-019, B-033) precisely because it merged a file that
+            # should never have needed merging.
+            git("checkout", "--ours", "--", path)
+            if not _regenerate_board():
+                _merge_board()
         else:
             git("checkout", "--ours", "--", path)
         git("add", "--", path)
+
+
+def _regenerate_board() -> bool:
+    """Rebuild COLLAB.md from the inboxes. True if it wrote a board, False to fall back.
+
+    Deliberately a subprocess rather than an import: the runner holds this module from
+    process start, so importing the regenerator would pin whichever version was on disk at
+    launch -- the same staleness that made B report an edit as an effect once already.
+    """
+    script = REPO / "scripts" / "regen_board.py"
+    if not script.is_file():
+        return False
+    try:
+        done = subprocess.run([sys.executable, str(script)], cwd=REPO, text=True,
+                              capture_output=True, timeout=120)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    if done.returncode != 0:
+        print(f"    regen failed, falling back to merge: {done.stdout.strip()[:160]}", flush=True)
+        return False
+    return True
 
 
 def _archived_ids() -> set[str]:
