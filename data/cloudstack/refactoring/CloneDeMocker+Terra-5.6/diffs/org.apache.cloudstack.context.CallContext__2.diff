@@ -1,0 +1,56 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
+@@ -914,8 +914,7 @@
+ 
+     @Test
+     public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withAdminUser_shouldNotThrowException() {
+-        CallContext callContext = mock(CallContext.class);
+-        when(callContext.getCallingUserId()).thenReturn(User.UID_ADMIN);
++        CallContext callContext = createMockCallContext(User.UID_ADMIN);
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+             when(CallContext.current()).thenReturn(callContext);
+             configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key(), "Admin");
+@@ -924,8 +923,7 @@
+ 
+     @Test
+     public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withNonAdminUser_shouldThrowException() {
+-        CallContext callContext = mock(CallContext.class);
+-        when(callContext.getCallingUserId()).thenReturn(123L);
++        CallContext callContext = createMockCallContext(123L);
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+             when(CallContext.current()).thenReturn(callContext);
+             Assert.assertThrows(CloudRuntimeException.class, () ->
+@@ -945,10 +943,9 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withValidConfigNameAndInvalidValue_shouldThrowException() {
+-        CallContext callContext = mock(CallContext.class);
++        CallContext callContext = createMockCallContext(User.UID_ADMIN);
+         try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+             mockedCallContext.when(CallContext::current).thenReturn(callContext);
+-            when(callContext.getCallingUserId()).thenReturn(User.UID_ADMIN);
+             String invalidValue = "Admin, SuperUser";
+             configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key(), invalidValue);
+         }
+@@ -1233,9 +1230,8 @@
+         when(sourceOffering.getDiskOfferingId()).thenReturn(2L);
+ 
+         try (MockedStatic<CallContext> callContextMock = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContext = Mockito.mock(CallContext.class);
++            CallContext callContext = createMockCallContext(1L);
+             callContextMock.when(CallContext::current).thenReturn(callContext);
+-            when(callContext.getCallingUserId()).thenReturn(1L);
+ 
+             // Implement the test assertion
+             Assert.assertNotNull(sourceOffering);
+@@ -1410,4 +1406,10 @@
+         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
+         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
+     }
++
++    private static CallContext createMockCallContext(long callingUserId) {
++        CallContext callContext = Mockito.mock(CallContext.class);
++        when(callContext.getCallingUserId()).thenReturn(callingUserId);
++        return callContext;
++    }
+ }

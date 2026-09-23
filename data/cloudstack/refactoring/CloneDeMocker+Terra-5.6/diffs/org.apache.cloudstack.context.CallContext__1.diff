@@ -1,0 +1,109 @@
+--- a/server/src/test/java/com/cloud/server/ManagementServerImplTest.java
++++ b/server/src/test/java/com/cloud/server/ManagementServerImplTest.java
+@@ -310,6 +310,12 @@
+         f.set(configKey, o);
+     }
+ 
++    private static CallContext createMockCallContext(Account callingAccount) {
++        CallContext callContextMock = Mockito.mock(CallContext.class);
++        when(callContextMock.getCallingAccount()).thenReturn(callingAccount);
++        return callContextMock;
++    }
++
+     @Test(expected = InvalidParameterValueException.class)
+     public void testDuplicateRegistrations() {
+         String accountName = "account";
+@@ -455,11 +461,10 @@
+     @Test
+     public void testSuccessfulRegisterUserdata() {
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
++            CallContext callContextMock = createMockCallContext(account);
+             when(CallContext.current()).thenReturn(callContextMock);
+             when(account.getAccountId()).thenReturn(1L);
+             when(account.getDomainId()).thenReturn(2L);
+-            when(callContextMock.getCallingAccount()).thenReturn(account);
+             when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+ 
+             String testUserData = "testUserdata";
+@@ -483,11 +488,10 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testRegisterExistingUserdata() {
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
++            CallContext callContextMock = createMockCallContext(account);
+             when(CallContext.current()).thenReturn(callContextMock);
+             when(account.getAccountId()).thenReturn(1L);
+             when(account.getDomainId()).thenReturn(2L);
+-            when(callContextMock.getCallingAccount()).thenReturn(account);
+             when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+ 
+             RegisterUserDataCmd cmd = Mockito.mock(RegisterUserDataCmd.class);
+@@ -505,11 +509,10 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testRegisterExistingName() {
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
++            CallContext callContextMock = createMockCallContext(account);
+             when(CallContext.current()).thenReturn(callContextMock);
+             when(account.getAccountId()).thenReturn(1L);
+             when(account.getDomainId()).thenReturn(2L);
+-            Mockito.when(callContextMock.getCallingAccount()).thenReturn(account);
+             when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+ 
+             RegisterUserDataCmd cmd = Mockito.mock(RegisterUserDataCmd.class);
+@@ -525,9 +528,8 @@
+     @Test
+     public void testSuccessfulDeleteUserdata() {
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
++            CallContext callContextMock = createMockCallContext(account);
+             when(CallContext.current()).thenReturn(callContextMock);
+-            when(callContextMock.getCallingAccount()).thenReturn(account);
+             when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+ 
+             DeleteUserDataCmd cmd = Mockito.mock(DeleteUserDataCmd.class);
+@@ -551,9 +553,8 @@
+     @Test(expected = CloudRuntimeException.class)
+     public void testDeleteUserdataLinkedToTemplate() {
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
++            CallContext callContextMock = createMockCallContext(account);
+             when(CallContext.current()).thenReturn(callContextMock);
+-            when(callContextMock.getCallingAccount()).thenReturn(account);
+             when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+ 
+             DeleteUserDataCmd cmd = Mockito.mock(DeleteUserDataCmd.class);
+@@ -578,9 +579,8 @@
+     @Test(expected = CloudRuntimeException.class)
+     public void testDeleteUserdataUsedByVM() {
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
++            CallContext callContextMock = createMockCallContext(account);
+             when(CallContext.current()).thenReturn(callContextMock);
+-            when(callContextMock.getCallingAccount()).thenReturn(account);
+             when(accountManager.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(account);
+ 
+             DeleteUserDataCmd cmd = Mockito.mock(DeleteUserDataCmd.class);
+@@ -639,9 +639,8 @@
+     @Test
+     public void testListUserDataByName() {
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
++            CallContext callContextMock = createMockCallContext(account);
+             when(CallContext.current()).thenReturn(callContextMock);
+-            when(callContextMock.getCallingAccount()).thenReturn(account);
+ 
+             ListUserDataCmd cmd = Mockito.mock(ListUserDataCmd.class);
+             when(cmd.getAccountName()).thenReturn("testAccountName");
+@@ -672,9 +671,8 @@
+     @Test
+     public void testListUserDataByKeyword() {
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
++            CallContext callContextMock = createMockCallContext(account);
+             when(CallContext.current()).thenReturn(callContextMock);
+-            when(callContextMock.getCallingAccount()).thenReturn(account);
+ 
+             ListUserDataCmd cmd = Mockito.mock(ListUserDataCmd.class);
+             when(cmd.getAccountName()).thenReturn("testAccountName");

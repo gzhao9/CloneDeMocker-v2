@@ -1,0 +1,37 @@
+--- a/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
+@@ -315,10 +315,9 @@
+     public void deleteUserTestIfUserIdIsEqualToCallerIdShouldThrowException() {
+         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+             DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
++            CallContext callContextMock = createMockCallContext(userVoMock);
+             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+ 
+-            Mockito.doReturn(userVoMock).when(callContextMock).getCallingUser();
+             Mockito.doReturn(1L).when(cmd).getId();
+             Mockito.doReturn(userVoMock).when(accountManagerImpl).getValidUserVO(Mockito.anyLong());
+             Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+@@ -333,10 +332,9 @@
+     public void deleteUserTestIfUserIdIsNotEqualToCallerIdShouldNotThrowException() {
+         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+             DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
++            CallContext callContextMock = createMockCallContext(userVoMock);
+             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+ 
+-            Mockito.doReturn(userVoMock).when(callContextMock).getCallingUser();
+             Mockito.doReturn(1L).when(cmd).getId();
+             Mockito.doReturn(userVoMock).when(accountManagerImpl).getValidUserVO(Mockito.anyLong());
+             Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+@@ -2289,4 +2287,10 @@
+ 
+         accountManagerImpl.checkRoleEscalation(caller, requested);
+     }
++
++    private static CallContext createMockCallContext(UserVO callingUser) {
++        CallContext callContextMock = Mockito.mock(CallContext.class);
++        Mockito.doReturn(callingUser).when(callContextMock).getCallingUser();
++        return callContextMock;
++    }
+ }

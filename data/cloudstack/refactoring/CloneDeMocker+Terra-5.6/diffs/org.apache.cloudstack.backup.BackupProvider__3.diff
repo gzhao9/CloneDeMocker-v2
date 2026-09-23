@@ -1,0 +1,53 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -1353,8 +1353,7 @@
+         when(vm.getHostId()).thenReturn(hostId);
+ 
+         BackupOfferingVO offering = mock(BackupOfferingVO.class);
+-        BackupProvider backupProvider = mock(BackupProvider.class);
+-        when(backupProvider.supportsInstanceFromBackup()).thenReturn(true);
++        BackupProvider backupProvider = createMockBackupProvider(vm, backup, new Pair<>(true, null));
+ 
+         overrideBackupFrameworkConfigValue();
+ 
+@@ -1376,7 +1375,7 @@
+         when(rootVolume.getPoolId()).thenReturn(poolId);
+         when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
+         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+-        when(backupProvider.restoreBackupToVM(vm, backup, null, null, false)).thenReturn(new Pair<>(true, null));
++
+ 
+         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+             boolean result = backupManager.restoreBackupToVM(backupId, vmId, false);
+@@ -1409,8 +1408,7 @@
+         when(vm.getHostId()).thenReturn(hostId);
+ 
+         BackupOfferingVO offering = mock(BackupOfferingVO.class);
+-        BackupProvider backupProvider = mock(BackupProvider.class);
+-        when(backupProvider.supportsInstanceFromBackup()).thenReturn(true);
++        BackupProvider backupProvider = createMockBackupProvider(vm, backup, new Pair<>(false, null));
+ 
+         overrideBackupFrameworkConfigValue();
+ 
+@@ -1432,7 +1430,6 @@
+         when(rootVolume.getPoolId()).thenReturn(poolId);
+         when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
+         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+-        when(backupProvider.restoreBackupToVM(vm, backup, null, null, false)).thenReturn(new Pair<>(false, null));
+ 
+         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+             CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+@@ -2623,6 +2620,13 @@
+         when(offering.getId()).thenReturn(id);
+         when(offering.getName()).thenReturn(name);
+         return offering;
++    }
++
++    private static BackupProvider createMockBackupProvider(VMInstanceVO vm, BackupVO backup, Pair<Boolean, String> restoreResult) {
++        BackupProvider backupProvider = mock(BackupProvider.class);
++        when(backupProvider.supportsInstanceFromBackup()).thenReturn(true);
++        when(backupProvider.restoreBackupToVM(vm, backup, null, null, false)).thenReturn(restoreResult);
++        return backupProvider;
+     }
+ 
+     @Test
