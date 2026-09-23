@@ -78,7 +78,11 @@ def regenerate() -> dict:
     """
     stored = _existing_results()
     entries, diffs, counts = [], {}, Counter()
-    for path in sorted(BATCH_DIR.glob("0*.json")):
+    # "[0-9]*.json", not "0*.json": safe_name() formats the index as %04d, so the batch
+    # rolls over to 1000-*.json at the thousandth MCI and a 0-prefixed glob silently stops
+    # seeing new work. It cost 68 rows their producedBy/platform stamps before anyone
+    # noticed, and made B claim to peers that B had not run MCIs B had in fact run.
+    for path in sorted(BATCH_DIR.glob("[0-9]*.json")):
         try:
             record = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):

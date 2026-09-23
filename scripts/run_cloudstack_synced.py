@@ -207,7 +207,7 @@ def main() -> None:
 
     order = list(range(total, 0, -1)) if args.reverse else list(range(1, total + 1))
     counts: dict[str, int] = {}
-    for path in BATCH_DIR.glob("0*.json"):
+    for path in BATCH_DIR.glob("[0-9]*.json"):   # see publish_cloudstack.regenerate()
         try:
             record = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
