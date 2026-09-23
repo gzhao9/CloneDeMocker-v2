@@ -1,0 +1,72 @@
+--- a/web/src/test/java/org/springframework/security/web/context/DelegatingSecurityContextRepositoryTests.java
++++ b/web/src/test/java/org/springframework/security/web/context/DelegatingSecurityContextRepositoryTests.java
+@@ -144,16 +144,12 @@
+ 	// gh-12314
+ 	@Test
+ 	public void loadContextWhenSecondDelegateReturnsThenContextFromSecondDelegate() {
+-		SecurityContextRepository delegate1 = mock(SecurityContextRepository.class);
+-		SecurityContextRepository delegate2 = mock(SecurityContextRepository.class);
+ 		HttpRequestResponseHolder holder = new HttpRequestResponseHolder(this.request, this.response);
+ 		SecurityContext securityContext1 = mock(SecurityContext.class);
+ 		SecurityContext securityContext2 = mock(SecurityContext.class);
+ 
+-		given(delegate1.loadContext(holder)).willReturn(securityContext1);
+-		given(delegate1.containsContext(holder.getRequest())).willReturn(false);
+-		given(delegate2.loadContext(holder)).willReturn(securityContext2);
+-		given(delegate2.containsContext(holder.getRequest())).willReturn(true);
++		SecurityContextRepository delegate1 = createMockSecurityContextRepository(holder, securityContext1, false);
++		SecurityContextRepository delegate2 = createMockSecurityContextRepository(holder, securityContext2, true);
+ 
+ 		DelegatingSecurityContextRepository repository = new DelegatingSecurityContextRepository(delegate1, delegate2);
+ 		SecurityContext returnedSecurityContext = repository.loadContext(holder);
+@@ -164,16 +160,11 @@
+ 	// gh-12314
+ 	@Test
+ 	public void loadContextWhenBothDelegateReturnsThenContextFromSecondDelegate() {
+-		SecurityContextRepository delegate1 = mock(SecurityContextRepository.class);
+-		SecurityContextRepository delegate2 = mock(SecurityContextRepository.class);
++		SecurityContextRepository delegate1 = createMockSecurityContextRepository(holder, securityContext1, true);
+ 		HttpRequestResponseHolder holder = new HttpRequestResponseHolder(this.request, this.response);
+ 		SecurityContext securityContext1 = mock(SecurityContext.class);
+ 		SecurityContext securityContext2 = mock(SecurityContext.class);
+-
+-		given(delegate1.loadContext(holder)).willReturn(securityContext1);
+-		given(delegate1.containsContext(holder.getRequest())).willReturn(true);
+-		given(delegate2.loadContext(holder)).willReturn(securityContext2);
+-		given(delegate2.containsContext(holder.getRequest())).willReturn(true);
++		SecurityContextRepository delegate2 = createMockSecurityContextRepository(holder, securityContext2, true);
+ 
+ 		DelegatingSecurityContextRepository repository = new DelegatingSecurityContextRepository(delegate1, delegate2);
+ 		SecurityContext returnedSecurityContext = repository.loadContext(holder);
+@@ -184,16 +175,12 @@
+ 	// gh-12314
+ 	@Test
+ 	public void loadContextWhenFirstDelegateReturnsThenContextFromFirstDelegate() {
+-		SecurityContextRepository delegate1 = mock(SecurityContextRepository.class);
+-		SecurityContextRepository delegate2 = mock(SecurityContextRepository.class);
+ 		HttpRequestResponseHolder holder = new HttpRequestResponseHolder(this.request, this.response);
+ 		SecurityContext securityContext1 = mock(SecurityContext.class);
+ 		SecurityContext securityContext2 = mock(SecurityContext.class);
+ 
+-		given(delegate1.loadContext(holder)).willReturn(securityContext1);
+-		given(delegate1.containsContext(holder.getRequest())).willReturn(true);
+-		given(delegate2.loadContext(holder)).willReturn(securityContext2);
+-		given(delegate2.containsContext(holder.getRequest())).willReturn(false);
++		SecurityContextRepository delegate1 = createMockSecurityContextRepository(holder, securityContext1, true);
++		SecurityContextRepository delegate2 = createMockSecurityContextRepository(holder, securityContext2, false);
+ 
+ 		DelegatingSecurityContextRepository repository = new DelegatingSecurityContextRepository(delegate1, delegate2);
+ 		SecurityContext returnedSecurityContext = repository.loadContext(holder);
+@@ -201,4 +188,12 @@
+ 		assertThat(returnedSecurityContext).isSameAs(securityContext1);
+ 	}
+ 
++	private static SecurityContextRepository createMockSecurityContextRepository(HttpRequestResponseHolder holder,
++			SecurityContext securityContext, boolean containsContext) {
++		SecurityContextRepository repository = mock(SecurityContextRepository.class);
++		given(repository.loadContext(holder)).willReturn(securityContext);
++		given(repository.containsContext(holder.getRequest())).willReturn(containsContext);
++		return repository;
++	}
++
+ }

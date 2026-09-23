@@ -1,0 +1,31 @@
+--- a/web/src/test/java/org/springframework/security/web/server/context/WebSessionServerSecurityContextRepositoryTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/context/WebSessionServerSecurityContextRepositoryTests.java
+@@ -87,8 +87,7 @@
+ 	@Test
+ 	public void loadWhenCacheSecurityContextThenSubscribeOnce() {
+ 		PublisherProbe<WebSession> webSession = PublisherProbe.empty();
+-		ServerWebExchange exchange = mock(ServerWebExchange.class);
+-		given(exchange.getSession()).willReturn(webSession.mono());
++		ServerWebExchange exchange = createMockServerWebExchange(webSession);
+ 		this.repository.setCacheSecurityContext(true);
+ 		Mono<SecurityContext> context = this.repository.load(exchange);
+ 		assertThat(context.block()).isSameAs(context.block());
+@@ -98,11 +97,16 @@
+ 	@Test
+ 	public void loadWhenNotCacheSecurityContextThenSubscribeMultiple() {
+ 		PublisherProbe<WebSession> webSession = PublisherProbe.empty();
+-		ServerWebExchange exchange = mock(ServerWebExchange.class);
+-		given(exchange.getSession()).willReturn(webSession.mono());
++		ServerWebExchange exchange = createMockServerWebExchange(webSession);
+ 		Mono<SecurityContext> context = this.repository.load(exchange);
+ 		assertThat(context.block()).isSameAs(context.block());
+ 		assertThat(webSession.subscribeCount()).isEqualTo(2);
+ 	}
+ 
++	private static ServerWebExchange createMockServerWebExchange(PublisherProbe<WebSession> webSession) {
++		ServerWebExchange exchange = mock(ServerWebExchange.class);
++		given(exchange.getSession()).willReturn(webSession.mono());
++		return exchange;
++	}
++
+ }

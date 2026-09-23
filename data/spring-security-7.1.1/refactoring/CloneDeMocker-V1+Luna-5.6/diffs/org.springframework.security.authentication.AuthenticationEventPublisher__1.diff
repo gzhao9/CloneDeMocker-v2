@@ -1,0 +1,70 @@
+--- a/core/src/test/java/org/springframework/security/authentication/ProviderManagerTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/ProviderManagerTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.authentication;
+ 
++import org.mockito.Mock;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collection;
+@@ -47,6 +48,8 @@
+  * @author Ben Alex
+  */
+ public class ProviderManagerTests {
++	@Mock
++	private AuthenticationEventPublisher publisher;
+ 
+ 	@Test
+ 	void authenticationFailsWithUnsupportedToken() {
+@@ -83,7 +86,7 @@
+ 	void authenticationSucceedsWithSupportedTokenAndReturnsExpectedObject() {
+ 		Authentication a = new TestingAuthenticationToken("user", "pass", "FACTOR");
+ 		ProviderManager mgr = new ProviderManager(createProviderWhichReturns(a));
+-		AuthenticationEventPublisher publisher = mock(AuthenticationEventPublisher.class);
++		// removed local mock; replaced with global field `publisher`
+ 		mgr.setAuthenticationEventPublisher(publisher);
+ 		Authentication result = mgr.authenticate(a);
+ 		assertThat(result.getPrincipal()).isEqualTo(a.getPrincipal());
+@@ -95,7 +98,6 @@
+ 		Authentication a = new TestingAuthenticationToken("user", "pass", "FACTOR");
+ 		ProviderManager mgr = new ProviderManager(
+ 				Arrays.asList(createProviderWhichReturns(null), createProviderWhichReturns(a)));
+-		AuthenticationEventPublisher publisher = mock(AuthenticationEventPublisher.class);
+ 		mgr.setAuthenticationEventPublisher(publisher);
+ 		Authentication result = mgr.authenticate(a);
+ 		assertThat(result.getPrincipal()).isEqualTo(a.getPrincipal());
+@@ -231,7 +233,7 @@
+ 	@Test
+ 	void providerNotFoundFromParentIsIgnored() {
+ 		final Authentication authReq = mock(Authentication.class);
+-		AuthenticationEventPublisher publisher = mock(AuthenticationEventPublisher.class);
++		// removed local mock; replaced with global field `publisher`
+ 		AuthenticationManager parent = mock(AuthenticationManager.class);
+ 		given(parent.authenticate(authReq)).willThrow(new ProviderNotFoundException(""));
+ 		// Set a provider that throws an exception - this is the exception we expect to be
+@@ -249,7 +251,6 @@
+ 		ProviderManager mgr = new ProviderManager(List.of(createProviderWhichThrows(new BadCredentialsException(""))),
+ 				parent);
+ 		Authentication authReq = mock(Authentication.class);
+-		AuthenticationEventPublisher publisher = mock(AuthenticationEventPublisher.class);
+ 		mgr.setAuthenticationEventPublisher(publisher);
+ 		// Set a provider that throws an exception - this is the exception we expect to be
+ 		// propagated
+@@ -265,7 +266,6 @@
+ 		LockedException expected = new LockedException("");
+ 		ProviderManager mgr = new ProviderManager(List.of(createProviderWhichThrows(expected)), parent);
+ 		Authentication authReq = mock(Authentication.class);
+-		AuthenticationEventPublisher publisher = mock(AuthenticationEventPublisher.class);
+ 		mgr.setAuthenticationEventPublisher(publisher);
+ 		assertThatExceptionOfType(LockedException.class).isThrownBy(() -> mgr.authenticate(authReq));
+ 		verify(publisher).publishAuthenticationFailure(expected, authReq);
+@@ -317,7 +317,7 @@
+ 		ProviderManager parentMgr = new ProviderManager(createProviderWhichThrows(badCredentialsExParent));
+ 		ProviderManager childMgr = new ProviderManager(
+ 				List.of(createProviderWhichThrows(new BadCredentialsException("Bad Credentials in child"))), parentMgr);
+-		AuthenticationEventPublisher publisher = mock(AuthenticationEventPublisher.class);
++		// removed local mock; replaced with global field `publisher`
+ 		parentMgr.setAuthenticationEventPublisher(publisher);
+ 		childMgr.setAuthenticationEventPublisher(publisher);
+ 		Authentication authReq = mock(Authentication.class);
