@@ -1,0 +1,114 @@
+--- a/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/ScaleIOPrimaryDataStoreDriverTest.java
++++ b/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/ScaleIOPrimaryDataStoreDriverTest.java
+@@ -98,6 +98,8 @@
+     @Mock
+     ConfigurationDao configDao;
+ 
++    private DataStore sourceDataStore;
++
+     static MockedStatic<RemoteHostEndPoint> remoteHostEndPointMock;
+ 
+     private AutoCloseable closeable;
+@@ -115,6 +117,7 @@
+     @Before
+     public void initMocks() {
+         closeable = MockitoAnnotations.openMocks(this);
++        sourceDataStore = Mockito.mock(DataStore.class);
+     }
+ 
+     @After
+@@ -193,13 +196,12 @@
+         VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+         VolumeInfo destData = Mockito.mock(VolumeInfo.class);
+ 
+-        DataStore srcStore = Mockito.mock(DataStore.class);
+         DataStore destStore = Mockito.mock(DataStore.class);
+ 
+-        when(srcData.getDataStore()).thenReturn(srcStore);
++        when(srcData.getDataStore()).thenReturn(sourceDataStore);
+         when(destData.getDataStore()).thenReturn(destStore);
+ 
+-        fillSrcVolumeDetails(srcData, srcStore);
++        fillSrcVolumeDetails(srcData, sourceDataStore);
+         fillDestVolumeDetails(destData, destStore);
+ 
+         VolumeObjectTO destVolTO = Mockito.mock(VolumeObjectTO.class);
+@@ -244,13 +246,12 @@
+         VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+         VolumeInfo destData = Mockito.mock(VolumeInfo.class);
+ 
+-        DataStore srcStore = Mockito.mock(DataStore.class);
+         DataStore destStore = Mockito.mock(DataStore.class);
+ 
+-        when(srcData.getDataStore()).thenReturn(srcStore);
++        when(srcData.getDataStore()).thenReturn(sourceDataStore);
+         when(destData.getDataStore()).thenReturn(destStore);
+ 
+-        fillSrcVolumeDetails(srcData, srcStore);
++        fillSrcVolumeDetails(srcData, sourceDataStore);
+         fillDestVolumeDetails(destData, destStore);
+ 
+         VolumeObjectTO destVolTO = Mockito.mock(VolumeObjectTO.class);
+@@ -385,8 +386,7 @@
+ 
+         when(srcData.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
+         when(srcData.getFolder()).thenReturn("921c364500000007");
+-        DataStore destStore = Mockito.mock(DataStore.class);
+-        when(destData.getDataStore()).thenReturn(destStore);
++        when(destData.getDataStore()).thenReturn(sourceDataStore);
+         doNothing().when(scaleIOPrimaryDataStoreDriver)
+                 .revokeAccess(any(), any(), any());
+ 
+@@ -422,8 +422,7 @@
+ 
+         when(srcData.getPath()).thenReturn(srcVolumePath);
+         when(srcData.getFolder()).thenReturn("921c364500000007");
+-        DataStore destStore = Mockito.mock(DataStore.class);
+-        when(destData.getDataStore()).thenReturn(destStore);
++        when(destData.getDataStore()).thenReturn(sourceDataStore);
+         doNothing().when(scaleIOPrimaryDataStoreDriver).revokeAccess(any(), any(), any());
+ 
+         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
+@@ -450,9 +449,8 @@
+         Host host = Mockito.mock(Host.class);
+         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
+ 
+-        DataStore srcStore = Mockito.mock(DataStore.class);
+         DataTO volumeTO = Mockito.mock(DataTO.class);
+-        when(srcData.getDataStore()).thenReturn(srcStore);
++        when(srcData.getDataStore()).thenReturn(sourceDataStore);
+         when(srcData.getTO()).thenReturn(volumeTO);
+         when(volumeTO.getPath()).thenReturn(srcVolumePath);
+         doNothing().when(scaleIOPrimaryDataStoreDriver).revokeVolumeAccess(any(), any(), any());
+@@ -473,13 +471,12 @@
+         Host host = Mockito.mock(Host.class);
+         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
+ 
+-        DataStore srcStore = Mockito.mock(DataStore.class);
+         DataTO volumeTO = Mockito.mock(DataTO.class);
+-        when(srcData.getDataStore()).thenReturn(srcStore);
++        when(srcData.getDataStore()).thenReturn(sourceDataStore);
+         when(srcData.getTO()).thenReturn(volumeTO);
+         when(volumeTO.getPath()).thenReturn(srcVolumePath);
+         String sdcId = "7332760565f6340f";
+-        doReturn(sdcId).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(srcStore, host);
++        doReturn(sdcId).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(sourceDataStore, host);
+ 
+         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
+         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
+@@ -499,13 +496,12 @@
+         when(host.getId()).thenReturn(1L);
+         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
+ 
+-        DataStore srcStore = Mockito.mock(DataStore.class);
+         DataTO volumeTO = Mockito.mock(DataTO.class);
+-        when(srcData.getDataStore()).thenReturn(srcStore);
++        when(srcData.getDataStore()).thenReturn(sourceDataStore);
+         when(srcData.getTO()).thenReturn(volumeTO);
+         when(volumeTO.getPath()).thenReturn(srcVolumePath);
+         String sdcId = "7332760565f6340f";
+-        doReturn(null).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(srcStore, host);
++        doReturn(null).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(sourceDataStore, host);
+ 
+         scaleIOPrimaryDataStoreDriver.deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
+     }

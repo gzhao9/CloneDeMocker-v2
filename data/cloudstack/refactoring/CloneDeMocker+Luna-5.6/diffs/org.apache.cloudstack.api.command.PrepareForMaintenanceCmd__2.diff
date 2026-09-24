@@ -1,0 +1,83 @@
+--- a/plugins/maintenance/src/test/java/org/apache/cloudstack/maintenance/ManagementServerMaintenanceManagerImplTest.java
++++ b/plugins/maintenance/src/test/java/org/apache/cloudstack/maintenance/ManagementServerMaintenanceManagerImplTest.java
+@@ -399,8 +399,7 @@
+         msHostList.add(msHost2);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(null);
+-        PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForMaintenanceCmd cmd = createMockPrepareForMaintenanceCmd();
+ 
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+             spy.prepareForMaintenance(cmd);
+@@ -417,8 +416,7 @@
+         msHostList.add(msHost2);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+-        PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForMaintenanceCmd cmd = createMockPrepareForMaintenanceCmd();
+ 
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+             spy.prepareForMaintenance(cmd);
+@@ -439,8 +437,7 @@
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList1);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.PreparingForMaintenance, ManagementServerHost.State.PreparingForShutDown)).thenReturn(msHostList2);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+-        PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForMaintenanceCmd cmd = createMockPrepareForMaintenanceCmd();
+ 
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+             spy.prepareForMaintenance(cmd);
+@@ -459,8 +456,7 @@
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.PreparingForMaintenance, ManagementServerHost.State.PreparingForShutDown)).thenReturn(new ArrayList<>());
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+         Mockito.when(msHostDao.listNonUpStateMsIPs()).thenReturn(new ArrayList<>());
+-        PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForMaintenanceCmd cmd = createMockPrepareForMaintenanceCmd();
+         Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong(), anyBoolean())).thenReturn(true);
+         Mockito.when(indirectAgentLBMock.getManagementServerList()).thenReturn(new ArrayList<>());
+ 
+@@ -480,8 +476,7 @@
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.PreparingForMaintenance, ManagementServerHost.State.PreparingForShutDown)).thenReturn(new ArrayList<>());
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+-        PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForMaintenanceCmd cmd = createMockPrepareForMaintenanceCmd();
+         Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong(), anyBoolean())).thenReturn(false);
+         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn(null);
+ 
+@@ -501,8 +496,7 @@
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.PreparingForMaintenance, ManagementServerHost.State.PreparingForShutDown)).thenReturn(new ArrayList<>());
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+-        PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForMaintenanceCmd cmd = createMockPrepareForMaintenanceCmd();
+         Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong(), anyBoolean())).thenReturn(false);
+         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn("Failed");
+ 
+@@ -522,8 +516,7 @@
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.PreparingForMaintenance, ManagementServerHost.State.PreparingForShutDown)).thenReturn(new ArrayList<>());
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+-        PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForMaintenanceCmd cmd = createMockPrepareForMaintenanceCmd();
+         Mockito.when(indirectAgentLBMock.haveAgentBasedHosts(anyLong(), anyBoolean())).thenReturn(false);
+         Mockito.when(hostDao.listByMs(anyLong())).thenReturn(new ArrayList<>());
+         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn("Success");
+@@ -568,4 +561,10 @@
+         spy.cancelMaintenance(cmd);
+         Mockito.verify(clusterManagerMock, Mockito.times(1)).execute(anyString(), anyLong(), anyString(), anyBoolean());
+     }
++
++    private static PrepareForMaintenanceCmd createMockPrepareForMaintenanceCmd() {
++        PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
++        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        return cmd;
++    }
+ }

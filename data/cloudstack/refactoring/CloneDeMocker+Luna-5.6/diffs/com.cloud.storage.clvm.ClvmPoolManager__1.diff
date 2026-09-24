@@ -1,0 +1,44 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/VolumeOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/VolumeOrchestratorTest.java
+@@ -861,11 +861,9 @@
+         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
+         Mockito.when(vmInstance.getInstanceName()).thenReturn(MOCK_VM_NAME);
+ 
+-        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
++        ClvmPoolManager clvmPoolManager = createMockClvmPoolManager(true);
+         Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
+                 Mockito.anyString(), Mockito.any(), Mockito.eq(true))).thenReturn(currentHostId);
+-        Mockito.when(clvmPoolManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
+-            Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
+ 
+         Mockito.when(storagePoolDao.findById(clvmPoolId)).thenReturn(clvmPool);
+         Mockito.when(storagePoolDao.findById(nfsPoolId)).thenReturn(nfsPool);
+@@ -902,11 +900,7 @@
+         VMInstanceVO vmInstance = Mockito.mock(VMInstanceVO.class);
+         Mockito.when(vmInstance.getInstanceName()).thenReturn(MOCK_VM_NAME);
+ 
+-        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
+-        Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
+-                Mockito.anyString(), Mockito.any(), Mockito.eq(true))).thenReturn(currentHostId);
+-        Mockito.when(clvmPoolManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
+-            Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(false);
++        ClvmPoolManager clvmPoolManager = createMockClvmPoolManager(false);
+ 
+         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(clvmPool);
+ 
+@@ -922,6 +916,15 @@
+         } catch (InvocationTargetException e) {
+             throw e.getCause();
+         }
++    }
++
++    private static ClvmPoolManager createMockClvmPoolManager(boolean transferClvmVolumeLockResult) {
++        ClvmPoolManager clvmPoolManager = Mockito.mock(ClvmPoolManager.class);
++        Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(101L), Mockito.anyString(),
++                Mockito.anyString(), Mockito.any(), Mockito.eq(true))).thenReturn(1L);
++        Mockito.when(clvmPoolManager.transferClvmVolumeLock(Mockito.anyString(), Mockito.anyLong(),
++            Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong())).thenReturn(transferClvmVolumeLockResult);
++        return clvmPoolManager;
+     }
+ 
+     private void setField(Object target, String fieldName, Object value) throws Exception {
