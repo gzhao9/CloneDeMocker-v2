@@ -1,0 +1,102 @@
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2DeviceAuthorizationEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2DeviceAuthorizationEndpointFilterTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.oauth2.server.authorization.web;
+ 
++import org.mockito.Mock;
+ import java.io.IOException;
+ import java.time.Instant;
+ import java.time.temporal.ChronoUnit;
+@@ -73,6 +74,8 @@
+  * @author Steve Riesenberg
+  */
+ public class OAuth2DeviceAuthorizationEndpointFilterTests {
++	@Mock
++	private FilterChain filterChain;
+ 
+ 	private static final String ISSUER_URI = "https://provider.com:8090";
+ 
+@@ -176,7 +179,6 @@
+ 	public void doFilterWhenNotDeviceAuthorizationRequestThenNotProcessed() throws Exception {
+ 		MockHttpServletRequest request = new MockHttpServletRequest(HttpMethod.GET.name(), "/path");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		verify(filterChain).doFilter(request, response);
+ 		verifyNoInteractions(this.authenticationManager);
+@@ -187,7 +189,6 @@
+ 		MockHttpServletRequest request = createRequest();
+ 		request.setMethod(HttpMethod.GET.name());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		verify(filterChain).doFilter(request, response);
+ 		verifyNoInteractions(this.authenticationManager);
+@@ -205,7 +206,6 @@
+ 		request.addParameter("custom-param-1", "custom-value-1");
+ 		request.addParameter("custom-param-2", "custom-value-1", "custom-value-2");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+@@ -257,7 +257,6 @@
+ 		request.setRequestURI("/contextPath" + AUTHORIZATION_URI);
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+@@ -281,7 +280,6 @@
+ 
+ 		MockHttpServletRequest request = createRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+ 
+@@ -306,7 +304,6 @@
+ 		request.setRequestURI("/device");
+ 		request.setServletPath("/device");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter = new OAuth2DeviceAuthorizationEndpointFilter(this.authenticationManager, "/device");
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+@@ -331,7 +328,6 @@
+ 
+ 		MockHttpServletRequest request = createRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+@@ -350,8 +346,8 @@
+ 
+ 		MockHttpServletRequest request = createRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
++
++		// removed local mock; replaced with global field `filterChain`
+ 		@SuppressWarnings("unchecked")
+ 		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = mock(
+ 				AuthenticationDetailsSource.class);
+@@ -380,7 +376,6 @@
+ 
+ 		MockHttpServletRequest request = createRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+@@ -403,7 +398,6 @@
+ 
+ 		MockHttpServletRequest request = createRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 

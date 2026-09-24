@@ -1,0 +1,100 @@
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2DeviceVerificationEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2DeviceVerificationEndpointFilterTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.oauth2.server.authorization.web;
+ 
++import org.mockito.Mock;
+ import java.nio.charset.StandardCharsets;
+ import java.text.MessageFormat;
+ import java.util.Collections;
+@@ -70,6 +71,8 @@
+  * @author Steve Riesenberg
+  */
+ public class OAuth2DeviceVerificationEndpointFilterTests {
++	@Mock
++	private FilterChain filterChain;
+ 
+ 	private static final String ISSUER_URI = "https://provider.com";
+ 
+@@ -160,7 +163,6 @@
+ 	public void doFilterWhenNotDeviceVerificationRequestThenNotProcessed() throws Exception {
+ 		MockHttpServletRequest request = new MockHttpServletRequest(HttpMethod.GET.name(), "/path");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		verify(filterChain).doFilter(request, response);
+ 		verifyNoInteractions(this.authenticationManager);
+@@ -184,7 +186,6 @@
+ 		request.addParameter("custom-param-1", "custom-value-1");
+ 		request.addParameter("custom-param-2", "custom-value-1", "custom-value-2");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.FOUND.value());
+ 		assertThat(response.getHeader(HttpHeaders.LOCATION)).isEqualTo("/?success");
+@@ -220,7 +221,6 @@
+ 		request.addParameter("custom-param-1", "custom-value-1");
+ 		updateQueryString(request);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.FOUND.value());
+ 		assertThat(response.getHeader(HttpHeaders.LOCATION)).isEqualTo("/?success");
+@@ -246,7 +246,6 @@
+ 		request.addParameter(OAuth2ParameterNames.USER_CODE, USER_CODE);
+ 		updateQueryString(request);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 		assertThat(response.getContentType())
+@@ -268,7 +267,6 @@
+ 		request.addParameter(OAuth2ParameterNames.USER_CODE, USER_CODE);
+ 		updateQueryString(request);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 		assertThat(response.getContentType())
+@@ -293,7 +291,7 @@
+ 		request.addParameter(OAuth2ParameterNames.USER_CODE, USER_CODE);
+ 		updateQueryString(request);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
++		// removed local mock; replaced with global field `filterChain`
+ 		this.filter.setConsentPage("/consent");
+ 		this.filter.doFilter(request, response, filterChain);
+ 		String redirectUri = UriComponentsBuilder.fromUriString("https://provider.com/consent")
+@@ -325,7 +323,6 @@
+ 		request.addParameter(OAuth2ParameterNames.USER_CODE, USER_CODE);
+ 		updateQueryString(request);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.FOUND.value());
+ 		assertThat(response.getHeader(HttpHeaders.LOCATION)).isEqualTo("/?success");
+@@ -344,7 +341,6 @@
+ 		request.addParameter(OAuth2ParameterNames.USER_CODE, USER_CODE);
+ 		updateQueryString(request);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 
+ 		@SuppressWarnings("unchecked")
+ 		AuthenticationDetailsSource<HttpServletRequest, WebAuthenticationDetails> authenticationDetailsSource = mock(
+@@ -374,7 +370,6 @@
+ 		request.addParameter(OAuth2ParameterNames.USER_CODE, USER_CODE);
+ 		updateQueryString(request);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 
+@@ -396,7 +391,6 @@
+ 		request.addParameter(OAuth2ParameterNames.USER_CODE, USER_CODE);
+ 		updateQueryString(request);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+ 

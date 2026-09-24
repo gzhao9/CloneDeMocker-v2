@@ -1,0 +1,82 @@
+--- a/config/src/test/java/org/springframework/security/config/http/OAuth2ResourceServerBeanDefinitionParserTests.java
++++ b/config/src/test/java/org/springframework/security/config/http/OAuth2ResourceServerBeanDefinitionParserTests.java
+@@ -856,9 +856,7 @@
+ 	public void validateConfigurationWhenMoreThanOneResourceServerModeThenError() {
+ 		OAuth2ResourceServerBeanDefinitionParser parser = new OAuth2ResourceServerBeanDefinitionParser(null, null, null,
+ 				null, null, null);
+-		Element element = mock(Element.class);
+-		given(element.hasAttribute(OAuth2ResourceServerBeanDefinitionParser.AUTHENTICATION_MANAGER_RESOLVER_REF))
+-			.willReturn(true);
++		Element element = createMockElement(java.util.Collections.singletonMap(OAuth2ResourceServerBeanDefinitionParser.AUTHENTICATION_MANAGER_RESOLVER_REF, true));
+ 		Element child = mock(Element.class);
+ 		ParserContext pc = new ParserContext(mock(XmlReaderContext.class), mock(BeanDefinitionParserDelegate.class));
+ 		parser.validateConfiguration(element, child, null, pc);
+@@ -872,9 +870,7 @@
+ 	public void validateConfigurationWhenNoResourceServerModeThenError() {
+ 		OAuth2ResourceServerBeanDefinitionParser parser = new OAuth2ResourceServerBeanDefinitionParser(null, null, null,
+ 				null, null, null);
+-		Element element = mock(Element.class);
+-		given(element.hasAttribute(OAuth2ResourceServerBeanDefinitionParser.AUTHENTICATION_MANAGER_RESOLVER_REF))
+-			.willReturn(false);
++		Element element = createMockElement(java.util.Collections.singletonMap(OAuth2ResourceServerBeanDefinitionParser.AUTHENTICATION_MANAGER_RESOLVER_REF, false));
+ 		ParserContext pc = new ParserContext(mock(XmlReaderContext.class), mock(BeanDefinitionParserDelegate.class));
+ 		parser.validateConfiguration(element, null, null, pc);
+ 		verify(pc.getReaderContext()).error(anyString(), eq(element));
+@@ -883,9 +879,7 @@
+ 	@Test
+ 	public void validateConfigurationWhenBothJwtAttributesThenError() {
+ 		JwtBeanDefinitionParser parser = new JwtBeanDefinitionParser();
+-		Element element = mock(Element.class);
+-		given(element.hasAttribute(JwtBeanDefinitionParser.JWK_SET_URI)).willReturn(true);
+-		given(element.hasAttribute(JwtBeanDefinitionParser.DECODER_REF)).willReturn(true);
++		Element element = createMockElement(java.util.Map.of(JwtBeanDefinitionParser.JWK_SET_URI, true, JwtBeanDefinitionParser.DECODER_REF, true));
+ 		ParserContext pc = new ParserContext(mock(XmlReaderContext.class), mock(BeanDefinitionParserDelegate.class));
+ 		parser.validateConfiguration(element, pc);
+ 		verify(pc.getReaderContext()).error(anyString(), eq(element));
+@@ -894,9 +888,7 @@
+ 	@Test
+ 	public void validateConfigurationWhenNoJwtAttributesThenError() {
+ 		JwtBeanDefinitionParser parser = new JwtBeanDefinitionParser();
+-		Element element = mock(Element.class);
+-		given(element.hasAttribute(JwtBeanDefinitionParser.JWK_SET_URI)).willReturn(false);
+-		given(element.hasAttribute(JwtBeanDefinitionParser.DECODER_REF)).willReturn(false);
++		Element element = createMockElement(java.util.Map.of(JwtBeanDefinitionParser.JWK_SET_URI, false, JwtBeanDefinitionParser.DECODER_REF, false));
+ 		ParserContext pc = new ParserContext(mock(XmlReaderContext.class), mock(BeanDefinitionParserDelegate.class));
+ 		parser.validateConfiguration(element, pc);
+ 		verify(pc.getReaderContext()).error(anyString(), eq(element));
+@@ -905,9 +897,7 @@
+ 	@Test
+ 	public void validateConfigurationWhenBothOpaqueTokenModesThenError() {
+ 		OpaqueTokenBeanDefinitionParser parser = new OpaqueTokenBeanDefinitionParser();
+-		Element element = mock(Element.class);
+-		given(element.hasAttribute(OpaqueTokenBeanDefinitionParser.INTROSPECTION_URI)).willReturn(true);
+-		given(element.hasAttribute(OpaqueTokenBeanDefinitionParser.INTROSPECTOR_REF)).willReturn(true);
++		Element element = createMockElement(java.util.Map.of(OpaqueTokenBeanDefinitionParser.INTROSPECTION_URI, true, OpaqueTokenBeanDefinitionParser.INTROSPECTOR_REF, true));
+ 		ParserContext pc = new ParserContext(mock(XmlReaderContext.class), mock(BeanDefinitionParserDelegate.class));
+ 		parser.validateConfiguration(element, pc);
+ 		verify(pc.getReaderContext()).error(anyString(), eq(element));
+@@ -916,9 +906,9 @@
+ 	@Test
+ 	public void validateConfigurationWhenNoOpaqueTokenModeThenError() {
+ 		OpaqueTokenBeanDefinitionParser parser = new OpaqueTokenBeanDefinitionParser();
+-		Element element = mock(Element.class);
+-		given(element.hasAttribute(OpaqueTokenBeanDefinitionParser.INTROSPECTION_URI)).willReturn(false);
+-		given(element.hasAttribute(OpaqueTokenBeanDefinitionParser.INTROSPECTOR_REF)).willReturn(false);
++		Element element = createMockElement(java.util.Map.of(
++		        OpaqueTokenBeanDefinitionParser.INTROSPECTION_URI, false,
++		        OpaqueTokenBeanDefinitionParser.INTROSPECTOR_REF, false));
+ 		ParserContext pc = new ParserContext(mock(XmlReaderContext.class), mock(BeanDefinitionParserDelegate.class));
+ 		parser.validateConfiguration(element, pc);
+ 		verify(pc.getReaderContext()).error(anyString(), eq(element));
+@@ -1153,4 +1143,11 @@
+ 
+ 	}
+ 
++
++	private static Element createMockElement(java.util.Map<String, Boolean> attributeValues) {
++		Element element = Mockito.mock(Element.class);
++		attributeValues.forEach((attributeName, attributeValue) ->
++				given(element.hasAttribute(attributeName)).willReturn(attributeValue));
++		return element;
++	}
+ }

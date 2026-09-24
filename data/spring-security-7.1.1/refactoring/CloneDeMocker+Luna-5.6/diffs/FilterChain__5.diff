@@ -1,0 +1,119 @@
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2ClientRegistrationEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2ClientRegistrationEndpointFilterTests.java
+@@ -83,6 +83,8 @@
+ 
+ 	private OAuth2ClientRegistrationEndpointFilter filter;
+ 
++	private FilterChain filterChainMock;
++
+ 	private final HttpMessageConverter<OAuth2ClientRegistration> clientRegistrationHttpMessageConverter = new OAuth2ClientRegistrationHttpMessageConverter();
+ 
+ 	private final HttpMessageConverter<OAuth2Error> errorHttpResponseConverter = new OAuth2ErrorHttpMessageConverter();
+@@ -90,6 +92,7 @@
+ 	@BeforeEach
+ 	public void setup() {
+ 		this.authenticationManager = mock(AuthenticationManager.class);
++		this.filterChainMock = mock(FilterChain.class);
+ 		this.filter = new OAuth2ClientRegistrationEndpointFilter(this.authenticationManager);
+ 	}
+ 
+@@ -135,11 +138,10 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest("POST", requestUri);
+ 		request.setServletPath(requestUri);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verify(filterChainMock).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+ 
+ 	@Test
+@@ -148,11 +150,10 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest("GET", requestUri);
+ 		request.setServletPath(requestUri);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verify(filterChainMock).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+ 
+ 	@Test
+@@ -162,11 +163,10 @@
+ 		request.setServletPath(requestUri);
+ 		request.setContent("invalid content".getBytes());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verifyNoInteractions(filterChainMock);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+ 		OAuth2Error error = readError(response);
+@@ -256,11 +256,10 @@
+ 		writeClientRegistrationRequest(request, clientRegistrationRequest);
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
++
++		verifyNoInteractions(filterChainMock);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.CREATED.value());
+ 		OAuth2ClientRegistration clientRegistrationResponse = readClientRegistrationResponse(response);
+@@ -296,9 +295,8 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest("POST", requestUri);
+ 		request.setServletPath(requestUri);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
+ 
+ 		verify(authenticationConverter).convert(request);
+ 	}
+@@ -335,9 +333,8 @@
+ 		request.setServletPath(requestUri);
+ 		writeClientRegistrationRequest(request, clientRegistrationRequest);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
+ 
+ 		verify(successHandler).onAuthenticationSuccess(request, response, clientRegistrationAuthenticationResult);
+ 	}
+@@ -352,9 +349,8 @@
+ 		request.setServletPath(requestUri);
+ 		request.setContent("invalid content".getBytes());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, filterChainMock);
+ 
+ 		verify(authenticationFailureHandler).onAuthenticationFailure(eq(request), eq(response),
+ 				any(OAuth2AuthenticationException.class));
