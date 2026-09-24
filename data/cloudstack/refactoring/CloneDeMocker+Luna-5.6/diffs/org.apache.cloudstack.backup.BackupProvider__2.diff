@@ -1,0 +1,122 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -160,8 +160,7 @@
+     @Mock
+     BackupDetailsDao backupDetailsDao;
+ 
+-    @Mock
+-    BackupProvider backupProvider;
++        BackupProvider backupProvider;
+ 
+     @Mock
+     VirtualMachineManager virtualMachineManager;
+@@ -312,8 +311,7 @@
+             return true;
+         });
+ 
+-        backupProvider = mock(BackupProvider.class);
+-        when(backupProvider.getName()).thenReturn("testbackupprovider");
++        backupProvider = createMockBackupProvider("testbackupprovider");
+         Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
+         backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
+         ReflectionTestUtils.setField(backupManager, "backupProvidersMap", backupProvidersMap);
+@@ -359,6 +357,18 @@
+         CallContext.unregister();
+     }
+ 
++    private static void stubRestoreBackedUpVolume(BackupProvider backupProvider) {
++        doReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success3"))
++            .when(backupProvider).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
++                any(String.class), any(String.class), any(Pair.class), any(), any(Boolean.class));
++    }
++
++    private static BackupProvider createMockBackupProvider(String providerName) {
++        BackupProvider backupProvider = mock(BackupProvider.class);
++        when(backupProvider.getName()).thenReturn(providerName);
++        return backupProvider;
++    }
++
+     private void overrideBackupFrameworkConfigValue() {
+         ConfigKey configKey = BackupManager.BackupFrameworkEnabled;
+         this.configDepotImpl = (ConfigDepotImpl) ReflectionTestUtils.getField(configKey, "s_depot");
+@@ -497,9 +507,7 @@
+         Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+         when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+ 
+-        doReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success3"))
+-            .when(backupProvider).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
+-                any(String.class), any(String.class), any(Pair.class), any(), any(Boolean.class));
++        stubRestoreBackedUpVolume(backupProvider);
+ 
+         Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm,
+                 false);
+@@ -590,6 +598,7 @@
+ 
+             Mockito.when(vm.getId()).thenReturn(1L);
+             Mockito.when(offering.getProvider()).thenReturn("veeam");
++            backupProvider = createMockBackupProvider("testbackupprovider");
+             Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
+             Mockito.when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(false);
+             try {
+@@ -720,11 +729,10 @@
+         when(volume.getState()).thenReturn(Volume.State.Ready);
+         when(volumeApiService.getVolumePhysicalSize(null, null, null)).thenReturn(newBackupSize);
+ 
+-        BackupProvider backupProvider = mock(BackupProvider.class);
++        BackupProvider backupProvider = createMockBackupProvider("testbackupprovider");
+         Backup backup = mock(Backup.class);
+         when(backup.getId()).thenReturn(backupId);
+         when(backup.getSize()).thenReturn(newBackupSize);
+-        when(backupProvider.getName()).thenReturn("testbackupprovider");
+         when(backupProvider.takeBackup(vmInstanceVOMock, null, false)).thenReturn(new Pair<>(true, backup));
+         Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
+         backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
+@@ -869,8 +877,7 @@
+         when(dataCenter.getId()).thenReturn(dataCenterId);
+         when(dataCenterDao.listAllZones()).thenReturn(List.of(dataCenter));
+ 
+-        BackupProvider backupProvider = mock(BackupProvider.class);
+-        when(backupProvider.getName()).thenReturn("testbackupprovider");
++        BackupProvider backupProvider = createMockBackupProvider("testbackupprovider");
+         backupManager.setBackupProviders(List.of(backupProvider));
+         backupManager.start();
+ 
+@@ -1447,6 +1454,7 @@
+     @Test
+     public void testGetBackupStorageUsedStats() {
+         Long zoneId = 1L;
++        backupProvider = createMockBackupProvider("testbackupprovider");
+         overrideBackupFrameworkConfigValue();
+         when(backupManager.getBackupProvider(zoneId)).thenReturn(backupProvider);
+         when(backupProvider.getBackupStorageStats(zoneId)).thenReturn(new Pair<>(100L, 200L));
+@@ -2776,8 +2784,8 @@
+         CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+         doReturn(zoneId).when(cmd).getZoneId();
+         doReturn(offeringName).when(cmd).getName();
++        backupProvider = createMockBackupProvider("dummy");
+         doReturn(backupProvider).when(backupManager).getBackupProvider(zoneId);
+-        doReturn("dummy").when(backupProvider).getName();
+ 
+         backupManager.createBackupOffering(cmd);
+ 
+@@ -2794,8 +2802,8 @@
+         CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+         doReturn(zoneId).when(cmd).getZoneId();
+         doReturn(offeringName).when(cmd).getName();
++        backupProvider = createMockBackupProvider("kboss");
+         doReturn(backupProvider).when(backupManager).getBackupProvider(zoneId);
+-        doReturn("kboss").when(backupProvider).getName();
+         doReturn(false).when(backupProvider).isValidProviderOffering(zoneId, null);
+ 
+         backupManager.createBackupOffering(cmd);
+@@ -2856,9 +2864,9 @@
+         CreateBackupOfferingCmd cmd = Mockito.mock(CreateBackupOfferingCmd.class);
+         doReturn(zoneId).when(cmd).getZoneId();
+         doReturn(offeringName).when(cmd).getName();
++        backupProvider = createMockBackupProvider("kboss");
+         doReturn(backupProvider).when(backupManager).getBackupProvider(zoneId);
+         doReturn(backupOfferingVOMock).when(backupOfferingDao).persist(any());
+-        doReturn("kboss").when(backupProvider).getName();
+         doReturn(true).when(backupProvider).isValidProviderOffering(zoneId, null);
+         doReturn(false).when(cmd).isCompress();
+         doReturn(false).when(cmd).isValidate();

@@ -1,0 +1,87 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -1186,8 +1186,7 @@
+         when(cluster_detail_ram.getValue()).thenReturn("1.0");
+         doReturn(false).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
+ 
+-        CallContext callContext = mock(CallContext.class);
+-        when(callContext.getCallingAccount()).thenReturn(account);
++        CallContext callContext = com.cloud.vm.MockCallContext.createMockCallContext(account);
+         when(callContext.getCallingUser()).thenReturn(user);
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+             when(CallContext.current()).thenReturn(callContext);
+@@ -1282,8 +1281,7 @@
+         when(cluster_detail_ram.getValue()).thenReturn("1.0");
+         doReturn(true).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
+ 
+-        CallContext callContext = mock(CallContext.class);
+-        when(callContext.getCallingAccount()).thenReturn(account);
++        CallContext callContext = MockCallContext.createMockCallContext(account);
+         when(callContext.getCallingUser()).thenReturn(user);
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+             when(CallContext.current()).thenReturn(callContext);
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -1832,8 +1832,7 @@
+             when(vm.getTemplateId()).thenReturn(1L);
+             when(vm.getDataCenterId()).thenReturn(1L);
+ 
+-            CallContext mockCallContext = mock(CallContext.class);
+-            when(mockCallContext.getCallingAccount()).thenReturn(accountMock);
++            CallContext mockCallContext = MockCallContext.createMockCallContext(accountMock);
+ 
+             CallContext mockVolumeContext = mock(CallContext.class);
+             when(CallContext.register(any(CallContext.class), any(ApiCommandResourceType.class))).thenReturn(mockVolumeContext);
+@@ -3830,9 +3829,8 @@
+         boolean expunge = true;
+ 
+         ReflectionTestUtils.setField(userVmManagerImpl, "_uuidMgr", uuidMgr);
+-        CallContext callContext = mock(CallContext.class);
+         Account callingAccount = mock(Account.class);
+-        when(callContext.getCallingAccount()).thenReturn(callingAccount);
++        CallContext callContext = MockCallContext.createMockCallContext(callingAccount);
+         try (MockedStatic<CallContext> mockedCallContext = mockStatic(CallContext.class)) {
+             mockedCallContext.when(CallContext::current).thenReturn(callContext);
+             mockedCallContext.when(() -> CallContext.register(callContext, ApiCommandResourceType.Volume)).thenReturn(callContext);
+--- a/engine/orchestration/src/test/java/com/cloud/vm/MockCallContext.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/MockCallContext.java
+@@ -0,0 +1,18 @@
++package com.cloud.vm;
++
++import org.apache.cloudstack.context.CallContext;
++import com.cloud.user.Account;
++
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++public final class MockCallContext {
++    private MockCallContext() {
++    }
++
++    public static CallContext createMockCallContext(Account callingAccount) {
++        CallContext callContext = mock(CallContext.class);
++        when(callContext.getCallingAccount()).thenReturn(callingAccount);
++        return callContext;
++    }
++}
+--- a/server/src/test/java/com/cloud/vm/MockCallContext.java
++++ b/server/src/test/java/com/cloud/vm/MockCallContext.java
+@@ -0,0 +1,18 @@
++package com.cloud.vm;
++
++import org.apache.cloudstack.context.CallContext;
++import com.cloud.user.Account;
++
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++public final class MockCallContext {
++    private MockCallContext() {
++    }
++
++    public static CallContext createMockCallContext(Account callingAccount) {
++        CallContext callContext = mock(CallContext.class);
++        when(callContext.getCallingAccount()).thenReturn(callingAccount);
++        return callContext;
++    }
++}

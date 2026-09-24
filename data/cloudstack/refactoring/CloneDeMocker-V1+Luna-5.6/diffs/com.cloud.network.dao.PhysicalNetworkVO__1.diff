@@ -1,0 +1,326 @@
+--- a/plugins/network-elements/brocade-vcs/src/test/java/com/cloud/network/guru/BrocadeVcsGuestNetworkGuruTest.java
++++ b/plugins/network-elements/brocade-vcs/src/test/java/com/cloud/network/guru/BrocadeVcsGuestNetworkGuruTest.java
+@@ -123,10 +123,8 @@
+         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
+         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
+ 
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VCS"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
+-
++
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList("VCS"));
+         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
+ 
+         assertTrue(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+@@ -152,10 +150,8 @@
+ 
+     @Test
+     public void testDesign() {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList("VCS"));
+         when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VCS"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
+ 
+         final NetworkOffering offering = mock(NetworkOffering.class);
+         when(offering.getId()).thenReturn(NETWORK_ID);
+@@ -177,10 +173,8 @@
+ 
+     @Test
+     public void testDesignNoIsolationMethodVCS() {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList(new String[] { "VLAN" }));
+         when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VLAN"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
+ 
+         final NetworkOffering offering = mock(NetworkOffering.class);
+         when(offering.getId()).thenReturn(NETWORK_ID);
+@@ -197,10 +191,8 @@
+ 
+     @Test
+     public void testDesignNoConnectivityInOffering() {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList(new String[] { "VCS" }));
+         when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VCS"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
+ 
+         final NetworkOffering offering = mock(NetworkOffering.class);
+         when(offering.getId()).thenReturn(NETWORK_ID);
+@@ -219,10 +211,8 @@
+ 
+     @Test
+     public void testImplement() throws InsufficientVirtualNetworkCapacityException, URISyntaxException {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList("VCS"));
+         when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VCS"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
+ 
+         final NetworkOffering offering = mock(NetworkOffering.class);
+         when(offering.getId()).thenReturn(NETWORK_ID);
+@@ -278,10 +268,8 @@
+ 
+     @Test
+     public void testImplementFail() throws InsufficientVirtualNetworkCapacityException, URISyntaxException {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList(new String[] { "VCS" }));
+         when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VCS"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
+ 
+         final NetworkOffering offering = mock(NetworkOffering.class);
+         when(offering.getId()).thenReturn(NETWORK_ID);
+@@ -588,4 +576,20 @@
+         assertTrue(result == false);
+         verify(agentmgr, times(0)).easySend(eq(NETWORK_ID), (Command)any());
+     }
++
++    public final class MockPhysicalNetworkVO {
++        private MockPhysicalNetworkVO() {
++            // Utility class
++        }
++
++        public static com.cloud.network.dao.PhysicalNetworkVO createMockPhysicalNetworkVO(
++                long id, java.util.List<String> isolationMethods) {
++            com.cloud.network.dao.PhysicalNetworkVO physnet =
++                    org.mockito.Mockito.mock(com.cloud.network.dao.PhysicalNetworkVO.class);
++            org.mockito.Mockito.when(physnet.getIsolationMethods())
++                    .thenReturn(java.util.Arrays.asList(isolationMethods.toArray(new String[0])));
++            org.mockito.Mockito.when(physnet.getId()).thenReturn(id);
++            return physnet;
++        }
++    }
+ }
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/guru/NiciraNvpGuestNetworkGuruTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/guru/NiciraNvpGuestNetworkGuruTest.java
+@@ -113,10 +113,8 @@
+         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
+         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
+ 
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
+-
++
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList("STT", "VXLAN"));
+         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
+ 
+         assertTrue(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+@@ -146,10 +144,8 @@
+ 
+     @Test
+     public void testDesign() {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList(new String[] { "STT", "VXLAN" }));
++        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+ 
+         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
+@@ -175,10 +171,8 @@
+ 
+     @Test
+     public void testDesignNoElementOnPhysicalNetwork() {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList(new String[] { "STT", "VXLAN" }));
++        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+ 
+         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Collections.<NiciraNvpDeviceVO> emptyList());
+ 
+@@ -197,10 +191,8 @@
+ 
+     @Test
+     public void testDesignNoIsolationMethodSTT() {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VLAN"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList(new String[] { "VLAN" }));
++        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+ 
+         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Collections.<NiciraNvpDeviceVO> emptyList());
+ 
+@@ -219,10 +211,8 @@
+ 
+     @Test
+     public void testDesignNoConnectivityInOffering() {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList(new String[] { "STT", "VXLAN" }));
++        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+ 
+         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
+@@ -245,10 +235,8 @@
+ 
+     @Test
+     public void testImplement() throws InsufficientVirtualNetworkCapacityException {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList(new String[] { "STT", "VXLAN" }));
++        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+ 
+         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
+@@ -299,10 +287,8 @@
+ 
+     @Test
+     public void testImplementWithCidr() throws InsufficientVirtualNetworkCapacityException {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList(new String[] { "STT" }));
++        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+ 
+         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
+@@ -357,10 +343,8 @@
+ 
+     @Test
+     public void testImplementURIException() throws InsufficientVirtualNetworkCapacityException {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList("STT"));
++        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+ 
+         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
+@@ -411,10 +395,8 @@
+ 
+     @Test
+     public void testShutdown() throws InsufficientVirtualNetworkCapacityException, URISyntaxException {
+-        final PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"STT", "VXLAN"}));
+-        when(physnet.getId()).thenReturn(NETWORK_ID);
++        final PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(NETWORK_ID, Arrays.asList(new String[] { "STT", "VXLAN" }));
++        when(physnetdao.findById((Long)any())).thenReturn(physnet);
+ 
+         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+         when(nvpdao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(new NiciraNvpDeviceVO[] {device}));
+@@ -469,4 +451,20 @@
+         verify(agentmgr, times(1)).easySend(eq(NETWORK_ID), (Command)any());
+         verify(implementednetwork, times(1)).setBroadcastUri(null);
+     }
++
++    public final class MockPhysicalNetworkVO {
++        private MockPhysicalNetworkVO() {
++            // Utility class
++        }
++
++        public static com.cloud.network.dao.PhysicalNetworkVO createMockPhysicalNetworkVO(
++                long id, java.util.List<String> isolationMethods) {
++            com.cloud.network.dao.PhysicalNetworkVO physnet =
++                    org.mockito.Mockito.mock(com.cloud.network.dao.PhysicalNetworkVO.class);
++            org.mockito.Mockito.when(physnet.getIsolationMethods())
++                    .thenReturn(java.util.Arrays.asList(isolationMethods.toArray(new String[0])));
++            org.mockito.Mockito.when(physnet.getId()).thenReturn(id);
++            return physnet;
++        }
++    }
+ }
+--- a/plugins/network-elements/vxlan/src/test/java/com/cloud/network/guru/VxlanGuestNetworkGuruTest.java
++++ b/plugins/network-elements/vxlan/src/test/java/com/cloud/network/guru/VxlanGuestNetworkGuruTest.java
+@@ -97,10 +97,8 @@
+         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
+         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
+ 
+-        PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VXLAN"}));
+-        when(physnet.getId()).thenReturn(42L);
+-
++
++        PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(42L, Arrays.asList("VXLAN"));
+         assertTrue(guru.canHandle(offering, NetworkType.Advanced, physnet) == true);
+ 
+         // Not supported TrafficType != Guest
+@@ -124,10 +122,8 @@
+ 
+     @Test
+     public void testDesign() {
+-        PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById(anyLong())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VXLAN"}));
+-        when(physnet.getId()).thenReturn(42L);
++        PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(42L, Arrays.asList(new String[] { "VXLAN" }));
++        when(physnetdao.findById(anyLong())).thenReturn(physnet);
+ 
+         NetworkOffering offering = mock(NetworkOffering.class);
+         when(offering.getId()).thenReturn(42L);
+@@ -145,10 +141,8 @@
+ 
+     @Test
+     public void testImplement() throws InsufficientVirtualNetworkCapacityException {
+-        PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById(anyLong())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VXLAN"}));
+-        when(physnet.getId()).thenReturn(42L);
++        PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(42L, Arrays.asList(new String[] { "VXLAN" }));
++        when(physnetdao.findById(anyLong())).thenReturn(physnet);
+ 
+         NetworkOffering offering = mock(NetworkOffering.class);
+         when(offering.getId()).thenReturn(42L);
+@@ -187,10 +181,8 @@
+ 
+     @Test
+     public void testImplementWithCidr() throws InsufficientVirtualNetworkCapacityException {
+-        PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById(anyLong())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VXLAN"}));
+-        when(physnet.getId()).thenReturn(42L);
++        PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(42L, Arrays.asList("VXLAN"));
++        when(physnetdao.findById(anyLong())).thenReturn(physnet);
+ 
+         NetworkOffering offering = mock(NetworkOffering.class);
+         when(offering.getId()).thenReturn(42L);
+@@ -234,11 +226,9 @@
+ 
+     @Test
+     public void testShutdown() throws InsufficientVirtualNetworkCapacityException, URISyntaxException {
+-        PhysicalNetworkVO physnet = mock(PhysicalNetworkVO.class);
+-        when(physnetdao.findById(anyLong())).thenReturn(physnet);
+-        when(physnet.getIsolationMethods()).thenReturn(Arrays.asList(new String[] {"VXLAN"}));
+-        when(physnet.getId()).thenReturn(42L);
+-
++        when(physnetdao.findById(anyLong())).thenReturn(physnet);
++
++        PhysicalNetworkVO physnet = MockPhysicalNetworkVO.createMockPhysicalNetworkVO(42L, Arrays.asList("VXLAN"));
+         NetworkOffering offering = mock(NetworkOffering.class);
+         when(offering.getId()).thenReturn(42L);
+         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
+@@ -277,4 +267,20 @@
+         guru.shutdown(implementednetwork, offering);
+         verify(implementednetwork, times(1)).setBroadcastUri(null);
+     }
++
++    public final class MockPhysicalNetworkVO {
++        private MockPhysicalNetworkVO() {
++            // Utility class
++        }
++
++        public static com.cloud.network.dao.PhysicalNetworkVO createMockPhysicalNetworkVO(
++                long id, java.util.List<String> isolationMethods) {
++            com.cloud.network.dao.PhysicalNetworkVO physnet =
++                    org.mockito.Mockito.mock(com.cloud.network.dao.PhysicalNetworkVO.class);
++            org.mockito.Mockito.when(physnet.getIsolationMethods())
++                    .thenReturn(java.util.Arrays.asList(isolationMethods.toArray(new String[0])));
++            org.mockito.Mockito.when(physnet.getId()).thenReturn(id);
++            return physnet;
++        }
++    }
+ }
