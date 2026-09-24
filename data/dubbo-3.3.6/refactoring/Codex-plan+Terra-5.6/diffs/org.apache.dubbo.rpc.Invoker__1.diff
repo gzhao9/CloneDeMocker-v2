@@ -1,0 +1,35 @@
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java
+@@ -512,13 +512,8 @@
+         given(invocation.getObjectAttachments()).willReturn(new HashMap<>());
+         given(invocation.getInvoker()).willReturn(firstInvoker);
+ 
+-        given(firstInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "first"));
+-        given(firstInvoker.getInterface()).willReturn(MenuService.class);
+-        given(firstInvoker.invoke(invocation)).willReturn(new AppResponse());
+-
+-        given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+-        given(secondInvoker.getInterface()).willReturn(MenuService.class);
+-        given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
++        firstInvoker = createMockInvoker(url, invocation, "first");
++        secondInvoker = createMockSecondInvoker(url, invocation);
+ 
+         given(directory.list(invocation)).willReturn(new ArrayList() {
+ 
+@@ -538,4 +533,16 @@
+         assertFalse(firstInvoker.isAvailable());
+         assertFalse(secondInvoker.isAvailable());
+     }
++
++    private static Invoker createMockSecondInvoker(URL url, Invocation invocation) {
++        return createMockInvoker(url, invocation, "second");
++    }
++
++    private static Invoker createMockInvoker(URL url, Invocation invocation, String group) {
++        Invoker invoker = mock(Invoker.class);
++        given(invoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, group));
++        given(invoker.getInterface()).willReturn(MenuService.class);
++        given(invoker.invoke(invocation)).willReturn(new AppResponse());
++        return invoker;
++    }
+ }
