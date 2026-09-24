@@ -1,0 +1,25 @@
+--- a/web/src/test/java/org/springframework/security/web/server/ObservationWebFilterChainDecoratorTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/ObservationWebFilterChainDecoratorTests.java
+@@ -142,8 +142,7 @@
+ 		ObservationRegistry registry = ObservationRegistry.create();
+ 		registry.observationConfig().observationHandler(handler);
+ 		ObservationWebFilterChainDecorator decorator = new ObservationWebFilterChainDecorator(registry);
+-		WebFilterChain chain = mock(WebFilterChain.class);
+-		given(chain.filter(any())).willReturn(Mono.error(() -> new Exception("ack")));
++		WebFilterChain chain = createMockWebFilterChain();
+ 		WebFilterChain decorated = decorator.decorate(chain, List.of(new BasicAuthenticationFilter()));
+ 		Observation http = Observation.start("http", registry).contextualName("http");
+ 		try {
+@@ -239,6 +238,12 @@
+ 			.isEqualTo(expectedFilterNameTag);
+ 	}
+ 
++	private static WebFilterChain createMockWebFilterChain() {
++		WebFilterChain chain = mock(WebFilterChain.class);
++		given(chain.filter(any())).willReturn(Mono.error(() -> new Exception("ack")));
++		return chain;
++	}
++
+ 	static Stream<Arguments> decorateFiltersWhenCompletesThenHasSpringSecurityReachedFilterNameTagArguments() {
+ 		WebFilter filterWithName = new BasicAuthenticationFilter();
+ 
