@@ -1,0 +1,73 @@
+--- a/web/src/test/java/org/springframework/security/web/FilterInvocationTests.java
++++ b/web/src/test/java/org/springframework/security/web/FilterInvocationTests.java
+@@ -22,6 +22,7 @@
+ import jakarta.servlet.FilterChain;
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpServletResponse;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.mock.web.MockHttpServletRequest;
+@@ -44,18 +45,24 @@
+  */
+ public class FilterInvocationTests {
+ 
++	private FilterChain filterChain;
++
++	@BeforeEach
++	public void setUp() {
++		this.filterChain = mock(FilterChain.class);
++	}
++
+ 	@Test
+ 	public void testGettersAndStringMethods() {
+ 		MockHttpServletRequest request = get().requestUri("/mycontext", "/HelloWorld", "/some/more/segments.html")
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain chain = mock(FilterChain.class);
+-		FilterInvocation fi = new FilterInvocation(request, response, chain);
++		FilterInvocation fi = new FilterInvocation(request, response, filterChain);
+ 		assertThat(fi.getRequest()).isEqualTo(request);
+ 		assertThat(fi.getHttpRequest()).isEqualTo(request);
+ 		assertThat(fi.getResponse()).isEqualTo(response);
+ 		assertThat(fi.getHttpResponse()).isEqualTo(response);
+-		assertThat(fi.getChain()).isEqualTo(chain);
++		assertThat(fi.getChain()).isEqualTo(filterChain);
+ 		assertThat(fi.getRequestUrl()).isEqualTo("/HelloWorld/some/more/segments.html");
+ 		assertThat(fi.toString()).isEqualTo("filter invocation [GET /HelloWorld/some/more/segments.html]");
+ 		assertThat(fi.getFullRequestUrl()).isEqualTo("http://localhost/mycontext/HelloWorld/some/more/segments.html");
+@@ -72,14 +79,14 @@
+ 	public void testRejectsNullServletRequest() {
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		assertThatIllegalArgumentException()
+-			.isThrownBy(() -> new FilterInvocation(null, response, mock(FilterChain.class)));
++			.isThrownBy(() -> new FilterInvocation(null, response, filterChain));
+ 	}
+ 
+ 	@Test
+ 	public void testRejectsNullServletResponse() {
+ 		MockHttpServletRequest request = new MockHttpServletRequest(null, null);
+ 		assertThatIllegalArgumentException()
+-			.isThrownBy(() -> new FilterInvocation(request, null, mock(FilterChain.class)));
++			.isThrownBy(() -> new FilterInvocation(request, null, filterChain));
+ 	}
+ 
+ 	@Test
+@@ -88,7 +95,7 @@
+ 			.queryString("foo=bar")
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterInvocation fi = new FilterInvocation(request, response, mock(FilterChain.class));
++		FilterInvocation fi = new FilterInvocation(request, response, filterChain);
+ 		assertThat(fi.getRequestUrl()).isEqualTo("/HelloWorld?foo=bar");
+ 		assertThat(fi.toString()).isEqualTo("filter invocation [GET /HelloWorld?foo=bar]");
+ 		assertThat(fi.getFullRequestUrl()).isEqualTo("http://localhost/mycontext/HelloWorld?foo=bar");
+@@ -98,7 +105,7 @@
+ 	public void testStringMethodsWithoutAnyQueryString() {
+ 		MockHttpServletRequest request = get().requestUri("/mycontext", "/HelloWorld", null).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterInvocation fi = new FilterInvocation(request, response, mock(FilterChain.class));
++		FilterInvocation fi = new FilterInvocation(request, response, filterChain);
+ 		assertThat(fi.getRequestUrl()).isEqualTo("/HelloWorld");
+ 		assertThat(fi.toString()).isEqualTo("filter invocation [GET /HelloWorld]");
+ 		assertThat(fi.getFullRequestUrl()).isEqualTo("http://localhost/mycontext/HelloWorld");

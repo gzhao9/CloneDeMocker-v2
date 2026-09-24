@@ -1,0 +1,63 @@
+--- a/web/src/test/java/org/springframework/security/web/FilterInvocationTests.java
++++ b/web/src/test/java/org/springframework/security/web/FilterInvocationTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web;
+ 
++import org.mockito.Mock;
+ import java.util.Enumeration;
+ import java.util.NoSuchElementException;
+ 
+@@ -43,13 +44,15 @@
+  * @author colin sampaleanu
+  */
+ public class FilterInvocationTests {
++	@Mock
++	private FilterChain chain;
+ 
+ 	@Test
+ 	public void testGettersAndStringMethods() {
+ 		MockHttpServletRequest request = get().requestUri("/mycontext", "/HelloWorld", "/some/more/segments.html")
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain chain = mock(FilterChain.class);
++		// removed local mock; replaced with global field `chain`
+ 		FilterInvocation fi = new FilterInvocation(request, response, chain);
+ 		assertThat(fi.getRequest()).isEqualTo(request);
+ 		assertThat(fi.getHttpRequest()).isEqualTo(request);
+@@ -71,15 +74,13 @@
+ 	@Test
+ 	public void testRejectsNullServletRequest() {
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		assertThatIllegalArgumentException()
+-			.isThrownBy(() -> new FilterInvocation(null, response, mock(FilterChain.class)));
++		assertThatIllegalArgumentException().isThrownBy(() -> new FilterInvocation(null, response, chain));
+ 	}
+ 
+ 	@Test
+ 	public void testRejectsNullServletResponse() {
+ 		MockHttpServletRequest request = new MockHttpServletRequest(null, null);
+-		assertThatIllegalArgumentException()
+-			.isThrownBy(() -> new FilterInvocation(request, null, mock(FilterChain.class)));
++		assertThatIllegalArgumentException().isThrownBy(() -> new FilterInvocation(request, null, chain));
+ 	}
+ 
+ 	@Test
+@@ -88,7 +89,7 @@
+ 			.queryString("foo=bar")
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterInvocation fi = new FilterInvocation(request, response, mock(FilterChain.class));
++		FilterInvocation fi = new FilterInvocation(request, response, chain);
+ 		assertThat(fi.getRequestUrl()).isEqualTo("/HelloWorld?foo=bar");
+ 		assertThat(fi.toString()).isEqualTo("filter invocation [GET /HelloWorld?foo=bar]");
+ 		assertThat(fi.getFullRequestUrl()).isEqualTo("http://localhost/mycontext/HelloWorld?foo=bar");
+@@ -98,7 +99,7 @@
+ 	public void testStringMethodsWithoutAnyQueryString() {
+ 		MockHttpServletRequest request = get().requestUri("/mycontext", "/HelloWorld", null).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterInvocation fi = new FilterInvocation(request, response, mock(FilterChain.class));
++		FilterInvocation fi = new FilterInvocation(request, response, chain);
+ 		assertThat(fi.getRequestUrl()).isEqualTo("/HelloWorld");
+ 		assertThat(fi.toString()).isEqualTo("filter invocation [GET /HelloWorld]");
+ 		assertThat(fi.getFullRequestUrl()).isEqualTo("http://localhost/mycontext/HelloWorld");

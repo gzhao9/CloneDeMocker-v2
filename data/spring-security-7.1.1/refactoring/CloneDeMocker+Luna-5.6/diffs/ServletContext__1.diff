@@ -1,0 +1,46 @@
+--- a/web/src/test/java/org/springframework/security/web/context/AbstractSecurityWebApplicationInitializerTests.java
++++ b/web/src/test/java/org/springframework/security/web/context/AbstractSecurityWebApplicationInitializerTests.java
+@@ -315,11 +315,9 @@
+ 
+ 	@Test
+ 	public void onStartupWhenDefaultsThenSessionTrackingModes() {
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), any(DelegatingFilterProxy.class)))
+-			.willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration);
+ 		@SuppressWarnings("unchecked")
+ 		ArgumentCaptor<Set<SessionTrackingMode>> modesCaptor = ArgumentCaptor.forClass(Set.class);
+ 		new AbstractSecurityWebApplicationInitializer() {
+@@ -334,11 +332,9 @@
+ 
+ 	@Test
+ 	public void onStartupWhenSessionTrackingModesConfiguredThenUsed() {
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), any(DelegatingFilterProxy.class)))
+-			.willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ServletContext context = createMockServletContext(registration);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+ 		@SuppressWarnings("unchecked")
+ 		ArgumentCaptor<Set<SessionTrackingMode>> modesCaptor = ArgumentCaptor.forClass(Set.class);
+ 		willDoNothing().given(context).setSessionTrackingModes(any());
+@@ -362,6 +358,13 @@
+ 			.isEqualTo("springSecurityFilterChain");
+ 	}
+ 
++	private static ServletContext createMockServletContext(FilterRegistration.Dynamic registration) {
++		ServletContext context = mock(ServletContext.class);
++		given(context.addFilter(eq("springSecurityFilterChain"), any(DelegatingFilterProxy.class)))
++			.willReturn(registration);
++		return context;
++	}
++
+ 	private static void verifyNoAddListener(ServletContext context) {
+ 		verify(context, times(0)).addListener(anyString());
+ 		verify(context, times(0)).addListener(any(EventListener.class));

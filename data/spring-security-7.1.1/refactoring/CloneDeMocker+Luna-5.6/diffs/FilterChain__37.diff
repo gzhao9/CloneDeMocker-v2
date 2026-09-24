@@ -1,0 +1,120 @@
+--- a/web/src/test/java/org/springframework/security/web/access/intercept/AuthorizationFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/access/intercept/AuthorizationFilterTests.java
+@@ -71,6 +71,8 @@
+ 
+ 	private AuthorizationManager<HttpServletRequest> authorizationManager;
+ 
++	private FilterChain mockChain;
++
+ 	private MockHttpServletRequest request = new MockHttpServletRequest();
+ 
+ 	private final MockHttpServletResponse response = new MockHttpServletResponse();
+@@ -80,6 +82,7 @@
+ 	@BeforeEach
+ 	public void setup() {
+ 		this.authorizationManager = mock(AuthorizationManager.class);
++		this.mockChain = mock(FilterChain.class);
+ 		this.filter = new AuthorizationFilter(this.authorizationManager);
+ 	}
+ 
+@@ -102,16 +105,15 @@
+ 
+ 		MockHttpServletRequest mockRequest = new MockHttpServletRequest(null, "/path");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
+-
+-		filter.doFilter(mockRequest, mockResponse, mockFilterChain);
++
++		filter.doFilter(mockRequest, mockResponse, mockChain);
+ 
+ 		ArgumentCaptor<Supplier<Authentication>> authenticationCaptor = ArgumentCaptor.forClass(Supplier.class);
+ 		verify(mockAuthorizationManager).authorize(authenticationCaptor.capture(), eq(mockRequest));
+ 		Supplier<Authentication> authentication = authenticationCaptor.getValue();
+ 		assertThat(authentication.get()).isEqualTo(authenticationToken);
+ 
+-		verify(mockFilterChain).doFilter(mockRequest, mockResponse);
++		verify(mockChain).doFilter(mockRequest, mockResponse);
+ 		verify(strategy).getContext();
+ 	}
+ 
+@@ -127,13 +129,12 @@
+ 
+ 		MockHttpServletRequest mockRequest = new MockHttpServletRequest(null, "/path");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
+ 
+ 		willThrow(new AccessDeniedException("Access Denied")).given(mockAuthorizationManager)
+ 			.authorize(any(), eq(mockRequest));
+ 
+ 		assertThatExceptionOfType(AccessDeniedException.class)
+-			.isThrownBy(() -> filter.doFilter(mockRequest, mockResponse, mockFilterChain))
++			.isThrownBy(() -> filter.doFilter(mockRequest, mockResponse, mockChain))
+ 			.withMessage("Access Denied");
+ 
+ 		ArgumentCaptor<Supplier<Authentication>> authenticationCaptor = ArgumentCaptor.forClass(Supplier.class);
+@@ -141,7 +142,7 @@
+ 		Supplier<Authentication> authentication = authenticationCaptor.getValue();
+ 		assertThat(authentication.get()).isEqualTo(authenticationToken);
+ 
+-		verifyNoInteractions(mockFilterChain);
++		verifyNoInteractions(mockChain);
+ 	}
+ 
+ 	@Test
+@@ -149,13 +150,12 @@
+ 		AuthorizationFilter filter = new AuthorizationFilter(AuthenticatedAuthorizationManager.authenticated());
+ 		MockHttpServletRequest mockRequest = new MockHttpServletRequest(null, "/path");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
+ 
+ 		assertThatExceptionOfType(AuthenticationCredentialsNotFoundException.class)
+-			.isThrownBy(() -> filter.doFilter(mockRequest, mockResponse, mockFilterChain))
++			.isThrownBy(() -> filter.doFilter(mockRequest, mockResponse, mockChain))
+ 			.withMessage("An Authentication object was not found in the SecurityContext");
+ 
+-		verifyNoInteractions(mockFilterChain);
++		verifyNoInteractions(mockChain);
+ 	}
+ 
+ 	@Test
+@@ -179,7 +179,6 @@
+ 				AuthenticatedAuthorizationManager.authenticated());
+ 		MockHttpServletRequest mockRequest = new MockHttpServletRequest(null, "/path");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
+ 
+ 		SecurityContext securityContext = new SecurityContextImpl();
+ 		securityContext.setAuthentication(new TestingAuthenticationToken("user", "password", "ROLE_USER"));
+@@ -187,7 +186,7 @@
+ 
+ 		AuthorizationEventPublisher eventPublisher = mock(AuthorizationEventPublisher.class);
+ 		authorizationFilter.setAuthorizationEventPublisher(eventPublisher);
+-		authorizationFilter.doFilter(mockRequest, mockResponse, mockFilterChain);
++		authorizationFilter.doFilter(mockRequest, mockResponse, mockChain);
+ 		verify(eventPublisher).publishAuthorizationEvent(any(Supplier.class), any(HttpServletRequest.class),
+ 				any(AuthorizationDecision.class));
+ 	}
+@@ -200,9 +199,8 @@
+ 		mockRequest.setDispatcherType(DispatcherType.ERROR);
+ 		mockRequest.setAttribute(WebUtils.ERROR_REQUEST_URI_ATTRIBUTE, "/error");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
+-
+-		authorizationFilter.doFilter(mockRequest, mockResponse, mockFilterChain);
++
++		authorizationFilter.doFilter(mockRequest, mockResponse, mockChain);
+ 		verify(authorizationManager).authorize(any(Supplier.class), eq(mockRequest));
+ 	}
+ 
+@@ -217,9 +215,8 @@
+ 		mockRequest.setDispatcherType(DispatcherType.ERROR);
+ 		mockRequest.setAttribute(WebUtils.ERROR_REQUEST_URI_ATTRIBUTE, "/error");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
+-
+-		authorizationFilter.doFilter(mockRequest, mockResponse, mockFilterChain);
++
++		authorizationFilter.doFilter(mockRequest, mockResponse, mockChain);
+ 		verifyNoInteractions(authorizationManager);
+ 	}
+ 

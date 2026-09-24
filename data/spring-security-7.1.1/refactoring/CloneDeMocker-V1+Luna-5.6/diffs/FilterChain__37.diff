@@ -1,0 +1,74 @@
+--- a/web/src/test/java/org/springframework/security/web/access/intercept/AuthorizationFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/access/intercept/AuthorizationFilterTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.access.intercept;
+ 
++import org.mockito.Mock;
+ import java.io.IOException;
+ import java.util.function.Supplier;
+ 
+@@ -64,6 +65,8 @@
+  * @author Evgeniy Cheban
+  */
+ public class AuthorizationFilterTests {
++	@Mock
++	private FilterChain mockFilterChain;
+ 
+ 	private static final String ALREADY_FILTERED_ATTRIBUTE_NAME = "org.springframework.security.web.access.intercept.AuthorizationFilter.APPLIED";
+ 
+@@ -102,7 +105,6 @@
+ 
+ 		MockHttpServletRequest mockRequest = new MockHttpServletRequest(null, "/path");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
+ 
+ 		filter.doFilter(mockRequest, mockResponse, mockFilterChain);
+ 
+@@ -127,7 +129,7 @@
+ 
+ 		MockHttpServletRequest mockRequest = new MockHttpServletRequest(null, "/path");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
++		// removed local mock; replaced with global field `mockFilterChain`
+ 
+ 		willThrow(new AccessDeniedException("Access Denied")).given(mockAuthorizationManager)
+ 			.authorize(any(), eq(mockRequest));
+@@ -149,8 +151,8 @@
+ 		AuthorizationFilter filter = new AuthorizationFilter(AuthenticatedAuthorizationManager.authenticated());
+ 		MockHttpServletRequest mockRequest = new MockHttpServletRequest(null, "/path");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
+-
++
++		// removed local mock; replaced with global field `mockFilterChain`
+ 		assertThatExceptionOfType(AuthenticationCredentialsNotFoundException.class)
+ 			.isThrownBy(() -> filter.doFilter(mockRequest, mockResponse, mockFilterChain))
+ 			.withMessage("An Authentication object was not found in the SecurityContext");
+@@ -179,7 +181,6 @@
+ 				AuthenticatedAuthorizationManager.authenticated());
+ 		MockHttpServletRequest mockRequest = new MockHttpServletRequest(null, "/path");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
+ 
+ 		SecurityContext securityContext = new SecurityContextImpl();
+ 		securityContext.setAuthentication(new TestingAuthenticationToken("user", "password", "ROLE_USER"));
+@@ -200,7 +201,6 @@
+ 		mockRequest.setDispatcherType(DispatcherType.ERROR);
+ 		mockRequest.setAttribute(WebUtils.ERROR_REQUEST_URI_ATTRIBUTE, "/error");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
+ 
+ 		authorizationFilter.doFilter(mockRequest, mockResponse, mockFilterChain);
+ 		verify(authorizationManager).authorize(any(Supplier.class), eq(mockRequest));
+@@ -217,8 +217,8 @@
+ 		mockRequest.setDispatcherType(DispatcherType.ERROR);
+ 		mockRequest.setAttribute(WebUtils.ERROR_REQUEST_URI_ATTRIBUTE, "/error");
+ 		MockHttpServletResponse mockResponse = new MockHttpServletResponse();
+-		FilterChain mockFilterChain = mock(FilterChain.class);
+-
++
++		// removed local mock; replaced with global field `mockFilterChain`
+ 		authorizationFilter.doFilter(mockRequest, mockResponse, mockFilterChain);
+ 		verifyNoInteractions(authorizationManager);
+ 	}

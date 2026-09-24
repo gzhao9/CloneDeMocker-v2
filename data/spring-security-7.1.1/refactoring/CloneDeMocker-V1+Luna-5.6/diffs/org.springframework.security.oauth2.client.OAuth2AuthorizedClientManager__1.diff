@@ -1,0 +1,74 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/client/ClientRegistrationIdProcessorRestClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/client/ClientRegistrationIdProcessorRestClientTests.java
+@@ -45,16 +45,31 @@
+ 
+ 	@Test
+ 	void clientRegistrationIdProcessorWorksWithRestClientAdapter() throws InterruptedException {
++	    ArgumentCaptor<OAuth2AuthorizeRequest> authorizeRequest = ArgumentCaptor.forClass(OAuth2AuthorizeRequest.class);
++	    this.authorizedClientManager = MockOAuth2AuthorizedClientManager.createOAuth2AuthorizedClientManager(authorizeRequest, authorizedClient);
+ 		OAuth2ClientHttpRequestInterceptor interceptor = new OAuth2ClientHttpRequestInterceptor(
+ 				this.authorizedClientManager);
+ 		RestClient.Builder builder = RestClient.builder().requestInterceptor(interceptor).baseUrl(this.baseUrl);
+ 
+-		ArgumentCaptor<OAuth2AuthorizeRequest> authorizeRequest = ArgumentCaptor.forClass(OAuth2AuthorizeRequest.class);
+-		given(this.authorizedClientManager.authorize(authorizeRequest.capture())).willReturn(authorizedClient);
+ 
+ 		testWithAdapter(RestClientAdapter.create(builder.build()));
+ 
+ 		assertThat(authorizeRequest.getValue().getClientRegistrationId()).isEqualTo(REGISTRATION_ID);
+ 	}
+ 
++
++	public final class MockOAuth2AuthorizedClientManager {
++
++		private MockOAuth2AuthorizedClientManager() {
++		}
++
++		public static org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager createOAuth2AuthorizedClientManager(
++				org.mockito.ArgumentCaptor<org.springframework.security.oauth2.client.OAuth2AuthorizeRequest> authorizeRequest,
++				org.springframework.security.oauth2.client.OAuth2AuthorizedClient authorizedClient) {
++			org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager authorizedClientManager =
++					mock(org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager.class);
++			given(authorizedClientManager.authorize(authorizeRequest.capture())).willReturn(authorizedClient);
++			return authorizedClientManager;
++		}
++	}
+ }
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/client/ClientRegistrationIdProcessorWebClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/client/ClientRegistrationIdProcessorWebClientTests.java
+@@ -68,7 +68,6 @@
+ 
+ 	@Test
+ 	void clientRegistrationIdProcessorWorksWithServletWebClient() throws InterruptedException {
+-		OAuth2AuthorizedClientManager authorizedClientManager = mock(OAuth2AuthorizedClientManager.class);
+ 
+ 		ServletOAuth2AuthorizedClientExchangeFilterFunction oauth2Client = new ServletOAuth2AuthorizedClientExchangeFilterFunction(
+ 				authorizedClientManager);
+@@ -82,11 +81,26 @@
+ 			.baseUrl(this.baseUrl);
+ 
+ 		ArgumentCaptor<OAuth2AuthorizeRequest> authorizeRequest = ArgumentCaptor.forClass(OAuth2AuthorizeRequest.class);
+-		given(authorizedClientManager.authorize(authorizeRequest.capture())).willReturn(this.authorizedClient);
+ 
++		OAuth2AuthorizedClientManager authorizedClientManager = MockOAuth2AuthorizedClientManager.createOAuth2AuthorizedClientManager(authorizeRequest, this.authorizedClient);
+ 		testWithAdapter(WebClientAdapter.create(builder.build()));
+ 
+ 		assertThat(authorizeRequest.getValue().getClientRegistrationId()).isEqualTo(REGISTRATION_ID);
+ 	}
+ 
++
++	public final class MockOAuth2AuthorizedClientManager {
++
++		private MockOAuth2AuthorizedClientManager() {
++		}
++
++		public static org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager createOAuth2AuthorizedClientManager(
++				org.mockito.ArgumentCaptor<org.springframework.security.oauth2.client.OAuth2AuthorizeRequest> authorizeRequest,
++				org.springframework.security.oauth2.client.OAuth2AuthorizedClient authorizedClient) {
++			org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager authorizedClientManager =
++					mock(org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager.class);
++			given(authorizedClientManager.authorize(authorizeRequest.capture())).willReturn(authorizedClient);
++			return authorizedClientManager;
++		}
++	}
+ }
