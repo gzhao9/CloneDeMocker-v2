@@ -1,0 +1,43 @@
+--- a/server/src/test/java/org/apache/cloudstack/network/router/deployment/RouterDeploymentDefinitionTest.java
++++ b/server/src/test/java/org/apache/cloudstack/network/router/deployment/RouterDeploymentDefinitionTest.java
+@@ -73,6 +73,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTestBase {
++    @Mock
++    private final DomainRouterVO domainRouterVO2;
+ 
+     @Mock
+     protected NetworkVO mockNw;
+@@ -403,7 +405,6 @@
+         // This list is not empty, so it will not add any for this pod, and continue with next pod
+         final List<DomainRouterVO> virtualRouters2 = new ArrayList<>();
+         final DomainRouterVO domainRouterVO1 = mock(DomainRouterVO.class);
+-        final DomainRouterVO domainRouterVO2 = mock(DomainRouterVO.class);
+         virtualRouters2.add(domainRouterVO1);
+         virtualRouters2.add(domainRouterVO2);
+         when(mockRouterDao.listByPodIdAndStates(POD_ID2,
+@@ -723,20 +724,17 @@
+         doReturn(2).when(deploymentUT).getNumberOfRoutersToDeploy();
+ 
+         final DomainRouterVO routerVO1 = mock(DomainRouterVO.class);
+-        final DomainRouterVO routerVO2 = mock(DomainRouterVO.class);
+-        when(mockNetworkHelper.deployRouter(deploymentUT, false))
+-        .thenReturn(routerVO1).thenReturn(routerVO2);
++        when(mockNetworkHelper.deployRouter(deploymentUT, false)).thenReturn(routerVO1).thenReturn(domainRouterVO2);
+         lenient().when(networkDetailsDao.findById(anyLong())).thenReturn(null);
+         // Execute
+         deploymentUT.deployAllVirtualRouters();
+ 
+         // Assert
+         verify(mockRouterDao, times(1)).addRouterToGuestNetwork(routerVO1, mockNw);
+-        verify(mockRouterDao, times(1)).addRouterToGuestNetwork(routerVO2, mockNw);
++        verify(mockRouterDao, times(1)).addRouterToGuestNetwork(domainRouterVO2, mockNw);
+         assertEquals("First router to deploy was not added to list of available routers",
+                 routerVO1, deployment.routers.get(0));
+-        assertEquals("Second router to deploy was not added to list of available routers",
+-                routerVO2, deployment.routers.get(1));
++        assertEquals("Second router to deploy was not added to list of available routers", domainRouterVO2, deployment.routers.get(1));
+     }
+ 
+     @Test
