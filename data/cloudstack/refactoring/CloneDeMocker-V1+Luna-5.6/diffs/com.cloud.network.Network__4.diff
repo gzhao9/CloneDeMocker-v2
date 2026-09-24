@@ -1,0 +1,101 @@
+--- a/server/src/test/java/com/cloud/network/firewall/FirewallManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/firewall/FirewallManagerImplTest.java
+@@ -78,9 +78,8 @@
+ 
+     @Test
+     public void applyRulesFirewallHandledByExtensionProvider() throws ResourceUnavailableException {
+-        Network network = mock(Network.class);
+-        when(network.getId()).thenReturn(1L);
+ 
++        Network network = MockNetwork.createMockNetwork(1L);
+         FirewallRule rule = mock(FirewallRule.class);
+         List<? extends FirewallRule> rules = List.of(rule);
+ 
+@@ -101,9 +100,8 @@
+ 
+     @Test
+     public void applyRulesFirewallReturnsFalseWhenNoExtensionProviderFound() throws ResourceUnavailableException {
+-        Network network = mock(Network.class);
+-        when(network.getId()).thenReturn(2L);
+ 
++        Network network = MockNetwork.createMockNetwork(2L);
+         FirewallRule rule = mock(FirewallRule.class);
+         List<? extends FirewallRule> rules = List.of(rule);
+ 
+@@ -122,9 +120,8 @@
+ 
+     @Test
+     public void applyRulesPortForwardingHandledByExtensionProvider() throws ResourceUnavailableException {
+-        Network network = mock(Network.class);
+-        when(network.getId()).thenReturn(3L);
+ 
++        Network network = MockNetwork.createMockNetwork(3L);
+         PortForwardingRule rule = mock(PortForwardingRule.class);
+         @SuppressWarnings("unchecked")
+         List<PortForwardingRule> rules = List.of(rule);
+@@ -144,9 +141,8 @@
+ 
+     @Test
+     public void applyRulesPortForwardingReturnsFalseWhenNoExtensionProviderFound() throws ResourceUnavailableException {
+-        Network network = mock(Network.class);
+-        when(network.getId()).thenReturn(4L);
+ 
++        Network network = MockNetwork.createMockNetwork(4L);
+         PortForwardingRule rule = mock(PortForwardingRule.class);
+         List<? extends FirewallRule> rules = List.of(rule);
+ 
+@@ -163,9 +159,8 @@
+ 
+     @Test
+     public void applyRulesStaticNatReturnsFalseWhenNoProviderFound() throws ResourceUnavailableException {
+-        Network network = mock(Network.class);
+-        when(network.getId()).thenReturn(5L);
+ 
++        Network network = MockNetwork.createMockNetwork(5L);
+         FirewallRule rule = mock(FirewallRule.class);
+         List<? extends FirewallRule> rules = List.of(rule);
+ 
+@@ -175,4 +170,12 @@
+         boolean result = firewallManager.applyRules(network, FirewallRule.Purpose.StaticNat, rules);
+         assertFalse(result);
+     }
++
++    public static class MockNetwork {
++        public static Network createMockNetwork(long id) {
++            Network network = mock(Network.class);
++            when(network.getId()).thenReturn(id);
++            return network;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
++++ b/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
+@@ -691,14 +691,13 @@
+         firewallMgr._networkModel = _networkModel;
+         firewallMgr._vpcMgr = _vpcMgr;
+ 
+-        Network network = Mockito.mock(Network.class);
+         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         List<FirewallRule> rules = new ArrayList<>();
+         FirewallRuleVO rule = new FirewallRuleVO("rule1", 1L, 80, 80, "tcp", 1L, 2, 3, Purpose.Firewall,
+                 Collections.emptyList(), Collections.emptyList(), null, null, null, FirewallRule.TrafficType.Ingress);
+         rules.add(rule);
+ 
+-        when(network.getId()).thenReturn(1L);
++        Network network = MockNetwork.createMockNetwork(1L);
+         when(network.getVpcId()).thenReturn(null);
+         when(fwProvider.getProvider()).thenReturn(Network.Provider.VirtualRouter);
+         when(_networkModel.isProviderSupportServiceInNetwork(1L, Service.Firewall, Network.Provider.VirtualRouter)).thenReturn(true);
+@@ -723,4 +722,12 @@
+         when(_ipAddressDao.findById(1L)).thenReturn(null);
+         _firewallMgr.getSourceIpForIngressRule(1L);
+     }
++
++    public static class MockNetwork {
++        public static Network createMockNetwork(long id) {
++            Network network = mock(Network.class);
++            when(network.getId()).thenReturn(id);
++            return network;
++        }
++    }
+ }
