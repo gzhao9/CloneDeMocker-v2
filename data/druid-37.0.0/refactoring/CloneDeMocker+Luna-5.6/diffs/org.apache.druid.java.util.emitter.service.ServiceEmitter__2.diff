@@ -1,0 +1,80 @@
+--- a/server/src/test/java/org/apache/druid/server/metrics/MetricsModuleTest.java
++++ b/server/src/test/java/org/apache/druid/server/metrics/MetricsModuleTest.java
+@@ -74,6 +74,7 @@
+ public class MetricsModuleTest
+ {
+   private static final String CPU_ARCH = System.getProperty("os.arch");
++  private final ServiceEmitter emitterMock = Mockito.mock(ServiceEmitter.class);
+ 
+   @Rule
+   public ExpectedException expectedException = ExpectedException.none();
+@@ -245,11 +246,10 @@
+ 
+     final Injector injector = createInjector(new Properties(), ImmutableSet.of(NodeRole.PEON));
+     final SysMonitor sysMonitor = injector.getInstance(SysMonitor.class);
+-    final ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+-    sysMonitor.doMonitor(emitter);
++    sysMonitor.doMonitor(emitterMock);
+ 
+     Assert.assertTrue(sysMonitor instanceof NoopSysMonitor);
+-    Mockito.verify(emitter, Mockito.never()).emit(ArgumentMatchers.any(ServiceEventBuilder.class));
++    Mockito.verify(emitterMock, Mockito.never()).emit(ArgumentMatchers.any(ServiceEventBuilder.class));
+   }
+ 
+   @Test
+@@ -260,11 +260,10 @@
+ 
+     Injector injector = createInjector(new Properties(), ImmutableSet.of());
+     final SysMonitor sysMonitor = injector.getInstance(SysMonitor.class);
+-    final ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+-    sysMonitor.doMonitor(emitter);
++    sysMonitor.doMonitor(emitterMock);
+ 
+     Assert.assertFalse(sysMonitor instanceof NoopSysMonitor);
+-    Mockito.verify(emitter, Mockito.atLeastOnce()).emit(ArgumentMatchers.any(ServiceEventBuilder.class));
++    Mockito.verify(emitterMock, Mockito.atLeastOnce()).emit(ArgumentMatchers.any(ServiceEventBuilder.class));
+   }
+   @Test
+   public void testGetOshiSysMonitorViaInjector()
+@@ -272,11 +271,10 @@
+ 
+     final Injector injector = createInjector(new Properties(), ImmutableSet.of(NodeRole.PEON));
+     final OshiSysMonitor sysMonitor = injector.getInstance(OshiSysMonitor.class);
+-    final ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+-    sysMonitor.doMonitor(emitter);
++    sysMonitor.doMonitor(emitterMock);
+ 
+     Assert.assertTrue(sysMonitor instanceof NoopOshiSysMonitor);
+-    Mockito.verify(emitter, Mockito.never()).emit(ArgumentMatchers.any(ServiceEventBuilder.class));
++    Mockito.verify(emitterMock, Mockito.never()).emit(ArgumentMatchers.any(ServiceEventBuilder.class));
+   }
+ 
+   @Test
+@@ -286,11 +284,10 @@
+     properties.setProperty("druid.monitoring.sys.categories", "[\"mem\"]");
+     final Injector injector = createInjector(properties, ImmutableSet.of(NodeRole.BROKER));
+     final OshiSysMonitor sysMonitor = injector.getInstance(OshiSysMonitor.class);
+-    final ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+-    sysMonitor.doMonitor(emitter);
++    sysMonitor.doMonitor(emitterMock);
+ 
+     Assert.assertTrue(sysMonitor instanceof OshiSysMonitor);
+-    Mockito.verify(emitter, Mockito.atLeastOnce()).emit(ArgumentMatchers.any(ServiceEventBuilder.class));
++    Mockito.verify(emitterMock, Mockito.atLeastOnce()).emit(ArgumentMatchers.any(ServiceEventBuilder.class));
+ 
+     Assert.assertTrue(injector.getInstance(OshiSysMonitorConfig.class).shouldEmitMetricCategory("mem"));
+     Assert.assertFalse(injector.getInstance(OshiSysMonitorConfig.class).shouldEmitMetricCategory("swap"));
+@@ -302,11 +299,10 @@
+ 
+     Injector injector = createInjector(new Properties(), ImmutableSet.of());
+     final OshiSysMonitor sysMonitor = injector.getInstance(OshiSysMonitor.class);
+-    final ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+-    sysMonitor.doMonitor(emitter);
++    sysMonitor.doMonitor(emitterMock);
+ 
+     Assert.assertFalse(sysMonitor instanceof NoopOshiSysMonitor);
+-    Mockito.verify(emitter, Mockito.atLeastOnce()).emit(ArgumentMatchers.any(ServiceEventBuilder.class));
++    Mockito.verify(emitterMock, Mockito.atLeastOnce()).emit(ArgumentMatchers.any(ServiceEventBuilder.class));
+   }
+ 
+   private static Injector createInjector(Properties properties, ImmutableSet<NodeRole> nodeRoles)

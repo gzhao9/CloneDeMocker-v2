@@ -1,0 +1,61 @@
+--- a/server/src/test/java/org/apache/druid/server/metrics/MetricsModuleTest.java
++++ b/server/src/test/java/org/apache/druid/server/metrics/MetricsModuleTest.java
+@@ -19,6 +19,7 @@
+ 
+ package org.apache.druid.server.metrics;
+ 
++import org.mockito.Mock;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableSet;
+ import com.google.inject.Binder;
+@@ -73,6 +74,8 @@
+ 
+ public class MetricsModuleTest
+ {
++    @Mock
++    private final ServiceEmitter emitter;
+   private static final String CPU_ARCH = System.getProperty("os.arch");
+ 
+   @Rule
+@@ -245,7 +248,6 @@
+ 
+     final Injector injector = createInjector(new Properties(), ImmutableSet.of(NodeRole.PEON));
+     final SysMonitor sysMonitor = injector.getInstance(SysMonitor.class);
+-    final ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+     sysMonitor.doMonitor(emitter);
+ 
+     Assert.assertTrue(sysMonitor instanceof NoopSysMonitor);
+@@ -260,7 +262,7 @@
+ 
+     Injector injector = createInjector(new Properties(), ImmutableSet.of());
+     final SysMonitor sysMonitor = injector.getInstance(SysMonitor.class);
+-    final ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
++    // removed local mock; replaced with global field `emitter`
+     sysMonitor.doMonitor(emitter);
+ 
+     Assert.assertFalse(sysMonitor instanceof NoopSysMonitor);
+@@ -272,7 +274,6 @@
+ 
+     final Injector injector = createInjector(new Properties(), ImmutableSet.of(NodeRole.PEON));
+     final OshiSysMonitor sysMonitor = injector.getInstance(OshiSysMonitor.class);
+-    final ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+     sysMonitor.doMonitor(emitter);
+ 
+     Assert.assertTrue(sysMonitor instanceof NoopOshiSysMonitor);
+@@ -286,7 +287,7 @@
+     properties.setProperty("druid.monitoring.sys.categories", "[\"mem\"]");
+     final Injector injector = createInjector(properties, ImmutableSet.of(NodeRole.BROKER));
+     final OshiSysMonitor sysMonitor = injector.getInstance(OshiSysMonitor.class);
+-    final ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
++    // removed local mock; replaced with global field `emitter`
+     sysMonitor.doMonitor(emitter);
+ 
+     Assert.assertTrue(sysMonitor instanceof OshiSysMonitor);
+@@ -302,7 +303,6 @@
+ 
+     Injector injector = createInjector(new Properties(), ImmutableSet.of());
+     final OshiSysMonitor sysMonitor = injector.getInstance(OshiSysMonitor.class);
+-    final ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+     sysMonitor.doMonitor(emitter);
+ 
+     Assert.assertFalse(sysMonitor instanceof NoopOshiSysMonitor);
