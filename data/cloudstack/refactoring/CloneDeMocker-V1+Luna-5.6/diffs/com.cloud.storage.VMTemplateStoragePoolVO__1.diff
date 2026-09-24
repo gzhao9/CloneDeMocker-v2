@@ -1,0 +1,78 @@
+--- a/server/src/test/java/com/cloud/template/TemplateManagerImplTest.java
++++ b/server/src/test/java/com/cloud/template/TemplateManagerImplTest.java
+@@ -359,13 +359,11 @@
+         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
+         when(mockPrimaryDataStore.getId()).thenReturn(2l);
+ 
+-        VMTemplateStoragePoolVO mockTemplateStore = mock(VMTemplateStoragePoolVO.class);
+-        when(mockTemplateStore.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+-
++
++        VMTemplateStoragePoolVO mockTemplateStore = createMockVmTemplateStoragePoolVO();
+         when(vmTemplateDao.findById(anyLong(), anyBoolean())).thenReturn(mockTemplate);
+         when(vmTemplatePoolDao.findByPoolTemplate(anyLong(), anyLong(), nullable(String.class))).thenReturn(mockTemplateStore);
+ 
+-        doNothing().when(mockTemplateStore).setMarkedForGC(anyBoolean());
+ 
+         VMTemplateStoragePoolVO returnObject = templateManager.prepareTemplateForCreate(mockTemplate, (StoragePool) mockPrimaryDataStore);
+         assertTrue("Test template is already seeded", returnObject == mockTemplateStore);
+@@ -422,21 +420,19 @@
+         VMTemplateVO mockTemplate = mock(VMTemplateVO.class);
+         StoragePoolVO mockPool = mock(StoragePoolVO.class);
+         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
+-        VMTemplateStoragePoolVO mockTemplateStore = mock(VMTemplateStoragePoolVO.class);
+-
++
++        VMTemplateStoragePoolVO mockTemplateStore = createMockVmTemplateStoragePoolVO();
+         when(mockPrimaryDataStore.getId()).thenReturn(2l);
+         when(mockPool.getId()).thenReturn(2l);
+         when(mockPool.getStatus()).thenReturn(StoragePoolStatus.Up);
+         when(mockPool.getDataCenterId()).thenReturn(1l);
+         when(mockTemplate.getId()).thenReturn(202l);
+-        when(mockTemplateStore.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+         when(vmTemplateDao.findById(anyLong())).thenReturn(mockTemplate);
+         when(dataStoreManager.getPrimaryDataStore(anyLong())).thenReturn(mockPrimaryDataStore);
+         when(vmTemplateDao.findById(anyLong(), anyBoolean())).thenReturn(mockTemplate);
+         when(vmTemplatePoolDao.findByPoolTemplate(anyLong(), anyLong(), nullable(String.class))).thenReturn(mockTemplateStore);
+         when(primaryDataStoreDao.findById(anyLong())).thenReturn(mockPool);
+ 
+-        doNothing().when(mockTemplateStore).setMarkedForGC(anyBoolean());
+ 
+         ExecutorService preloadExecutor = new CustomThreadPoolExecutor(8, 8, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue(),
+                 new NamedThreadFactory("Template-Preloader"));
+@@ -469,7 +465,6 @@
+     public void testTemplateScheduledForDownloadInMultiplePool() {
+         VMTemplateVO mockTemplate = mock(VMTemplateVO.class);
+         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
+-        VMTemplateStoragePoolVO mockTemplateStore = mock(VMTemplateStoragePoolVO.class);
+         List<StoragePoolVO> pools = new ArrayList<StoragePoolVO>();
+ 
+         StoragePoolVO mockPool1 = mock(StoragePoolVO.class);
+@@ -485,14 +480,13 @@
+ 
+         when(mockPrimaryDataStore.getId()).thenReturn(2l);
+         when(mockTemplate.getId()).thenReturn(202l);
+-        when(mockTemplateStore.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
++        VMTemplateStoragePoolVO mockTemplateStore = createMockVmTemplateStoragePoolVO();
+         when(vmTemplateDao.findById(anyLong())).thenReturn(mockTemplate);
+         when(dataStoreManager.getPrimaryDataStore(anyLong())).thenReturn(mockPrimaryDataStore);
+         when(vmTemplateDao.findById(anyLong(), anyBoolean())).thenReturn(mockTemplate);
+         when(vmTemplatePoolDao.findByPoolTemplate(anyLong(), anyLong(), nullable(String.class))).thenReturn(mockTemplateStore);
+         when(primaryDataStoreDao.listByStatus(StoragePoolStatus.Up)).thenReturn(pools);
+ 
+-        doNothing().when(mockTemplateStore).setMarkedForGC(anyBoolean());
+ 
+         ExecutorService preloadExecutor = new CustomThreadPoolExecutor(8, 8, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue(),
+                 new NamedThreadFactory("Template-Preloader"));
+@@ -1312,4 +1306,11 @@
+             }
+         }
+     }
++
++    private static VMTemplateStoragePoolVO createMockVmTemplateStoragePoolVO() {
++        VMTemplateStoragePoolVO mockTemplateStore = mock(VMTemplateStoragePoolVO.class);
++        when(mockTemplateStore.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
++        doNothing().when(mockTemplateStore).setMarkedForGC(anyBoolean());
++        return mockTemplateStore;
++    }
+ }
