@@ -1,0 +1,48 @@
+--- a/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/vmware/resource/VmwareResourceTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/vmware/resource/VmwareResourceTest.java
+@@ -573,9 +573,7 @@
+ 
+     @Test
+     public void testCheckGuestOsMappingCommandFailure() throws Exception {
+-        CheckGuestOsMappingCommand cmd = mock(CheckGuestOsMappingCommand.class);
+-        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+-        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centosWrongName");
++        CheckGuestOsMappingCommand cmd = createMockCheckGuestOsMappingCommand("centosWrongName");
+         when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+         when(hyperHost.getGuestOsDescriptor("centosWrongName")).thenReturn(null);
+ 
+@@ -586,9 +584,7 @@
+ 
+     @Test
+     public void testCheckGuestOsMappingCommandSuccess() throws Exception {
+-        CheckGuestOsMappingCommand cmd = mock(CheckGuestOsMappingCommand.class);
+-        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+-        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centos64Guest");
++        CheckGuestOsMappingCommand cmd = createMockCheckGuestOsMappingCommand("centos64Guest");
+         when(_resource.getHyperHost(context, null)).thenReturn(hyperHost);
+         GuestOsDescriptor guestOsDescriptor = mock(GuestOsDescriptor.class);
+         when(hyperHost.getGuestOsDescriptor("centos64Guest")).thenReturn(guestOsDescriptor);
+@@ -601,9 +597,7 @@
+ 
+     @Test
+     public void testCheckGuestOsMappingCommandException() {
+-        CheckGuestOsMappingCommand cmd = mock(CheckGuestOsMappingCommand.class);
+-        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
+-        when(cmd.getGuestOsHypervisorMappingName()).thenReturn("centos64Guest");
++        CheckGuestOsMappingCommand cmd = createMockCheckGuestOsMappingCommand("centos64Guest");
+         when(_resource.getHyperHost(context, null)).thenReturn(null);
+ 
+         CheckGuestOsMappingAnswer answer = _resource.execute(cmd);
+@@ -874,4 +868,12 @@
+         Mockito.verify(vmwareResource, Mockito.times(1)).removeVirtualTPMDevice(vmConfigSpec, tpm);
+         Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
+     }
++
++    private static CheckGuestOsMappingCommand createMockCheckGuestOsMappingCommand(
++            String guestOsHypervisorMappingName) {
++        CheckGuestOsMappingCommand cmd = mock(CheckGuestOsMappingCommand.class);
++        when(cmd.getGuestOsName()).thenReturn("CentOS 7.2");
++        when(cmd.getGuestOsHypervisorMappingName()).thenReturn(guestOsHypervisorMappingName);
++        return cmd;
++    }
+ }

@@ -1,0 +1,67 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -890,8 +890,8 @@
+     @Test
+     public void addTungstenPolicyRuleTest() throws Exception {
+         TungstenAnswer addTungstenPolicyRuleAnswer = MockTungstenAnswerFactory.get(true);
+-        NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+         PolicyEntriesType policyEntriesType = mock(PolicyEntriesType.class);
++        NetworkPolicy networkPolicy = createMockNetworkPolicy(policyEntriesType);
+         PolicyRuleType policyRuleType = mock(PolicyRuleType.class);
+         ActionListType actionListType = mock(ActionListType.class);
+         AddressType addressType = mock(AddressType.class);
+@@ -901,7 +901,6 @@
+ 
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenPolicyRuleCommand.class), anyLong())).thenReturn(addTungstenPolicyRuleAnswer);
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+-        when(addTungstenPolicyRuleAnswer.getApiObjectBase()).thenReturn(networkPolicy);
+         when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
+         when(policyEntriesType.getPolicyRule()).thenReturn(List.of(policyRuleType));
+ 
+@@ -997,7 +996,6 @@
+     @Test
+     public void listTungstenPolicyRuleWithRuleUuidTest() {
+         TungstenAnswer listTungstenPolicyRuleAnswer = MockTungstenAnswerFactory.get(true);
+-        NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+         PolicyEntriesType policyEntriesType = mock(PolicyEntriesType.class);
+         PolicyRuleType policyRuleType = mock(PolicyRuleType.class);
+         ActionListType actionListType = mock(ActionListType.class);
+@@ -1008,8 +1006,8 @@
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenPolicyRuleCommand.class), anyLong())).thenReturn(listTungstenPolicyRuleAnswer);
++        NetworkPolicy networkPolicy = createMockNetworkPolicy(policyEntriesType);
+         doReturn(networkPolicy).when(listTungstenPolicyRuleAnswer).getApiObjectBase();
+-        when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
+         when(policyEntriesType.getPolicyRule()).thenReturn(List.of(policyRuleType));
+         when(policyRuleType.getRuleUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
+         when(policyRuleType.getActionList()).thenReturn(actionListType);
+@@ -1026,7 +1024,6 @@
+     @Test
+     public void listTungstenPolicyRuleWithAllRuleTest() {
+         TungstenAnswer listTungstenPolicyRuleAnswer = MockTungstenAnswerFactory.get(true);
+-        NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+         PolicyEntriesType policyEntriesType = mock(PolicyEntriesType.class);
+         PolicyRuleType policyRuleType = mock(PolicyRuleType.class);
+         ActionListType actionListType = mock(ActionListType.class);
+@@ -1037,8 +1034,8 @@
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenPolicyRuleCommand.class), anyLong())).thenReturn(listTungstenPolicyRuleAnswer);
++        NetworkPolicy networkPolicy = createMockNetworkPolicy(policyEntriesType);
+         doReturn(networkPolicy).when(listTungstenPolicyRuleAnswer).getApiObjectBase();
+-        when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
+         when(policyEntriesType.getPolicyRule()).thenReturn(List.of(policyRuleType));
+         when(policyRuleType.getRuleUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
+         when(policyRuleType.getActionList()).thenReturn(actionListType);
+@@ -1668,4 +1665,10 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    private static NetworkPolicy createMockNetworkPolicy(PolicyEntriesType policyEntriesType) {
++        NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
++        when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
++        return networkPolicy;
++    }
+ }
