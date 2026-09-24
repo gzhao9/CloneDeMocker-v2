@@ -1,0 +1,48 @@
+--- a/web/src/test/java/org/springframework/security/web/server/header/CompositeServerHttpHeadersWriterTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/header/CompositeServerHttpHeadersWriterTests.java
+@@ -78,8 +78,8 @@
+ 
+ 	@Test
+ 	public void writeHttpHeadersWhenNoErrorThenNoError() {
+-		given(this.writer1.writeHttpHeaders(this.exchange)).willReturn(Mono.empty());
+-		given(this.writer2.writeHttpHeaders(this.exchange)).willReturn(Mono.empty());
++		this.writer1 = MockServerHttpHeadersWriterWithExchange.createMockServerHttpHeadersWriter(this.exchange);
++		this.writer2 = MockServerHttpHeadersWriterWithExchange.createMockServerHttpHeadersWriter(this.exchange);
+ 		Mono<Void> result = this.writer.writeHttpHeaders(this.exchange);
+ 		StepVerifier.create(result).expectComplete().verify();
+ 		verify(this.writer1).writeHttpHeaders(this.exchange);
+--- a/web/src/test/java/org/springframework/security/web/server/header/ServerWebExchangeDelegatingServerHttpHeadersWriterTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/header/ServerWebExchangeDelegatingServerHttpHeadersWriterTests.java
+@@ -99,7 +99,7 @@
+ 	public void writeHeadersWhenMatchThenDelegateWriteHttpHeaders() {
+ 		given(this.matcher.matches(this.exchange))
+ 			.willReturn(ServerWebExchangeMatcher.MatchResult.match(Collections.emptyMap()));
+-		given(this.delegate.writeHttpHeaders(this.exchange)).willReturn(Mono.empty());
++		this.delegate = MockServerHttpHeadersWriterWithExchange.createMockServerHttpHeadersWriter(this.exchange);
+ 		this.headerWriter.writeHttpHeaders(this.exchange).block();
+ 		verify(this.delegate).writeHttpHeaders(this.exchange);
+ 	}
+--- a/web/src/test/java/org/springframework/security/web/server/header/MockServerHttpHeadersWriterWithExchange.java
++++ b/web/src/test/java/org/springframework/security/web/server/header/MockServerHttpHeadersWriterWithExchange.java
+@@ -0,0 +1,21 @@
++package org.springframework.security.web.server.header;
++
++import org.mockito.Mockito;
++import reactor.core.publisher.Mono;
++
++import org.springframework.web.server.ServerWebExchange;
++
++import static org.mockito.BDDMockito.given;
++
++public final class MockServerHttpHeadersWriterWithExchange {
++
++	private MockServerHttpHeadersWriterWithExchange() {
++	}
++
++	public static ServerHttpHeadersWriter createMockServerHttpHeadersWriter(ServerWebExchange exchange) {
++		ServerHttpHeadersWriter writer = Mockito.mock(ServerHttpHeadersWriter.class);
++		given(writer.writeHttpHeaders(exchange)).willReturn(Mono.empty());
++		return writer;
++	}
++
++}

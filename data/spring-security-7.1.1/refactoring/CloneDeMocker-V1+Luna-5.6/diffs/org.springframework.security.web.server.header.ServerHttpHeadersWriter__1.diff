@@ -1,0 +1,64 @@
+--- a/web/src/test/java/org/springframework/security/web/server/header/CompositeServerHttpHeadersWriterTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/header/CompositeServerHttpHeadersWriterTests.java
+@@ -78,8 +78,8 @@
+ 
+ 	@Test
+ 	public void writeHttpHeadersWhenNoErrorThenNoError() {
+-		given(this.writer1.writeHttpHeaders(this.exchange)).willReturn(Mono.empty());
+-		given(this.writer2.writeHttpHeaders(this.exchange)).willReturn(Mono.empty());
++		this.writer1 = MockServerHttpHeadersWriter.createServerHttpHeadersWriter(this.exchange);
++		this.writer2 = MockServerHttpHeadersWriter.createServerHttpHeadersWriter(this.exchange);
+ 		Mono<Void> result = this.writer.writeHttpHeaders(this.exchange);
+ 		StepVerifier.create(result).expectComplete().verify();
+ 		verify(this.writer1).writeHttpHeaders(this.exchange);
+@@ -101,4 +101,19 @@
+ 		assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue();
+ 	}
+ 
++
++	public final class MockServerHttpHeadersWriter {
++
++		private MockServerHttpHeadersWriter() {
++		}
++
++		public static org.springframework.security.web.server.header.ServerHttpHeadersWriter createServerHttpHeadersWriter(
++				org.springframework.web.server.ServerWebExchange exchange) {
++			org.springframework.security.web.server.header.ServerHttpHeadersWriter writer =
++					org.mockito.Mockito.mock(org.springframework.security.web.server.header.ServerHttpHeadersWriter.class);
++			given(writer.writeHttpHeaders(exchange))
++					.willReturn(reactor.core.publisher.Mono.empty());
++			return writer;
++		}
++	}
+ }
+--- a/web/src/test/java/org/springframework/security/web/server/header/ServerWebExchangeDelegatingServerHttpHeadersWriterTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/header/ServerWebExchangeDelegatingServerHttpHeadersWriterTests.java
+@@ -99,7 +99,7 @@
+ 	public void writeHeadersWhenMatchThenDelegateWriteHttpHeaders() {
+ 		given(this.matcher.matches(this.exchange))
+ 			.willReturn(ServerWebExchangeMatcher.MatchResult.match(Collections.emptyMap()));
+-		given(this.delegate.writeHttpHeaders(this.exchange)).willReturn(Mono.empty());
++		this.delegate = MockServerHttpHeadersWriter.createServerHttpHeadersWriter(this.exchange);
+ 		this.headerWriter.writeHttpHeaders(this.exchange).block();
+ 		verify(this.delegate).writeHttpHeaders(this.exchange);
+ 	}
+@@ -112,4 +112,19 @@
+ 		verify(this.delegate, times(0)).writeHttpHeaders(this.exchange);
+ 	}
+ 
++
++	public final class MockServerHttpHeadersWriter {
++
++		private MockServerHttpHeadersWriter() {
++		}
++
++		public static org.springframework.security.web.server.header.ServerHttpHeadersWriter createServerHttpHeadersWriter(
++				org.springframework.web.server.ServerWebExchange exchange) {
++			org.springframework.security.web.server.header.ServerHttpHeadersWriter writer =
++					org.mockito.Mockito.mock(org.springframework.security.web.server.header.ServerHttpHeadersWriter.class);
++			given(writer.writeHttpHeaders(exchange))
++					.willReturn(reactor.core.publisher.Mono.empty());
++			return writer;
++		}
++	}
+ }

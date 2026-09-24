@@ -1,0 +1,55 @@
+--- a/config/src/test/java/org/springframework/security/config/annotation/web/configurers/oauth2/server/resource/OAuth2ResourceServerConfigurerTests.java
++++ b/config/src/test/java/org/springframework/security/config/annotation/web/configurers/oauth2/server/resource/OAuth2ResourceServerConfigurerTests.java
+@@ -49,6 +49,7 @@
+ import org.hamcrest.core.StringContains;
+ import org.hamcrest.core.StringEndsWith;
+ import org.hamcrest.core.StringStartsWith;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.extension.ExtendWith;
+ import org.mockito.verification.VerificationMode;
+@@ -185,6 +186,13 @@
+ @ExtendWith(SpringTestContextExtension.class)
+ public class OAuth2ResourceServerConfigurerTests {
+ 
++	private BearerTokenResolver dslResolver;
++
++	@BeforeEach
++	public void setUp() {
++		this.dslResolver = mock(BearerTokenResolver.class);
++	}
++
+ 	private static final String JWT_TOKEN = "token";
+ 
+ 	private static final String JWT_SUBJECT = "mock-test-subject";
+@@ -732,11 +740,10 @@
+ 
+ 	@Test
+ 	public void getBearerTokenResolverWhenDuplicateResolverBeansAndAnotherOnTheDslThenTheDslOneIsUsed() {
+-		BearerTokenResolver resolverBean = mock(BearerTokenResolver.class);
+ 		BearerTokenResolver resolver = mock(BearerTokenResolver.class);
+ 		GenericWebApplicationContext context = new GenericWebApplicationContext();
+-		context.registerBean("resolverOne", BearerTokenResolver.class, () -> resolverBean);
+-		context.registerBean("resolverTwo", BearerTokenResolver.class, () -> resolverBean);
++		context.registerBean("resolverOne", BearerTokenResolver.class, () -> dslResolver);
++		context.registerBean("resolverTwo", BearerTokenResolver.class, () -> dslResolver);
+ 		this.spring.context(context).autowire();
+ 		OAuth2ResourceServerConfigurer oauth2 = new OAuth2ResourceServerConfigurer(context);
+ 		oauth2.bearerTokenResolver(resolver);
+@@ -753,14 +760,13 @@
+ 
+ 	@Test
+ 	public void getBearerTokenResolverWhenResolverBeanAndAnotherOnTheDslThenTheDslOneIsUsed() {
+-		BearerTokenResolver resolver = mock(BearerTokenResolver.class);
+ 		BearerTokenResolver resolverBean = mock(BearerTokenResolver.class);
+ 		GenericWebApplicationContext context = new GenericWebApplicationContext();
+ 		context.registerBean(BearerTokenResolver.class, () -> resolverBean);
+ 		this.spring.context(context).autowire();
+ 		OAuth2ResourceServerConfigurer oauth2 = new OAuth2ResourceServerConfigurer(context);
+-		oauth2.bearerTokenResolver(resolver);
+-		assertThat(oauth2.getBearerTokenResolver()).isEqualTo(resolver);
++		oauth2.bearerTokenResolver(dslResolver);
++		assertThat(oauth2.getBearerTokenResolver()).isEqualTo(dslResolver);
+ 	}
+ 
+ 	@Test

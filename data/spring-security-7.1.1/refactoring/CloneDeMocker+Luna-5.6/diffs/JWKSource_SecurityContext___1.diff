@@ -1,0 +1,65 @@
+--- a/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/NimbusJwtDecoderTests.java
++++ b/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/NimbusJwtDecoderTests.java
+@@ -56,6 +56,7 @@
+ import com.nimbusds.jwt.proc.JWTProcessor;
+ import okhttp3.mockwebserver.MockWebServer;
+ import org.junit.jupiter.api.BeforeAll;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.ArgumentCaptor;
+ 
+@@ -136,9 +137,16 @@
+ 
+ 	NimbusJwtDecoder jwtDecoder = new NimbusJwtDecoder(withoutSigning());
+ 
++	private JWKSource<SecurityContext> jwkSourceMock;
++
+ 	@BeforeAll
+ 	public static void keyFactory() throws NoSuchAlgorithmException {
+ 		kf = KeyFactory.getInstance("RSA");
++	}
++
++	@BeforeEach
++	public void setUp() {
++		this.jwkSourceMock = mock(JWKSource.class);
+ 	}
+ 
+ 	@Test
+@@ -653,9 +661,8 @@
+ 
+ 	@Test
+ 	public void jwsKeySelectorWhenNoAlgorithmThenReturnsRS256Selector() {
+-		JWKSource<SecurityContext> jwkSource = mock(JWKSource.class);
+ 		JWSKeySelector<SecurityContext> jwsKeySelector = NimbusJwtDecoder.withJwkSetUri(JWK_SET_URI)
+-			.jwsKeySelector(jwkSource);
++			.jwsKeySelector(jwkSourceMock);
+ 		assertThat(jwsKeySelector instanceof JWSVerificationKeySelector);
+ 		JWSVerificationKeySelector<?> jwsVerificationKeySelector = (JWSVerificationKeySelector<?>) jwsKeySelector;
+ 		assertThat(jwsVerificationKeySelector.isAllowed(JWSAlgorithm.RS256)).isTrue();
+@@ -663,11 +670,10 @@
+ 
+ 	@Test
+ 	public void jwsKeySelectorWhenOneAlgorithmThenReturnsSingleSelector() {
+-		JWKSource<SecurityContext> jwkSource = mock(JWKSource.class);
+ 		// @formatter:off
+ 		JWSKeySelector<SecurityContext> jwsKeySelector = NimbusJwtDecoder.withJwkSetUri(JWK_SET_URI)
+ 				.jwsAlgorithm(SignatureAlgorithm.RS512)
+-				.jwsKeySelector(jwkSource);
++				.jwsKeySelector(jwkSourceMock);
+ 		// @formatter:on
+ 		assertThat(jwsKeySelector instanceof JWSVerificationKeySelector);
+ 		JWSVerificationKeySelector<?> jwsVerificationKeySelector = (JWSVerificationKeySelector<?>) jwsKeySelector;
+@@ -676,12 +682,11 @@
+ 
+ 	@Test
+ 	public void jwsKeySelectorWhenMultipleAlgorithmThenReturnsCompositeSelector() {
+-		JWKSource<SecurityContext> jwkSource = mock(JWKSource.class);
+ 		// @formatter:off
+ 		JWSKeySelector<SecurityContext> jwsKeySelector = NimbusJwtDecoder.withJwkSetUri(JWK_SET_URI)
+ 				.jwsAlgorithm(SignatureAlgorithm.RS256)
+ 				.jwsAlgorithm(SignatureAlgorithm.RS512)
+-				.jwsKeySelector(jwkSource);
++				.jwsKeySelector(jwkSourceMock);
+ 		// @formatter:on
+ 		assertThat(jwsKeySelector instanceof JWSVerificationKeySelector);
+ 		JWSVerificationKeySelector<?> jwsAlgorithmMapKeySelector = (JWSVerificationKeySelector<?>) jwsKeySelector;

@@ -1,0 +1,59 @@
+--- a/taglibs/src/test/java/org/springframework/security/taglibs/authz/AbstractAuthorizeTagTests.java
++++ b/taglibs/src/test/java/org/springframework/security/taglibs/authz/AbstractAuthorizeTagTests.java
+@@ -91,8 +91,7 @@
+ 
+ 	@Test
+ 	public void privilegeEvaluatorFromRequestUsesSecurityContextHolderStrategy() throws IOException {
+-		SecurityContextHolderStrategy strategy = mock(SecurityContextHolderStrategy.class);
+-		given(strategy.getContext()).willReturn(new SecurityContextImpl(
++		SecurityContextHolderStrategy strategy = MockSecurityContextHolderStrategy.createMockSecurityContextHolderStrategy(new SecurityContextImpl(
+ 				new TestingAuthenticationToken("user", "password", AuthorityUtils.NO_AUTHORITIES)));
+ 		GenericWebApplicationContext wac = new GenericWebApplicationContext();
+ 		wac.registerBean(SecurityContextHolderStrategy.class, () -> strategy);
+--- a/taglibs/src/test/java/org/springframework/security/taglibs/authz/AccessControlListTagTests.java
++++ b/taglibs/src/test/java/org/springframework/security/taglibs/authz/AccessControlListTagTests.java
+@@ -97,8 +97,7 @@
+ 
+ 	@Test
+ 	public void securityContextHolderStrategyIsUsedIfConfigured() throws Exception {
+-		SecurityContextHolderStrategy strategy = mock(SecurityContextHolderStrategy.class);
+-		given(strategy.getContext()).willReturn(new SecurityContextImpl(this.bob));
++		SecurityContextHolderStrategy strategy = MockSecurityContextHolderStrategy.createMockSecurityContextHolderStrategy(new SecurityContextImpl(this.bob));
+ 		GenericWebApplicationContext context = new GenericWebApplicationContext();
+ 		context.registerBean(SecurityContextHolderStrategy.class, () -> strategy);
+ 		context.registerBean(PermissionEvaluator.class, () -> this.pe);
+--- a/taglibs/src/test/java/org/springframework/security/taglibs/authz/AuthenticationTagTests.java
++++ b/taglibs/src/test/java/org/springframework/security/taglibs/authz/AuthenticationTagTests.java
+@@ -141,8 +141,7 @@
+ 
+ 	@Test
+ 	public void setSecurityContextHolderStrategyThenUses() throws Exception {
+-		SecurityContextHolderStrategy strategy = mock(SecurityContextHolderStrategy.class);
+-		given(strategy.getContext()).willReturn(new SecurityContextImpl(
++		SecurityContextHolderStrategy strategy = MockSecurityContextHolderStrategy.createMockSecurityContextHolderStrategy(new SecurityContextImpl(
+ 				new TestingAuthenticationToken("rodAsString", "koala", AuthorityUtils.NO_AUTHORITIES)));
+ 		MockServletContext servletContext = new MockServletContext();
+ 		GenericWebApplicationContext applicationContext = new GenericWebApplicationContext();
+--- a/taglibs/src/test/java/org/springframework/security/taglibs/authz/MockSecurityContextHolderStrategy.java
++++ b/taglibs/src/test/java/org/springframework/security/taglibs/authz/MockSecurityContextHolderStrategy.java
+@@ -0,0 +1,20 @@
++package org.springframework.security.taglibs.authz;
++
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.mock;
++
++import org.springframework.security.core.context.SecurityContextHolderStrategy;
++import org.springframework.security.core.context.SecurityContextImpl;
++
++public final class MockSecurityContextHolderStrategy {
++
++	private MockSecurityContextHolderStrategy() {
++	}
++
++	public static SecurityContextHolderStrategy createMockSecurityContextHolderStrategy(
++			SecurityContextImpl context) {
++		SecurityContextHolderStrategy strategy = mock(SecurityContextHolderStrategy.class);
++		given(strategy.getContext()).willReturn(context);
++		return strategy;
++	}
++}

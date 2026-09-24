@@ -1,0 +1,184 @@
+--- a/web/src/test/java/org/springframework/security/web/context/AbstractSecurityWebApplicationInitializerTests.java
++++ b/web/src/test/java/org/springframework/security/web/context/AbstractSecurityWebApplicationInitializerTests.java
+@@ -57,10 +57,9 @@
+ 
+ 	@Test
+ 	public void onStartupWhenDefaultContextThenRegistersSpringSecurityFilterChain() {
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		new AbstractSecurityWebApplicationInitializer() {
+ 		}.onStartup(context);
+ 		assertProxyDefaults(proxyCaptor.getValue());
+@@ -71,10 +70,9 @@
+ 
+ 	@Test
+ 	public void onStartupWhenConfigurationClassThenAddsContextLoaderListener() {
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		new AbstractSecurityWebApplicationInitializer(MyRootConfiguration.class) {
+ 		}.onStartup(context);
+ 		assertProxyDefaults(proxyCaptor.getValue());
+@@ -85,10 +83,9 @@
+ 
+ 	@Test
+ 	public void onStartupWhenEnableHttpSessionEventPublisherIsTrueThenAddsHttpSessionEventPublisher() {
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		new AbstractSecurityWebApplicationInitializer() {
+ 			@Override
+ 			protected boolean enableHttpSessionEventPublisher() {
+@@ -103,10 +100,9 @@
+ 
+ 	@Test
+ 	public void onStartupWhenCustomSecurityDispatcherTypesThenUses() {
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		new AbstractSecurityWebApplicationInitializer() {
+ 			@Override
+ 			protected EnumSet<DispatcherType> getSecurityDispatcherTypes() {
+@@ -122,10 +118,9 @@
+ 
+ 	@Test
+ 	public void onStartupWhenCustomDispatcherWebApplicationContextSuffixThenUses() {
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		new AbstractSecurityWebApplicationInitializer() {
+ 			@Override
+ 			protected String getDispatcherWebApplicationContextSuffix() {
+@@ -154,10 +149,9 @@
+ 	public void onStartupWhenInsertFiltersThenInserted() {
+ 		Filter filter1 = mock(Filter.class);
+ 		Filter filter2 = mock(Filter.class);
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		given(context.addFilter(anyString(), eq(filter1))).willReturn(registration);
+ 		given(context.addFilter(anyString(), eq(filter2))).willReturn(registration);
+ 		new AbstractSecurityWebApplicationInitializer() {
+@@ -177,10 +171,9 @@
+ 	@Test
+ 	public void onStartupWhenDuplicateFilterInsertedThenException() {
+ 		Filter filter1 = mock(Filter.class);
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		assertThatIllegalStateException().isThrownBy(() -> new AbstractSecurityWebApplicationInitializer() {
+ 
+ 			@Override
+@@ -216,10 +209,9 @@
+ 	@Test
+ 	public void onStartupWhenNullFilterInsertedThenException() {
+ 		Filter filter = mock(Filter.class);
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		given(context.addFilter(anyString(), eq(filter))).willReturn(registration);
+ 		assertThatIllegalArgumentException().isThrownBy(() -> new AbstractSecurityWebApplicationInitializer() {
+ 
+@@ -236,10 +228,9 @@
+ 	public void onStartupWhenAppendFiltersThenAppended() {
+ 		Filter filter1 = mock(Filter.class);
+ 		Filter filter2 = mock(Filter.class);
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		given(context.addFilter(anyString(), eq(filter1))).willReturn(registration);
+ 		given(context.addFilter(anyString(), eq(filter2))).willReturn(registration);
+ 		new AbstractSecurityWebApplicationInitializer() {
+@@ -258,10 +249,9 @@
+ 	@Test
+ 	public void onStartupWhenDuplicateFilterAppendedThenException() {
+ 		Filter filter1 = mock(Filter.class);
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		assertThatIllegalStateException().isThrownBy(() -> new AbstractSecurityWebApplicationInitializer() {
+ 
+ 			@Override
+@@ -279,10 +269,9 @@
+ 
+ 	@Test
+ 	public void onStartupWhenAppendFiltersEmptyThenException() {
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		assertThatIllegalArgumentException().isThrownBy(() -> new AbstractSecurityWebApplicationInitializer() {
+ 
+ 			@Override
+@@ -297,10 +286,9 @@
+ 	@Test
+ 	public void onStartupWhenNullFilterAppendedThenException() {
+ 		Filter filter = mock(Filter.class);
+-		ServletContext context = mock(ServletContext.class);
+-		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
+-		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
+-		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		FilterRegistration.Dynamic registration = mock(FilterRegistration.Dynamic.class);
++		ArgumentCaptor<DelegatingFilterProxy> proxyCaptor = ArgumentCaptor.forClass(DelegatingFilterProxy.class);
++		ServletContext context = createMockServletContext(registration, proxyCaptor);
+ 		given(context.addFilter(anyString(), eq(filter))).willReturn(registration);
+ 		assertThatIllegalArgumentException().isThrownBy(() -> new AbstractSecurityWebApplicationInitializer() {
+ 
+@@ -368,6 +356,13 @@
+ 		verify(context, times(0)).addListener(any(Class.class));
+ 	}
+ 
++	private static ServletContext createMockServletContext(FilterRegistration.Dynamic registration,
++			ArgumentCaptor<DelegatingFilterProxy> proxyCaptor) {
++		ServletContext context = mock(ServletContext.class);
++		given(context.addFilter(eq("springSecurityFilterChain"), proxyCaptor.capture())).willReturn(registration);
++		return context;
++	}
++
+ 	private static void assertProxyDefaults(DelegatingFilterProxy proxy) {
+ 		assertThat(proxy.getContextAttribute()).isNull();
+ 		assertThat(proxy).hasFieldOrPropertyWithValue("targetBeanName", "springSecurityFilterChain");

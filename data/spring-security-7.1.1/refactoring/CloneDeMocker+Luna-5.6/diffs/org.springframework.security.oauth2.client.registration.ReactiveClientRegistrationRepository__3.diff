@@ -1,0 +1,74 @@
+--- a/config/src/test/java/org/springframework/security/config/web/server/ServerHttpSecurityTests.java
++++ b/config/src/test/java/org/springframework/security/config/web/server/ServerHttpSecurityTests.java
+@@ -646,10 +646,7 @@
+ 
+ 	@Test
+ 	public void shouldUseDefaultAuthorizationRedirectStrategyForOAuth2Login() {
+-		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+-				ReactiveClientRegistrationRepository.class);
+-		given(clientRegistrationRepository.findByRegistrationId(anyString()))
+-			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
++		ReactiveClientRegistrationRepository clientRegistrationRepository = createMockClientRegistrationRepository();
+ 
+ 		SecurityWebFilterChain securityFilterChain = this.http
+ 			.oauth2Login((login) -> login.clientRegistrationRepository(clientRegistrationRepository))
+@@ -668,10 +665,7 @@
+ 	@Test
+ 	public void shouldConfigureAuthorizationRedirectStrategyForOAuth2Login() {
+ 		ServerRedirectStrategy authorizationRedirectStrategy = mock(ServerRedirectStrategy.class);
+-		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+-				ReactiveClientRegistrationRepository.class);
+-		given(clientRegistrationRepository.findByRegistrationId(anyString()))
+-			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
++		ReactiveClientRegistrationRepository clientRegistrationRepository = createMockClientRegistrationRepository();
+ 		given(authorizationRedirectStrategy.sendRedirect(any(), any())).willReturn(Mono.empty());
+ 
+ 		SecurityWebFilterChain securityFilterChain = this.http
+@@ -690,12 +684,17 @@
+ 			.isSameAs(authorizationRedirectStrategy);
+ 	}
+ 
+-	@Test
+-	public void shouldUseDefaultAuthorizationRedirectStrategyForOAuth2Client() {
++	private static ReactiveClientRegistrationRepository createMockClientRegistrationRepository() {
+ 		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+ 				ReactiveClientRegistrationRepository.class);
+ 		given(clientRegistrationRepository.findByRegistrationId(anyString()))
+-			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
++				.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
++		return clientRegistrationRepository;
++	}
++
++	@Test
++	public void shouldUseDefaultAuthorizationRedirectStrategyForOAuth2Client() {
++		ReactiveClientRegistrationRepository clientRegistrationRepository = createMockClientRegistrationRepository();
+ 
+ 		SecurityWebFilterChain securityFilterChain = this.http
+ 			.oauth2Client((client) -> client.clientRegistrationRepository(clientRegistrationRepository))
+@@ -714,10 +713,7 @@
+ 	@Test
+ 	public void shouldConfigureAuthorizationRedirectStrategyForOAuth2Client() {
+ 		ServerRedirectStrategy authorizationRedirectStrategy = mock(ServerRedirectStrategy.class);
+-		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+-				ReactiveClientRegistrationRepository.class);
+-		given(clientRegistrationRepository.findByRegistrationId(anyString()))
+-			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
++		ReactiveClientRegistrationRepository clientRegistrationRepository = createMockClientRegistrationRepository();
+ 		given(authorizationRedirectStrategy.sendRedirect(any(), any())).willReturn(Mono.empty());
+ 
+ 		SecurityWebFilterChain securityFilterChain = this.http
+@@ -806,6 +802,14 @@
+ 		return WebTestClientBuilder.bindToWebFilters(springSecurityFilterChain).build();
+ 	}
+ 
++	private static ReactiveClientRegistrationRepository createMockClientRegistrationRepository() {
++		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
++				ReactiveClientRegistrationRepository.class);
++		given(clientRegistrationRepository.findByRegistrationId(anyString()))
++			.willReturn(Mono.just(TestClientRegistrations.clientRegistration().build()));
++		return clientRegistrationRepository;
++	}
++
+ 	@RestController
+ 	private static class SubscriberContextController {
+ 

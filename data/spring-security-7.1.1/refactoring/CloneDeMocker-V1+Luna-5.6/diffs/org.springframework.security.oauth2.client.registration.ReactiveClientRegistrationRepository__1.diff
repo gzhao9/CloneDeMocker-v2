@@ -1,0 +1,96 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/DefaultServerOAuth2AuthorizationRequestResolverTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/DefaultServerOAuth2AuthorizationRequestResolverTests.java
+@@ -77,7 +77,7 @@
+ 
+ 	@Test
+ 	public void resolveWhenClientRegistrationNotFoundMatchThenBadRequest() {
+-		given(this.clientRegistrationRepository.findByRegistrationId(any())).willReturn(Mono.empty());
++		this.clientRegistrationRepository = MockReactiveClientRegistrationRepository.createReactiveClientRegistrationRepository();
+ 		assertThatExceptionOfType(ResponseStatusException.class)
+ 			.isThrownBy(() -> resolve("/oauth2/authorization/not-found-id"))
+ 			.satisfies((ex) -> assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST));
+@@ -252,4 +252,20 @@
+ 		return this.resolver.resolve(exchange).block();
+ 	}
+ 
++
++	public final class MockReactiveClientRegistrationRepository {
++
++		private MockReactiveClientRegistrationRepository() {
++		}
++
++		public static org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository createReactiveClientRegistrationRepository() {
++			org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository clientRegistrationRepository =
++					Mockito.mock(org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository.class);
++
++			given(clientRegistrationRepository.findByRegistrationId(any()))
++					.willReturn(Mono.empty());
++
++			return clientRegistrationRepository;
++		}
++	}
+ }
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/OAuth2AuthorizationCodeGrantWebFilterTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/OAuth2AuthorizationCodeGrantWebFilterTests.java
+@@ -255,7 +255,7 @@
+ 	@Test
+ 	public void filterWhenAuthenticationConverterThrowsOAuth2AuthorizationExceptionThenMappedToOAuth2AuthenticationException() {
+ 		ClientRegistration clientRegistration = TestClientRegistrations.clientRegistration().build();
+-		given(this.clientRegistrationRepository.findByRegistrationId(any())).willReturn(Mono.empty());
++		this.clientRegistrationRepository = MockReactiveClientRegistrationRepository.createReactiveClientRegistrationRepository();
+ 		MockServerHttpRequest authorizationRequest = createAuthorizationRequest("/authorization/callback");
+ 		OAuth2AuthorizationRequest oauth2AuthorizationRequest = createOAuth2AuthorizationRequest(authorizationRequest,
+ 				clientRegistration);
+@@ -336,4 +336,20 @@
+ 		return builder.build();
+ 	}
+ 
++
++	public final class MockReactiveClientRegistrationRepository {
++
++		private MockReactiveClientRegistrationRepository() {
++		}
++
++		public static org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository createReactiveClientRegistrationRepository() {
++			org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository clientRegistrationRepository =
++					Mockito.mock(org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository.class);
++
++			given(clientRegistrationRepository.findByRegistrationId(any()))
++					.willReturn(Mono.empty());
++
++			return clientRegistrationRepository;
++		}
++	}
+ }
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/ServerOAuth2AuthorizationCodeAuthenticationTokenConverterTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/ServerOAuth2AuthorizationCodeAuthenticationTokenConverterTests.java
+@@ -114,7 +114,7 @@
+ 	public void applyWhenClientRegistrationMissingThenOAuth2AuthorizationException() {
+ 		given(this.authorizationRequestRepository.removeAuthorizationRequest(any()))
+ 			.willReturn(Mono.just(this.authorizationRequest.build()));
+-		given(this.clientRegistrationRepository.findByRegistrationId(any())).willReturn(Mono.empty());
++		this.clientRegistrationRepository = MockReactiveClientRegistrationRepository.createReactiveClientRegistrationRepository();
+ 		assertThatExceptionOfType(OAuth2AuthorizationException.class).isThrownBy(() -> applyConverter())
+ 			.withMessageContaining(
+ 					ServerOAuth2AuthorizationCodeAuthenticationTokenConverter.CLIENT_REGISTRATION_NOT_FOUND_ERROR_CODE);
+@@ -149,4 +149,20 @@
+ 		return (OAuth2AuthorizationCodeAuthenticationToken) this.converter.convert(exchange).block();
+ 	}
+ 
++
++	public final class MockReactiveClientRegistrationRepository {
++
++		private MockReactiveClientRegistrationRepository() {
++		}
++
++		public static org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository createReactiveClientRegistrationRepository() {
++			org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository clientRegistrationRepository =
++					Mockito.mock(org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository.class);
++
++			given(clientRegistrationRepository.findByRegistrationId(any()))
++					.willReturn(Mono.empty());
++
++			return clientRegistrationRepository;
++		}
++	}
+ }

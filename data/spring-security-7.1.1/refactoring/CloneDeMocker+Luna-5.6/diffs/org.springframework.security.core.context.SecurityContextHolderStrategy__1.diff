@@ -1,0 +1,56 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/AuthenticationFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/AuthenticationFilterTests.java
+@@ -145,9 +145,8 @@
+ 		given(this.authenticationManager.authenticate(any())).willReturn(authentication);
+ 		AuthenticationFilter filter = new AuthenticationFilter(this.authenticationManager,
+ 				this.authenticationConverter);
+-		SecurityContextHolderStrategy strategy = mock(SecurityContextHolderStrategy.class);
++		SecurityContextHolderStrategy strategy = MockSecurityContextHolderStrategy.createMockSecurityContextHolderStrategy(new SecurityContextImpl());
+ 		given(strategy.createEmptyContext()).willReturn(new SecurityContextImpl());
+-		given(strategy.getContext()).willReturn(new SecurityContextImpl());
+ 		filter.setSecurityContextHolderStrategy(strategy);
+ 		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+--- a/web/src/test/java/org/springframework/security/web/authentication/DefaultLoginPageGeneratingFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/DefaultLoginPageGeneratingFilterTests.java
+@@ -283,7 +283,6 @@
+ 
+ 	@Test
+ 	public void generateWhenAuthenticatedThenReadOnlyUsername() throws Exception {
+-		SecurityContextHolderStrategy strategy = mock(SecurityContextHolderStrategy.class);
+ 		DefaultLoginPageGeneratingFilter filter = new DefaultLoginPageGeneratingFilter();
+ 		filter.setLoginPageUrl(DefaultLoginPageGeneratingFilter.DEFAULT_LOGIN_PAGE_URL);
+ 		filter.setFormLoginEnabled(true);
+@@ -291,8 +290,8 @@
+ 		filter.setPasswordParameter("password");
+ 		filter.setOneTimeTokenEnabled(true);
+ 		filter.setOneTimeTokenGenerationUrl("/ott/authenticate");
++		SecurityContextHolderStrategy strategy = MockSecurityContextHolderStrategy.createMockSecurityContextHolderStrategy(new SecurityContextImpl(TestAuthentication.authenticatedUser()));
+ 		filter.setSecurityContextHolderStrategy(strategy);
+-		given(strategy.getContext()).willReturn(new SecurityContextImpl(TestAuthentication.authenticatedUser()));
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		filter.doFilter(TestMockHttpServletRequests.get("/login").build(), response, this.chain);
+ 		assertThat(response.getContentAsString()).contains("Request a One-Time Token");
+--- a/web/src/test/java/org/springframework/security/web/authentication/MockSecurityContextHolderStrategy.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/MockSecurityContextHolderStrategy.java
+@@ -0,0 +1,20 @@
++package org.springframework.security.web.authentication;
++
++import org.mockito.Mockito;
++import org.springframework.security.core.context.SecurityContext;
++import org.springframework.security.core.context.SecurityContextHolderStrategy;
++
++import static org.mockito.BDDMockito.given;
++
++public final class MockSecurityContextHolderStrategy {
++
++	private MockSecurityContextHolderStrategy() {
++	}
++
++	public static SecurityContextHolderStrategy createMockSecurityContextHolderStrategy(SecurityContext context) {
++		SecurityContextHolderStrategy strategy = Mockito.mock(SecurityContextHolderStrategy.class);
++		given(strategy.getContext()).willReturn(context);
++		return strategy;
++	}
++
++}

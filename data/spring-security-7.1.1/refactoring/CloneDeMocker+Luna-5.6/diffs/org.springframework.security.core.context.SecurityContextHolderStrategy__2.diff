@@ -1,0 +1,45 @@
+--- a/core/src/test/java/org/springframework/security/provisioning/InMemoryUserDetailsManagerTests.java
++++ b/core/src/test/java/org/springframework/security/provisioning/InMemoryUserDetailsManagerTests.java
+@@ -116,8 +116,7 @@
+ 	public void changePasswordWhenCustomSecurityContextHolderStrategyThenUses() {
+ 		Authentication authentication = TestAuthentication.authenticatedUser();
+ 		InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager((User) authentication.getPrincipal());
+-		SecurityContextHolderStrategy strategy = mock(SecurityContextHolderStrategy.class);
+-		given(strategy.getContext()).willReturn(new SecurityContextImpl(authentication));
++		SecurityContextHolderStrategy strategy = createMockSecurityContextHolderStrategy(authentication);
+ 		manager.setSecurityContextHolderStrategy(strategy);
+ 		manager.changePassword("password", "newpassword");
+ 		verify(strategy).getContext();
+@@ -129,8 +128,7 @@
+ 		InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager(userNotLowerCase);
+ 		Authentication authentication = new UsernamePasswordAuthenticationToken("User", userNotLowerCase.getPassword(),
+ 				userNotLowerCase.getAuthorities());
+-		SecurityContextHolderStrategy strategy = mock(SecurityContextHolderStrategy.class);
+-		given(strategy.getContext()).willReturn(new SecurityContextImpl(authentication));
++		SecurityContextHolderStrategy strategy = createMockSecurityContextHolderStrategy(authentication);
+ 		manager.setSecurityContextHolderStrategy(strategy);
+ 
+ 		String newPassword = "newPassword";
+@@ -150,8 +148,7 @@
+ 		InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
+ 		CustomUser user = new CustomUser(User.withUserDetails(PasswordEncodedUser.user()).build());
+ 		Authentication authentication = TestAuthentication.authenticated(user);
+-		SecurityContextHolderStrategy strategy = mock(SecurityContextHolderStrategy.class);
+-		given(strategy.getContext()).willReturn(new SecurityContextImpl(authentication));
++		SecurityContextHolderStrategy strategy = createMockSecurityContextHolderStrategy(authentication);
+ 		manager.setSecurityContextHolderStrategy(strategy);
+ 		manager.createUser(user);
+ 		String newPassword = "newPassword";
+@@ -203,6 +200,12 @@
+ 		assertThatIllegalArgumentException()
+ 			.isThrownBy(() -> authManager.authenticate(new UsernamePasswordAuthenticationToken(username, "password")))
+ 			.withMessage(expectedMessage);
++	}
++
++	private static SecurityContextHolderStrategy createMockSecurityContextHolderStrategy(Authentication authentication) {
++		SecurityContextHolderStrategy strategy = mock(SecurityContextHolderStrategy.class);
++		given(strategy.getContext()).willReturn(new SecurityContextImpl(authentication));
++		return strategy;
+ 	}
+ 
+ 	private static Stream<Arguments> authenticationErrorCases() {
