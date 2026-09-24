@@ -1,0 +1,33 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
+@@ -257,6 +257,7 @@
+         String parentPath = "parentPath";
+         String volumePath = "volPath";
+         String parentBackupFullPath = "parentBackupFullPath";
++        kvmStoragePool2 = createMockKvmStoragePool(parentPath, parentBackupFullPath);
+         String backupDeltaFullPathOnPrimary1 = "backupDeltaFullPathOnPrimary1";
+         String backupDeltaFullPathOnSecondary1 = "backupDeltaFullPathOnSecondary1";
+         String randomPath1 = "random";
+@@ -273,9 +274,8 @@
+         doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
+         doReturn(kvmStoragePool3).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
+ 
+-        doReturn(parentBackupFullPath).when(kvmStoragePool2).getLocalPathFor(parentPath);
+-        doReturn(backupDeltaFullPathOnPrimary1).when(kvmStoragePool3).getLocalPathFor(deltaPath2);
+-        doReturn(backupDeltaFullPathOnSecondary1).when(kvmStoragePool1).getLocalPathFor(deltaPath1);
++        kvmStoragePool3 = createMockKvmStoragePool(deltaPath2, backupDeltaFullPathOnPrimary1);
++        kvmStoragePool1 = createMockKvmStoragePool(deltaPath1, backupDeltaFullPathOnSecondary1);
+         doNothing().when(libvirtTakeKbossBackupCommandWrapperSpy).convertDeltaToSecondary(backupDeltaFullPathOnPrimary1, backupDeltaFullPathOnSecondary1, parentBackupFullPath, volUuid1, 100000);
+ 
+         doReturn(randomPath1).when(libvirtTakeKbossBackupCommandWrapperSpy).getRelativePathOnSecondaryForBackup(anyLong(), anyLong(), any());
+@@ -374,4 +374,10 @@
+         doReturn(volumeObjectToMock2).when(kbossTO2).getVolumeObjectTO();
+         doReturn(volUuid2).when(volumeObjectToMock2).getUuid();
+     }
++
++    private static KVMStoragePool createMockKvmStoragePool(String path, String localPath) {
++        KVMStoragePool kvmStoragePool = Mockito.mock(KVMStoragePool.class);
++        doReturn(localPath).when(kvmStoragePool).getLocalPathFor(path);
++        return kvmStoragePool;
++    }
+ }

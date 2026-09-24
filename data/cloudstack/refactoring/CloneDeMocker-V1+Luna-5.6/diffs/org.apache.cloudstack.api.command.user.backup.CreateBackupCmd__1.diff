@@ -1,0 +1,52 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -738,10 +738,8 @@
+         List<BackupVO> backups = new ArrayList<>(List.of(oldestBackupVO));
+         when(backupDao.listBySchedule(scheduleId)).thenReturn(backups);
+ 
+-        CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
+-        when(cmd.getVmId()).thenReturn(vmId);
++        CreateBackupCmd cmd = createBackupCommand(vmId);
+         when(cmd.getName()).thenReturn("new-backup1");
+-        when(cmd.getQuiesceVM()).thenReturn(null);
+ 
+         try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
+             Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+@@ -789,10 +787,8 @@
+         Mockito.doThrow(new ResourceAllocationException("", Resource.ResourceType.backup)).when(resourceLimitMgr)
+                 .checkResourceLimitWithTag(account, domainId, true, Resource.ResourceType.backup, null, 1L);
+ 
+-        CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
+-        when(cmd.getVmId()).thenReturn(vmId);
+-        when(cmd.getQuiesceVM()).thenReturn(null);
+-
++
++        CreateBackupCmd cmd = createBackupCommand(vmId);
+         String jobParams = "{}";
+         when(asyncJobVOMock.getCmdInfo()).thenReturn(jobParams);
+         when(asyncJobVOMock.getId()).thenReturn(1L);
+@@ -840,10 +836,8 @@
+                 .when(resourceLimitMgr)
+                 .checkResourceLimitWithTag(account, domainId, true, Resource.ResourceType.backup_storage, null, size);
+ 
+-        CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
+-        when(cmd.getVmId()).thenReturn(vmId);
+-        when(cmd.getQuiesceVM()).thenReturn(null);
+-
++
++        CreateBackupCmd cmd = createBackupCommand(vmId);
+         backupManager.createBackup(cmd, asyncJobVOMock);
+ 
+         String msg = "Backup storage space resource limit exceeded for account id : " + accountId + ". Failed to create backup";
+@@ -2874,4 +2868,11 @@
+         verify(backupOfferingDao).persist(any());
+         verify(backupOfferingDetailsDao, never()).saveDetails(any());
+     }
++
++    private static CreateBackupCmd createBackupCommand(Long vmId) {
++        CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
++        when(cmd.getQuiesceVM()).thenReturn(null);
++        when(cmd.getVmId()).thenReturn(vmId);
++        return cmd;
++    }
+ }

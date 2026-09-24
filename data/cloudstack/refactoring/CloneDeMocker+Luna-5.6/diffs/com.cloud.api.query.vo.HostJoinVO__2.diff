@@ -1,0 +1,50 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
+@@ -121,6 +121,7 @@
+     @Mock StoragePoolJoinDao storagePoolJoinDao;
+     @Mock ClusterDao clusterDao;
+     @Mock HostJoinDao hostJoinDao;
++    private HostJoinVO hostJoinVO;
+     @Mock NetworkDao networkDao;
+     @Mock UserVmDao userVmDao;
+     @Mock UserVmJoinDao userVmJoinDao;
+@@ -147,6 +148,7 @@
+ 
+     @Before
+     public void setupCallContext() {
++        hostJoinVO = mock(HostJoinVO.class);
+         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
+     }
+ 
+@@ -484,9 +486,8 @@
+ 
+     @Test
+     public void testGetHostById_ReturnsVoFromDao() {
+-        HostJoinVO vo = mock(HostJoinVO.class);
+-        when(hostJoinDao.findById(2L)).thenReturn(vo);
+-        assertEquals(vo, serverAdapter.getHostById(2L));
++        when(hostJoinDao.findById(2L)).thenReturn(hostJoinVO);
++        assertEquals(hostJoinVO, serverAdapter.getHostById(2L));
+     }
+ 
+     @Test
+@@ -884,8 +885,7 @@
+ 
+     @Test
+     public void testListAllHosts_ReturnsList() {
+-        HostJoinVO hostVO = mock(HostJoinVO.class);
+-        when(hostJoinDao.listAvailableRoutingByZonesAndHypervisor(anyList(), any(), any())).thenReturn(List.of(hostVO));
++        when(hostJoinDao.listAvailableRoutingByZonesAndHypervisor(anyList(), any(), any())).thenReturn(List.of(hostJoinVO));
+ 
+         assertEquals(1, serverAdapter.listAllHosts(0L, 10L).size());
+     }
+@@ -899,8 +899,7 @@
+ 
+     @Test
+     public void testGetHost_Found_ReturnsHost() {
+-        HostJoinVO vo = mock(HostJoinVO.class);
+-        when(hostJoinDao.findByUuid("host-uuid")).thenReturn(vo);
++        when(hostJoinDao.findByUuid("host-uuid")).thenReturn(hostJoinVO);
+ 
+         assertNotNull(serverAdapter.getHost("host-uuid"));
+     }

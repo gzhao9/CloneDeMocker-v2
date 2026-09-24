@@ -1,0 +1,152 @@
+--- a/plugins/affinity-group-processors/non-strict-host-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAffinityProcessorTest.java
++++ b/plugins/affinity-group-processors/non-strict-host-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAffinityProcessorTest.java
+@@ -79,7 +79,6 @@
+ 
+         List<AffinityGroupVMMapVO> vmGroupMappings = new ArrayList<>();
+         vmGroupMappings.add(new AffinityGroupVMMapVO(affinityGroupId, vmId));
+-        when(_affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class))).thenReturn(vmGroupMappings);
+ 
+         DataCenterDeployment plan = new DataCenterDeployment(zoneId);
+         ExcludeList avoid = new ExcludeList();
+@@ -88,7 +87,7 @@
+         when(affinityGroupDao.findById(affinityGroupId)).thenReturn(affinityGroupVO);
+         when(affinityGroupVO.getId()).thenReturn(affinityGroupId);
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+-        when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
++        _affinityGroupVMMapDao = MockAffinityGroupVMMapDao.createAffinityGroupVMMapDao(vmId, vmGroupMappings, affinityGroupId, groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+         when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+         vm2.setHostId(host2Id);
+@@ -109,7 +108,6 @@
+ 
+         List<AffinityGroupVMMapVO> vmGroupMappings = new ArrayList<>();
+         vmGroupMappings.add(new AffinityGroupVMMapVO(affinityGroupId, vmId));
+-        when(_affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class))).thenReturn(vmGroupMappings);
+ 
+         DataCenterDeployment plan = new DataCenterDeployment(zoneId);
+         plan.adjustHostPriority(host2Id, DeploymentPlan.HostPriorityAdjustment.DEFAULT);
+@@ -120,7 +118,7 @@
+         when(affinityGroupDao.findById(affinityGroupId)).thenReturn(affinityGroupVO);
+         when(affinityGroupVO.getId()).thenReturn(affinityGroupId);
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id, vm3Id));
+-        when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
++        _affinityGroupVMMapDao = MockAffinityGroupVMMapDao.createAffinityGroupVMMapDao(vmId, vmGroupMappings, affinityGroupId, groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+         when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+         vm2.setHostId(host2Id);
+@@ -146,7 +144,6 @@
+ 
+         List<AffinityGroupVMMapVO> vmGroupMappings = new ArrayList<>();
+         vmGroupMappings.add(new AffinityGroupVMMapVO(affinityGroupId, vmId));
+-        when(_affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class))).thenReturn(vmGroupMappings);
+ 
+         DataCenterDeployment plan = new DataCenterDeployment(zoneId);
+         ExcludeList avoid = new ExcludeList();
+@@ -155,7 +152,7 @@
+         when(affinityGroupDao.findById(affinityGroupId)).thenReturn(affinityGroupVO);
+         when(affinityGroupVO.getId()).thenReturn(affinityGroupId);
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+-        when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
++         _affinityGroupVMMapDao = MockAffinityGroupVMMapDao.createAffinityGroupVMMapDao(vmId, vmGroupMappings, affinityGroupId, groupVMIds);
+         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
+         when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+         when(vm2.getHostId()).thenReturn(null);
+@@ -170,4 +167,22 @@
+         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
+         Assert.assertEquals(Integer.valueOf(1), plan.getHostPriorities().get(host2Id));
+     }
++
++    public class MockAffinityGroupVMMapDao {
++        public static org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao createAffinityGroupVMMapDao(
++                long vmId,
++                java.util.List<org.apache.cloudstack.affinity.AffinityGroupVMMapVO> vmGroupMappings,
++                long affinityGroupId,
++                java.util.List<java.lang.Long> groupVMIds) {
++            org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao affinityGroupVMMapDao =
++                    Mockito.mock(org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao.class);
++
++            when(affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class)))
++                    .thenReturn(new java.util.ArrayList<org.apache.cloudstack.affinity.AffinityGroupVMMapVO>(vmGroupMappings));
++            when(affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId))
++                    .thenReturn(new java.util.ArrayList<java.lang.Long>(groupVMIds));
++
++            return affinityGroupVMMapDao;
++        }
++    }
+ }
+--- a/plugins/affinity-group-processors/non-strict-host-anti-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAntiAffinityProcessorTest.java
++++ b/plugins/affinity-group-processors/non-strict-host-anti-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAntiAffinityProcessorTest.java
+@@ -78,7 +78,6 @@
+ 
+         List<AffinityGroupVMMapVO> vmGroupMappings = new ArrayList<>();
+         vmGroupMappings.add(new AffinityGroupVMMapVO(affinityGroupId, vmId));
+-        when(_affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class))).thenReturn(vmGroupMappings);
+ 
+         DataCenterDeployment plan = new DataCenterDeployment(zoneId);
+         ExcludeList avoid = new ExcludeList();
+@@ -87,7 +86,7 @@
+         when(affinityGroupDao.findById(affinityGroupId)).thenReturn(affinityGroupVO);
+         when(affinityGroupVO.getId()).thenReturn(affinityGroupId);
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+-        when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
++        _affinityGroupVMMapDao = MockAffinityGroupVMMapDao.createAffinityGroupVMMapDao(vmId, vmGroupMappings, affinityGroupId, groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+         when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+         vm2.setHostId(host2Id);
+@@ -108,7 +107,6 @@
+ 
+         List<AffinityGroupVMMapVO> vmGroupMappings = new ArrayList<>();
+         vmGroupMappings.add(new AffinityGroupVMMapVO(affinityGroupId, vmId));
+-        when(_affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class))).thenReturn(vmGroupMappings);
+ 
+         DataCenterDeployment plan = new DataCenterDeployment(zoneId);
+         plan.adjustHostPriority(host2Id, DeploymentPlan.HostPriorityAdjustment.DEFAULT);
+@@ -119,7 +117,7 @@
+         when(affinityGroupDao.findById(affinityGroupId)).thenReturn(affinityGroupVO);
+         when(affinityGroupVO.getId()).thenReturn(affinityGroupId);
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id, vm3Id));
+-        when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
++        _affinityGroupVMMapDao = MockAffinityGroupVMMapDao.createAffinityGroupVMMapDao(vmId, vmGroupMappings, affinityGroupId, groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+         when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+         vm2.setHostId(host2Id);
+@@ -145,7 +143,6 @@
+ 
+         List<AffinityGroupVMMapVO> vmGroupMappings = new ArrayList<>();
+         vmGroupMappings.add(new AffinityGroupVMMapVO(affinityGroupId, vmId));
+-        when(_affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class))).thenReturn(vmGroupMappings);
+ 
+         DataCenterDeployment plan = new DataCenterDeployment(zoneId);
+         ExcludeList avoid = new ExcludeList();
+@@ -154,7 +151,7 @@
+         when(affinityGroupDao.findById(affinityGroupId)).thenReturn(affinityGroupVO);
+         when(affinityGroupVO.getId()).thenReturn(affinityGroupId);
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+-        when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
++        _affinityGroupVMMapDao = MockAffinityGroupVMMapDao.createAffinityGroupVMMapDao(vmId, vmGroupMappings, affinityGroupId, groupVMIds);
+         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
+         when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+         when(vm2.getHostId()).thenReturn(null);
+@@ -169,4 +166,22 @@
+         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
+         Assert.assertEquals(Integer.valueOf(-1), plan.getHostPriorities().get(host2Id));
+     }
++
++    public class MockAffinityGroupVMMapDao {
++        public static org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao createAffinityGroupVMMapDao(
++                long vmId,
++                java.util.List<org.apache.cloudstack.affinity.AffinityGroupVMMapVO> vmGroupMappings,
++                long affinityGroupId,
++                java.util.List<java.lang.Long> groupVMIds) {
++            org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao affinityGroupVMMapDao =
++                    Mockito.mock(org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao.class);
++
++            when(affinityGroupVMMapDao.findByVmIdType(eq(vmId), nullable(String.class)))
++                    .thenReturn(new java.util.ArrayList<org.apache.cloudstack.affinity.AffinityGroupVMMapVO>(vmGroupMappings));
++            when(affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId))
++                    .thenReturn(new java.util.ArrayList<java.lang.Long>(groupVMIds));
++
++            return affinityGroupVMMapDao;
++        }
++    }
+ }

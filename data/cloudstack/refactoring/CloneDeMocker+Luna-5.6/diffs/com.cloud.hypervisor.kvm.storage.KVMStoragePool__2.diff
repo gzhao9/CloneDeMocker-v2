@@ -1,0 +1,45 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
+@@ -262,6 +262,8 @@
+         String randomPath1 = "random";
+         String backupDeltaFullPathOnPrimary2 = "backupDeltaFullPathOnPrimary2";
+ 
++        kvmStoragePool1 = createMockKvmStoragePool(deltaPath1, backupDeltaFullPathOnSecondary1, randomPath1, "random2");
++
+         doReturn(volumeObjectToMock1).when(kbossTO1).getVolumeObjectTO();
+         doReturn(volumePath).when(volumeObjectToMock1).getPath();
+         doReturn(volUuid1).when(volumeObjectToMock1).getUuid();
+@@ -271,16 +273,13 @@
+         doReturn(kvmStoragePool1).when(kvmStoragePoolManagerMock).getStoragePoolByURI(secondaryUrl);
+         doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePoolByURI(secondaryUrl2);
+         doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
++        kvmStoragePool3 = createMockKvmStoragePool(deltaPath2, backupDeltaFullPathOnPrimary1, volumePath, backupDeltaFullPathOnPrimary2);
+         doReturn(kvmStoragePool3).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
+ 
+-        doReturn(parentBackupFullPath).when(kvmStoragePool2).getLocalPathFor(parentPath);
+-        doReturn(backupDeltaFullPathOnPrimary1).when(kvmStoragePool3).getLocalPathFor(deltaPath2);
+-        doReturn(backupDeltaFullPathOnSecondary1).when(kvmStoragePool1).getLocalPathFor(deltaPath1);
++        kvmStoragePool2 = createMockKvmStoragePool(parentPath, parentBackupFullPath, parentPath, parentBackupFullPath);
+         doNothing().when(libvirtTakeKbossBackupCommandWrapperSpy).convertDeltaToSecondary(backupDeltaFullPathOnPrimary1, backupDeltaFullPathOnSecondary1, parentBackupFullPath, volUuid1, 100000);
+ 
+         doReturn(randomPath1).when(libvirtTakeKbossBackupCommandWrapperSpy).getRelativePathOnSecondaryForBackup(anyLong(), anyLong(), any());
+-        doReturn("random2").when(kvmStoragePool1).getLocalPathFor(randomPath1);
+-        doReturn(backupDeltaFullPathOnPrimary2).when(kvmStoragePool3).getLocalPathFor(volumePath);
+         doNothing().when(libvirtTakeKbossBackupCommandWrapperSpy).convertDeltaToSecondary(eq(backupDeltaFullPathOnPrimary2), eq("random2"), eq(backupDeltaFullPathOnSecondary1),
+                 any(), anyInt());
+ 
+@@ -368,6 +367,14 @@
+         verify(libvirtComputingResourceMock).mergeDeltaForStoppedVm(deltaMergeTreeToMock);
+     }
+ 
++    private static KVMStoragePool createMockKvmStoragePool(String deltaPath, String backupDeltaFullPathOnSecondary,
++            String randomPath, String randomPathReturn) {
++        KVMStoragePool kvmStoragePool = Mockito.mock(KVMStoragePool.class);
++        doReturn(backupDeltaFullPathOnSecondary).when(kvmStoragePool).getLocalPathFor(deltaPath);
++        doReturn(randomPathReturn).when(kvmStoragePool).getLocalPathFor(randomPath);
++        return kvmStoragePool;
++    }
++
+     private void setupKbossTos() {
+         doReturn(volumeObjectToMock1).when(kbossTO1).getVolumeObjectTO();
+         doReturn(volUuid1).when(volumeObjectToMock1).getUuid();

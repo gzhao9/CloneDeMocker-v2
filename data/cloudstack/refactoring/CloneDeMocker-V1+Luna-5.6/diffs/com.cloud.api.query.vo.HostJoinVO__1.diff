@@ -1,0 +1,123 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/HostJoinVOToHostConverterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/HostJoinVOToHostConverterTest.java
+@@ -35,19 +35,8 @@
+ 
+     @Test
+     public void testToHost_MapsUpHostAndCoreFields() {
+-        final HostJoinVO vo = mock(HostJoinVO.class);
+-        when(vo.getUuid()).thenReturn("host-1");
++        final HostJoinVO vo = createMockHostJoinVO("cl-1", 2, 8, 4000L, "10.10.10.11", ResourceState.Enabled, 2400L, Status.Up, 16000L, "host-1", false);
+         when(vo.getName()).thenReturn("kvm-1");
+-        when(vo.getPrivateIpAddress()).thenReturn("10.10.10.11");
+-        when(vo.isInMaintenanceStates()).thenReturn(false);
+-        when(vo.getStatus()).thenReturn(Status.Up);
+-        when(vo.getResourceState()).thenReturn(ResourceState.Enabled);
+-        when(vo.getClusterUuid()).thenReturn("cl-1");
+-        when(vo.getSpeed()).thenReturn(2400L);
+-        when(vo.getCpuSockets()).thenReturn(2);
+-        when(vo.getCpus()).thenReturn(8);
+-        when(vo.getTotalMemory()).thenReturn(16000L);
+-        when(vo.getMemUsedCapacity()).thenReturn(4000L);
+ 
+         final Host host = HostJoinVOToHostConverter.toHost(vo);
+ 
+@@ -64,19 +53,8 @@
+ 
+     @Test
+     public void testToHost_MapsMaintenanceAndFallbackName() {
+-        final HostJoinVO vo = mock(HostJoinVO.class);
+-        when(vo.getUuid()).thenReturn("host-2");
++        final HostJoinVO vo = createMockHostJoinVO("cl-2", 1, 4, 2000L, "10.10.10.12", ResourceState.Disabled, 2200L, Status.Down, 8000L, "host-2", true);
+         when(vo.getName()).thenReturn(null);
+-        when(vo.getPrivateIpAddress()).thenReturn("10.10.10.12");
+-        when(vo.isInMaintenanceStates()).thenReturn(true);
+-        when(vo.getStatus()).thenReturn(Status.Down);
+-        when(vo.getResourceState()).thenReturn(ResourceState.Disabled);
+-        when(vo.getClusterUuid()).thenReturn("cl-2");
+-        when(vo.getSpeed()).thenReturn(2200L);
+-        when(vo.getCpuSockets()).thenReturn(1);
+-        when(vo.getCpus()).thenReturn(4);
+-        when(vo.getTotalMemory()).thenReturn(8000L);
+-        when(vo.getMemUsedCapacity()).thenReturn(2000L);
+ 
+         final Host host = HostJoinVOToHostConverter.toHost(vo);
+ 
+@@ -86,33 +64,22 @@
+ 
+     @Test
+     public void testToHostList_ConvertsAllEntries() {
+-        final HostJoinVO first = mock(HostJoinVO.class);
+-        when(first.getUuid()).thenReturn("h1");
++        final HostJoinVO first = createMockHostJoinVO("c1", 1, 1, 24L, "1.1.1.1", ResourceState.Enabled, 1000L, Status.Up, 1024L, "h1", false);
+         when(first.getName()).thenReturn("h1");
+-        when(first.getPrivateIpAddress()).thenReturn("1.1.1.1");
+-        when(first.isInMaintenanceStates()).thenReturn(false);
+-        when(first.getStatus()).thenReturn(Status.Up);
+-        when(first.getResourceState()).thenReturn(ResourceState.Enabled);
+-        when(first.getClusterUuid()).thenReturn("c1");
+-        when(first.getSpeed()).thenReturn(1000L);
+-        when(first.getCpuSockets()).thenReturn(1);
+-        when(first.getCpus()).thenReturn(1);
+-        when(first.getTotalMemory()).thenReturn(1024L);
+-        when(first.getMemUsedCapacity()).thenReturn(24L);
+ 
+-        final HostJoinVO second = mock(HostJoinVO.class);
+-        when(second.getUuid()).thenReturn("h2");
++        final HostJoinVO second = createMockHostJoinVO(
++                "c2",
++                1,
++                2,
++                48L,
++                "2.2.2.2",
++                ResourceState.Disabled,
++                2000L,
++                Status.Down,
++                2048L,
++                "h2",
++                false);
+         when(second.getName()).thenReturn("h2");
+-        when(second.getPrivateIpAddress()).thenReturn("2.2.2.2");
+-        when(second.isInMaintenanceStates()).thenReturn(false);
+-        when(second.getStatus()).thenReturn(Status.Down);
+-        when(second.getResourceState()).thenReturn(ResourceState.Disabled);
+-        when(second.getClusterUuid()).thenReturn("c2");
+-        when(second.getSpeed()).thenReturn(2000L);
+-        when(second.getCpuSockets()).thenReturn(1);
+-        when(second.getCpus()).thenReturn(2);
+-        when(second.getTotalMemory()).thenReturn(2048L);
+-        when(second.getMemUsedCapacity()).thenReturn(48L);
+ 
+         final List<Host> hosts = HostJoinVOToHostConverter.toHostList(List.of(first, second));
+ 
+@@ -120,4 +87,31 @@
+         assertEquals("h1", hosts.get(0).getId());
+         assertEquals("h2", hosts.get(1).getId());
+     }
++
++    private static HostJoinVO createMockHostJoinVO(
++            String clusterUuid,
++            int cpuSockets,
++            int cpus,
++            long memUsedCapacity,
++            String privateIpAddress,
++            ResourceState resourceState,
++            long speed,
++            Status status,
++            long totalMemory,
++            String uuid,
++            boolean inMaintenanceStates) {
++        final HostJoinVO vo = mock(HostJoinVO.class);
++        when(vo.getClusterUuid()).thenReturn(clusterUuid);
++        when(vo.getCpuSockets()).thenReturn(cpuSockets);
++        when(vo.getCpus()).thenReturn(cpus);
++        when(vo.getMemUsedCapacity()).thenReturn(memUsedCapacity);
++        when(vo.getPrivateIpAddress()).thenReturn(privateIpAddress);
++        when(vo.getResourceState()).thenReturn(resourceState);
++        when(vo.getSpeed()).thenReturn(speed);
++        when(vo.getStatus()).thenReturn(status);
++        when(vo.getTotalMemory()).thenReturn(totalMemory);
++        when(vo.getUuid()).thenReturn(uuid);
++        when(vo.isInMaintenanceStates()).thenReturn(inMaintenanceStates);
++        return vo;
++    }
+ }
