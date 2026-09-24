@@ -100,20 +100,49 @@ def sync(lane: str, project: str, note: str) -> bool:
             if git("fetch", "-q", REMOTE, "main").returncode != 0:
                 time.sleep(5 * attempt)
                 continue
-            base = git("rev-parse", "FETCH_HEAD").stdout.strip()
+            # The remote-tracking ref, not FETCH_HEAD: any concurrent `git fetch` (the per-MCI
+            # routing check runs one outside this lock) rewrites FETCH_HEAD, and reading it
+            # mid-write returned nothing. An empty base made read-tree fail silently, and the
+            # commit that followed held only this lane's files -- f5a8435b deleted 3482 files.
+            base = git("rev-parse", "--verify", f"{REMOTE}/main^{{commit}}").stdout.strip()
+            base_tree = git("rev-parse", "--verify", f"{base}^{{tree}}").stdout.strip() if base else ""
             index.unlink(missing_ok=True)
-            plumb("read-tree", base)
+            if not base or not base_tree or plumb("read-tree", base).returncode != 0:
+                issue(lane, f"{project}: could not read the remote tree ({base!r}); not publishing")
+                time.sleep(5 * attempt)
+                continue
+            ok = True
             for rel in files:
                 merge_with_remote(base, rel)
                 blob = git("hash-object", "-w", "--", rel).stdout.strip()
-                plumb("update-index", "--add", "--cacheinfo", f"100644,{blob},{rel}")
-            tree = plumb("write-tree").stdout.strip()
-            if tree == git("rev-parse", f"{base}^{{tree}}").stdout.strip():
+                if not blob or plumb("update-index", "--add", "--cacheinfo", f"100644,{blob},{rel}").returncode != 0:
+                    ok = False
+                    break
+            tree = plumb("write-tree").stdout.strip() if ok else ""
+            if not tree:
+                issue(lane, f"{project}: building the commit failed; not publishing")
+                time.sleep(5 * attempt)
+                continue
+            if tree == base_tree:
                 index.unlink(missing_ok=True)
                 return True                                   # nothing new to publish
+            # This publisher only adds and updates files. Any deletion means the index was not
+            # built from the remote tree, so refuse rather than push it.
+            deleted = git("diff-tree", "-r", "--name-only", "--diff-filter=D", base_tree, tree).stdout.split()
+            if deleted:
+                issue(lane, f"{project}: REFUSED a commit that would delete {len(deleted)} files "
+                            f"(e.g. {deleted[:3]}); not publishing")
+                index.unlink(missing_ok=True)
+                return False
             commit = plumb("commit-tree", tree, "-p", base, "-m",
                            f"pair {project}: {note} (V2 vs V1, gpt-5.6-luna)").stdout.strip()
-            if git("push", "-q", REMOTE, f"{commit}:refs/heads/main").returncode == 0:
+            if not commit:
+                time.sleep(3 * attempt)
+                continue
+            pushed = subprocess.run(["git", "push", "-q", REMOTE, f"{commit}:refs/heads/main"], cwd=REPO,
+                                    capture_output=True, text=True, timeout=600,
+                                    env={**os.environ, "CLONEDEMOCKER_ALLOW_PUSH": "1"})
+            if pushed.returncode == 0:
                 index.unlink(missing_ok=True)
                 return True
             time.sleep(3 * attempt)
