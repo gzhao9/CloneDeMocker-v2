@@ -1,0 +1,37 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
+@@ -148,6 +148,7 @@
+     TungstenProviderDao tungstenProviderDao;
+     @Mock
+     NicDao nicDao;
++    private final NicVO nicVOField = mock(NicVO.class);
+     @Mock
+     AgentManager agentMgr;
+ 
+@@ -244,12 +245,11 @@
+         final Network network = mock(Network.class);
+         final NicProfile nicProfile = mock(NicProfile.class);
+         final VirtualMachineProfile virtualMachineProfile = mock(VirtualMachineProfile.class);
+-        final NicVO nicVO = mock(NicVO.class);
+ 
+         when(network.getDataCenterId()).thenReturn(1L);
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.User);
+-        when(nicDao.listByVmId(anyLong())).thenReturn(List.of(nicVO));
++        when(nicDao.listByVmId(anyLong())).thenReturn(List.of(nicVOField));
+ 
+         guru.deallocate(network, nicProfile, virtualMachineProfile);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong());
+@@ -261,11 +261,10 @@
+         final Network network = mock(Network.class);
+         final NicProfile nicProfile = mock(NicProfile.class);
+         final VirtualMachineProfile virtualMachineProfile = mock(VirtualMachineProfile.class);
+-        final NicVO nicVO = mock(NicVO.class);
+ 
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong())).thenThrow(
+             new IllegalArgumentException());
+-        when(nicDao.listByVmId(anyLong())).thenReturn(List.of(nicVO));
++        when(nicDao.listByVmId(anyLong())).thenReturn(List.of(nicVOField));
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.User);
+ 

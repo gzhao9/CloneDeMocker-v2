@@ -1,0 +1,78 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -724,7 +724,6 @@
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         net.juniper.tungsten.api.types.SecurityGroup securityGroup = mock(net.juniper.tungsten.api.types.SecurityGroup.class);
+         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
+-        NicVO nicVO = mock(NicVO.class);
+ 
+         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
+         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
+@@ -737,10 +736,8 @@
+         when(securityRule.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
+         when(securityRule.getEndPort()).thenReturn(NetUtils.PORT_RANGE_MIN);
+         when(securityGroupVMMapDao.listVmIdsBySecurityGroup(anyLong())).thenReturn(List.of(1L));
++         NicVO nicVO = createMockNicVO();
+         when(nicDao.findDefaultNicForVM(anyLong())).thenReturn(nicVO);
+-        when(nicVO.getIPv4Address()).thenReturn("192.168.100.100");
+-        when(nicVO.getIPv6Address()).thenReturn("fd00::1");
+-        when(nicVO.getSecondaryIp()).thenReturn(true);
+         when(nicSecIpDao.getSecondaryIpAddressesForNic(anyLong())).thenReturn(List.of("192.168.100.200"));
+         when(tungstenSecurityGroupRuleDao.persist(any(TungstenSecurityGroupRuleVO.class))).thenReturn(tungstenSecurityGroupRuleVO);
+         when(securityRule.getAllowedNetworkId()).thenReturn(1L);
+@@ -778,8 +775,8 @@
+         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
+         TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer removeTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+-        NicVO nicVO = mock(NicVO.class);
+-
++
++        NicVO nicVO = createMockNicVO();
+         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
+         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
+         when(securityRule.getRuleType()).thenReturn(SecurityRule.SecurityRuleType.EgressRule);
+@@ -791,9 +788,6 @@
+         when(securityGroupVMMapDao.listVmIdsBySecurityGroup(anyLong())).thenReturn(List.of(1L));
+         when(nicDao.findDefaultNicForVM(anyLong())).thenReturn(nicVO);
+         when(tungstenSecurityGroupRuleDao.expunge(anyLong())).thenReturn(true);
+-        when(nicVO.getIPv4Address()).thenReturn("192.168.100.100");
+-        when(nicVO.getIPv6Address()).thenReturn("fd00::1");
+-        when(nicVO.getSecondaryIp()).thenReturn(true);
+         when(nicSecIpDao.getSecondaryIpAddressesForNic(anyLong())).thenReturn(List.of("192.168.100.200"));
+         when(tungstenSecurityGroupRuleDao.findBySecurityGroupAndRuleTypeAndRuleTarget(anyLong(), anyString(), anyString())).thenReturn(tungstenSecurityGroupRuleVO);
+ 
+@@ -1542,7 +1536,6 @@
+         TungstenAnswer getTungstenSecurityGroupAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer addTungstenVmToSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
+         net.juniper.tungsten.api.types.SecurityGroup securityGroup = mock(net.juniper.tungsten.api.types.SecurityGroup.class);
+-        NicVO nicVO = mock(NicVO.class);
+         SecurityGroupRuleVO securityGroupRuleVO = mock(SecurityGroupRuleVO.class);
+         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
+         TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+@@ -1555,12 +1548,10 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenVmToSecurityGroupCommand.class), anyLong())).thenReturn(addTungstenVmToSecurityGroupAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(addTungstenSecurityGroupRuleAnswer);
+         when(getTungstenSecurityGroupAnswer.getApiObjectBase()).thenReturn(securityGroup);
++         NicVO nicVO = createMockNicVO();
+         when(nicDao.findDefaultNicForVM(anyLong())).thenReturn(nicVO);
+         when(nicVO.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"));
+         when(securityGroupRuleDao.listByAllowedSecurityGroupId(anyLong())).thenReturn(List.of(securityGroupRuleVO));
+-        when(nicVO.getIPv4Address()).thenReturn("192.168.100.100");
+-        when(nicVO.getIPv6Address()).thenReturn("fd00::1");
+-        when(nicVO.getSecondaryIp()).thenReturn(true);
+         when(nicSecIpDao.getSecondaryIpAddressesForNic(anyLong())).thenReturn(List.of("192.168.100.200"));
+         when(securityGroupRuleVO.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
+         when(tungstenSecurityGroupRuleDao.persist(any(TungstenSecurityGroupRuleVO.class))).thenReturn(tungstenSecurityGroupRuleVO);
+@@ -1668,4 +1659,12 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    private static NicVO createMockNicVO() {
++        NicVO nicVO = mock(NicVO.class);
++        when(nicVO.getIPv4Address()).thenReturn("192.168.100.100");
++        when(nicVO.getIPv6Address()).thenReturn("fd00::1");
++        when(nicVO.getSecondaryIp()).thenReturn(true);
++        return nicVO;
++    }
+ }
