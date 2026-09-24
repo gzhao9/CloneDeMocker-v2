@@ -1,0 +1,43 @@
+--- a/engine/storage/image/src/test/java/org/apache/cloudstack/storage/image/TemplateServiceImplTest.java
++++ b/engine/storage/image/src/test/java/org/apache/cloudstack/storage/image/TemplateServiceImplTest.java
+@@ -124,8 +124,7 @@
+ 
+     @Test
+     public void shouldDownloadTemplateToStoreTestSkipsTemplateDirectedToAnotherStorage() {
+-        DataStore destinedStore = Mockito.mock(DataStore.class);
+-        Mockito.doReturn(dataStoreMock.getId() + 1L).when(destinedStore).getId();
++        DataStore destinedStore = createDataStore(dataStoreMock.getId() + 1L);
+         Mockito.when(templateManagerMock.verifyHeuristicRulesForZone(tmpltMock, zoneScopeMock.getScopeId())).thenReturn(destinedStore);
+         Assert.assertFalse(templateService.shouldDownloadTemplateToStore(tmpltMock, dataStoreMock));
+     }
+@@ -155,8 +154,7 @@
+ 
+     @Test
+     public void shouldDownloadTemplateToStoreTestReplicatesPrivateTemplateUnderCopyLimit() {
+-        DataStore storeWithCopy = Mockito.mock(DataStore.class);
+-        Mockito.doReturn(10L).when(storeWithCopy).getId();
++        DataStore storeWithCopy = createDataStore(10L);
+         Mockito.when(templateManagerMock.getSecStorageCopyLimit(tmpltMock, zoneScopeMock.getScopeId())).thenReturn(2);
+         Mockito.doReturn(List.of(storeWithCopy)).when(dataStoreManagerMock).getImageStoresByScope(Mockito.any());
+         Mockito.doReturn(List.of(Mockito.mock(TemplateDataStoreVO.class))).when(templateDataStoreDao).listByTemplateStore(2L, 10L);
+@@ -166,8 +164,7 @@
+ 
+     @Test
+     public void shouldDownloadTemplateToStoreTestSkipsPrivateTemplateAtCopyLimit() {
+-        DataStore storeWithCopy = Mockito.mock(DataStore.class);
+-        Mockito.doReturn(10L).when(storeWithCopy).getId();
++        DataStore storeWithCopy = createDataStore(10L);
+         Mockito.when(templateManagerMock.getSecStorageCopyLimit(tmpltMock, zoneScopeMock.getScopeId())).thenReturn(1);
+         Mockito.doReturn(List.of(storeWithCopy)).when(dataStoreManagerMock).getImageStoresByScope(Mockito.any());
+         Mockito.doReturn(List.of(Mockito.mock(TemplateDataStoreVO.class))).when(templateDataStoreDao).listByTemplateStore(2L, 10L);
+@@ -372,4 +369,10 @@
+         Assert.assertNotNull(result);
+         Assert.assertEquals(tmplWithValidPath, result);
+     }
++
++    private static DataStore createDataStore(long id) {
++        DataStore dataStore = Mockito.mock(DataStore.class);
++        Mockito.doReturn(id).when(dataStore).getId();
++        return dataStore;
++    }
+ }

@@ -1,0 +1,43 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/utils/NegotiationTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/utils/NegotiationTest.java
+@@ -29,26 +29,21 @@
+ 
+     @Test
+     public void testResponseFormat_DefaultsToXmlForNullBlankWildcardAndUnknown() {
+-        final HttpServletRequest request = mock(HttpServletRequest.class);
++        final HttpServletRequest request = createMockHttpServletRequest(null, "   ", "*/*", "application/octet-stream");
+ 
+-        when(request.getHeader("Accept")).thenReturn(null);
+         assertEquals(Negotiation.OutFormat.XML, Negotiation.responseFormat(request));
+ 
+-        when(request.getHeader("Accept")).thenReturn("   ");
+         assertEquals(Negotiation.OutFormat.XML, Negotiation.responseFormat(request));
+ 
+-        when(request.getHeader("Accept")).thenReturn("*/*");
+         assertEquals(Negotiation.OutFormat.XML, Negotiation.responseFormat(request));
+ 
+-        when(request.getHeader("Accept")).thenReturn("application/octet-stream");
+         assertEquals(Negotiation.OutFormat.XML, Negotiation.responseFormat(request));
+     }
+ 
+     @Test
+     public void testResponseFormat_ResolvesJsonAndXmlMediaTypesCaseInsensitively() {
+-        final HttpServletRequest request = mock(HttpServletRequest.class);
++        final HttpServletRequest request = createMockHttpServletRequest("Application/JSON");
+ 
+-        when(request.getHeader("Accept")).thenReturn("Application/JSON");
+         assertEquals(Negotiation.OutFormat.JSON, Negotiation.responseFormat(request));
+ 
+         when(request.getHeader("Accept")).thenReturn("application/xml");
+@@ -63,4 +58,11 @@
+         assertEquals("application/json", Negotiation.contentType(Negotiation.OutFormat.JSON));
+         assertEquals("application/xml", Negotiation.contentType(Negotiation.OutFormat.XML));
+     }
++
++    private static HttpServletRequest createMockHttpServletRequest(String... acceptHeaderReturns) {
++        final HttpServletRequest request = mock(HttpServletRequest.class);
++        when(request.getHeader("Accept")).thenReturn(acceptHeaderReturns[0],
++                java.util.Arrays.copyOfRange(acceptHeaderReturns, 1, acceptHeaderReturns.length));
++        return request;
++    }
+ }

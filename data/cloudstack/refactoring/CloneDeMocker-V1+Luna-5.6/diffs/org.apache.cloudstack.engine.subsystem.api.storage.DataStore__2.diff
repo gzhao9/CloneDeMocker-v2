@@ -1,0 +1,64 @@
+--- a/engine/storage/image/src/test/java/org/apache/cloudstack/storage/image/TemplateServiceImplTest.java
++++ b/engine/storage/image/src/test/java/org/apache/cloudstack/storage/image/TemplateServiceImplTest.java
+@@ -57,6 +57,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class TemplateServiceImplTest {
++    @Mock
++    private DataStore otherZoneStoreMock;
+ 
+     @InjectMocks
+     @Spy
+@@ -237,7 +239,6 @@
+         Mockito.doReturn(null).when(templateService).listTemplate(sourceStoreMock);
+         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
+ 
+-        DataStore otherZoneStoreMock = Mockito.mock(DataStore.class);
+         Mockito.doReturn(List.of(otherZoneStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(2L);
+ 
+         Map<String, TemplateProp> templatesInOtherZone = new HashMap<>();
+@@ -267,7 +268,6 @@
+         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
+         Mockito.doReturn(List.of()).when(dataStoreManagerMock).getImageStoresByZoneIds(1L);
+ 
+-        DataStore otherZoneStoreMock = Mockito.mock(DataStore.class);
+         Mockito.doReturn(List.of(otherZoneStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(2L);
+ 
+         Map<String, TemplateProp> templates = new HashMap<>();
+@@ -294,7 +294,6 @@
+         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
+         Mockito.doReturn(List.of()).when(dataStoreManagerMock).getImageStoresByZoneIds(1L);
+ 
+-        DataStore otherZoneStoreMock = Mockito.mock(DataStore.class);
+         Mockito.doReturn(List.of(otherZoneStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(2L);
+ 
+         Map<String, TemplateProp> templates = new HashMap<>();
+@@ -349,7 +348,6 @@
+         DataStore storeWithNullPath = Mockito.mock(DataStore.class);
+         Mockito.when(storeWithNullPath.getName()).thenReturn("store-null");
+ 
+-        DataStore storeWithValidPath = Mockito.mock(DataStore.class);
+         TemplateObject tmplWithNullPath = Mockito.mock(TemplateObject.class);
+         Mockito.when(tmplWithNullPath.getInstallPath()).thenReturn(null);
+ 
+@@ -357,15 +355,15 @@
+         Mockito.when(tmplWithValidPath.getInstallPath()).thenReturn("/mnt/secondary/template.qcow2");
+ 
+         Mockito.doReturn(tmplWithNullPath).when(templateDataFactoryMock).getTemplate(10L, storeWithNullPath);
+-        Mockito.doReturn(tmplWithValidPath).when(templateDataFactoryMock).getTemplate(10L, storeWithValidPath);
+-
++
++        Mockito.doReturn(tmplWithValidPath).when(templateDataFactoryMock).getTemplate(10L, otherZoneStoreMock);
+         Map<String, TemplateProp> templates = new HashMap<>();
+         templates.put("test-template", Mockito.mock(TemplateProp.class));
+ 
+         Mockito.doReturn(templates).when(templateService).listTemplate(storeWithNullPath);
+-        Mockito.doReturn(templates).when(templateService).listTemplate(storeWithValidPath);
+-
+-        List<DataStore> imageStores = List.of(storeWithNullPath, storeWithValidPath);
++
++        Mockito.doReturn(templates).when(templateService).listTemplate(otherZoneStoreMock);
++        List<DataStore> imageStores = List.of(storeWithNullPath, otherZoneStoreMock);
+ 
+         TemplateObject result = templateService.findUsableTemplate(template, imageStores);
+ 
