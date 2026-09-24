@@ -1,0 +1,67 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -231,6 +231,7 @@
+     ConfigurationDao configDao;
+     @Mock
+     IPAddressDao ipAddressDao;
++    private IPAddressVO sharedIpAddressVO;
+     @Mock
+     EntityManager entityMgr;
+     @Mock
+@@ -281,6 +282,7 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
++        sharedIpAddressVO = mock(IPAddressVO.class);
+         tungstenService = new TungstenServiceImpl();
+         tungstenService.projectDao = projectDao;
+         tungstenService.tungstenProviderDao = tungstenProviderDao;
+@@ -332,14 +334,13 @@
+ 
+     @Test
+     public void deleteTungstenFloatingIpWithIpAddressTest() throws Exception {
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer deleteTungstenFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(networkVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenFloatingIpCommand.class), anyLong())).thenReturn(deleteTungstenFloatingIpAnswer);
+ 
+-        assertTrue(ReflectionTestUtils.invokeMethod(tungstenService, "deleteTungstenFloatingIp", 1L, ipAddressVO));
++        assertTrue(ReflectionTestUtils.invokeMethod(tungstenService, "deleteTungstenFloatingIp", 1L, sharedIpAddressVO));
+     }
+ 
+     @Test
+@@ -504,7 +505,6 @@
+         TungstenAnswer applyTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+         TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+ 
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenNetworkSubnetCommand.class), anyLong())).thenReturn(addTungstenNetworkSubnetAnswer);
+@@ -545,7 +545,6 @@
+         TungstenAnswer deleteTungstenNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer removeTungstenNetworkSubnetAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+ 
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteTungstenNetworkPolicyAnswer);
+@@ -553,7 +552,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenNetworkDnsCommand.class), anyLong())).thenReturn(getTungstenNetworkDnsAnswer);
+         when(getTungstenNetworkDnsAnswer.getDetails()).thenReturn("192.168.100.150");
+         when(publicNetwork.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(sharedIpAddressVO);
+ 
+         assertTrue(tungstenService.removePublicNetworkSubnet(vlanVO));
+         verify(ipAddressDao, times(1)).unassignIpAddress(anyLong());
+@@ -1506,7 +1505,6 @@
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         HostVO hostVO = mock(HostVO.class);
+         Answer answer = mock(Answer.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         ApiObjectBase apiObjectBase = mock(ApiObjectBase.class);
+ 
+         when(accountDao.findById(anyLong())).thenReturn(accountVO);

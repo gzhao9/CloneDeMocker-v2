@@ -1,0 +1,219 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -180,6 +180,8 @@
+     @Mock
+     LoadBalancerCertMapDao loadBalancerCertMapDao;
+ 
++    private IPAddressVO sharedIpAddressVO;
++
+     TungstenElement tungstenElement;
+ 
+     MockedStatic<ApiDBUtils> apiDBUtilsMocked;
+@@ -191,6 +193,7 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
++        sharedIpAddressVO = mock(IPAddressVO.class);
+         tungstenElement = new TungstenElement();
+         tungstenElement.tungstenFabricUtils = tungstenFabricUtils;
+         tungstenElement.networkModel = networkModel;
+@@ -255,7 +258,6 @@
+     public void applyStaticNatsAddRuleSuccessTest() {
+         Network network = mock(Network.class);
+         StaticNatImpl staticNat = mock(StaticNatImpl.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         TungstenAnswer assignFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
+         Nic nic = mock(Nic.class);
+@@ -263,7 +265,7 @@
+         List<StaticNatImpl> staticNatList = List.of(staticNat);
+ 
+         when(staticNat.isForRevoke()).thenReturn(false);
+-        when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
++        when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(sharedIpAddressVO);
+         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
+         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+@@ -276,7 +278,6 @@
+     public void applyStaticNatsAddRuleFailTest() {
+         Network network = mock(Network.class);
+         StaticNatImpl staticNat = mock(StaticNatImpl.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         TungstenAnswer assignFloatingIpAnswer = MockTungstenAnswerFactory.get(false);
+         Nic nic = mock(Nic.class);
+@@ -284,7 +285,7 @@
+         List<StaticNatImpl> staticNatList = List.of(staticNat);
+ 
+         when(staticNat.isForRevoke()).thenReturn(false);
+-        when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
++        when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(sharedIpAddressVO);
+         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
+         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+@@ -297,7 +298,6 @@
+     public void applyStaticNatsRevokeRuleSuccessTest() {
+         Network network = mock(Network.class);
+         StaticNatImpl staticNat = mock(StaticNatImpl.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         TungstenAnswer releaseFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
+         Nic nic = mock(Nic.class);
+@@ -305,7 +305,7 @@
+         List<StaticNatImpl> staticNatList = List.of(staticNat);
+ 
+         when(staticNat.isForRevoke()).thenReturn(true);
+-        when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
++        when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(sharedIpAddressVO);
+         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
+         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+@@ -318,7 +318,6 @@
+     public void applyStaticNatsRevokeRuleFailTest() {
+         Network network = mock(Network.class);
+         StaticNatImpl staticNat = mock(StaticNatImpl.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         TungstenAnswer releaseFloatingIpAnswer = MockTungstenAnswerFactory.get(false);
+         Nic nic = mock(Nic.class);
+@@ -326,7 +325,7 @@
+         List<StaticNatImpl> staticNatList = List.of(staticNat);
+ 
+         when(staticNat.isForRevoke()).thenReturn(true);
+-        when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
++        when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(sharedIpAddressVO);
+         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
+         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+@@ -472,7 +471,6 @@
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         Ip ip = mock(Ip.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         LoadBalancingRule loadBalancingRule = mock(LoadBalancingRule.class);
+         LoadBalancerVO loadBalancerVO1 = mock(LoadBalancerVO.class);
+         LoadBalancerVO loadBalancerVO2 = mock(LoadBalancerVO.class);
+@@ -485,7 +483,7 @@
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(loadBalancingRule.getSourceIp()).thenReturn(ip);
+         when(loadBalancingRule.getState()).thenReturn(FirewallRule.State.Revoke);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(sharedIpAddressVO);
+         when(ip.addr()).thenReturn("10.10.10.10");
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerListenerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerListenerAnswer);
+         when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
+@@ -499,7 +497,6 @@
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         UserVm userVm = mock(UserVm.class);
+         Nic nic = mock(Nic.class);
+         TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(true);
+@@ -507,7 +504,7 @@
+ 
+         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Add);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+-        when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddressVO);
++        when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(sharedIpAddressVO);
+         when(ApiDBUtils.findUserVmById(anyLong())).thenReturn(userVm);
+         when(networkModel.getNicInNetwork(anyLong(), anyLong())).thenReturn(nic);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenPortForwardingCommand.class), anyLong())).thenReturn(applyTungstenPortForwardingAnswer);
+@@ -520,7 +517,6 @@
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         UserVm userVm = mock(UserVm.class);
+         Nic nic = mock(Nic.class);
+         TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(false);
+@@ -528,7 +524,7 @@
+ 
+         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Add);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+-        when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddressVO);
++        when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(sharedIpAddressVO);
+         when(ApiDBUtils.findUserVmById(anyLong())).thenReturn(userVm);
+         when(networkModel.getNicInNetwork(anyLong(), anyLong())).thenReturn(nic);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenPortForwardingCommand.class), anyLong())).thenReturn(applyTungstenPortForwardingAnswer);
+@@ -541,7 +537,6 @@
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         UserVm userVm = mock(UserVm.class);
+         Nic nic = mock(Nic.class);
+         TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(true);
+@@ -549,7 +544,7 @@
+ 
+         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Revoke);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+-        when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddressVO);
++        when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(sharedIpAddressVO);
+         when(ApiDBUtils.findUserVmById(anyLong())).thenReturn(userVm);
+         when(networkModel.getNicInNetwork(anyLong(), anyLong())).thenReturn(nic);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenPortForwardingCommand.class), anyLong())).thenReturn(applyTungstenPortForwardingAnswer);
+@@ -562,7 +557,6 @@
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         PortForwardingRule portForwardingRule = mock(PortForwardingRule.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         UserVm userVm = mock(UserVm.class);
+         Nic nic = mock(Nic.class);
+         TungstenAnswer applyTungstenPortForwardingAnswer = MockTungstenAnswerFactory.get(false);
+@@ -570,7 +564,7 @@
+ 
+         when(portForwardingRule.getState()).thenReturn(FirewallRule.State.Revoke);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+-        when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddressVO);
++        when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(sharedIpAddressVO);
+         when(ApiDBUtils.findUserVmById(anyLong())).thenReturn(userVm);
+         when(networkModel.getNicInNetwork(anyLong(), anyLong())).thenReturn(nic);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenPortForwardingCommand.class), anyLong())).thenReturn(applyTungstenPortForwardingAnswer);
+@@ -588,7 +582,6 @@
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         HostVO host = mock(HostVO.class);
+         TungstenAnswer createTungstenVMAnswer = MockTungstenAnswerFactory.get(true);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         TungstenAnswer createTungstenNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         nicProfile.setIPv4Address("192.168.100.100");
+@@ -596,7 +589,7 @@
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(createTungstenVMAnswer);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(sharedIpAddressVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(createTungstenNetworkPolicyAnswer);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
+ 
+@@ -661,7 +654,6 @@
+         ReservationContext reservationContext = mock(ReservationContext.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         HostVO host = mock(HostVO.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         TungstenAnswer deleteTungstenVRouterPortAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer deleteVmiAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer deleteVmAnswer = mock(TungstenAnswer.class);
+@@ -672,7 +664,7 @@
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(sharedIpAddressVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmInterfaceCommand.class), anyLong())).thenReturn(deleteVmiAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong())).thenReturn(deleteVmAnswer);
+@@ -728,11 +720,10 @@
+ 
+     @Test
+     public void destroyTest() throws ConcurrentOperationException, ResourceUnavailableException {
+-        IPAddressVO ipAddressVO1 = mock(IPAddressVO.class);
+         IPAddressVO ipAddressVO2 = mock(IPAddressVO.class);
+         Network network = mock(Network.class);
+         ReservationContext reservationContext = mock(ReservationContext.class);
+-        List<IPAddressVO> ipAddressVOList = Arrays.asList(ipAddressVO1, ipAddressVO2);
++        List<IPAddressVO> ipAddressVOList = Arrays.asList(sharedIpAddressVO, ipAddressVO2);
+         TungstenAnswer tungstenDeleteFIPAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer tungstenDeleteNPAnswer = MockTungstenAnswerFactory.get(true);
+ 

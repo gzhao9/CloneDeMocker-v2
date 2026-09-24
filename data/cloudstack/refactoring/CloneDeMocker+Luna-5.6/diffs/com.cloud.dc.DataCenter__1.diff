@@ -1,0 +1,48 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
+@@ -121,12 +121,14 @@
+     @Mock
+     NetworkOfferingDao networkOfferingDao;
+ 
++    private DataCenter dataCenterMock;
+     NsxGuestNetworkGuru guru;
+     AutoCloseable closeable;
+ 
+     @Before
+     public void setUp() throws IllegalAccessException, NoSuchFieldException {
+         closeable = MockitoAnnotations.openMocks(this);
++        dataCenterMock = Mockito.mock(DataCenter.class);
+         guru = new NsxGuestNetworkGuru();
+ 
+         ReflectionTestUtils.setField(guru, "_dcDao", dcDao);
+@@ -294,12 +296,11 @@
+     @Test
+     public void testCreateNsxSegmentForVpc() {
+         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+-        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+ 
+         when(networkVO.getAccountId()).thenReturn(1L);
+         when(nsxControllerUtils.sendNsxCommand(any(CreateNsxSegmentCommand.class),
+                 anyLong())).thenReturn(new NsxAnswer(new NsxCommand(), true, ""));
+-        guru.createNsxSegment(networkVO, dataCenter);
++        guru.createNsxSegment(networkVO, dataCenterMock);
+         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class),
+                 anyLong());
+     }
+@@ -309,7 +310,6 @@
+     public void testCreateNsxSegmentForIsolatedNetwork() {
+         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+         NetworkOfferingVO offeringVO = Mockito.mock(NetworkOfferingVO.class);
+-        DataCenter dataCenter = Mockito.mock(DataCenter.class);
+ 
+         when(networkVO.getAccountId()).thenReturn(1L);
+         when(networkVO.getVpcId()).thenReturn(null);
+@@ -320,7 +320,7 @@
+         when(networkVO.getNetworkOfferingId()).thenReturn(1L);
+         when(networkOfferingDao.findById(1L)).thenReturn(offeringVO);
+         when(offeringVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED);
+-        guru.createNsxSegment(networkVO, dataCenter);
++        guru.createNsxSegment(networkVO, dataCenterMock);
+         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxTier1GatewayCommand.class),
+                 anyLong());
+         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class),

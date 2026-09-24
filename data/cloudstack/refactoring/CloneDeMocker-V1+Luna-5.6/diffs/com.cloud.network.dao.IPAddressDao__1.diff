@@ -1,0 +1,141 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -374,7 +374,7 @@
+         when(loadBalancingRule1.getStickinessPolicies()).thenReturn(lbStickinessPolicyList);
+         when(loadBalancingRule1.getSourceIp()).thenReturn(ip);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        ipAddressDao = MockIPAddressDao.createMockIpAddressDao(ipAddressVO);
+         when(ipAddressVO.getAddress()).thenReturn(ip);
+         when(lbVmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(loadBalancerVMMapVOList);
+         when(tungstenGuestNetworkIpAddressVO.getGuestIpAddress()).thenReturn(ip);
+@@ -424,7 +424,7 @@
+         when(loadBalancingRule1.getStickinessPolicies()).thenReturn(lbStickinessPolicyList);
+         when(loadBalancingRule1.getSourceIp()).thenReturn(ip);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        ipAddressDao = MockIPAddressDao.createMockIpAddressDao(ipAddressVO);
+         when(ipAddressVO.getAddress()).thenReturn(ip);
+         when(lbVmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(loadBalancerVMMapVOList);
+         when(ip.addr()).thenReturn("10.10.10.10");
+@@ -456,7 +456,7 @@
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(loadBalancingRule1.getSourceIp()).thenReturn(ip1);
+         when(loadBalancingRule1.getState()).thenReturn(FirewallRule.State.Revoke);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        ipAddressDao = MockIPAddressDao.createMockIpAddressDao(ipAddressVO);
+         when(ipAddressVO.getAddress()).thenReturn(ip1);
+         when(ip1.addr()).thenReturn("10.10.10.10");
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerCommand);
+@@ -485,7 +485,7 @@
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(loadBalancingRule.getSourceIp()).thenReturn(ip);
+         when(loadBalancingRule.getState()).thenReturn(FirewallRule.State.Revoke);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        ipAddressDao = MockIPAddressDao.createMockIpAddressDao(ipAddressVO);
+         when(ip.addr()).thenReturn("10.10.10.10");
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerListenerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerListenerAnswer);
+         when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
+@@ -596,7 +596,7 @@
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(createTungstenVMAnswer);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        ipAddressDao = MockIPAddressDao.createMockIpAddressDao(ipAddressVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(createTungstenNetworkPolicyAnswer);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
+ 
+@@ -672,7 +672,7 @@
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        ipAddressDao = MockIPAddressDao.createMockIpAddressDao(ipAddressVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmInterfaceCommand.class), anyLong())).thenReturn(deleteVmiAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong())).thenReturn(deleteVmAnswer);
+@@ -962,4 +962,15 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    public final class MockIPAddressDao {
++        private MockIPAddressDao() {
++        }
++
++        public static IPAddressDao createMockIpAddressDao(IPAddressVO ipAddressVO) {
++            IPAddressDao ipAddressDao = Mockito.mock(IPAddressDao.class);
++            when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++            return ipAddressDao;
++        }
++    }
+ }
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
+@@ -298,7 +298,7 @@
+             anyLong())).thenReturn(new TungstenAnswer(new TungstenCommand(), new LogicalRouter(), true, ""));
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenNatIpCommand.class), anyLong())).thenReturn(
+             new TungstenAnswer(new TungstenCommand(), true, "192.168.1.100"));
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        ipAddressDao = MockIPAddressDao.createMockIpAddressDao(ipAddressVO);
+         when(tungstenService.allocateDnsIpAddress(any(Network.class), any(), anyString())).thenReturn(true);
+ 
+         final Network implemented = guru.implement(network, offering, deployDestination, reservationContext);
+@@ -526,4 +526,15 @@
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class),
+             anyLong());
+     }
++
++    public final class MockIPAddressDao {
++        private MockIPAddressDao() {
++        }
++
++        public static IPAddressDao createMockIpAddressDao(IPAddressVO ipAddressVO) {
++            IPAddressDao ipAddressDao = Mockito.mock(IPAddressDao.class);
++            when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++            return ipAddressDao;
++        }
++    }
+ }
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -547,13 +547,13 @@
+         TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+ 
++        ipAddressDao = MockIPAddressDao.createMockIpAddressDao(ipAddressVO);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteTungstenNetworkPolicyAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenNetworkSubnetCommand.class), anyLong())).thenReturn(removeTungstenNetworkSubnetAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenNetworkDnsCommand.class), anyLong())).thenReturn(getTungstenNetworkDnsAnswer);
+         when(getTungstenNetworkDnsAnswer.getDetails()).thenReturn("192.168.100.150");
+         when(publicNetwork.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+ 
+         assertTrue(tungstenService.removePublicNetworkSubnet(vlanVO));
+         verify(ipAddressDao, times(1)).unassignIpAddress(anyLong());
+@@ -657,7 +657,7 @@
+         Loadbalancer loadbalancer = mock(Loadbalancer.class);
+ 
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        ipAddressDao = MockIPAddressDao.createMockIpAddressDao(ipAddressVO);
+         when(hostDao.listAllHostsByZoneAndHypervisorType(anyLong(), eq(Hypervisor.HypervisorType.KVM))).thenReturn(List.of(hostVO));
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenLoadBalancerCommand.class), anyLong())).thenReturn(getTungstenLoadBalancerAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateLoadBalancerServiceInstanceCommand.class), anyLong())).thenReturn(updateLoadBalancerServiceInstanceAnswer);
+@@ -1668,4 +1668,15 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    public final class MockIPAddressDao {
++        private MockIPAddressDao() {
++        }
++
++        public static IPAddressDao createMockIpAddressDao(IPAddressVO ipAddressVO) {
++            IPAddressDao ipAddressDao = Mockito.mock(IPAddressDao.class);
++            when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++            return ipAddressDao;
++        }
++    }
+ }

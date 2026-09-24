@@ -1,0 +1,91 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -350,7 +350,7 @@
+         List<LoadBalancingRule.LbStickinessPolicy> lbStickinessPolicyList = List.of(lbStickinessPolicy);
+         List<LoadBalancerVO> loadBalancerVOList = List.of(loadBalancerVO);
+         TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO = mock(TungstenFabricLBHealthMonitorVO.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
++        IPAddressVO ipAddressVO = MockIPAddressVO.createMockIPAddressVO(ip);
+         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
+         TungstenAnswer createTungstenNetworkLoadbalancerAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer updateTungstenLoadBalancerPoolAnswer = MockTungstenAnswerFactory.get(true);
+@@ -375,7 +375,6 @@
+         when(loadBalancingRule1.getSourceIp()).thenReturn(ip);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+-        when(ipAddressVO.getAddress()).thenReturn(ip);
+         when(lbVmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(loadBalancerVMMapVOList);
+         when(tungstenGuestNetworkIpAddressVO.getGuestIpAddress()).thenReturn(ip);
+         when(ip.addr()).thenReturn("10.10.10.10");
+@@ -405,7 +404,7 @@
+         List<LoadBalancerVMMapVO> loadBalancerVMMapVOList = List.of(loadBalancerVMMapVO);
+         List<LoadBalancingRule.LbStickinessPolicy> lbStickinessPolicyList = List.of(lbStickinessPolicy);
+         List<LoadBalancerVO> loadBalancerVOList = List.of(loadBalancerVO);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
++        IPAddressVO ipAddressVO = MockIPAddressVO.createMockIPAddressVO(ip);
+         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
+         TungstenAnswer createTungstenNetworkLoadbalancerAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer updateTungstenLoadBalancerPoolAnswer = MockTungstenAnswerFactory.get(true);
+@@ -444,7 +443,7 @@
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         Ip ip1 = mock(Ip.class);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
++        IPAddressVO ipAddressVO = MockIPAddressVO.createMockIPAddressVO(ip1);
+         LoadBalancingRule loadBalancingRule1 = mock(LoadBalancingRule.class);
+         LoadBalancerVO loadBalancerVO1 = mock(LoadBalancerVO.class);
+         List<LoadBalancingRule> loadBalancingRuleList1 = List.of(loadBalancingRule1);
+@@ -457,7 +456,6 @@
+         when(loadBalancingRule1.getSourceIp()).thenReturn(ip1);
+         when(loadBalancingRule1.getState()).thenReturn(FirewallRule.State.Revoke);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+-        when(ipAddressVO.getAddress()).thenReturn(ip1);
+         when(ip1.addr()).thenReturn("10.10.10.10");
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerCommand);
+         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList1);
+@@ -848,8 +846,8 @@
+         Network publicNetwork = mock(Network.class);
+         TungstenAnswer createNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer applyNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         Ip ip = mock(Ip.class);
++        IPAddressVO ipAddressVO = MockIPAddressVO.createMockIPAddressVO(ip);
+ 
+         when(firewallRuleVO.getState()).thenReturn(FirewallRule.State.Add);
+         when(firewallRuleVO.getSourceCidrList()).thenReturn(List.of("192.168.100.0/24"));
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -318,14 +318,13 @@
+ 
+     @Test
+     public void createTungstenFloatingIpTest() throws Exception {
+-        IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer createTungstenFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
+         Ip ip = mock(Ip.class);
+ 
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(networkVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenFloatingIpCommand.class), anyLong())).thenReturn(createTungstenFloatingIpAnswer);
+-        when(ipAddressVO.getAddress()).thenReturn(ip);
++        IPAddressVO ipAddressVO = MockIPAddressVO.createMockIPAddressVO(ip);
+ 
+         assertTrue(ReflectionTestUtils.invokeMethod(tungstenService, "createTungstenFloatingIp", 1L, ipAddressVO));
+     }
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockIPAddressVO.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockIPAddressVO.java
+@@ -0,0 +1,15 @@
++package org.apache.cloudstack.network.tungsten.service;
++
++import com.cloud.network.dao.IPAddressVO;
++import com.cloud.utils.net.Ip;
++import org.mockito.Mockito;
++
++import static org.mockito.Mockito.when;
++
++public class MockIPAddressVO {
++    public static IPAddressVO createMockIPAddressVO(Ip address) {
++        IPAddressVO ipAddressVO = Mockito.mock(IPAddressVO.class);
++        when(ipAddressVO.getAddress()).thenReturn(address);
++        return ipAddressVO;
++    }
++}

@@ -1,0 +1,47 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -820,7 +820,6 @@
+     public void addTungstenNicSecondaryIpAddressTest() {
+         NicSecondaryIp nicSecondaryIp = mock(NicSecondaryIp.class);
+         Network network = mock(Network.class);
+-        DataCenter dataCenter = mock(DataCenter.class);
+         Nic nic = mock(Nic.class);
+         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
+         SecurityGroupRuleVO securityGroupRuleVO = mock(SecurityGroupRuleVO.class);
+@@ -836,7 +835,7 @@
+         when(nicSecondaryIp.getIp4Address()).thenReturn("192.168.100.100");
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecondaryIpAddressCommand.class), anyLong())).thenReturn(addTungstenSecondaryIpAddressAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(addTungstenSecurityGroupRuleAnswer);
+-        when(dataCenter.isSecurityGroupEnabled()).thenReturn(true);
++        DataCenter dataCenter = createMockDataCenter();
+         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+         when(securityGroupManager.getSecurityGroupsForVm(anyLong())).thenReturn(List.of(securityGroupVO));
+         when(securityGroupRuleDao.listByAllowedSecurityGroupId(anyLong())).thenReturn(List.of(securityGroupRuleVO));
+@@ -851,7 +850,7 @@
+     public void removeTungstenNicSecondaryIpAddressTest() {
+         NicSecondaryIpVO nicSecondaryIpVO = mock(NicSecondaryIpVO.class);
+         Network network = mock(Network.class);
+-        DataCenter dataCenter = mock(DataCenter.class);
++        DataCenter dataCenter = createMockDataCenter();
+         TungstenAnswer removeTungstenSecondaryIpAddressAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
+         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
+@@ -862,7 +861,6 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenSecondaryIpAddressCommand.class), anyLong())).thenReturn(removeTungstenSecondaryIpAddressAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(removeTungstenSecurityGroupRuleAnswer);
+ 
+-        when(dataCenter.isSecurityGroupEnabled()).thenReturn(true);
+         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+         when(tungstenSecurityGroupRuleDao.listByRuleTarget(anyString())).thenReturn(List.of(tungstenSecurityGroupRuleVO));
+         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
+@@ -1668,4 +1666,10 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    private static DataCenter createMockDataCenter() {
++        DataCenter dataCenter = mock(DataCenter.class);
++        when(dataCenter.isSecurityGroupEnabled()).thenReturn(true);
++        return dataCenter;
++    }
+ }
