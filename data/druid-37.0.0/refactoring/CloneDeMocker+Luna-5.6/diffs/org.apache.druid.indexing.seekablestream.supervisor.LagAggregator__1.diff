@@ -1,0 +1,155 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/supervisor/SeekableStreamSupervisorIOConfigTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/supervisor/SeekableStreamSupervisorIOConfigTest.java
+@@ -30,6 +30,7 @@
+ import org.joda.time.Duration;
+ import org.joda.time.Period;
+ import org.junit.Assert;
++import org.junit.Before;
+ import org.junit.Test;
+ 
+ import javax.annotation.Nullable;
+@@ -40,6 +41,14 @@
+ 
+ public class SeekableStreamSupervisorIOConfigTest
+ {
++
++  private LagAggregator lagAggregatorMock;
++
++  @Before
++  public void setUp()
++  {
++    lagAggregatorMock = mock(LagAggregator.class);
++  }
+ 
+   private final Map<Integer, Integer> serverPriorityToReplicas = Map.of(
+       1, 2,
+@@ -49,7 +58,6 @@
+   @Test
+   public void testAllDefaults()
+   {
+-    LagAggregator lagAggregator = mock(LagAggregator.class);
+     InputFormat inputFormat = mock(InputFormat.class);
+ 
+     SeekableStreamSupervisorIOConfig config = new SeekableStreamSupervisorIOConfig(
+@@ -65,7 +73,7 @@
+         null,
+         null,
+         null,
+-        lagAggregator,
++        lagAggregatorMock,
+         null,
+         null,
+         null,
+@@ -88,7 +96,7 @@
+     Assert.assertFalse(config.getLateMessageRejectionStartDateTime().isPresent());
+     Assert.assertNull(config.getIdleConfig());
+     Assert.assertNull(config.getStopTaskCount());
+-    Assert.assertEquals(lagAggregator, config.getLagAggregator());
++    Assert.assertEquals(lagAggregatorMock, config.getLagAggregator());
+     Assert.assertEquals(1, config.getMaxAllowedStops());
+     Assert.assertNull(config.getServerPriorityToReplicas());
+   }
+@@ -96,7 +104,6 @@
+   @Test
+   public void testAutoScalerEnabledPreservesTaskCountWhenNonNull()
+   {
+-    LagAggregator lagAggregator = mock(LagAggregator.class);
+ 
+     // autoScalerEnabled = true
+     AutoScalerConfig autoScalerConfig = mock(AutoScalerConfig.class);
+@@ -117,7 +124,7 @@
+         null,
+         null,
+         autoScalerConfig,
+-        lagAggregator,
++        lagAggregatorMock,
+         null,
+         null,
+         null,
+@@ -142,7 +149,7 @@
+         null,
+         null,
+         null,
+-        lagAggregator,
++        lagAggregatorMock,
+         null,
+         null,
+         null,
+@@ -157,7 +164,6 @@
+   @Test
+   public void testBothLateMessageRejectionPeriodAndStartDateTime()
+   {
+-    LagAggregator lagAggregator = mock(LagAggregator.class);
+ 
+     IAE ex = Assert.assertThrows(
+         IAE.class,
+@@ -174,7 +180,7 @@
+             Period.seconds(10),
+             null,
+             null,
+-            lagAggregator,
++            lagAggregatorMock,
+             DateTimes.nowUtc(),
+             null,
+             null,
+@@ -226,7 +232,6 @@
+   @Test
+   public void testGetMaxAllowedStopsScalingDisabled()
+   {
+-    LagAggregator lagAggregator = mock(LagAggregator.class);
+ 
+     // Autoscaler disabled, stopTaskCount unset
+     SeekableStreamSupervisorIOConfig config1 = new SeekableStreamSupervisorIOConfig(
+@@ -242,7 +247,7 @@
+         null,
+         null,
+         null,
+-        lagAggregator,
++        lagAggregatorMock,
+         null,
+         null,
+         null,
+@@ -266,7 +271,7 @@
+         null,
+         null,
+         null,
+-        lagAggregator,
++        lagAggregatorMock,
+         null,
+         null,
+         3,
+@@ -280,7 +285,6 @@
+   @Test
+   public void testGetMaxAllowedStopsScalingEnabled()
+   {
+-    LagAggregator lagAggregator = mock(LagAggregator.class);
+ 
+     AutoScalerConfig autoScalerConfig = mock(AutoScalerConfig.class);
+ 
+@@ -302,7 +306,7 @@
+         null,
+         null,
+         autoScalerConfig,
+-        lagAggregator,
++        lagAggregatorMock,
+         null,
+         null,
+         1,
+@@ -335,7 +339,7 @@
+         null,
+         null,
+         autoScalerConfig,
+-        lagAggregator,
++        lagAggregatorMock,
+         null,
+         null,
+         1,
+@@ -365,7 +369,7 @@
+         null,
+         null,
+         autoScalerConfig,
+-        lagAggregator,
++        lagAggregatorMock,
+         null,
+         null,
+         null,
