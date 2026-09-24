@@ -1,0 +1,42 @@
+--- a/web/src/test/java/org/springframework/security/web/firewall/RequestWrapperTests.java
++++ b/web/src/test/java/org/springframework/security/web/firewall/RequestWrapperTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.firewall;
+ 
++import org.mockito.Mock;
+ import java.util.LinkedHashMap;
+ import java.util.Map;
+ 
+@@ -38,6 +39,8 @@
+  * @author Luke Taylor
+  */
+ public class RequestWrapperTests {
++	@Mock
++	private RequestDispatcher mockDispatcher;
+ 
+ 	private static Map<String, String> testPaths = new LinkedHashMap<>();
+ 
+@@ -90,7 +93,7 @@
+ 		String forwardPath = "/forward/path";
+ 		HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+ 		HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+-		RequestDispatcher mockDispatcher = mock(RequestDispatcher.class);
++		// removed local mock; replaced with global field `mockDispatcher`
+ 		given(mockRequest.getServletPath()).willReturn("");
+ 		given(mockRequest.getPathInfo()).willReturn(denormalizedPath);
+ 		given(mockRequest.getRequestDispatcher(forwardPath)).willReturn(mockDispatcher);
+@@ -111,11 +114,10 @@
+ 	public void requestDispatcherNotWrappedAfterReset() {
+ 		String path = "/forward/path";
+ 		HttpServletRequest request = mock(HttpServletRequest.class);
+-		RequestDispatcher dispatcher = mock(RequestDispatcher.class);
+-		given(request.getRequestDispatcher(path)).willReturn(dispatcher);
++		given(request.getRequestDispatcher(path)).willReturn(mockDispatcher);
+ 		RequestWrapper wrapper = new RequestWrapper(request);
+ 		wrapper.reset();
+-		assertThat(wrapper.getRequestDispatcher(path)).isSameAs(dispatcher);
++		assertThat(wrapper.getRequestDispatcher(path)).isSameAs(mockDispatcher);
+ 	}
+ 
+ }

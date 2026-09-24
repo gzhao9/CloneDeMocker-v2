@@ -1,0 +1,69 @@
+--- a/web/src/test/java/org/springframework/security/web/firewall/RequestWrapperTests.java
++++ b/web/src/test/java/org/springframework/security/web/firewall/RequestWrapperTests.java
+@@ -23,6 +23,7 @@
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpServletResponse;
+ import org.junit.jupiter.api.BeforeAll;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.mock.web.MockHttpServletRequest;
+@@ -41,6 +42,8 @@
+ 
+ 	private static Map<String, String> testPaths = new LinkedHashMap<>();
+ 
++	private RequestDispatcher requestDispatcher;
++
+ 	@BeforeAll
+ 	// Some of these may be unrealistic values, but we can't be sure because of the
+ 	// inconsistency in the spec.
+@@ -50,6 +53,11 @@
+ 		testPaths.put("/path1//path2/", "/path1/path2/");
+ 		testPaths.put("//path1/path2//", "/path1/path2/");
+ 		testPaths.put(";x=y;z=w", "");
++	}
++
++	@BeforeEach
++	public void setUp() {
++		requestDispatcher = mock(RequestDispatcher.class);
+ 	}
+ 
+ 	@Test
+@@ -90,32 +98,30 @@
+ 		String forwardPath = "/forward/path";
+ 		HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+ 		HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+-		RequestDispatcher mockDispatcher = mock(RequestDispatcher.class);
+ 		given(mockRequest.getServletPath()).willReturn("");
+ 		given(mockRequest.getPathInfo()).willReturn(denormalizedPath);
+-		given(mockRequest.getRequestDispatcher(forwardPath)).willReturn(mockDispatcher);
++		given(mockRequest.getRequestDispatcher(forwardPath)).willReturn(requestDispatcher);
+ 		RequestWrapper wrapper = new RequestWrapper(mockRequest);
+ 		RequestDispatcher dispatcher = wrapper.getRequestDispatcher(forwardPath);
+ 		dispatcher.forward(mockRequest, mockResponse);
+ 		verify(mockRequest).getRequestDispatcher(forwardPath);
+-		verify(mockDispatcher).forward(mockRequest, mockResponse);
++		verify(requestDispatcher).forward(mockRequest, mockResponse);
+ 		assertThat(wrapper.getPathInfo()).isEqualTo(denormalizedPath);
+ 		verify(mockRequest, times(2)).getPathInfo();
+ 		// validate wrapper.getServletPath() delegates to the mock
+ 		wrapper.getServletPath();
+ 		verify(mockRequest, times(2)).getServletPath();
+-		verifyNoMoreInteractions(mockRequest, mockResponse, mockDispatcher);
++		verifyNoMoreInteractions(mockRequest, mockResponse, requestDispatcher);
+ 	}
+ 
+ 	@Test
+ 	public void requestDispatcherNotWrappedAfterReset() {
+ 		String path = "/forward/path";
+ 		HttpServletRequest request = mock(HttpServletRequest.class);
+-		RequestDispatcher dispatcher = mock(RequestDispatcher.class);
+-		given(request.getRequestDispatcher(path)).willReturn(dispatcher);
++		given(request.getRequestDispatcher(path)).willReturn(requestDispatcher);
+ 		RequestWrapper wrapper = new RequestWrapper(request);
+ 		wrapper.reset();
+-		assertThat(wrapper.getRequestDispatcher(path)).isSameAs(dispatcher);
++		assertThat(wrapper.getRequestDispatcher(path)).isSameAs(requestDispatcher);
+ 	}
+ 
+ }

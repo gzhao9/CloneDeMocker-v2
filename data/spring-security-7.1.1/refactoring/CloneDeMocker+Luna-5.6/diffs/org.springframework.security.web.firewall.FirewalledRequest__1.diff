@@ -1,0 +1,46 @@
+--- a/web/src/test/java/org/springframework/security/web/FilterChainProxyTests.java
++++ b/web/src/test/java/org/springframework/security/web/FilterChainProxyTests.java
+@@ -164,10 +164,7 @@
+ 	@Test
+ 	public void wrapperIsResetWhenNoMatchingFilters() throws Exception {
+ 		HttpFirewall fw = mock(HttpFirewall.class);
+-		FirewalledRequest fwr = mock(FirewalledRequest.class);
+-		given(fwr.getRequestURI()).willReturn("/");
+-		given(fwr.getContextPath()).willReturn("");
+-		given(fwr.getHttpServletMapping()).willReturn(TestMockHttpServletMappings.defaultMapping());
++		FirewalledRequest fwr = createMockFirewalledRequest("fwr");
+ 		this.fcp.setFirewall(fw);
+ 		given(fw.getFirewalledRequest(this.request)).willReturn(fwr);
+ 		given(this.matcher.matches(any(HttpServletRequest.class))).willReturn(false);
+@@ -182,14 +179,8 @@
+ 		FilterChainProxy firstFcp = new FilterChainProxy(new DefaultSecurityFilterChain(this.matcher, this.fcp));
+ 		firstFcp.setFirewall(fw);
+ 		this.fcp.setFirewall(fw);
+-		FirewalledRequest firstFwr = mock(FirewalledRequest.class, "firstFwr");
+-		given(firstFwr.getRequestURI()).willReturn("/");
+-		given(firstFwr.getContextPath()).willReturn("");
+-		given(firstFwr.getHttpServletMapping()).willReturn(TestMockHttpServletMappings.defaultMapping());
+-		FirewalledRequest fwr = mock(FirewalledRequest.class, "fwr");
+-		given(fwr.getRequestURI()).willReturn("/");
+-		given(fwr.getContextPath()).willReturn("");
+-		given(fwr.getHttpServletMapping()).willReturn(TestMockHttpServletMappings.defaultMapping());
++		FirewalledRequest firstFwr = createMockFirewalledRequest("firstFwr");
++		FirewalledRequest fwr = createMockFirewalledRequest("fwr");
+ 		given(fw.getFirewalledRequest(this.request)).willReturn(firstFwr);
+ 		given(fw.getFirewalledRequest(firstFwr)).willReturn(fwr);
+ 		given(fwr.getRequest()).willReturn(firstFwr);
+@@ -499,6 +490,14 @@
+ 		assertFilterChainObservation(contexts.next(), "after", 3);
+ 	}
+ 
++	private static FirewalledRequest createMockFirewalledRequest(String mockName) {
++		FirewalledRequest fwr = mock(FirewalledRequest.class, mockName);
++		given(fwr.getRequestURI()).willReturn("/");
++		given(fwr.getContextPath()).willReturn("");
++		given(fwr.getHttpServletMapping()).willReturn(TestMockHttpServletMappings.defaultMapping());
++		return fwr;
++	}
++
+ 	static void assertFilterChainObservation(Observation.Context context, String filterSection, int chainPosition) {
+ 		assertThat(context).isInstanceOf(ObservationFilterChainDecorator.FilterChainObservationContext.class);
+ 		ObservationFilterChainDecorator.FilterChainObservationContext filterChainObservationContext = (ObservationFilterChainDecorator.FilterChainObservationContext) context;
