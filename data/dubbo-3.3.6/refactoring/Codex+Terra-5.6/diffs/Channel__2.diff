@@ -1,0 +1,78 @@
+--- a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java
++++ b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java
+@@ -43,12 +43,11 @@
+     @Test
+     void shouldShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndEmptyWhiteList() throws Exception {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+-        Channel channel = mock(Channel.class);
+-        when(context.channel()).thenReturn(channel);
+         InetAddress addr = mock(InetAddress.class);
+         when(addr.isLoopbackAddress()).thenReturn(false);
+         InetSocketAddress address = new InetSocketAddress(addr, 12345);
+-        when(channel.remoteAddress()).thenReturn(address);
++        Channel channel = channelWithRemoteAddress(address);
++        when(context.channel()).thenReturn(channel);
+         ChannelFuture future = mock(ChannelFuture.class);
+         when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(future);
+         ForeignHostPermitHandler handler = new ForeignHostPermitHandler(QosConfiguration.builder()
+@@ -68,13 +67,12 @@
+     @Test
+     void shouldShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndNotMatchWhiteList() throws Exception {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+-        Channel channel = mock(Channel.class);
+-        when(context.channel()).thenReturn(channel);
+         InetAddress addr = mock(InetAddress.class);
+         when(addr.isLoopbackAddress()).thenReturn(false);
+         when(addr.getHostAddress()).thenReturn("179.23.44.1");
+         InetSocketAddress address = new InetSocketAddress(addr, 12345);
+-        when(channel.remoteAddress()).thenReturn(address);
++        Channel channel = channelWithRemoteAddress(address);
++        when(context.channel()).thenReturn(channel);
+         ChannelFuture future = mock(ChannelFuture.class);
+         when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(future);
+         ForeignHostPermitHandler handler = new ForeignHostPermitHandler(QosConfiguration.builder()
+@@ -95,13 +93,12 @@
+     @Test
+     void shouldNotShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndMatchWhiteList() throws Exception {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+-        Channel channel = mock(Channel.class);
+-        when(context.channel()).thenReturn(channel);
+         InetAddress addr = mock(InetAddress.class);
+         when(addr.isLoopbackAddress()).thenReturn(false);
+         when(addr.getHostAddress()).thenReturn("175.23.44.1");
+         InetSocketAddress address = new InetSocketAddress(addr, 12345);
+-        when(channel.remoteAddress()).thenReturn(address);
++        Channel channel = channelWithRemoteAddress(address);
++        when(context.channel()).thenReturn(channel);
+ 
+         ForeignHostPermitHandler handler = new ForeignHostPermitHandler(QosConfiguration.builder()
+                 .acceptForeignIp(false)
+@@ -114,13 +111,12 @@
+     @Test
+     void shouldNotShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndMatchWhiteListRange() throws Exception {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+-        Channel channel = mock(Channel.class);
+-        when(context.channel()).thenReturn(channel);
+         InetAddress addr = mock(InetAddress.class);
+         when(addr.isLoopbackAddress()).thenReturn(false);
+         when(addr.getHostAddress()).thenReturn("192.168.1.199");
+         InetSocketAddress address = new InetSocketAddress(addr, 12345);
+-        when(channel.remoteAddress()).thenReturn(address);
++        Channel channel = channelWithRemoteAddress(address);
++        when(context.channel()).thenReturn(channel);
+ 
+         ForeignHostPermitHandler handler = new ForeignHostPermitHandler(QosConfiguration.builder()
+                 .acceptForeignIp(false)
+@@ -128,6 +124,12 @@
+                 .build());
+         handler.handlerAdded(context);
+         verify(context, never()).writeAndFlush(any());
++    }
++
++    private Channel channelWithRemoteAddress(InetSocketAddress address) {
++        Channel channel = mock(Channel.class);
++        when(channel.remoteAddress()).thenReturn(address);
++        return channel;
+     }
+ 
+     @Test
