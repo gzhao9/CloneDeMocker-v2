@@ -1,0 +1,47 @@
+--- a/processing/src/test/java/org/apache/druid/java/util/metrics/OshiSysMonitorTest.java
++++ b/processing/src/test/java/org/apache/druid/java/util/metrics/OshiSysMonitorTest.java
+@@ -192,20 +192,8 @@
+   {
+     StubServiceEmitter emitter = new StubServiceEmitter("dev/monitor-test", "localhost:0000");
+     FileSystem fileSystem = Mockito.mock(FileSystem.class);
+-    OSFileStore fs1 = Mockito.mock(OSFileStore.class);
+-    OSFileStore fs2 = Mockito.mock(OSFileStore.class);
+-    Mockito.when(fs1.getTotalSpace()).thenReturn(300L);
+-    Mockito.when(fs1.getUsableSpace()).thenReturn(200L);
+-    Mockito.when(fs1.getTotalInodes()).thenReturn(1000L);
+-    Mockito.when(fs1.getFreeInodes()).thenReturn(700L);
+-    Mockito.when(fs1.getVolume()).thenReturn("/dev/disk1");
+-    Mockito.when(fs1.getMount()).thenReturn("/System/Volumes/boot1");
+-    Mockito.when(fs2.getTotalSpace()).thenReturn(400L);
+-    Mockito.when(fs2.getUsableSpace()).thenReturn(320L);
+-    Mockito.when(fs2.getTotalInodes()).thenReturn(800L);
+-    Mockito.when(fs2.getFreeInodes()).thenReturn(600L);
+-    Mockito.when(fs2.getVolume()).thenReturn("/dev/disk2");
+-    Mockito.when(fs2.getMount()).thenReturn("/System/Volumes/boot2");
++    OSFileStore fs1 = createMockOsFileStore(300L, 200L, 1000L, 700L, "/dev/disk1", "/System/Volumes/boot1");
++    OSFileStore fs2 = createMockOsFileStore(400L, 320L, 800L, 600L, "/dev/disk2", "/System/Volumes/boot2");
+     List<OSFileStore> osFileStores = ImmutableList.of(fs1, fs2);
+     Mockito.when(fileSystem.getFileStores(true)).thenReturn(osFileStores);
+     Mockito.when(os.getFileSystem()).thenReturn(fileSystem);
+@@ -649,4 +637,21 @@
+   {
+     return new OshiSysMonitor(new OshiSysMonitorConfig(categories), si);
+   }
++
++    private static OSFileStore createMockOsFileStore(
++            long totalSpace,
++            long usableSpace,
++            long totalInodes,
++            long freeInodes,
++            String volume,
++            String mount) {
++        OSFileStore fileStore = Mockito.mock(OSFileStore.class);
++        Mockito.when(fileStore.getTotalSpace()).thenReturn(totalSpace);
++        Mockito.when(fileStore.getUsableSpace()).thenReturn(usableSpace);
++        Mockito.when(fileStore.getTotalInodes()).thenReturn(totalInodes);
++        Mockito.when(fileStore.getFreeInodes()).thenReturn(freeInodes);
++        Mockito.when(fileStore.getVolume()).thenReturn(volume);
++        Mockito.when(fileStore.getMount()).thenReturn(mount);
++        return fileStore;
++    }
+ }
