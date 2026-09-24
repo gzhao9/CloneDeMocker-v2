@@ -1,0 +1,70 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
+@@ -183,6 +183,8 @@
+     @Mock
+     TungstenApi tungstenApi;
+ 
++    private InstanceIp instanceIpMock;
++
+     TungstenResource tungstenResource;
+ 
+     MockedStatic<TungstenVRouterApi> tungstenVRouterApiMocked;
+@@ -192,6 +194,7 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
++        instanceIpMock = mock(InstanceIp.class);
+         tungstenResource = new TungstenResource();
+         tungstenResource.tungstenApi = tungstenApi;
+         ReflectionTestUtils.setField(tungstenResource, "vrouterPort", "9091");
+@@ -308,7 +311,6 @@
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         VirtualMachine virtualMachine = mock(VirtualMachine.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+-        InstanceIp instanceIp = mock(InstanceIp.class);
+ 
+         when(virtualMachineInterface.getUuid()).thenReturn("b604c7f7-1dbc-42d8-bceb-2c0898034a7a");
+         when(tungstenApi.getTungstenObject(eq(VirtualNetwork.class), anyString())).thenReturn(virtualNetwork);
+@@ -316,7 +318,7 @@
+         when(tungstenApi.createTungstenVmInterface(anyString(), anyString(), anyString(), anyString(), anyString(),
+             anyString(), anyString(), anyBoolean())).thenReturn(virtualMachineInterface);
+         when(tungstenApi.createTungstenInstanceIp(anyString(), anyString(), anyString(), anyString())).thenReturn(
+-            instanceIp);
++            instanceIpMock);
+         tungstenVRouterApiMocked.when(
+                 () -> TungstenVRouterApi.addTungstenVrouterPort(anyString(), anyString(), any(Port.class))
+                                      ).thenReturn(true);
+@@ -332,7 +334,6 @@
+             "b604c7f7-1dbc-42d8-bceb-2c0898034a7a", "192.168.1.1");
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+-        InstanceIp instanceIp = mock(InstanceIp.class);
+ 
+         when(virtualMachineInterface.getUuid()).thenReturn("ac617be6-bf80-4086-9d6a-c05ff78e2264");
+         when(tungstenApi.getTungstenObjectByName(eq(LogicalRouter.class), any(), anyString())).thenReturn(
+@@ -340,7 +341,7 @@
+         when(tungstenApi.createTungstenGatewayVmi(anyString(), anyString(), anyString())).thenReturn(
+             virtualMachineInterface);
+         when(tungstenApi.createTungstenInstanceIp(anyString(), anyString(), anyString(), anyString())).thenReturn(
+-            instanceIp);
++            instanceIpMock);
+         when(tungstenApi.updateTungstenObject(any(LogicalRouter.class))).thenReturn(true);
+ 
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+@@ -643,7 +644,6 @@
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         FloatingIpPool floatingIpPool = mock(FloatingIpPool.class);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+-        InstanceIp instanceIp = mock(InstanceIp.class);
+         Loadbalancer loadbalancer = mock(Loadbalancer.class);
+         LoadbalancerListener loadbalancerListener = mock(LoadbalancerListener.class);
+         LoadbalancerHealthmonitor loadbalancerHealthmonitor = mock(LoadbalancerHealthmonitor.class);
+@@ -662,7 +662,7 @@
+         when(tungstenApi.createTungstenLbVmi(anyString(), anyString(), anyString())).thenReturn(
+             virtualMachineInterface);
+         when(tungstenApi.createTungstenInstanceIp(anyString(), anyString(), anyString(), anyString(),
+-            anyString())).thenReturn(instanceIp);
++            anyString())).thenReturn(instanceIpMock);
+         when(tungstenApi.assignTungstenFloatingIp(anyString(), anyString(), anyString(), anyString(),
+             anyString())).thenReturn(true);
+         when(tungstenApi.createTungstenLoadbalancer(anyString(), anyString(), anyString(), anyString(),
