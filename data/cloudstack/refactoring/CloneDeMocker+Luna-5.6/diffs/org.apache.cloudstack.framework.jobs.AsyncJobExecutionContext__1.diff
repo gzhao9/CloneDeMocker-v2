@@ -1,0 +1,56 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -193,6 +193,7 @@
+     private VMInstanceVO vmInstanceMock;
+     @Mock
+     private VmWorkJobDao _workJobDao;
++    private AsyncJobExecutionContext asyncJobExecutionContext;
+ 
+     private long vmInstanceVoMockId = 1L;
+ 
+@@ -301,6 +302,7 @@
+ 
+     @Before
+     public void setup() {
++        asyncJobExecutionContext = mock(AsyncJobExecutionContext.class);
+         ReflectionTestUtils.getField(VirtualMachineManager.VmMetadataManufacturer, "s_depot");
+         virtualMachineManagerImpl.setHostAllocators(new ArrayList<>());
+ 
+@@ -1914,9 +1916,8 @@
+                 .when(virtualMachineManagerImpl).createWorkJobAndWorkInfo(commandName, vmInstanceVoMockId);
+         doNothing().when(virtualMachineManagerImpl).setCmdInfoAndSubmitAsyncJob(any(), any(), anyLong());
+ 
+-        AsyncJobExecutionContext execContext = mock(AsyncJobExecutionContext.class);
+         try (MockedStatic<AsyncJobExecutionContext> ignored = Mockito.mockStatic(AsyncJobExecutionContext.class)) {
+-            when(AsyncJobExecutionContext.getCurrentExecutionContext()).thenReturn(execContext);
++            when(AsyncJobExecutionContext.getCurrentExecutionContext()).thenReturn(asyncJobExecutionContext);
+ 
+             virtualMachineManagerImpl.removeNicFromVmThroughJobQueue(vmInstanceMock, nic);
+ 
+@@ -1924,7 +1925,7 @@
+             verify(virtualMachineManagerImpl, times(1)).createWorkJobAndWorkInfo(commandName, vmInstanceVoMockId);
+             verify(newJob, times(1)).setSecondaryObjectIdentifier(nicUuid);
+             verify(virtualMachineManagerImpl, times(1)).setCmdInfoAndSubmitAsyncJob(eq(newJob), any(), eq(vmInstanceVoMockId));
+-            verify(execContext, times(1)).joinJob(100L);
++            verify(asyncJobExecutionContext, times(1)).joinJob(100L);
+         }
+     }
+ 
+@@ -1945,15 +1946,14 @@
+         when(_workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance, vmInstanceVoMockId, commandName, nicUuid))
+                 .thenReturn(Collections.singletonList(existingJob));
+ 
+-        AsyncJobExecutionContext execContext = mock(AsyncJobExecutionContext.class);
+         try (MockedStatic<AsyncJobExecutionContext> ignored = Mockito.mockStatic(AsyncJobExecutionContext.class)) {
+-            when(AsyncJobExecutionContext.getCurrentExecutionContext()).thenReturn(execContext);
++            when(AsyncJobExecutionContext.getCurrentExecutionContext()).thenReturn(asyncJobExecutionContext);
+ 
+             virtualMachineManagerImpl.removeNicFromVmThroughJobQueue(vmInstanceMock, nic);
+ 
+             verify(virtualMachineManagerImpl, never()).createWorkJobAndWorkInfo(anyString(), anyLong());
+             verify(virtualMachineManagerImpl, never()).setCmdInfoAndSubmitAsyncJob(any(), any(), anyLong());
+-            verify(execContext, times(1)).joinJob(77L);
++            verify(asyncJobExecutionContext, times(1)).joinJob(77L);
+         }
+     }
+ 
