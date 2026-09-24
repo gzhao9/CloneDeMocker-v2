@@ -1,0 +1,73 @@
+--- a/rsocket/src/test/java/org/springframework/security/rsocket/core/PayloadInterceptorRSocketTests.java
++++ b/rsocket/src/test/java/org/springframework/security/rsocket/core/PayloadInterceptorRSocketTests.java
+@@ -33,6 +33,7 @@
+ import org.mockito.ArgumentCaptor;
+ import org.mockito.Captor;
+ import org.mockito.Mock;
++import org.mockito.Mockito;
+ import org.mockito.junit.jupiter.MockitoExtension;
+ import org.mockito.stubbing.Answer;
+ import org.reactivestreams.Publisher;
+@@ -80,8 +81,7 @@
+ 	@Mock
+ 	RSocket delegate;
+ 
+-	@Mock
+-	PayloadInterceptor interceptor;
++	PayloadInterceptor interceptor = createMockPayloadInterceptor();
+ 
+ 	@Mock
+ 	PayloadInterceptor interceptor2;
+@@ -125,7 +125,7 @@
+ 	// single interceptor
+ 	@Test
+ 	public void fireAndForgetWhenInterceptorCompletesThenDelegateSubscribed() {
+-		given(this.interceptor.intercept(any(), any())).willAnswer(withChainNext());
++		this.interceptor = createMockPayloadInterceptor();
+ 		given(this.delegate.fireAndForget(any())).willReturn(this.voidResult.mono());
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor), this.metadataMimeType, this.dataMimeType);
+@@ -427,8 +427,8 @@
+ 	// multiple interceptors
+ 	@Test
+ 	public void fireAndForgetWhenInterceptorsCompleteThenDelegateInvoked() {
+-		given(this.interceptor.intercept(any(), any())).willAnswer(withChainNext());
+-		given(this.interceptor2.intercept(any(), any())).willAnswer(withChainNext());
++		this.interceptor = createMockPayloadInterceptor();
++		this.interceptor2 = createMockPayloadInterceptor();
+ 		given(this.delegate.fireAndForget(any())).willReturn(this.voidResult.mono());
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor, this.interceptor2), this.metadataMimeType, this.dataMimeType);
+@@ -440,8 +440,8 @@
+ 
+ 	@Test
+ 	public void fireAndForgetWhenInterceptorsMutatesPayloadThenDelegateInvoked() {
+-		given(this.interceptor.intercept(any(), any())).willAnswer(withChainNext());
+-		given(this.interceptor2.intercept(any(), any())).willAnswer(withChainNext());
++		this.interceptor = createMockPayloadInterceptor();
++		this.interceptor2 = createMockPayloadInterceptor();
+ 		given(this.delegate.fireAndForget(any())).willReturn(this.voidResult.mono());
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor, this.interceptor2), this.metadataMimeType, this.dataMimeType);
+@@ -471,7 +471,7 @@
+ 	@Test
+ 	public void fireAndForgetWhenInterceptor2ErrorsThenInterceptor2AndDelegateNotInvoked() {
+ 		RuntimeException expected = new RuntimeException("Oops");
+-		given(this.interceptor.intercept(any(), any())).willAnswer(withChainNext());
++		this.interceptor = createMockPayloadInterceptor();
+ 		given(this.interceptor2.intercept(any(), any())).willReturn(Mono.error(expected));
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor, this.interceptor2), this.metadataMimeType, this.dataMimeType);
+@@ -482,6 +482,12 @@
+ 		assertThat(this.exchange.getValue().getPayload()).isEqualTo(this.payload);
+ 		verify(this.interceptor2).intercept(any(), any());
+ 		this.voidResult.assertWasNotSubscribed();
++	}
++
++	private static PayloadInterceptor createMockPayloadInterceptor() {
++		PayloadInterceptor interceptor = Mockito.mock(PayloadInterceptor.class);
++		given(interceptor.intercept(any(), any())).willAnswer(withChainNext());
++		return interceptor;
+ 	}
+ 
+ 	private Mono<Authentication> assertAuthentication(Authentication authentication) {

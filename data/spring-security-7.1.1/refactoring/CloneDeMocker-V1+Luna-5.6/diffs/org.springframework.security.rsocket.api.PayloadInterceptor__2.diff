@@ -1,0 +1,76 @@
+--- a/rsocket/src/test/java/org/springframework/security/rsocket/core/PayloadInterceptorRSocketTests.java
++++ b/rsocket/src/test/java/org/springframework/security/rsocket/core/PayloadInterceptorRSocketTests.java
+@@ -139,7 +139,7 @@
+ 	@Test
+ 	public void fireAndForgetWhenInterceptorErrorsThenDelegateNotSubscribed() {
+ 		RuntimeException expected = new RuntimeException("Oops");
+-		given(this.interceptor.intercept(any(), any())).willReturn(Mono.error(expected));
++		this.interceptor = createPayloadInterceptor(expected);
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor), this.metadataMimeType, this.dataMimeType);
+ 		StepVerifier.create(interceptor.fireAndForget(this.payload))
+@@ -187,7 +187,7 @@
+ 	@Test
+ 	public void requestResponseWhenInterceptorErrorsThenDelegateNotInvoked() {
+ 		RuntimeException expected = new RuntimeException("Oops");
+-		given(this.interceptor.intercept(any(), any())).willReturn(Mono.error(expected));
++		this.interceptor = createPayloadInterceptor(expected);
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor), this.metadataMimeType, this.dataMimeType);
+ 		assertThatExceptionOfType(RuntimeException.class)
+@@ -239,7 +239,7 @@
+ 	@Test
+ 	public void requestStreamWhenInterceptorErrorsThenDelegateNotSubscribed() {
+ 		RuntimeException expected = new RuntimeException("Oops");
+-		given(this.interceptor.intercept(any(), any())).willReturn(Mono.error(expected));
++		this.interceptor = createPayloadInterceptor(expected);
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor), this.metadataMimeType, this.dataMimeType);
+ 		StepVerifier.create(interceptor.requestStream(this.payload))
+@@ -344,7 +344,7 @@
+ 	@Test
+ 	public void requestChannelWhenInterceptorErrorsThenDelegateNotSubscribed() {
+ 		RuntimeException expected = new RuntimeException("Oops");
+-		given(this.interceptor.intercept(any(), any())).willReturn(Mono.error(expected));
++		this.interceptor = createPayloadInterceptor(expected);
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor), this.metadataMimeType, this.dataMimeType);
+ 		StepVerifier.create(interceptor.requestChannel(Flux.just(this.payload)))
+@@ -394,7 +394,7 @@
+ 	@Test
+ 	public void metadataPushWhenInterceptorErrorsThenDelegateNotSubscribed() {
+ 		RuntimeException expected = new RuntimeException("Oops");
+-		given(this.interceptor.intercept(any(), any())).willReturn(Mono.error(expected));
++		this.interceptor = createPayloadInterceptor(expected);
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor), this.metadataMimeType, this.dataMimeType);
+ 		StepVerifier.create(interceptor.metadataPush(this.payload))
+@@ -456,7 +456,7 @@
+ 	@Test
+ 	public void fireAndForgetWhenInterceptor1ErrorsThenInterceptor2AndDelegateNotInvoked() {
+ 		RuntimeException expected = new RuntimeException("Oops");
+-		given(this.interceptor.intercept(any(), any())).willReturn(Mono.error(expected));
++		this.interceptor = createPayloadInterceptor(expected);
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor, this.interceptor2), this.metadataMimeType, this.dataMimeType);
+ 		assertThatExceptionOfType(RuntimeException.class)
+@@ -472,7 +472,7 @@
+ 	public void fireAndForgetWhenInterceptor2ErrorsThenInterceptor2AndDelegateNotInvoked() {
+ 		RuntimeException expected = new RuntimeException("Oops");
+ 		given(this.interceptor.intercept(any(), any())).willAnswer(withChainNext());
+-		given(this.interceptor2.intercept(any(), any())).willReturn(Mono.error(expected));
++		this.interceptor2 = createPayloadInterceptor(expected);
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor, this.interceptor2), this.metadataMimeType, this.dataMimeType);
+ 		assertThatExceptionOfType(RuntimeException.class)
+@@ -508,4 +508,10 @@
+ 		};
+ 	}
+ 
++
++	private static PayloadInterceptor createPayloadInterceptor(RuntimeException expected) {
++		PayloadInterceptor interceptor = Mockito.mock(PayloadInterceptor.class);
++		given(interceptor.intercept(any(), any())).willReturn(Mono.error(expected));
++		return interceptor;
++	}
+ }

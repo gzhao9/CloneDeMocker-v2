@@ -1,0 +1,36 @@
+--- a/web/src/test/java/org/springframework/security/web/server/authorization/ServerWebExchangeDelegatingServerAccessDeniedHandlerTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authorization/ServerWebExchangeDelegatingServerAccessDeniedHandlerTests.java
+@@ -68,10 +68,9 @@
+ 	@Test
+ 	public void handleWhenFirstMatchesThenOnlyFirstInvoked() {
+ 		ServerAccessDeniedHandler firstHandler = mock(ServerAccessDeniedHandler.class);
+-		ServerWebExchangeMatcher firstMatcher = mock(ServerWebExchangeMatcher.class);
++		ServerWebExchangeMatcher firstMatcher = createMockServerWebExchangeMatcher(this.exchange);
+ 		ServerAccessDeniedHandler secondHandler = mock(ServerAccessDeniedHandler.class);
+ 		ServerWebExchangeMatcher secondMatcher = mock(ServerWebExchangeMatcher.class);
+-		given(firstMatcher.matches(this.exchange)).willReturn(MatchResult.match());
+ 		given(firstHandler.handle(this.exchange, null)).willReturn(Mono.empty());
+ 		given(secondHandler.handle(this.exchange, null)).willReturn(Mono.empty());
+ 		this.entries.add(new DelegateEntry(firstMatcher, firstHandler));
+@@ -90,9 +89,8 @@
+ 		ServerAccessDeniedHandler firstHandler = mock(ServerAccessDeniedHandler.class);
+ 		ServerWebExchangeMatcher firstMatcher = mock(ServerWebExchangeMatcher.class);
+ 		ServerAccessDeniedHandler secondHandler = mock(ServerAccessDeniedHandler.class);
+-		ServerWebExchangeMatcher secondMatcher = mock(ServerWebExchangeMatcher.class);
++		ServerWebExchangeMatcher secondMatcher = createMockServerWebExchangeMatcher(this.exchange);
+ 		given(firstMatcher.matches(this.exchange)).willReturn(MatchResult.notMatch());
+-		given(secondMatcher.matches(this.exchange)).willReturn(MatchResult.match());
+ 		given(firstHandler.handle(this.exchange, null)).willReturn(Mono.empty());
+ 		given(secondHandler.handle(this.exchange, null)).willReturn(Mono.empty());
+ 		this.entries.add(new DelegateEntry(firstMatcher, firstHandler));
+@@ -104,4 +102,10 @@
+ 		verify(this.accessDeniedHandler, never()).handle(this.exchange, null);
+ 	}
+ 
++
++	private static ServerWebExchangeMatcher createMockServerWebExchangeMatcher(ServerWebExchange exchange) {
++		ServerWebExchangeMatcher matcher = mock(ServerWebExchangeMatcher.class);
++		given(matcher.matches(exchange)).willReturn(MatchResult.match());
++		return matcher;
++	}
+ }

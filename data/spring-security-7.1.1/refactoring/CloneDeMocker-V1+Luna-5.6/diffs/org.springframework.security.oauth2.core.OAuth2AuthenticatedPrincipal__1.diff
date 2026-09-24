@@ -1,0 +1,46 @@
+--- a/oauth2/oauth2-resource-server/src/test/java/org/springframework/security/oauth2/server/resource/introspection/SpringReactiveOpaqueTokenIntrospectorTests.java
++++ b/oauth2/oauth2-resource-server/src/test/java/org/springframework/security/oauth2/server/resource/introspection/SpringReactiveOpaqueTokenIntrospectorTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.oauth2.server.resource.introspection;
+ 
++import org.mockito.Mock;
+ import java.io.IOException;
+ import java.time.Instant;
+ import java.util.Arrays;
+@@ -59,6 +60,8 @@
+  * Tests for {@link SpringReactiveOpaqueTokenIntrospector}
+  */
+ public class SpringReactiveOpaqueTokenIntrospectorTests {
++	@Mock
++	private OAuth2AuthenticatedPrincipal oAuth2AuthenticatedPrincipal;
+ 
+ 	private static final ParameterizedTypeReference<Map<String, Object>> STRING_OBJECT_MAP = new ParameterizedTypeReference<Map<String, Object>>() {
+ 	};
+@@ -228,7 +231,6 @@
+ 		WebClient web = mockResponse(ACTIVE_RESPONSE);
+ 		Converter<OAuth2TokenIntrospectionClaimAccessor, Mono<? extends OAuth2AuthenticatedPrincipal>> authenticationConverter = mock(
+ 				Converter.class);
+-		OAuth2AuthenticatedPrincipal oAuth2AuthenticatedPrincipal = mock(OAuth2AuthenticatedPrincipal.class);
+ 		String tokenToIntrospect = "some token";
+ 		given(authenticationConverter.convert(any())).willReturn((Mono) Mono.just(oAuth2AuthenticatedPrincipal));
+ 		SpringReactiveOpaqueTokenIntrospector introspectionClient = new SpringReactiveOpaqueTokenIntrospector(
+@@ -315,8 +317,7 @@
+ 			String introspectUri = server.url("/introspect").toString();
+ 			Converter<OAuth2TokenIntrospectionClaimAccessor, Mono<? extends OAuth2AuthenticatedPrincipal>> authenticationConverter = mock(
+ 					Converter.class);
+-			OAuth2AuthenticatedPrincipal principal = mock(OAuth2AuthenticatedPrincipal.class);
+-			given(authenticationConverter.convert(any())).willReturn((Mono) Mono.just(principal));
++			given(authenticationConverter.convert(any())).willReturn((Mono) Mono.just(oAuth2AuthenticatedPrincipal));
+ 			ReactiveOpaqueTokenIntrospector introspector = SpringReactiveOpaqueTokenIntrospector
+ 				.withIntrospectionUri(introspectUri)
+ 				.clientId(CLIENT_ID)
+@@ -324,7 +325,7 @@
+ 				.postProcessor((i) -> i.setAuthenticationConverter(authenticationConverter))
+ 				.build();
+ 			OAuth2AuthenticatedPrincipal result = introspector.introspect("token").block();
+-			assertThat(result).isSameAs(principal);
++			assertThat(result).isSameAs(oAuth2AuthenticatedPrincipal);
+ 		}
+ 	}
+ 

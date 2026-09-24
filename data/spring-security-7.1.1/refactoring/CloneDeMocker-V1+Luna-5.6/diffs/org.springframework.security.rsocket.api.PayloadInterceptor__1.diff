@@ -1,0 +1,53 @@
+--- a/rsocket/src/test/java/org/springframework/security/rsocket/core/PayloadInterceptorRSocketTests.java
++++ b/rsocket/src/test/java/org/springframework/security/rsocket/core/PayloadInterceptorRSocketTests.java
+@@ -125,7 +125,7 @@
+ 	// single interceptor
+ 	@Test
+ 	public void fireAndForgetWhenInterceptorCompletesThenDelegateSubscribed() {
+-		given(this.interceptor.intercept(any(), any())).willAnswer(withChainNext());
++		this.interceptor = createPayloadInterceptor();
+ 		given(this.delegate.fireAndForget(any())).willReturn(this.voidResult.mono());
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor), this.metadataMimeType, this.dataMimeType);
+@@ -427,8 +427,8 @@
+ 	// multiple interceptors
+ 	@Test
+ 	public void fireAndForgetWhenInterceptorsCompleteThenDelegateInvoked() {
+-		given(this.interceptor.intercept(any(), any())).willAnswer(withChainNext());
+-		given(this.interceptor2.intercept(any(), any())).willAnswer(withChainNext());
++		this.interceptor = createPayloadInterceptor();
++		this.interceptor2 = createPayloadInterceptor();
+ 		given(this.delegate.fireAndForget(any())).willReturn(this.voidResult.mono());
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor, this.interceptor2), this.metadataMimeType, this.dataMimeType);
+@@ -440,8 +440,8 @@
+ 
+ 	@Test
+ 	public void fireAndForgetWhenInterceptorsMutatesPayloadThenDelegateInvoked() {
+-		given(this.interceptor.intercept(any(), any())).willAnswer(withChainNext());
+-		given(this.interceptor2.intercept(any(), any())).willAnswer(withChainNext());
++		this.interceptor = createPayloadInterceptor();
++		this.interceptor2 = createPayloadInterceptor();
+ 		given(this.delegate.fireAndForget(any())).willReturn(this.voidResult.mono());
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor, this.interceptor2), this.metadataMimeType, this.dataMimeType);
+@@ -471,7 +471,7 @@
+ 	@Test
+ 	public void fireAndForgetWhenInterceptor2ErrorsThenInterceptor2AndDelegateNotInvoked() {
+ 		RuntimeException expected = new RuntimeException("Oops");
+-		given(this.interceptor.intercept(any(), any())).willAnswer(withChainNext());
++		this.interceptor = createPayloadInterceptor();
+ 		given(this.interceptor2.intercept(any(), any())).willReturn(Mono.error(expected));
+ 		PayloadInterceptorRSocket interceptor = new PayloadInterceptorRSocket(this.delegate,
+ 				Arrays.asList(this.interceptor, this.interceptor2), this.metadataMimeType, this.dataMimeType);
+@@ -508,4 +508,10 @@
+ 		};
+ 	}
+ 
++
++	private static PayloadInterceptor createPayloadInterceptor() {
++		PayloadInterceptor interceptor = Mockito.mock(PayloadInterceptor.class);
++		given(interceptor.intercept(any(), any())).willAnswer(withChainNext());
++		return interceptor;
++	}
+ }
