@@ -1,0 +1,133 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateCommandWrapperTest.java
+@@ -964,8 +964,8 @@
+ 
+         Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+         Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+-        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
+-
++
++        libvirtComputingResourceMock = MockLibvirtComputingResource.createMockLibvirtComputingResource(currentVmCpuShares, virtualMachineTOMock);
+         String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+ 
+         Assert.assertEquals(finalXml, fullfile);
+@@ -979,8 +979,8 @@
+ 
+         Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+         Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+-        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
+-
++
++        libvirtComputingResourceMock = MockLibvirtComputingResource.createMockLibvirtComputingResource(currentVmCpuShares, virtualMachineTOMock);
+         String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+ 
+         InputStream inputStream = IOUtils.toInputStream(finalXml, StandardCharsets.UTF_8);
+@@ -1003,8 +1003,8 @@
+ 
+         Mockito.doReturn(newVmCpuShares).when(migrateCommandMock).getNewVmCpuShares();
+         Mockito.doReturn(virtualMachineTOMock).when(migrateCommandMock).getVirtualMachine();
+-        Mockito.doReturn(currentVmCpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
+-
++
++        libvirtComputingResourceMock = MockLibvirtComputingResource.createMockLibvirtComputingResource(currentVmCpuShares, virtualMachineTOMock);
+         String finalXml = libvirtMigrateCmdWrapper.updateVmSharesIfNeeded(migrateCommandMock, fullfile, libvirtComputingResourceMock);
+ 
+         InputStream inputStream = IOUtils.toInputStream(finalXml, StandardCharsets.UTF_8);
+@@ -1262,4 +1262,20 @@
+ 
+         return devices;
+     }
++
++    public final class MockLibvirtComputingResource {
++        private MockLibvirtComputingResource() {
++        }
++
++        public static com.cloud.hypervisor.kvm.resource.LibvirtComputingResource createMockLibvirtComputingResource(
++                int cpuShares,
++                com.cloud.agent.api.to.VirtualMachineTO virtualMachineTO) {
++            com.cloud.hypervisor.kvm.resource.LibvirtComputingResource libvirtComputingResourceMock =
++                    Mockito.mock(com.cloud.hypervisor.kvm.resource.LibvirtComputingResource.class);
++            Mockito.doReturn(cpuShares)
++                    .when(libvirtComputingResourceMock)
++                    .calculateCpuShares(virtualMachineTO);
++            return libvirtComputingResourceMock;
++        }
++    }
+ }
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPrepareForMigrationCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPrepareForMigrationCommandWrapperTest.java
+@@ -66,7 +66,8 @@
+     @Test
+     public void createPrepareForMigrationAnswerTestVerifyThatCpuSharesIsSet() {
+         int cpuShares = 1000;
+-        Mockito.doReturn(cpuShares).when(libvirtComputingResourceMock).calculateCpuShares(virtualMachineTOMock);
++        LibvirtComputingResource libvirtComputingResourceMock =
++                MockLibvirtComputingResource.createMockLibvirtComputingResource(cpuShares, virtualMachineTOMock);
+         PrepareForMigrationAnswer prepareForMigrationAnswer = libvirtPrepareForMigrationCommandWrapperSpy.createPrepareForMigrationAnswer(prepareForMigrationCommandMock,null,
+                 libvirtComputingResourceMock, virtualMachineTOMock);
+ 
+@@ -97,4 +98,20 @@
+             runTestRemoveDpdkPortForCommandInjection(portWithCommand);
+         }
+     }
++
++    public final class MockLibvirtComputingResource {
++        private MockLibvirtComputingResource() {
++        }
++
++        public static com.cloud.hypervisor.kvm.resource.LibvirtComputingResource createMockLibvirtComputingResource(
++                int cpuShares,
++                com.cloud.agent.api.to.VirtualMachineTO virtualMachineTO) {
++            com.cloud.hypervisor.kvm.resource.LibvirtComputingResource libvirtComputingResourceMock =
++                    Mockito.mock(com.cloud.hypervisor.kvm.resource.LibvirtComputingResource.class);
++            Mockito.doReturn(cpuShares)
++                    .when(libvirtComputingResourceMock)
++                    .calculateCpuShares(virtualMachineTO);
++            return libvirtComputingResourceMock;
++        }
++    }
+ }
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtScaleVmCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtScaleVmCommandWrapperTest.java
+@@ -217,8 +217,8 @@
+         int shares = vmTo.getCpus() * vmTo.getSpeed();
+ 
+         Mockito.doReturn(vmTo).when(scaleVmCommandMock).getVirtualMachine();
++        libvirtComputingResourceMock = MockLibvirtComputingResource.createMockLibvirtComputingResource(shares, vmTo);
+         Mockito.doReturn(libvirtUtilitiesHelperMock).when(libvirtComputingResourceMock).getLibvirtUtilitiesHelper();
+-        Mockito.doReturn(shares).when(libvirtComputingResourceMock).calculateCpuShares(vmTo);
+         Mockito.doThrow(libvirtException).when(libvirtUtilitiesHelperMock).getConnectionByVmName(Mockito.anyString());
+         Mockito.doReturn(errorMessage).when(libvirtException).getMessage();
+ 
+@@ -234,9 +234,9 @@
+         int shares = vmTo.getCpus() * vmTo.getSpeed();
+ 
+         Mockito.doReturn(vmTo).when(scaleVmCommandMock).getVirtualMachine();
++        libvirtComputingResourceMock = MockLibvirtComputingResource.createMockLibvirtComputingResource(shares, vmTo);
+         Mockito.doReturn(libvirtUtilitiesHelperMock).when(libvirtComputingResourceMock).getLibvirtUtilitiesHelper();
+         Mockito.doReturn(connectMock).when(libvirtUtilitiesHelperMock).getConnectionByVmName(Mockito.anyString());
+-        Mockito.doReturn(shares).when(libvirtComputingResourceMock).calculateCpuShares(vmTo);
+         Mockito.doReturn(domainMock).when(connectMock).domainLookupByName(Mockito.anyString());
+         Mockito.doNothing().when(libvirtScaleVmCommandWrapperSpy).scaleMemory(Mockito.any(), Mockito.anyLong(), Mockito.anyString());
+         Mockito.doNothing().when(libvirtScaleVmCommandWrapperSpy).scaleVcpus(Mockito.any(), Mockito.anyInt(), Mockito.anyString());
+@@ -292,4 +292,20 @@
+         libvirtComputingResourceMocked.verify(() -> LibvirtComputingResource.setCpuShares(domainMock, newShares),
+                 Mockito.times(0));
+     }
++
++    public final class MockLibvirtComputingResource {
++        private MockLibvirtComputingResource() {
++        }
++
++        public static com.cloud.hypervisor.kvm.resource.LibvirtComputingResource createMockLibvirtComputingResource(
++                int cpuShares,
++                com.cloud.agent.api.to.VirtualMachineTO virtualMachineTO) {
++            com.cloud.hypervisor.kvm.resource.LibvirtComputingResource libvirtComputingResourceMock =
++                    Mockito.mock(com.cloud.hypervisor.kvm.resource.LibvirtComputingResource.class);
++            Mockito.doReturn(cpuShares)
++                    .when(libvirtComputingResourceMock)
++                    .calculateCpuShares(virtualMachineTO);
++            return libvirtComputingResourceMock;
++        }
++    }
+ }

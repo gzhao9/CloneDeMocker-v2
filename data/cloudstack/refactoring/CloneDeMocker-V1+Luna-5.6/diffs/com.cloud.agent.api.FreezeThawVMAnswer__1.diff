@@ -1,0 +1,49 @@
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/OntapVMSnapshotStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/OntapVMSnapshotStrategyTest.java
+@@ -667,8 +667,7 @@
+         setupSingleVolumeForTakeSnapshot();
+ 
+         // Freeze failure
+-        FreezeThawVMAnswer freezeAnswer = mock(FreezeThawVMAnswer.class);
+-        when(freezeAnswer.getResult()).thenReturn(false);
++        FreezeThawVMAnswer freezeAnswer = createFreezeThawVMAnswer(false);
+         when(freezeAnswer.getDetails()).thenReturn("qemu-guest-agent not responding");
+         when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class))).thenReturn(freezeAnswer);
+ 
+@@ -783,10 +782,8 @@
+         when(vmSnapshotHelper.getSnapshotWithParents(currentSnapshot)).thenReturn(parentTO);
+ 
+         // Freeze success (since quiesce=true by default)
+-        FreezeThawVMAnswer freezeAnswer = mock(FreezeThawVMAnswer.class);
+-        when(freezeAnswer.getResult()).thenReturn(true);
+-        FreezeThawVMAnswer thawAnswer = mock(FreezeThawVMAnswer.class);
+-        when(thawAnswer.getResult()).thenReturn(true);
++        FreezeThawVMAnswer freezeAnswer = createFreezeThawVMAnswer(true);
++        FreezeThawVMAnswer thawAnswer = createFreezeThawVMAnswer(true);
+         when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class)))
+                 .thenReturn(freezeAnswer)
+                 .thenReturn(thawAnswer);
+@@ -813,10 +810,8 @@
+ 
+         when(vmSnapshotDao.findCurrentSnapshotByVmId(VM_ID)).thenReturn(null);
+ 
+-        FreezeThawVMAnswer freezeAnswer = mock(FreezeThawVMAnswer.class);
+-        when(freezeAnswer.getResult()).thenReturn(true);
+-        FreezeThawVMAnswer thawAnswer = mock(FreezeThawVMAnswer.class);
+-        when(thawAnswer.getResult()).thenReturn(true);
++        FreezeThawVMAnswer freezeAnswer = createFreezeThawVMAnswer(true);
++        FreezeThawVMAnswer thawAnswer = createFreezeThawVMAnswer(true);
+         when(agentMgr.send(eq(HOST_ID), any(FreezeThawVMCommand.class)))
+                 .thenReturn(freezeAnswer)
+                 .thenReturn(thawAnswer);
+@@ -899,4 +894,10 @@
+         when(volumeInfo.getName()).thenReturn("vol-1");
+         when(volumeDataFactory.getVolume(VOLUME_ID_1)).thenReturn(volumeInfo);
+     }
++
++    private static FreezeThawVMAnswer createFreezeThawVMAnswer(boolean result) {
++        FreezeThawVMAnswer answer = mock(FreezeThawVMAnswer.class);
++        when(answer.getResult()).thenReturn(result);
++        return answer;
++    }
+ }

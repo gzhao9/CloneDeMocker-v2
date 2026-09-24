@@ -1,0 +1,61 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
+@@ -101,13 +101,12 @@
+     @Test(expected = IOException.class)
+     public void testBackupNvramIfNeededFailsWhenUefiNvramIsMissing() throws Exception {
+         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper();
+-        LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
++        LibvirtComputingResource resource = createMockLibvirtComputingResource("/tmp/" + UUID.randomUUID() + ".fd");
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+ 
+         when(command.isUefiEnabled()).thenReturn(true);
+         when(command.getVmUuid()).thenReturn("vm-uuid");
+         when(command.getVmName()).thenReturn("vm-name");
+-        when(resource.getUefiNvramPath("vm-uuid")).thenReturn("/tmp/" + UUID.randomUUID() + ".fd");
+ 
+         wrapper.backupNvramIfNeeded(command, resource);
+     }
+@@ -115,7 +114,6 @@
+     @Test(expected = IOException.class)
+     public void testValidateNvramRevertStateFailsForLegacySnapshotsOnUefiVms() throws Exception {
+         LibvirtRevertDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtRevertDiskOnlyVMSnapshotCommandWrapper();
+-        LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
+         RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
+ 
+         Path activeNvram = Files.createTempFile("active-", ".fd");
+@@ -123,7 +121,7 @@
+         when(command.getVmName()).thenReturn("vm-name");
+         when(command.isUefiEnabled()).thenReturn(true);
+         when(command.getNvramSnapshotPath()).thenReturn(null);
+-        when(resource.getUefiNvramPath("vm-uuid")).thenReturn(activeNvram.toString());
++        LibvirtComputingResource resource = createMockLibvirtComputingResource(activeNvram.toString());
+ 
+         wrapper.validateNvramRevertState(command, resource, null, mock(KVMStoragePoolManager.class));
+     }
+@@ -131,14 +129,13 @@
+     @Test(expected = IOException.class)
+     public void testValidateNvramRevertStateFailsForLegacySnapshotsOnFallbackHostsForUefiVms() throws Exception {
+         LibvirtRevertDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtRevertDiskOnlyVMSnapshotCommandWrapper();
+-        LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
++        LibvirtComputingResource resource = createMockLibvirtComputingResource(Path.of("/tmp", UUID.randomUUID() + ".fd").toString());
+         RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
+ 
+         when(command.getVmUuid()).thenReturn("vm-uuid");
+         when(command.getVmName()).thenReturn("vm-name");
+         when(command.isUefiEnabled()).thenReturn(true);
+         when(command.getNvramSnapshotPath()).thenReturn(null);
+-        when(resource.getUefiNvramPath("vm-uuid")).thenReturn(Path.of("/tmp", UUID.randomUUID() + ".fd").toString());
+ 
+         wrapper.validateNvramRevertState(command, resource, null, mock(KVMStoragePoolManager.class));
+     }
+@@ -818,4 +815,10 @@
+ 
+         assertFalse(answer.getResult());
+     }
++
++    private static LibvirtComputingResource createMockLibvirtComputingResource(String uefiNvramPath) {
++        LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
++        when(resource.getUefiNvramPath("vm-uuid")).thenReturn(uefiNvramPath);
++        return resource;
++    }
+ }

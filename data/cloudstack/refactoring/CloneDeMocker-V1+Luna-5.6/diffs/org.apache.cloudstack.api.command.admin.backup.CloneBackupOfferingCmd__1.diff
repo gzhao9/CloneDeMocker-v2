@@ -1,0 +1,52 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -2634,13 +2634,7 @@
+         List<Long> providedDomainIds = List.of(11L);
+ 
+         // command
+-        CloneBackupOfferingCmd cmd = Mockito.mock(CloneBackupOfferingCmd.class);
+-        when(cmd.getSourceOfferingId()).thenReturn(sourceOfferingId);
+-        when(cmd.getName()).thenReturn("Cloned Offering");
+-        when(cmd.getDescription()).thenReturn(null);
+-        when(cmd.getExternalId()).thenReturn(null);
+-        when(cmd.getUserDrivenBackups()).thenReturn(null);
+-        when(cmd.getZoneId()).thenReturn(null);
++        CloneBackupOfferingCmd cmd = createCloneBackupOfferingCmd(sourceOfferingId, "Cloned Offering", providedDomainIds);
+         when(cmd.getDomainIds()).thenReturn(providedDomainIds);
+ 
+         // source offering
+@@ -2682,13 +2676,7 @@
+         Long savedOfferingId = 4L;
+         List<Long> sourceDomainIds = List.of(21L, 22L);
+ 
+-        CloneBackupOfferingCmd cmd = Mockito.mock(CloneBackupOfferingCmd.class);
+-        when(cmd.getSourceOfferingId()).thenReturn(sourceOfferingId);
+-        when(cmd.getName()).thenReturn("Cloned Inherit Offering");
+-        when(cmd.getDescription()).thenReturn(null);
+-        when(cmd.getExternalId()).thenReturn(null);
+-        when(cmd.getUserDrivenBackups()).thenReturn(null);
+-        when(cmd.getZoneId()).thenReturn(null);
++        CloneBackupOfferingCmd cmd = createCloneBackupOfferingCmd(sourceOfferingId, "Cloned Inherit Offering", sourceDomainIds);
+         // Simulate resolver having provided the source offering domains (the real cmd#getDomainIds() would do this)
+         when(cmd.getDomainIds()).thenReturn(sourceDomainIds);
+ 
+@@ -2874,4 +2862,19 @@
+         verify(backupOfferingDao).persist(any());
+         verify(backupOfferingDetailsDao, never()).saveDetails(any());
+     }
++
++    private static CloneBackupOfferingCmd createCloneBackupOfferingCmd(
++            Long sourceOfferingId,
++            String name,
++            List<Long> domainIds) {
++        CloneBackupOfferingCmd cmd = Mockito.mock(CloneBackupOfferingCmd.class);
++        when(cmd.getSourceOfferingId()).thenReturn(sourceOfferingId);
++        when(cmd.getName()).thenReturn(name);
++        when(cmd.getDescription()).thenReturn(null);
++        when(cmd.getExternalId()).thenReturn(null);
++        when(cmd.getUserDrivenBackups()).thenReturn(null);
++        when(cmd.getZoneId()).thenReturn(null);
++        when(cmd.getDomainIds()).thenReturn(new java.util.ArrayList<>(domainIds));
++        return cmd;
++    }
+ }
