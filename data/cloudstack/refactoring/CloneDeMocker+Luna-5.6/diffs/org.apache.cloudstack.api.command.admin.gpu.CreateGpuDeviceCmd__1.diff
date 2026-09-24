@@ -1,0 +1,57 @@
+--- a/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
+@@ -526,11 +526,7 @@
+     // GPU Device Tests
+     @Test
+     public void testCreateGpuDevice_Success() {
+-        CreateGpuDeviceCmd cmd = mock(CreateGpuDeviceCmd.class);
+-        when(cmd.getHostId()).thenReturn(HOST_ID);
+-        when(cmd.getBusAddress()).thenReturn(GPU_BUS_ADDRESS);
+-        when(cmd.getGpuCardId()).thenReturn(GPU_CARD_ID);
+-        when(cmd.getVgpuProfileId()).thenReturn(VGPU_PROFILE_ID);
++        CreateGpuDeviceCmd cmd = createMockCreateGpuDeviceCmd(VGPU_PROFILE_ID);
+         when(cmd.getType()).thenReturn(GpuDevice.DeviceType.PCI);
+         when(cmd.getParentGpuDeviceId()).thenReturn(null);
+         when(cmd.getNumaNode()).thenReturn(NUMA_NODE_0);
+@@ -1032,11 +1028,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateGpuDevice_InvalidVgpuProfile() {
+-        CreateGpuDeviceCmd cmd = mock(CreateGpuDeviceCmd.class);
+-        when(cmd.getHostId()).thenReturn(HOST_ID);
+-        when(cmd.getBusAddress()).thenReturn(GPU_BUS_ADDRESS);
+-        when(cmd.getGpuCardId()).thenReturn(GPU_CARD_ID);
+-        when(cmd.getVgpuProfileId()).thenReturn(GPU_CARD_ID_2); // Different card ID
++        CreateGpuDeviceCmd cmd = createMockCreateGpuDeviceCmd(GPU_CARD_ID_2);
+ 
+         VgpuProfileVO wrongProfile = mock(VgpuProfileVO.class);
+         when(wrongProfile.getCardId()).thenReturn(DIFFERENT_CARD_ID); // Different card ID
+@@ -1051,11 +1043,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateGpuDevice_ParentDeviceOnDifferentHost() {
+-        CreateGpuDeviceCmd cmd = mock(CreateGpuDeviceCmd.class);
+-        when(cmd.getHostId()).thenReturn(HOST_ID);
+-        when(cmd.getBusAddress()).thenReturn(GPU_BUS_ADDRESS);
+-        when(cmd.getGpuCardId()).thenReturn(GPU_CARD_ID);
+-        when(cmd.getVgpuProfileId()).thenReturn(VGPU_PROFILE_ID);
++        CreateGpuDeviceCmd cmd = createMockCreateGpuDeviceCmd(VGPU_PROFILE_ID);
+         when(cmd.getParentGpuDeviceId()).thenReturn(PARENT_GPU_DEVICE_ID);
+ 
+         GpuDeviceVO parentDevice = mock(GpuDeviceVO.class);
+@@ -1144,6 +1132,15 @@
+         // Should select first 2 devices (sorted by ID)
+         assertEquals(GPU_DEVICE_ID_LONG.longValue(), result.get(0).getId());
+         assertEquals(GPU_DEVICE_ID_2.longValue(), result.get(1).getId());
++    }
++
++    private static CreateGpuDeviceCmd createMockCreateGpuDeviceCmd(Long vgpuProfileId) {
++        CreateGpuDeviceCmd cmd = mock(CreateGpuDeviceCmd.class);
++        when(cmd.getHostId()).thenReturn(HOST_ID);
++        when(cmd.getBusAddress()).thenReturn(GPU_BUS_ADDRESS);
++        when(cmd.getGpuCardId()).thenReturn(GPU_CARD_ID);
++        when(cmd.getVgpuProfileId()).thenReturn(vgpuProfileId);
++        return cmd;
+     }
+ 
+     // Helper methods for creating mock GPU devices
