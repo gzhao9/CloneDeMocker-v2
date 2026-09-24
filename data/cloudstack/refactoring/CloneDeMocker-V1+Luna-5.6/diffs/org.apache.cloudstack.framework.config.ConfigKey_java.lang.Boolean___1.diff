@@ -1,0 +1,41 @@
+--- a/server/src/test/java/com/cloud/api/ApiServletTest.java
++++ b/server/src/test/java/com/cloud/api/ApiServletTest.java
+@@ -393,9 +393,8 @@
+         Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+         Mockito.when(userAccount.isUser2faEnabled()).thenReturn(false);
+ 
+-        ConfigKey<Boolean> mandateUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
++        ConfigKey<Boolean> mandateUserTwoFactorAuthentication = createMockConfigKey(false);
+         AccountManagerImpl.mandateUserTwoFactorAuthentication = mandateUserTwoFactorAuthentication;
+-        Mockito.when(mandateUserTwoFactorAuthentication.valueIn(1L)).thenReturn(false);
+ 
+         boolean result = servlet.skip2FAcheckForUser(cuurentSession);
+         Assert.assertEquals(true, result);
+@@ -412,13 +411,11 @@
+         Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+         Mockito.when(userAccount.isUser2faEnabled()).thenReturn(false);
+ 
+-        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
++        ConfigKey<Boolean> enableUserTwoFactorAuthentication = createMockConfigKey(true);
+         AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
+-        Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
+-
+-        ConfigKey<Boolean> mandateUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
++
++        ConfigKey<Boolean> mandateUserTwoFactorAuthentication = createMockConfigKey(true);
+         AccountManagerImpl.mandateUserTwoFactorAuthentication = mandateUserTwoFactorAuthentication;
+-        Mockito.when(mandateUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
+ 
+         boolean result = servlet.skip2FAcheckForUser(cuurentSession);
+         Assert.assertEquals(false, result);
+@@ -552,4 +549,10 @@
+         boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+         Assert.assertTrue(result);
+     }
++
++    private static ConfigKey<Boolean> createMockConfigKey(boolean valueInReturn) {
++        ConfigKey<Boolean> configKey = Mockito.mock(ConfigKey.class);
++        Mockito.when(configKey.valueIn(1L)).thenReturn(valueInReturn);
++        return configKey;
++    }
+ }

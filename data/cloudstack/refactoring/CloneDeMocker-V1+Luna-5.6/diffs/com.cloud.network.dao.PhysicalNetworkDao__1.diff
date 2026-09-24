@@ -1,0 +1,56 @@
+--- a/server/src/test/java/com/cloud/network/DedicateGuestVlanRangesTest.java
++++ b/server/src/test/java/com/cloud/network/DedicateGuestVlanRangesTest.java
+@@ -188,8 +188,8 @@
+         physicalNetwork.addIsolationMethod("VLAN");
+         AccountGuestVlanMapVO accountGuestVlanMapVO = new AccountGuestVlanMapVO(1L, 1L);
+ 
+-        when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
+-
++
++        networkService._physicalNetworkDao = MockPhysicalNetworkDao.createPhysicalNetworkDao(physicalNetwork);
+         when(networkService._dcVnetDao.listAllocatedVnetsInRange(anyLong(), anyLong(), anyInt(), anyInt())).thenReturn(null);
+ 
+         when(networkService._accountGuestVlanMapDao.listAccountGuestVlanMapsByPhysicalNetwork(anyLong())).thenReturn(null);
+@@ -390,4 +390,15 @@
+             return 1;
+         }
+     }
++
++    public final class MockPhysicalNetworkDao {
++        private MockPhysicalNetworkDao() {
++        }
++
++        public static PhysicalNetworkDao createPhysicalNetworkDao(PhysicalNetworkVO physicalNetwork) {
++            PhysicalNetworkDao physicalNetworkDao = mock(PhysicalNetworkDao.class);
++            when(physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
++            return physicalNetworkDao;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/network/UpdatePhysicalNetworkTest.java
++++ b/server/src/test/java/com/cloud/network/UpdatePhysicalNetworkTest.java
+@@ -57,7 +57,7 @@
+         TransactionLegacy txn = TransactionLegacy.open("updatePhysicalNetworkTest");
+         NetworkServiceImpl networkService = setUp();
+         existingRange.add("524");
+-        when(_physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetworkVO);
++        _physicalNetworkDao = MockPhysicalNetworkDao.createPhysicalNetworkDao(physicalNetworkVO);
+         when(_datacenterDao.findById(anyLong())).thenReturn(datacentervo);
+         when(_physicalNetworkDao.update(anyLong(), any(physicalNetworkVO.getClass()))).thenReturn(true);
+         when(_datacenterVnetDao.listVnetsByPhysicalNetworkAndDataCenter(anyLong(), anyLong())).thenReturn(existingRange);
+@@ -67,4 +67,15 @@
+         assertEquals("524-530", argumentCaptor.getValue());
+     }
+ 
++
++    public final class MockPhysicalNetworkDao {
++        private MockPhysicalNetworkDao() {
++        }
++
++        public static PhysicalNetworkDao createPhysicalNetworkDao(PhysicalNetworkVO physicalNetwork) {
++            PhysicalNetworkDao physicalNetworkDao = mock(PhysicalNetworkDao.class);
++            when(physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
++            return physicalNetworkDao;
++        }
++    }
+ }

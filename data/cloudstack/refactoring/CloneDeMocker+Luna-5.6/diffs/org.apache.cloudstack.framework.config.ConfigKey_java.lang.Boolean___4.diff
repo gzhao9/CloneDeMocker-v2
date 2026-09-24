@@ -1,0 +1,69 @@
+--- a/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
+@@ -173,7 +173,7 @@
+ 
+     @Before
+     public void setUp() throws Exception {
+-        enableUserTwoFactorAuthenticationMock = Mockito.mock(ConfigKey.class);
++        enableUserTwoFactorAuthenticationMock = createMockEnableUserTwoFactorAuthentication(null);
+         accountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthenticationMock;
+ 
+         allowOperationsOnUsersInSameAccountMock = Mockito.mock(ConfigKey.class);
+@@ -500,6 +500,14 @@
+         updateUserPwdChange();
+     }
+ 
++    private static ConfigKey<Boolean> createMockEnableUserTwoFactorAuthentication(Boolean valueInReturn) {
++        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
++        if (valueInReturn != null) {
++            Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(valueInReturn);
++        }
++        return enableUserTwoFactorAuthentication;
++    }
++
+     private void updateUserPwdChange() {
+         Mockito.doReturn(true).when(UpdateUserCmdMock).isPasswordChangeRequired();
+         Mockito.when(userVoMock.getAccountId()).thenReturn(10L);
+@@ -1142,10 +1150,8 @@
+         Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
+         Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+ 
+-        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
++        ConfigKey<Boolean> enableUserTwoFactorAuthentication = createMockEnableUserTwoFactorAuthentication(false);
+         AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
+-
+-        Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(false);
+ 
+         accountManagerImpl.enableTwoFactorAuthentication(userId, "totp");
+     }
+@@ -1161,9 +1167,8 @@
+         Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
+         Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+ 
+-        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
++        ConfigKey<Boolean> enableUserTwoFactorAuthentication = createMockEnableUserTwoFactorAuthentication(true);
+         AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
+-        Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
+ 
+         UserTwoFactorAuthenticator totpProvider = Mockito.mock(UserTwoFactorAuthenticator.class);
+         Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = Mockito.mock(HashMap.class);
+@@ -1190,9 +1195,8 @@
+         Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
+         Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+ 
+-        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
++        ConfigKey<Boolean> enableUserTwoFactorAuthentication = createMockEnableUserTwoFactorAuthentication(true);
+         AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
+-        Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
+ 
+         UserTwoFactorAuthenticator totpProvider = Mockito.mock(UserTwoFactorAuthenticator.class);
+         Map<String, UserTwoFactorAuthenticator> userTwoFactorAuthenticationProvidersMap = Mockito.mock(HashMap.class);
+@@ -1324,7 +1328,7 @@
+         Mockito.when(userAccountDao.findById(1L)).thenReturn(userAccountVO);
+         Mockito.when(userDaoMock.findById(1L)).thenReturn(userVoMock);
+         Mockito.when(userAccountVO.getDomainId()).thenReturn(1L);
+-        Mockito.when(enableUserTwoFactorAuthenticationMock.valueIn(1L)).thenReturn(true);
++        enableUserTwoFactorAuthenticationMock = createMockEnableUserTwoFactorAuthentication(true);
+         Mockito.when(cmd.getEnable()).thenReturn(true);
+ 
+         UserTwoFactorAuthenticator staticpinProvider = Mockito.mock(UserTwoFactorAuthenticator.class);

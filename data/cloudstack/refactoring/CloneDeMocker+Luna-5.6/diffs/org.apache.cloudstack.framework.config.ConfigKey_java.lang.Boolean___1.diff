@@ -1,0 +1,41 @@
+--- a/server/src/test/java/com/cloud/api/ApiServletTest.java
++++ b/server/src/test/java/com/cloud/api/ApiServletTest.java
+@@ -393,9 +393,7 @@
+         Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+         Mockito.when(userAccount.isUser2faEnabled()).thenReturn(false);
+ 
+-        ConfigKey<Boolean> mandateUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
+-        AccountManagerImpl.mandateUserTwoFactorAuthentication = mandateUserTwoFactorAuthentication;
+-        Mockito.when(mandateUserTwoFactorAuthentication.valueIn(1L)).thenReturn(false);
++        AccountManagerImpl.mandateUserTwoFactorAuthentication = createMockMandateUserTwoFactorAuthentication(false);
+ 
+         boolean result = servlet.skip2FAcheckForUser(cuurentSession);
+         Assert.assertEquals(true, result);
+@@ -412,13 +410,11 @@
+         Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+         Mockito.when(userAccount.isUser2faEnabled()).thenReturn(false);
+ 
+-        ConfigKey<Boolean> enableUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
++        ConfigKey<Boolean> enableUserTwoFactorAuthentication = createMockMandateUserTwoFactorAuthentication(true);
+         AccountManagerImpl.enableUserTwoFactorAuthentication = enableUserTwoFactorAuthentication;
+-        Mockito.when(enableUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
+-
+-        ConfigKey<Boolean> mandateUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
++
++        ConfigKey<Boolean> mandateUserTwoFactorAuthentication = createMockMandateUserTwoFactorAuthentication(true);
+         AccountManagerImpl.mandateUserTwoFactorAuthentication = mandateUserTwoFactorAuthentication;
+-        Mockito.when(mandateUserTwoFactorAuthentication.valueIn(1L)).thenReturn(true);
+ 
+         boolean result = servlet.skip2FAcheckForUser(cuurentSession);
+         Assert.assertEquals(false, result);
+@@ -552,4 +548,10 @@
+         boolean result = servlet.isStateChangingCommandNotUsingPOST(command, method, params);
+         Assert.assertTrue(result);
+     }
++
++    private static ConfigKey<Boolean> createMockMandateUserTwoFactorAuthentication(boolean value) {
++        ConfigKey<Boolean> mandateUserTwoFactorAuthentication = Mockito.mock(ConfigKey.class);
++        Mockito.when(mandateUserTwoFactorAuthentication.valueIn(1L)).thenReturn(value);
++        return mandateUserTwoFactorAuthentication;
++    }
+ }

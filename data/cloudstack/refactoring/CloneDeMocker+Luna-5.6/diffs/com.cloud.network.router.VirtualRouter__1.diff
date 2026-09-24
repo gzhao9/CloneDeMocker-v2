@@ -1,0 +1,58 @@
+--- a/server/src/test/java/com/cloud/network/router/CommandSetupHelperTest.java
++++ b/server/src/test/java/com/cloud/network/router/CommandSetupHelperTest.java
+@@ -168,7 +168,7 @@
+ 
+     @Test
+     public void testCreateVpcAssociatePublicIP() {
+-        VirtualRouter router = Mockito.mock(VirtualRouter.class);
++        VirtualRouter router = createMockVirtualRouter(4L);
+         Ip ip = new Ip("10.10.10.10");
+         IPAddressVO ipAddressVO = new IPAddressVO(ip, 1L, 0x0ac00000L, 2L, true);
+         VlanVO vlanVO = new VlanVO();
+@@ -188,7 +188,6 @@
+         DataCenterVO dc = new DataCenterVO(1L, null, null, null, null, null, null, null, null, null, DataCenter.NetworkType.Advanced, null, null);
+ 
+         when(router.getId()).thenReturn(14L);
+-        when(router.getDataCenterId()).thenReturn(4L);
+         when(nicDao.listByVmId(ArgumentMatchers.anyLong())).thenReturn(List.of(nicVO));
+         when(networkDao.findById(ArgumentMatchers.anyLong())).thenReturn(networkVO);
+         when(ipAddressDao.listByAssociatedVpc(ArgumentMatchers.anyLong(), ArgumentMatchers.nullable(Boolean.class))).thenReturn(userIps);
+@@ -214,12 +213,11 @@
+         BgpPeerVO bgpPeer2 = Mockito.mock(BgpPeerVO.class);
+         List<BgpPeerVO> bgpPeers = Arrays.asList(bgpPeer1, bgpPeer2);
+         Commands cmds = new Commands(Command.OnError.Stop);
+-        VirtualRouter router = Mockito.mock(VirtualRouter.class);
+         NetworkVO network = Mockito.mock(NetworkVO.class);
+ 
+         long zoneId = 10L;
+         long networkId = 11L;
+-        when(router.getDataCenterId()).thenReturn(zoneId);
++        VirtualRouter router = createMockVirtualRouter(zoneId);
+         when(router.getVpcId()).thenReturn(null);
+         when(network.getId()).thenReturn(networkId);
+         ASNumberVO asNumberVO = Mockito.mock(ASNumberVO.class);
+@@ -242,12 +240,11 @@
+         BgpPeerVO bgpPeer2 = Mockito.mock(BgpPeerVO.class);
+         List<BgpPeerVO> bgpPeers = Arrays.asList(bgpPeer1, bgpPeer2);
+         Commands cmds = new Commands(Command.OnError.Stop);
+-        VirtualRouter router = Mockito.mock(VirtualRouter.class);
+         NetworkVO network = Mockito.mock(NetworkVO.class);
+ 
+         long zoneId = 10L;
++        VirtualRouter router = createMockVirtualRouter(zoneId);
+         long vpcId = 11L;
+-        when(router.getDataCenterId()).thenReturn(zoneId);
+         when(router.getVpcId()).thenReturn(vpcId);
+         ASNumberVO asNumberVO = Mockito.mock(ASNumberVO.class);
+         when(asNumberDao.findByZoneAndVpcId(zoneId, vpcId)).thenReturn(asNumberVO);
+@@ -311,4 +308,10 @@
+         ConfigKey<Integer> configKey = NetworkOrchestrationService.DhcpLeaseTimeout;
+         Assert.assertTrue("ConfigKey should be dynamic", configKey.isDynamic());
+     }
++
++    private static VirtualRouter createMockVirtualRouter(long dataCenterId) {
++        VirtualRouter router = Mockito.mock(VirtualRouter.class);
++        when(router.getDataCenterId()).thenReturn(dataCenterId);
++        return router;
++    }
+ }
