@@ -1,0 +1,65 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
+@@ -111,6 +111,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class ServerAdapterTest {
++    @Mock
++    private NetworkVO network;
+ 
+     @InjectMocks
+     ServerAdapter serverAdapter;
+@@ -295,7 +297,6 @@
+ 
+     @Test
+     public void testGetValidatedInstanceNicDetails_NullVm_ReturnsNullPair() {
+-        NetworkVO network = mock(NetworkVO.class);
+ 
+         Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(null, network);
+ 
+@@ -313,7 +314,6 @@
+ 
+     @Test
+     public void testGetValidatedInstanceNicDetails_NoRestoreConfig_ReturnsNullPair() {
+-        NetworkVO network = mock(NetworkVO.class);
+ 
+         Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(null, network);
+ 
+@@ -323,7 +323,6 @@
+ 
+     @Test
+     public void testGetValidatedInstanceNicDetails_BlankRestoreConfig_ReturnsNullPair() {
+-        NetworkVO network = mock(NetworkVO.class);
+ 
+         Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails("   ", network);
+ 
+@@ -508,9 +507,9 @@
+ 
+     @Test
+     public void testGetNetworkById_ReturnsVoFromDao() {
+-        NetworkVO vo = mock(NetworkVO.class);
+-        when(networkDao.findById(4L)).thenReturn(vo);
+-        assertEquals(vo, serverAdapter.getNetworkById(4L));
++        // removed local mock; replaced with global field `network`
++        when(networkDao.findById(4L)).thenReturn(network);
++        assertEquals(network, serverAdapter.getNetworkById(4L));
+     }
+ 
+ 
+@@ -697,7 +696,6 @@
+ 
+     @Test
+     public void testAccountCannotAccessNetwork_CanAccess_ReturnsFalse() {
+-        NetworkVO network = mock(NetworkVO.class);
+         Account account = mock(Account.class);
+         when(accountService.getActiveAccountById(1L)).thenReturn(account);
+         doNothing().when(networkModel).checkNetworkPermissions(account, network);
+@@ -707,7 +705,7 @@
+ 
+     @Test
+     public void testAccountCannotAccessNetwork_CannotAccess_ReturnsTrue() {
+-        NetworkVO network = mock(NetworkVO.class);
++        // removed local mock; replaced with global field `network`
+         Account account = mock(Account.class);
+         when(accountService.getActiveAccountById(1L)).thenReturn(account);
+         doThrow(new CloudRuntimeException("Access denied"))

@@ -1,0 +1,67 @@
+--- a/server/src/test/java/com/cloud/network/router/NetworkHelperImplTest.java
++++ b/server/src/test/java/com/cloud/network/router/NetworkHelperImplTest.java
+@@ -340,7 +340,6 @@
+         NicProfile expected = getExpectedNicProfile(true, vlanTag);
+ 
+         Ip ipMock = Mockito.mock(Ip.class);
+-        NetworkVO publicNetworkMock = Mockito.mock(NetworkVO.class);
+         long networkId = 1L;
+         Mockito.when(publicIpMock.getAddress()).thenReturn(ipMock);
+         Mockito.when(ipMock.addr()).thenReturn(expected.getIPv4Address());
+@@ -348,8 +347,8 @@
+         Mockito.when(publicIpMock.getNetmask()).thenReturn(expected.getIPv4Netmask());
+         Mockito.when(publicIpMock.getMacAddress()).thenReturn(expected.getMacAddress());
+         Mockito.when(publicIpMock.getNetworkId()).thenReturn(networkId);
++         NetworkVO publicNetworkMock = createMockNetworkVO(Networks.BroadcastDomainType.Vxlan);
+         Mockito.when(networkDao.findById(networkId)).thenReturn(publicNetworkMock);
+-        Mockito.when(publicNetworkMock.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Vxlan);
+         Mockito.when(publicIpMock.getVlanTag()).thenReturn(vlanTag);
+ 
+         networkHelperSpy.configurePublicVrNicBasedOnSourceNatIp(nicProfile, publicIpMock);
+@@ -370,7 +369,6 @@
+         NicProfile expected = getExpectedNicProfile(false, vlanTag);
+ 
+         Ip ipMock = Mockito.mock(Ip.class);
+-        NetworkVO publicNetworkMock = Mockito.mock(NetworkVO.class);
+         long networkId = 1L;
+         Mockito.when(publicIpMock.getAddress()).thenReturn(ipMock);
+         Mockito.when(ipMock.addr()).thenReturn(expected.getIPv4Address());
+@@ -378,8 +376,8 @@
+         Mockito.when(publicIpMock.getNetmask()).thenReturn(expected.getIPv4Netmask());
+         Mockito.when(publicIpMock.getMacAddress()).thenReturn(expected.getMacAddress());
+         Mockito.when(publicIpMock.getNetworkId()).thenReturn(networkId);
++        NetworkVO publicNetworkMock = createMockNetworkVO(Networks.BroadcastDomainType.Vlan);
+         Mockito.when(networkDao.findById(networkId)).thenReturn(publicNetworkMock);
+-        Mockito.when(publicNetworkMock.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Vlan);
+         Mockito.when(publicIpMock.getVlanTag()).thenReturn(vlanTag);
+ 
+         networkHelperSpy.configurePublicVrNicBasedOnSourceNatIp(nicProfile, publicIpMock);
+@@ -400,7 +398,6 @@
+         NicProfile expected = getExpectedNicProfile(false, vlanTag);
+ 
+         Ip ipMock = Mockito.mock(Ip.class);
+-        NetworkVO publicNetworkMock = Mockito.mock(NetworkVO.class);
+         long networkId = 1L;
+         Mockito.when(publicIpMock.getAddress()).thenReturn(ipMock);
+         Mockito.when(ipMock.addr()).thenReturn(expected.getIPv4Address());
+@@ -408,8 +405,8 @@
+         Mockito.when(publicIpMock.getNetmask()).thenReturn(expected.getIPv4Netmask());
+         Mockito.when(publicIpMock.getMacAddress()).thenReturn(expected.getMacAddress());
+         Mockito.when(publicIpMock.getNetworkId()).thenReturn(networkId);
++         NetworkVO publicNetworkMock = createMockNetworkVO(Networks.BroadcastDomainType.Vlan);
+         Mockito.when(networkDao.findById(networkId)).thenReturn(publicNetworkMock);
+-        Mockito.when(publicNetworkMock.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Vlan);
+         Mockito.when(publicIpMock.getVlanTag()).thenReturn(vlanTag);
+ 
+         networkHelperSpy.configurePublicVrNicBasedOnSourceNatIp(nicProfile, publicIpMock);
+@@ -534,4 +531,10 @@
+         Map<Network, List<? extends NicProfile>> nic = networkHelperSpy.configurePublicNic(routerDeploymentDefinitionMock, false);
+         Mockito.verify(ipv6ServiceMock).updateNicIpv6(Mockito.eq(nic.get(networkMock).get(0)), Mockito.any(), Mockito.eq(networkMock));
+     }
++
++    private static NetworkVO createMockNetworkVO(Networks.BroadcastDomainType broadcastDomainType) {
++        NetworkVO networkMock = Mockito.mock(NetworkVO.class);
++        Mockito.when(networkMock.getBroadcastDomainType()).thenReturn(broadcastDomainType);
++        return networkMock;
++    }
+ }

@@ -1,0 +1,85 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
+@@ -140,6 +140,7 @@
+     @Mock VMSnapshotDao vmSnapshotDao;
+     @Mock BackupDao backupDao;
+     @Mock NetworkModel networkModel;
++    @Mock NetworkVO networkMock;
+     @Mock ProjectManager projectManager;
+     @Mock DomainDao domainDao;
+     @Mock
+@@ -295,9 +296,7 @@
+ 
+     @Test
+     public void testGetValidatedInstanceNicDetails_NullVm_ReturnsNullPair() {
+-        NetworkVO network = mock(NetworkVO.class);
+-
+-        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(null, network);
++        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(null, networkMock);
+ 
+         assertNull(result.first());
+         assertNull(result.second());
+@@ -313,9 +312,7 @@
+ 
+     @Test
+     public void testGetValidatedInstanceNicDetails_NoRestoreConfig_ReturnsNullPair() {
+-        NetworkVO network = mock(NetworkVO.class);
+-
+-        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(null, network);
++        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails(null, networkMock);
+ 
+         assertNull(result.first());
+         assertNull(result.second());
+@@ -323,9 +320,7 @@
+ 
+     @Test
+     public void testGetValidatedInstanceNicDetails_BlankRestoreConfig_ReturnsNullPair() {
+-        NetworkVO network = mock(NetworkVO.class);
+-
+-        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails("   ", network);
++        Pair<String, String> result = serverAdapter.getValidatedInstanceNicDetails("   ", networkMock);
+ 
+         assertNull(result.first());
+         assertNull(result.second());
+@@ -508,9 +503,8 @@
+ 
+     @Test
+     public void testGetNetworkById_ReturnsVoFromDao() {
+-        NetworkVO vo = mock(NetworkVO.class);
+-        when(networkDao.findById(4L)).thenReturn(vo);
+-        assertEquals(vo, serverAdapter.getNetworkById(4L));
++        when(networkDao.findById(4L)).thenReturn(networkMock);
++        assertEquals(networkMock, serverAdapter.getNetworkById(4L));
+     }
+ 
+ 
+@@ -697,23 +691,21 @@
+ 
+     @Test
+     public void testAccountCannotAccessNetwork_CanAccess_ReturnsFalse() {
+-        NetworkVO network = mock(NetworkVO.class);
+         Account account = mock(Account.class);
+         when(accountService.getActiveAccountById(1L)).thenReturn(account);
+-        doNothing().when(networkModel).checkNetworkPermissions(account, network);
+-
+-        assertFalse(serverAdapter.accountCannotAccessNetwork(network, 1L));
++        doNothing().when(networkModel).checkNetworkPermissions(account, networkMock);
++
++        assertFalse(serverAdapter.accountCannotAccessNetwork(networkMock, 1L));
+     }
+ 
+     @Test
+     public void testAccountCannotAccessNetwork_CannotAccess_ReturnsTrue() {
+-        NetworkVO network = mock(NetworkVO.class);
+         Account account = mock(Account.class);
+         when(accountService.getActiveAccountById(1L)).thenReturn(account);
+         doThrow(new CloudRuntimeException("Access denied"))
+-                .when(networkModel).checkNetworkPermissions(account, network);
+-
+-        assertTrue(serverAdapter.accountCannotAccessNetwork(network, 1L));
++                .when(networkModel).checkNetworkPermissions(account, networkMock);
++
++        assertTrue(serverAdapter.accountCannotAccessNetwork(networkMock, 1L));
+     }
+ 
+ 

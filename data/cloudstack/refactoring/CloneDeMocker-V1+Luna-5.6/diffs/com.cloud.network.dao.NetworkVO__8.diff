@@ -1,0 +1,127 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/NetworkVOToNetworkConverterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/NetworkVOToNetworkConverterTest.java
+@@ -37,10 +37,8 @@
+ 
+     @Test
+     public void testToNetwork_MapsFieldsAndDataCenterRef() {
+-        final NetworkVO vo = mock(NetworkVO.class);
+-        when(vo.getUuid()).thenReturn("net-1");
++        final NetworkVO vo = MockNetworkVO.createNetworkVO("net-1", "Guest network");
+         when(vo.getName()).thenReturn("guest-net");
+-        when(vo.getDisplayText()).thenReturn("Guest network");
+         when(vo.getPrivateMtu()).thenReturn(1450);
+         when(vo.getDataCenterId()).thenReturn(10L);
+ 
+@@ -68,11 +66,9 @@
+ 
+     @Test
+     public void testToNetwork_UsesFallbackNameAndSkipsBlankDataCenterUuid() {
+-        final NetworkVO vo = mock(NetworkVO.class);
+-        when(vo.getUuid()).thenReturn("net-2");
++        final NetworkVO vo = MockNetworkVO.createNetworkVO("net-2", "Fallback network");
+         when(vo.getName()).thenReturn(null);
+         when(vo.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+-        when(vo.getDisplayText()).thenReturn("Fallback network");
+         when(vo.getPrivateMtu()).thenReturn(null);
+         when(vo.getDataCenterId()).thenReturn(20L);
+ 
+@@ -89,17 +85,13 @@
+ 
+     @Test
+     public void testToNetworkList_ConvertsAllItemsInOrder() {
+-        final NetworkVO first = mock(NetworkVO.class);
+-        when(first.getUuid()).thenReturn("net-1");
++        final NetworkVO first = MockNetworkVO.createNetworkVO("net-1", "First network");
+         when(first.getName()).thenReturn("first-net");
+-        when(first.getDisplayText()).thenReturn("First network");
+         when(first.getPrivateMtu()).thenReturn(1400);
+ 
+-        final NetworkVO second = mock(NetworkVO.class);
+-        when(second.getUuid()).thenReturn("net-2");
++        final NetworkVO second = MockNetworkVO.createNetworkVO("net-2", "Second network");
+         when(second.getName()).thenReturn(null);
+         when(second.getTrafficType()).thenReturn(Networks.TrafficType.Control);
+-        when(second.getDisplayText()).thenReturn("Second network");
+         when(second.getPrivateMtu()).thenReturn(null);
+ 
+         final List<Network> result = NetworkVOToNetworkConverter.toNetworkList(List.of(first, second), null);
+@@ -110,4 +102,16 @@
+         assertEquals("net-2", result.get(1).getId());
+         assertEquals("Control-net-2", result.get(1).getName());
+     }
++
++    public final class MockNetworkVO {
++        private MockNetworkVO() {
++        }
++
++        public static NetworkVO createNetworkVO(String uuidReturn, String displayTextReturn) {
++            final NetworkVO vo = mock(NetworkVO.class);
++            when(vo.getUuid()).thenReturn(uuidReturn);
++            when(vo.getDisplayText()).thenReturn(displayTextReturn);
++            return vo;
++        }
++    }
+ }
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/NetworkVOToVnicProfileConverterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/NetworkVOToVnicProfileConverterTest.java
+@@ -36,10 +36,8 @@
+ 
+     @Test
+     public void testToVnicProfile_MapsNetworkAndDataCenterRefs() {
+-        final NetworkVO vo = mock(NetworkVO.class);
+-        when(vo.getUuid()).thenReturn("net-3");
++        final NetworkVO vo = MockNetworkVO.createNetworkVO("net-3", "Profile network");
+         when(vo.getName()).thenReturn("profile-net");
+-        when(vo.getDisplayText()).thenReturn("Profile network");
+         when(vo.getDataCenterId()).thenReturn(30L);
+ 
+         final DataCenterJoinVO dc = mock(DataCenterJoinVO.class);
+@@ -58,11 +56,9 @@
+ 
+     @Test
+     public void testToVnicProfile_UsesFallbackNameAndOmitsBlankDataCenterUuid() {
+-        final NetworkVO vo = mock(NetworkVO.class);
+-        when(vo.getUuid()).thenReturn("net-4");
++        final NetworkVO vo = MockNetworkVO.createNetworkVO("net-4", "Mgmt network");
+         when(vo.getName()).thenReturn(null);
+         when(vo.getTrafficType()).thenReturn(Networks.TrafficType.Management);
+-        when(vo.getDisplayText()).thenReturn("Mgmt network");
+         when(vo.getDataCenterId()).thenReturn(40L);
+ 
+         final DataCenterJoinVO dc = mock(DataCenterJoinVO.class);
+@@ -78,16 +74,12 @@
+ 
+     @Test
+     public void testToVnicProfileList_ConvertsAllItemsInOrder() {
+-        final NetworkVO first = mock(NetworkVO.class);
+-        when(first.getUuid()).thenReturn("net-1");
++        final NetworkVO first = MockNetworkVO.createNetworkVO("net-1", "Profile A");
+         when(first.getName()).thenReturn("profile-a");
+-        when(first.getDisplayText()).thenReturn("Profile A");
+ 
+-        final NetworkVO second = mock(NetworkVO.class);
+-        when(second.getUuid()).thenReturn("net-2");
++        final NetworkVO second = MockNetworkVO.createNetworkVO("net-2", "Profile B");
+         when(second.getName()).thenReturn(null);
+         when(second.getTrafficType()).thenReturn(Networks.TrafficType.Control);
+-        when(second.getDisplayText()).thenReturn("Profile B");
+ 
+         final List<VnicProfile> result = NetworkVOToVnicProfileConverter.toVnicProfileList(List.of(first, second), null);
+ 
+@@ -97,4 +89,16 @@
+         assertEquals("net-2", result.get(1).getId());
+         assertEquals("Control-net-2", result.get(1).getName());
+     }
++
++    public final class MockNetworkVO {
++        private MockNetworkVO() {
++        }
++
++        public static NetworkVO createNetworkVO(String uuidReturn, String displayTextReturn) {
++            final NetworkVO vo = mock(NetworkVO.class);
++            when(vo.getUuid()).thenReturn(uuidReturn);
++            when(vo.getDisplayText()).thenReturn(displayTextReturn);
++            return vo;
++        }
++    }
+ }

@@ -1,0 +1,84 @@
+--- a/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
+@@ -265,13 +265,8 @@
+     // GPU Card Tests
+     @Test
+     public void testCreateGpuCard_Success() {
+-        CreateGpuCardCmd cmd = mock(CreateGpuCardCmd.class);
+-        when(cmd.getDeviceId()).thenReturn(GPU_DEVICE_ID);
+-        when(cmd.getDeviceName()).thenReturn(GPU_DEVICE_NAME);
+-        when(cmd.getName()).thenReturn(GPU_CARD_NAME);
+-        when(cmd.getVendorName()).thenReturn(GPU_VENDOR_NAME);
+-        when(cmd.getVendorId()).thenReturn(GPU_VENDOR_ID);
+-
++
++        CreateGpuCardCmd cmd = createMockCreateGpuCardCmd(GPU_DEVICE_ID, GPU_DEVICE_NAME, GPU_CARD_NAME, GPU_VENDOR_NAME, GPU_VENDOR_ID);
+         when(gpuCardDao.findByVendorIdAndDeviceId(GPU_VENDOR_ID, GPU_DEVICE_ID)).thenReturn(null);
+         when(gpuCardDao.persist(any(GpuCardVO.class))).thenReturn(mockGpuCard);
+         when(vgpuProfileDao.persist(any(VgpuProfileVO.class))).thenReturn(mockVgpuProfile);
+@@ -307,13 +302,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateGpuCard_DuplicateCard() {
+-        CreateGpuCardCmd cmd = mock(CreateGpuCardCmd.class);
+-        when(cmd.getDeviceId()).thenReturn(GPU_DEVICE_ID);
+-        when(cmd.getDeviceName()).thenReturn(GPU_DEVICE_NAME);
+-        when(cmd.getName()).thenReturn(GPU_CARD_NAME);
+-        when(cmd.getVendorName()).thenReturn(GPU_VENDOR_NAME);
+-        when(cmd.getVendorId()).thenReturn(GPU_VENDOR_ID);
+-
++
++        CreateGpuCardCmd cmd = createMockCreateGpuCardCmd(GPU_DEVICE_ID, GPU_DEVICE_NAME, GPU_CARD_NAME, GPU_VENDOR_NAME, GPU_VENDOR_ID);
+         when(gpuCardDao.findByVendorIdAndDeviceId(GPU_VENDOR_ID, GPU_DEVICE_ID)).thenReturn(mockGpuCard);
+ 
+         gpuService.createGpuCard(cmd);
+@@ -997,25 +987,15 @@
+     // Additional edge case tests
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateGpuCard_BlankVendorName() {
+-        CreateGpuCardCmd cmd = mock(CreateGpuCardCmd.class);
+-        when(cmd.getDeviceId()).thenReturn(GPU_DEVICE_ID);
+-        when(cmd.getDeviceName()).thenReturn(GPU_DEVICE_NAME);
+-        when(cmd.getName()).thenReturn(GPU_CARD_NAME);
+-        when(cmd.getVendorName()).thenReturn("");
+-        when(cmd.getVendorId()).thenReturn(GPU_VENDOR_ID);
+-
++
++        CreateGpuCardCmd cmd = createMockCreateGpuCardCmd(GPU_DEVICE_ID, GPU_DEVICE_NAME, GPU_CARD_NAME, "", GPU_VENDOR_ID);
+         gpuService.createGpuCard(cmd);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateGpuCard_BlankName() {
+-        CreateGpuCardCmd cmd = mock(CreateGpuCardCmd.class);
+-        when(cmd.getDeviceId()).thenReturn(GPU_DEVICE_ID);
+-        when(cmd.getDeviceName()).thenReturn(GPU_DEVICE_NAME);
+-        when(cmd.getName()).thenReturn("");
+-        when(cmd.getVendorName()).thenReturn(GPU_VENDOR_NAME);
+-        when(cmd.getVendorId()).thenReturn(GPU_VENDOR_ID);
+-
++
++        CreateGpuCardCmd cmd = createMockCreateGpuCardCmd(GPU_DEVICE_ID, GPU_DEVICE_NAME, "", GPU_VENDOR_NAME, GPU_VENDOR_ID);
+         gpuService.createGpuCard(cmd);
+     }
+ 
+@@ -1492,4 +1472,19 @@
+         verify(parentDevice).setState(GpuDevice.State.Error);
+         verify(gpuDeviceDao).update(eq(PARENT_GPU_DEVICE_ID), eq(parentDevice));
+     }
++
++    private static CreateGpuCardCmd createMockCreateGpuCardCmd(
++            String deviceId,
++            String deviceName,
++            String name,
++            String vendorName,
++            String vendorId) {
++        CreateGpuCardCmd cmd = mock(CreateGpuCardCmd.class);
++        when(cmd.getDeviceId()).thenReturn(deviceId);
++        when(cmd.getDeviceName()).thenReturn(deviceName);
++        when(cmd.getName()).thenReturn(name);
++        when(cmd.getVendorName()).thenReturn(vendorName);
++        when(cmd.getVendorId()).thenReturn(vendorId);
++        return cmd;
++    }
+ }

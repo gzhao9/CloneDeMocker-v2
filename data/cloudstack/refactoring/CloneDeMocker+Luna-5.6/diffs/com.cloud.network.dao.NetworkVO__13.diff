@@ -1,0 +1,74 @@
+--- a/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
++++ b/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
+@@ -138,6 +138,12 @@
+                 new ArrayList<>(), 5, 6, null, FirewallRule.TrafficType.Ingress);
+     }
+ 
++    private static NetworkVO createMockNetwork(Long vpcId) {
++        NetworkVO network = Mockito.mock(NetworkVO.class);
++        when(network.getVpcId()).thenReturn(vpcId);
++        return network;
++    }
++
+     @Ignore("Requires database to be set up")
+     @Test
+     public void testApplyRules() {
+@@ -256,10 +262,9 @@
+ 
+         List<FirewallRule> newRuleList = createNewRuleList(newNetworkId);
+ 
+-        NetworkVO newNetworkVO = Mockito.mock(NetworkVO.class);
+         Vpc vpc = Mockito.mock(Vpc.class);
++        NetworkVO newNetworkVO = createMockNetwork(vpcId);
+         when(_firewallMgr._networkDao.findById(2L)).thenReturn(newNetworkVO);
+-        when(newNetworkVO.getVpcId()).thenReturn(vpcId);
+         when(_vpcMgr.getActiveVpc(Mockito.eq(vpcId))).thenReturn(vpc);
+         when(_vpcMgr.isNetworkOnVpcEnabledConserveMode(Mockito.eq(newNetworkVO))).thenReturn(vpcConserveMode);
+ 
+@@ -356,7 +361,7 @@
+     public void testValidateFirewallRuleVpcWithoutAssociatedNetworkUsesVpcCapabilities() {
+         final Account caller = Mockito.mock(Account.class);
+         final IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+-        final NetworkVO network = Mockito.mock(NetworkVO.class);
++        final NetworkVO network = createMockNetwork(10L);
+         final FirewallServiceProvider firewallServiceProvider = Mockito.mock(FirewallServiceProvider.class);
+         final Map<Capability, String> firewallCaps = new HashMap<>();
+         final Map<Service, Map<Capability, String>> capabilities = new HashMap<>();
+@@ -368,7 +373,6 @@
+ 
+         when(ipAddress.getVpcId()).thenReturn(10L);
+         when(_networkModel.getNetwork(2L)).thenReturn(network);
+-        when(network.getVpcId()).thenReturn(10L);
+         when(routedIpv4Manager.isVirtualRouterGateway(network)).thenReturn(false);
+         when(firewallServiceProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+         when(firewallServiceProvider.getCapabilities()).thenReturn(capabilities);
+@@ -439,14 +443,13 @@
+ 
+     @Test
+     public void testGetFirewallServiceCapabilitiesForVpcNetworkUsesVpcProvider() {
+-        NetworkVO network = Mockito.mock(NetworkVO.class);
+         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> firewallCaps = new HashMap<>();
+         firewallCaps.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+         Map<Service, Map<Capability, String>> providerCapabilities = new HashMap<>();
+         providerCapabilities.put(Service.Firewall, firewallCaps);
+ 
+-        when(network.getVpcId()).thenReturn(10L);
++        NetworkVO network = createMockNetwork(10L);
+         when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+         when(fwProvider.getCapabilities()).thenReturn(providerCapabilities);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+@@ -460,12 +463,11 @@
+ 
+     @Test
+     public void testGetFirewallServiceCapabilitiesForVpcNetworkFallsBackToNetworkModelWhenNoProvider() {
+-        NetworkVO network = Mockito.mock(NetworkVO.class);
++        NetworkVO network = createMockNetwork(10L);
+         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> fallbackCaps = new HashMap<>();
+ 
+         when(network.getId()).thenReturn(1L);
+-        when(network.getVpcId()).thenReturn(10L);
+         when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(false);
+         when(_networkModel.getNetworkServiceCapabilities(1L, Service.Firewall)).thenReturn(fallbackCaps);
