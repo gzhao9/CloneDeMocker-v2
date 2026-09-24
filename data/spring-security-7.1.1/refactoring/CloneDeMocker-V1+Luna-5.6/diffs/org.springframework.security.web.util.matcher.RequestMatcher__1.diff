@@ -1,0 +1,76 @@
+--- a/web/src/test/java/org/springframework/security/web/util/matcher/AndRequestMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/util/matcher/AndRequestMatcherTests.java
+@@ -129,10 +129,10 @@
+ 
+ 	@Test
+ 	public void matcherWhenMatchersHavePlaceholdersThenPropagatesMatches() {
++	    this.delegate = MockRequestMatcher.createMockRequestMatcher(this.request, MatchResult.match(Map.of("param", "value")));
++		this.delegate2 = MockRequestMatcher.createMockRequestMatcher(this.request, MatchResult.match(Map.of("param", "othervalue")));
+ 		this.matcher = new AndRequestMatcher(this.delegate, this.delegate2);
+ 
+-		given(this.delegate.matcher(this.request)).willReturn(MatchResult.match(Map.of("param", "value")));
+-		given(this.delegate2.matcher(this.request)).willReturn(MatchResult.match(Map.of("param", "othervalue")));
+ 		MatchResult result = this.matcher.matcher(this.request);
+ 		assertThat(result.getVariables()).containsExactlyEntriesOf(Map.of("param", "othervalue"));
+ 
+@@ -153,4 +153,19 @@
+ 			.containsExactlyInAnyOrderEntriesOf(Map.of("otherparam", "value", "param", "value"));
+ 	}
+ 
++
++	public final class MockRequestMatcher {
++
++		private MockRequestMatcher() {
++		}
++
++		public static org.springframework.security.web.util.matcher.RequestMatcher createMockRequestMatcher(
++				jakarta.servlet.http.HttpServletRequest request,
++				org.springframework.security.web.util.matcher.RequestMatcher.MatchResult matchResult) {
++			org.springframework.security.web.util.matcher.RequestMatcher mock =
++					org.mockito.Mockito.mock(org.springframework.security.web.util.matcher.RequestMatcher.class);
++			given(mock.matcher(request)).willReturn(matchResult);
++			return mock;
++		}
++	}
+ }
+--- a/web/src/test/java/org/springframework/security/web/util/matcher/OrRequestMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/util/matcher/OrRequestMatcherTests.java
+@@ -129,16 +129,16 @@
+ 
+ 	@Test
+ 	public void matcherWhenMatchersHavePlaceholdersThenPropagatesFirstMatch() {
++	    this.delegate = MockRequestMatcher.createMockRequestMatcher(this.request, MatchResult.match(Map.of("param", "value")));
+ 		this.matcher = new OrRequestMatcher(this.delegate, this.delegate2);
+ 
+-		given(this.delegate.matcher(this.request)).willReturn(MatchResult.match(Map.of("param", "value")));
+ 		given(this.delegate2.matcher(this.request)).willReturn(MatchResult.match(Map.of("param", "othervalue")));
+ 		MatchResult result = this.matcher.matcher(this.request);
+ 		assertThat(result.getVariables()).containsExactlyEntriesOf(Map.of("param", "value"));
+ 		verifyNoInteractions(this.delegate2);
+ 
+ 		given(this.delegate.matcher(this.request)).willReturn(MatchResult.match());
+-		given(this.delegate2.matcher(this.request)).willReturn(MatchResult.match(Map.of("param", "value")));
++		this.delegate2 = MockRequestMatcher.createMockRequestMatcher(this.request, MatchResult.match(Map.of("param", "value")));
+ 		result = this.matcher.matcher(this.request);
+ 		assertThat(result.getVariables()).isEmpty();
+ 		verifyNoInteractions(this.delegate2);
+@@ -149,4 +149,19 @@
+ 		assertThat(result.getVariables()).containsExactlyEntriesOf(Map.of("param", "value"));
+ 	}
+ 
++
++	public final class MockRequestMatcher {
++
++		private MockRequestMatcher() {
++		}
++
++		public static org.springframework.security.web.util.matcher.RequestMatcher createMockRequestMatcher(
++				jakarta.servlet.http.HttpServletRequest request,
++				org.springframework.security.web.util.matcher.RequestMatcher.MatchResult matchResult) {
++			org.springframework.security.web.util.matcher.RequestMatcher mock =
++					org.mockito.Mockito.mock(org.springframework.security.web.util.matcher.RequestMatcher.class);
++			given(mock.matcher(request)).willReturn(matchResult);
++			return mock;
++		}
++	}
+ }

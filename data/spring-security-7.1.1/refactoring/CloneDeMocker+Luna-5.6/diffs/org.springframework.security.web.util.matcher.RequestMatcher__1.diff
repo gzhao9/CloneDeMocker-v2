@@ -1,0 +1,48 @@
+--- a/web/src/test/java/org/springframework/security/web/util/matcher/AndRequestMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/util/matcher/AndRequestMatcherTests.java
+@@ -42,8 +42,7 @@
+ @ExtendWith(MockitoExtension.class)
+ public class AndRequestMatcherTests {
+ 
+-	@Mock
+-	private RequestMatcher delegate;
++	private RequestMatcher delegate = createMockRequestMatcher();
+ 
+ 	@Mock
+ 	private RequestMatcher delegate2;
+@@ -129,6 +128,7 @@
+ 
+ 	@Test
+ 	public void matcherWhenMatchersHavePlaceholdersThenPropagatesMatches() {
++		this.delegate2 = createMockRequestMatcher();
+ 		this.matcher = new AndRequestMatcher(this.delegate, this.delegate2);
+ 
+ 		given(this.delegate.matcher(this.request)).willReturn(MatchResult.match(Map.of("param", "value")));
+--- a/web/src/test/java/org/springframework/security/web/util/matcher/OrRequestMatcherTests.java
++++ b/web/src/test/java/org/springframework/security/web/util/matcher/OrRequestMatcherTests.java
+@@ -129,6 +129,8 @@
+ 
+ 	@Test
+ 	public void matcherWhenMatchersHavePlaceholdersThenPropagatesFirstMatch() {
++		this.delegate = createMockRequestMatcher();
++		this.delegate2 = createMockRequestMatcher();
+ 		this.matcher = new OrRequestMatcher(this.delegate, this.delegate2);
+ 
+ 		given(this.delegate.matcher(this.request)).willReturn(MatchResult.match(Map.of("param", "value")));
+--- a/web/src/test/java/org/springframework/security/web/util/matcher/MockRequestMatcher.java
++++ b/web/src/test/java/org/springframework/security/web/util/matcher/MockRequestMatcher.java
+@@ -0,0 +1,14 @@
++package org.springframework.security.web.util.matcher;
++
++import org.mockito.Mockito;
++
++public final class MockRequestMatcher {
++
++	private MockRequestMatcher() {
++	}
++
++	public static RequestMatcher createMockRequestMatcher() {
++		return Mockito.mock(RequestMatcher.class);
++	}
++
++}

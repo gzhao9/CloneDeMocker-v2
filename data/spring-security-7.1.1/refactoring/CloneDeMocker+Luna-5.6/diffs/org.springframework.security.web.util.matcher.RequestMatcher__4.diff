@@ -1,0 +1,100 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/DelegatingAuthenticationEntryPointTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/DelegatingAuthenticationEntryPointTests.java
+@@ -64,8 +64,7 @@
+ 	@SuppressWarnings("removal")
+ 	public void testDefaultEntryPoint() throws Exception {
+ 		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher firstRM = mock(RequestMatcher.class);
+-		given(firstRM.matches(this.request)).willReturn(false);
++		RequestMatcher firstRM = createMockRequestMatcher(this.request, false);
+ 		this.daep = new DelegatingAuthenticationEntryPoint(this.defaultEntryPoint,
+ 				new RequestMatcherEntry<>(firstRM, firstAEP));
+ 		this.daep.commence(this.request, null, null);
+@@ -77,10 +76,9 @@
+ 	@SuppressWarnings("removal")
+ 	public void testFirstEntryPoint() throws Exception {
+ 		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher firstRM = mock(RequestMatcher.class);
++		RequestMatcher firstRM = createMockRequestMatcher(this.request, true);
+ 		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher secondRM = mock(RequestMatcher.class);
+-		given(firstRM.matches(this.request)).willReturn(true);
+ 		this.daep = new DelegatingAuthenticationEntryPoint(this.defaultEntryPoint,
+ 				new RequestMatcherEntry<>(firstRM, firstAEP), new RequestMatcherEntry<>(secondRM, secondAEP));
+ 		this.daep.commence(this.request, null, null);
+@@ -94,11 +92,9 @@
+ 	@SuppressWarnings("removal")
+ 	public void testSecondEntryPoint() throws Exception {
+ 		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher firstRM = mock(RequestMatcher.class);
+-		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher secondRM = mock(RequestMatcher.class);
+-		given(firstRM.matches(this.request)).willReturn(false);
+-		given(secondRM.matches(this.request)).willReturn(true);
++		RequestMatcher firstRM = createMockRequestMatcher(this.request, false);
++		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
++		RequestMatcher secondRM = createMockRequestMatcher(this.request, true);
+ 		this.daep = new DelegatingAuthenticationEntryPoint(this.defaultEntryPoint,
+ 				new RequestMatcherEntry<>(firstRM, firstAEP), new RequestMatcherEntry<>(secondRM, secondAEP));
+ 		this.daep.commence(this.request, null, null);
+@@ -165,8 +161,7 @@
+ 	@SuppressWarnings("removal")
+ 	public void commenceWhenNoMatchThenDefaultEntryPoint() throws Exception {
+ 		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher firstRM = mock(RequestMatcher.class);
+-		given(firstRM.matches(this.request)).willReturn(false);
++		RequestMatcher firstRM = createMockRequestMatcher(this.request, false);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> entry = new RequestMatcherEntry<>(firstRM, firstAEP);
+ 		this.daep = new DelegatingAuthenticationEntryPoint(this.defaultEntryPoint, entry);
+ 		this.daep.commence(this.request, null, null);
+@@ -178,12 +173,10 @@
+ 	@SuppressWarnings("removal")
+ 	public void commenceWhenMatchFirstEntryPointThenOthersNotInvoked() throws Exception {
+ 		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher firstRM = mock(RequestMatcher.class);
+-		given(firstRM.matches(this.request)).willReturn(true);
++		RequestMatcher firstRM = createMockRequestMatcher(this.request, true);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> firstEntry = new RequestMatcherEntry<>(firstRM, firstAEP);
+ 		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher secondRM = mock(RequestMatcher.class);
+-		given(secondRM.matches(this.request)).willReturn(false);
++		RequestMatcher secondRM = createMockRequestMatcher(this.request, false);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> secondEntry = new RequestMatcherEntry<>(firstRM, firstAEP);
+ 		this.daep = new DelegatingAuthenticationEntryPoint(this.defaultEntryPoint, firstEntry, secondEntry);
+ 		this.daep.commence(this.request, null, null);
+@@ -197,12 +190,10 @@
+ 	@SuppressWarnings("removal")
+ 	public void commenceWhenSecondMatchesThenDefaultNotInvoked() throws Exception {
+ 		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher firstRM = mock(RequestMatcher.class);
+-		given(firstRM.matches(this.request)).willReturn(false);
++		RequestMatcher firstRM = createMockRequestMatcher(this.request, false);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> firstEntry = new RequestMatcherEntry<>(firstRM, firstAEP);
+ 		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher secondRM = mock(RequestMatcher.class);
+-		given(secondRM.matches(this.request)).willReturn(true);
++		RequestMatcher secondRM = createMockRequestMatcher(this.request, true);
+ 		RequestMatcherEntry<AuthenticationEntryPoint> secondEntry = new RequestMatcherEntry<>(secondRM, secondAEP);
+ 		this.daep = new DelegatingAuthenticationEntryPoint(this.defaultEntryPoint, firstEntry, secondEntry);
+ 		this.daep.commence(this.request, null, null);
+@@ -227,8 +218,7 @@
+ 	void builderWhenDefaultNullThenFirstIsDefault() throws ServletException, IOException {
+ 		AuthenticationEntryPoint firstEntryPoint = mock(AuthenticationEntryPoint.class);
+ 		AuthenticationEntryPoint secondEntryPoint = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher neverMatch = mock(RequestMatcher.class);
+-		given(neverMatch.matches(this.request)).willReturn(false);
++		RequestMatcher neverMatch = createMockRequestMatcher(this.request, false);
+ 		AuthenticationEntryPoint result = DelegatingAuthenticationEntryPoint.builder()
+ 			.addEntryPointFor(firstEntryPoint, neverMatch)
+ 			.addEntryPointFor(secondEntryPoint, neverMatch)
+@@ -259,4 +249,10 @@
+ 		assertThatIllegalStateException().isThrownBy(builder::build);
+ 	}
+ 
++	private static RequestMatcher createMockRequestMatcher(HttpServletRequest request, boolean matches) {
++		RequestMatcher matcher = mock(RequestMatcher.class);
++		given(matcher.matches(request)).willReturn(matches);
++		return matcher;
++	}
++
+ }

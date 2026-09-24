@@ -1,0 +1,48 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/DelegatingAuthenticationEntryPointTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/DelegatingAuthenticationEntryPointTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.authentication;
+ 
++import org.mockito.Mock;
+ import java.io.IOException;
+ import java.util.Collections;
+ import java.util.List;
+@@ -48,6 +49,8 @@
+  * @version $Id:$
+  */
+ public class DelegatingAuthenticationEntryPointTests {
++	@Mock
++	private RequestMatcher secondRM;
+ 
+ 	private DelegatingAuthenticationEntryPoint daep;
+ 
+@@ -79,7 +82,6 @@
+ 		AuthenticationEntryPoint firstAEP = mock(AuthenticationEntryPoint.class);
+ 		RequestMatcher firstRM = mock(RequestMatcher.class);
+ 		AuthenticationEntryPoint secondAEP = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher secondRM = mock(RequestMatcher.class);
+ 		given(firstRM.matches(this.request)).willReturn(true);
+ 		this.daep = new DelegatingAuthenticationEntryPoint(this.defaultEntryPoint,
+ 				new RequestMatcherEntry<>(firstRM, firstAEP), new RequestMatcherEntry<>(secondRM, secondAEP));
+@@ -127,9 +129,6 @@
+ 	@SuppressWarnings("removal")
+ 	public void constructorAepListWhenNullDefaultEntryPoint() {
+ 		AuthenticationEntryPoint entryPoint = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher matcher = mock(RequestMatcher.class);
+-		List<RequestMatcherEntry<AuthenticationEntryPoint>> entryPoints = List
+-			.of(new RequestMatcherEntry<>(matcher, entryPoint));
+ 		assertThatIllegalArgumentException()
+ 			.isThrownBy(() -> new DelegatingAuthenticationEntryPoint(null, entryPoints));
+ 	}
+@@ -154,9 +153,7 @@
+ 	@SuppressWarnings("removal")
+ 	public void constructorAepVargsWhenNullDefaultEntryPoint() {
+ 		AuthenticationEntryPoint entryPoint = mock(AuthenticationEntryPoint.class);
+-		RequestMatcher matcher = mock(RequestMatcher.class);
+-		RequestMatcherEntry<AuthenticationEntryPoint>[] entryPoints = new RequestMatcherEntry[] {
+-				new RequestMatcherEntry<>(matcher, entryPoint) };
++		RequestMatcherEntry<AuthenticationEntryPoint>[] entryPoints = new RequestMatcherEntry[] { new RequestMatcherEntry<>(secondRM, entryPoint) };
+ 		assertThatIllegalArgumentException()
+ 			.isThrownBy(() -> new DelegatingAuthenticationEntryPoint(null, entryPoints));
+ 	}
