@@ -203,6 +203,14 @@ def _remote_rows(rel: str) -> dict:
     return json.loads(shown.stdout.decode("utf-8", "replace")).get("results", {})
 
 
+# Modules CloudStack builds only when the `noredist` property is set (profiles in pom.xml and
+# plugins/pom.xml). Only C has graded them, with CLONEDEMOCKER_MAVEN_ARGS=-Dnoredist.
+NOREDIST_MODULES = ("vmware-base", "plugins/api/vmware-sioc", "plugins/backup/veeam", "plugins/hypervisors/vmware",
+                    "plugins/network-elements/cisco-vnmc", "plugins/network-elements/nsx",
+                    "plugins/network-elements/netris", "plugins/network-elements/juniper-contrail",
+                    "plugins/network-elements/tungsten", "plugins/database/mysql-ha")
+
+
 def make_should_run(project: str):
     """Decide per MCI, on the remote's current data, whether this lane runs it.
 
@@ -234,9 +242,17 @@ def make_should_run(project: str):
         # Round 1 is complete, so an MCI without a verdict was never gradable there (e.g.
         # Volume::4 crashed B's interpreter six times): it goes to C, not to A and B.
         failed = verdict != "SUCCESS"
+        # Round 1 graded CloudStack's noredist-gated modules (vmware, nsx, tungsten, ...) only on
+        # C, with CLONEDEMOCKER_MAVEN_ARGS=-Dnoredist. Without it those modules are not in the
+        # reactor and the MCI fails in seconds as ENVIRONMENT_NOT_READY (46 such pairs on A,
+        # 2026-09-24). Send them where round 1 could build them.
+        scope = str((_remote_cache.get("round1", {}).get(mci_id) or {}).get("scope") or "")
+        gated = any(module in scope for module in NOREDIST_MODULES)
         if ROUTE["round1"] == "skip":
-            return not failed
+            return not failed and not gated
         if ROUTE["round1"] == "only":
+            if gated and not failed:
+                return True
             if verdict == "ENVIRONMENT_NOT_READY" and ROUTE.get("inherit_env"):
                 # User decision 2026-09-24: an MCI whose untouched baseline could not be
                 # established in round 1 keeps that verdict for V2 and V1 instead of paying up to
