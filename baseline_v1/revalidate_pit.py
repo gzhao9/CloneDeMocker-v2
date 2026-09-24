@@ -22,6 +22,7 @@ sys.path.insert(0, str(REPO))
 from studio import canonical_store  # noqa: E402
 from studio.detection_service import DetectionService  # noqa: E402
 from studio.refactoring_agent import RefactoringAgent  # noqa: E402
+from studio.long_paths import long_path  # noqa: E402
 from baseline_v1 import drive, run_pair  # noqa: E402
 
 
@@ -65,7 +66,8 @@ def main() -> None:
         manifest = json.loads((proposal / "manifest.json").read_text(encoding="utf-8"))
         now, new = {}, {}
         for rel, original_hash in manifest.items():
-            content = (proposal / "candidate-files" / rel).read_text(encoding="utf-8")
+            # Deep test paths exceed Windows' 260-character limit; V2 reads them the same way.
+            content = long_path(proposal / "candidate-files" / rel).read_text(encoding="utf-8")
             (new if original_hash is None else now)[Path(rel)] = content
         ReplayAgent.files_now, ReplayAgent.files_new = now, new
         agent = ReplayAgent(service, provider=RefactoringAgent._openai_provider("default"))

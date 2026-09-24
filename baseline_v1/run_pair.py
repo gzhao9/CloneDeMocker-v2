@@ -103,8 +103,13 @@ class TimedProvider(ModelProvider):
         audit = any(frame.function == "_audit_refactoring" for frame in inspect.stack()[1:8])
         started = time.perf_counter()
         result = self.inner.generate(instructions, input_text, model)
+        u = result.usage
         self.calls.append({"seconds": round(time.perf_counter() - started, 3),
-                           "responseId": result.response_id, "audit": audit})
+                           "responseId": result.response_id, "audit": audit,
+                           "usage": {"input_tokens": getattr(u, "input_tokens", 0),
+                                     "cached_input_tokens": getattr(u, "cached_input_tokens", 0),
+                                     "output_tokens": getattr(u, "output_tokens", 0),
+                                     "reasoning_tokens": getattr(u, "reasoning_tokens", 0)}})
         self.replies.append({"responseId": result.response_id, "audit": audit,
                              "instructions": instructions[:120], "input": input_text, "reply": result.text})
         return result
@@ -114,12 +119,23 @@ class TimedProvider(ModelProvider):
         timings["modelSeconds"] = round(sum(c["seconds"] for c in self.calls if not c["audit"]), 2)
         timings["auditSeconds"] = round(sum(c["seconds"] for c in self.calls if c["audit"]), 2)
         timings["modelCallLog"] = list(self.calls)
-        return {**result, "timings": timings}
+        # Token usage split at write time: refactoring calls (phases + repairs) vs the audit
+        # call (validation). The row's `usage` sums both, and a failed row's `usage` holds only
+        # its last call; these two fields count every call exactly once.
+        split = {"refactoring": {}, "audit": {}}
+        for call in self.calls:
+            side = split["audit" if call["audit"] else "refactoring"]
+            for k, v in (call.get("usage") or {}).items():
+                side[k] = side.get(k, 0) + (v or 0)
+        return {**result, "timings": timings, "usageRefactoring": split["refactoring"], "usageAudit": split["audit"]}
 
 
 def record(project: str, mci_id: str, result: dict, run_id: str, model: str, harness: str) -> str:
     entry = canonical_store.entry_from_agent_result(mci_id, result)
     entry["host"] = socket.gethostname()
+    for key in ("usageRefactoring", "usageAudit"):
+        if key in result:
+            entry[key] = result[key]
     if result.get("v1KeyNormalized"):
         entry["v1KeyNormalized"] = True
     if result.get("v1FuzzyApply"):
