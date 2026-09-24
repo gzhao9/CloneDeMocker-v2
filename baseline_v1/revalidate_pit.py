@@ -55,7 +55,11 @@ def main() -> None:
     run_id = drive.run_id_for(args.project)
     directory = REPO / "data" / args.project / "refactoring" / args.setup
     rows = json.loads((directory / "refactoring-results.json").read_text(encoding="utf-8"))["results"]
-    harness_label = json.loads((directory / "setup.json").read_text(encoding="utf-8"))["harness"]
+    setup = json.loads((directory / "setup.json").read_text(encoding="utf-8"))
+    harness_label = setup["harness"]
+    # The dataset's own model, not a default: writing a luna row with the terra default put it
+    # into the round-1 directory (kiota, 2026-09-24; caught before it was published).
+    args.model = setup.get("model") or args.model
     for mci, row in rows.items():
         if row.get("revalidatedWithPit"):
             continue
