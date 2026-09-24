@@ -1,0 +1,53 @@
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
+@@ -84,6 +84,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class KubernetesClusterManagerImplTest {
++    @Mock
++    private Network network;
+ 
+     @Mock
+     FirewallRulesDao firewallRulesDao;
+@@ -149,7 +151,7 @@
+     public void validateIsolatedNetworkIpRulesNoRules() {
+         long ipId = 1L;
+         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
+-        Network network = Mockito.mock(Network.class);
++        // removed local mock; replaced with global field `network`
+         Mockito.when(firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO)).thenReturn(new ArrayList<>());
+         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
+     }
+@@ -163,7 +165,6 @@
+     public void validateIsolatedNetworkIpRulesNoConflictingRules() {
+         long ipId = 1L;
+         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
+-        Network network = Mockito.mock(Network.class);
+         Mockito.when(firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO)).thenReturn(List.of(createRule(80, 80), createRule(443, 443)));
+         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
+     }
+@@ -172,7 +173,6 @@
+     public void validateIsolatedNetworkIpRulesApiConflictingRules() {
+         long ipId = 1L;
+         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
+-        Network network = Mockito.mock(Network.class);
+         Mockito.when(firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO)).thenReturn(List.of(createRule(6440, 6445), createRule(443, 443)));
+         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
+     }
+@@ -181,7 +181,6 @@
+     public void validateIsolatedNetworkIpRulesSshConflictingRules() {
+         long ipId = 1L;
+         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
+-        Network network = Mockito.mock(Network.class);
+         Mockito.when(firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO)).thenReturn(List.of(createRule(2200, KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT), createRule(443, 443)));
+         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
+     }
+@@ -190,7 +189,7 @@
+     public void validateIsolatedNetworkIpRulesNearConflictingRules() {
+         long ipId = 1L;
+         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
+-        Network network = Mockito.mock(Network.class);
++        // removed local mock; replaced with global field `network`
+         Mockito.when(firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO)).thenReturn(List.of(createRule(2220, 2221), createRule(2225, 2227), createRule(6440, 6442), createRule(6444, 6446)));
+         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
+     }

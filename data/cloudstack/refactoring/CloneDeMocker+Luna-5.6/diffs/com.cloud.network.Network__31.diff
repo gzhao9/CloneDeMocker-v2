@@ -1,0 +1,77 @@
+--- a/server/src/test/java/com/cloud/network/element/VirtualRouterElementTest.java
++++ b/server/src/test/java/com/cloud/network/element/VirtualRouterElementTest.java
+@@ -462,14 +462,13 @@
+ 
+     @Test
+     public void testCanHandle() {
+-        Network network = Mockito.mock(Network.class);
+-
+         final long networkId = 1;
+         final long physicalNetworkId = 42;
+         final long networkOfferingId = 10;
+         final long dataCenterId = 33;
+ 
+-        when(network.getId()).thenReturn(networkId);
++        Network network = MockNetwork.createMockNetwork(networkId);
++
+         lenient().when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+         lenient().when(network.getTrafficType()).thenReturn(TrafficType.Guest);
+         lenient().when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+@@ -485,19 +484,18 @@
+ 
+     @Test
+     public void testAddPasswordAndUserdata() throws Exception {
+-        Network network = Mockito.mock(Network.class);
++        final long networkId = 1;
++        final long physicalNetworkId = 42;
++        final long networkOfferingId = 10;
++        final long dataCenterId = 33;
++
++        Network network = MockNetwork.createMockNetwork(networkId);
+         VirtualMachineProfile vm = Mockito.mock(VirtualMachineProfile.class);
+         NicProfile nic = Mockito.mock(NicProfile.class);
+         DeployDestination dest = Mockito.mock(DeployDestination.class);
+         ReservationContext context = Mockito.mock(ReservationContext.class);
+         Service service = Service.UserData;
+ 
+-        final long networkId = 1;
+-        final long physicalNetworkId = 42;
+-        final long networkOfferingId = 10;
+-        final long dataCenterId = 33;
+-
+-        when(network.getId()).thenReturn(networkId);
+         lenient().when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+         lenient().when(network.getTrafficType()).thenReturn(TrafficType.Guest);
+         lenient().when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+--- a/server/src/test/java/com/cloud/network/element/VpcVirtualRouterElementTest.java
++++ b/server/src/test/java/com/cloud/network/element/VpcVirtualRouterElementTest.java
+@@ -202,10 +202,9 @@
+ 
+     @Test
+     public void testCanHandleFirewallUsesVpcCapability() {
+-        final Network network = Mockito.mock(Network.class);
++        final Network network = MockNetwork.createMockNetwork(200L);
+ 
+         when(_networkMdl.getPhysicalNetworkId(network)).thenReturn(1L);
+-        when(network.getId()).thenReturn(200L);
+         when(network.getVpcId()).thenReturn(100L);
+         when(_networkMdl.isProviderEnabledInPhysicalNetwork(1L, Network.Provider.VPCVirtualRouter.getName())).thenReturn(true);
+         when(_networkMdl.isProviderSupportServiceInNetwork(200L, Network.Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+--- a/server/src/test/java/com/cloud/network/element/MockNetwork.java
++++ b/server/src/test/java/com/cloud/network/element/MockNetwork.java
+@@ -0,0 +1,15 @@
++package com.cloud.network.element;
++
++import com.cloud.network.Network;
++
++import static org.mockito.Mockito.when;
++
++import org.mockito.Mockito;
++
++public class MockNetwork {
++    public static Network createMockNetwork(long networkId) {
++        Network network = Mockito.mock(Network.class);
++        when(network.getId()).thenReturn(networkId);
++        return network;
++    }
++}
