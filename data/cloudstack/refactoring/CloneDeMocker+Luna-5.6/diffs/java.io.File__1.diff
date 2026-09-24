@@ -1,0 +1,108 @@
+--- a/engine/storage/configdrive/src/test/java/org/apache/cloudstack/storage/configdrive/ConfigDriveBuilderTest.java
++++ b/engine/storage/configdrive/src/test/java/org/apache/cloudstack/storage/configdrive/ConfigDriveBuilderTest.java
+@@ -191,8 +191,7 @@
+     public void writeVendorDataJsonFileTestCreatingFolder() {
+         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
+ 
+-            File folderFileMock = Mockito.mock(File.class);
+-            Mockito.doReturn(false).when(folderFileMock).exists();
++            File folderFileMock = createMockGenIsoFile(false);
+             Mockito.doReturn(true).when(folderFileMock).mkdirs();
+ 
+             //force execution of real method
+@@ -232,8 +231,7 @@
+ 
+     @Test
+     public void linkUserDataTestUserDataFilePathDoesNotExist() {
+-        File fileMock = Mockito.mock(File.class);
+-        Mockito.doReturn(false).when(fileMock).exists();
++        File fileMock = createMockGenIsoFile(false);
+ 
+         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class);
+              MockedConstruction<Script> scriptMock = Mockito.mockConstruction(Script.class)
+@@ -247,8 +245,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void linkUserDataTestUserDataFilePathExistAndExecutionPresentedSomeError() {
+-        File fileMock = Mockito.mock(File.class);
+-        Mockito.doReturn(true).when(fileMock).exists();
++        File fileMock = createMockGenIsoFile(true);
+ 
+         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class);
+              MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+@@ -270,8 +267,7 @@
+                  Mockito.doReturn(StringUtils.EMPTY).when(mock).execute();
+              })
+         ) {
+-            File fileMock = Mockito.mock(File.class);
+-            Mockito.doReturn(true).when(fileMock).exists();
++            File fileMock = createMockGenIsoFile(true);
+             Mockito.when(ConfigDriveBuilder.getFile(anyString())).thenReturn(fileMock);
+ 
+             configDriveBuilderMocked.when(() -> ConfigDriveBuilder.linkUserData(anyString())).thenCallRealMethod();
+@@ -424,8 +420,7 @@
+     public void getProgramToGenerateIsoTestGenIsoExistsAndIsExecutable() throws Exception {
+         try (MockedStatic<ConfigDriveBuilder> ignored = Mockito.mockStatic(ConfigDriveBuilder.class)) {
+ 
+-            File genIsoFileMock = Mockito.mock(File.class);
+-            Mockito.doReturn(true).when(genIsoFileMock).exists();
++            File genIsoFileMock = createMockGenIsoFile(true);
+             Mockito.doReturn(true).when(genIsoFileMock).canExecute();
+ 
+             Mockito.when(ConfigDriveBuilder.getFile("/usr/bin/genisoimage")).thenReturn(genIsoFileMock);
+@@ -443,8 +438,7 @@
+     public void getProgramToGenerateIsoTestGenIsoExistsbutNotExecutable() throws Exception {
+         try (MockedStatic<ConfigDriveBuilder> ignored = Mockito.mockStatic(ConfigDriveBuilder.class)) {
+ 
+-            File genIsoFileMock = Mockito.mock(File.class);
+-            Mockito.doReturn(true).when(genIsoFileMock).exists();
++            File genIsoFileMock = createMockGenIsoFile(true);
+             Mockito.doReturn(false).when(genIsoFileMock).canExecute();
+ 
+             Mockito.when(ConfigDriveBuilder.getFile("/usr/bin/genisoimage")).thenReturn(genIsoFileMock);
+@@ -459,11 +453,9 @@
+     public void getProgramToGenerateIsoTestNotGenIsoMkIsoInLinux() throws Exception {
+         try (MockedStatic<ConfigDriveBuilder> ignored = Mockito.mockStatic(ConfigDriveBuilder.class)) {
+ 
+-            File genIsoFileMock = Mockito.mock(File.class);
+-            Mockito.doReturn(false).when(genIsoFileMock).exists();
+-
+-            File mkIsoProgramInLinuxFileMock = Mockito.mock(File.class);
+-            Mockito.doReturn(true).when(mkIsoProgramInLinuxFileMock).exists();
++            File genIsoFileMock = createMockGenIsoFile(false);
++
++            File mkIsoProgramInLinuxFileMock = createMockGenIsoFile(true);
+             Mockito.doReturn(true).when(mkIsoProgramInLinuxFileMock).canExecute();
+ 
+             Mockito.when(ConfigDriveBuilder.getFile("/usr/bin/genisoimage")).thenReturn(genIsoFileMock);
+@@ -488,14 +480,11 @@
+         try (MockedStatic<ConfigDriveBuilder> ignored = Mockito.mockStatic(ConfigDriveBuilder.class)) {
+ 
+ 
+-            File genIsoFileMock = Mockito.mock(File.class);
+-            Mockito.doReturn(false).when(genIsoFileMock).exists();
+-
+-            File mkIsoProgramInLinuxFileMock = Mockito.mock(File.class);
+-            Mockito.doReturn(false).when(mkIsoProgramInLinuxFileMock).exists();
+-
+-            File mkIsoProgramInMacOsFileMock = Mockito.mock(File.class);
+-            Mockito.doReturn(true).when(mkIsoProgramInMacOsFileMock).exists();
++            File genIsoFileMock = createMockGenIsoFile(false);
++
++            File mkIsoProgramInLinuxFileMock = createMockGenIsoFile(false);
++
++            File mkIsoProgramInMacOsFileMock = createMockGenIsoFile(true);
+             Mockito.doReturn(true).when(mkIsoProgramInMacOsFileMock).canExecute();
+ 
+             Mockito.when(ConfigDriveBuilder.getFile("/usr/bin/genisoimage")).thenReturn(genIsoFileMock);
+@@ -659,4 +648,10 @@
+         Assert.assertEquals(expectedJsonObject, actualJson);
+         folder.delete();
+     }
++
++    private static File createMockGenIsoFile(boolean existsReturn) {
++        File genIsoFileMock = Mockito.mock(File.class);
++        Mockito.doReturn(existsReturn).when(genIsoFileMock).exists();
++        return genIsoFileMock;
++    }
+ }

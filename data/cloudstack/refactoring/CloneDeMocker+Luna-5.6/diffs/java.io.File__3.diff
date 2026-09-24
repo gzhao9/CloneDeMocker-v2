@@ -1,0 +1,46 @@
+--- a/engine/storage/configdrive/src/test/java/org/apache/cloudstack/storage/configdrive/ConfigDriveBuilderTest.java
++++ b/engine/storage/configdrive/src/test/java/org/apache/cloudstack/storage/configdrive/ConfigDriveBuilderTest.java
+@@ -307,12 +307,7 @@
+              MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+                  Mockito.doReturn(StringUtils.EMPTY).when(mock).execute();
+              })) {
+-            File fileMock = Mockito.mock(File.class);
+-            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString())).thenReturn(fileMock);
+-            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString(), anyString())).thenReturn(fileMock);
+-
+-            Mockito.when(fileMock.getAbsolutePath()).thenReturn("");
+-            Mockito.when(fileMock.length()).thenReturn(64L * 1024L * 1024L + 1L);
++            File fileMock = createMockFile(configDriveBuilderMocked, "", 64L * 1024L * 1024L + 1L);
+             Mockito.when(ConfigDriveBuilder.getProgramToGenerateIso()).thenReturn("/usr/bin/genisoimage");
+ 
+             Mockito.when(ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(nullable(String.class), nullable(String.class), nullable(String.class))).thenCallRealMethod();
+@@ -328,12 +323,7 @@
+                  Mockito.doReturn(StringUtils.EMPTY).when(mock).execute();
+              })) {
+ 
+-            File fileMock = Mockito.mock(File.class);
+-            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString(), anyString())).thenReturn(fileMock);
+-            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString())).thenReturn(fileMock);
+-
+-            Mockito.when(fileMock.getAbsolutePath()).thenReturn("absolutePath");
+-            Mockito.doReturn(64L * 1024L * 1024L).when(fileMock).length();
++            File fileMock = createMockFile(configDriveBuilderMocked, "absolutePath", 64L * 1024L * 1024L);
+ 
+             Mockito.when(ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(nullable(String.class), nullable(String.class), nullable(String.class))).thenCallRealMethod();
+ 
+@@ -359,6 +349,15 @@
+ 
+             configDriveBuilderMocked.verify(() -> ConfigDriveBuilder.fileToBase64String(nullable(File.class)));
+         }
++    }
++
++    private static File createMockFile(MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked, String absolutePath, long length) {
++        File fileMock = Mockito.mock(File.class);
++        configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString())).thenReturn(fileMock);
++        configDriveBuilderMocked.when(() -> ConfigDriveBuilder.getFile(anyString(), anyString())).thenReturn(fileMock);
++        Mockito.when(fileMock.getAbsolutePath()).thenReturn(absolutePath);
++        Mockito.when(fileMock.length()).thenReturn(length);
++        return fileMock;
+     }
+ 
+     @Test
