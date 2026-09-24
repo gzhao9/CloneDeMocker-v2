@@ -1,0 +1,83 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -501,8 +501,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCheckIfCanUpgradeFail() {
+-        when(serviceOfferingMock.getState()).thenReturn(ServiceOffering.State.Inactive);
+-
++
++        serviceOfferingMock = MockServiceOfferingVO.createServiceOfferingVO(ServiceOffering.State.Inactive);
+         virtualMachineManagerImpl.checkIfCanUpgrade(vmInstanceMock, serviceOfferingMock);
+     }
+ 
+@@ -2241,4 +2241,17 @@
+         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
+     }
+ 
++
++    public final class MockServiceOfferingVO {
++        private MockServiceOfferingVO() {
++        }
++
++        public static com.cloud.service.ServiceOfferingVO createServiceOfferingVO(
++                com.cloud.offering.ServiceOffering.State state) {
++            com.cloud.service.ServiceOfferingVO serviceOffering =
++                    Mockito.mock(com.cloud.service.ServiceOfferingVO.class);
++            when(serviceOffering.getState()).thenReturn(state);
++            return serviceOffering;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -1186,9 +1186,9 @@
+         when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+         when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
++
++        serviceOffering = MockServiceOfferingVO.createServiceOfferingVO(ServiceOffering.State.Inactive);
+         when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+-        when(serviceOffering.getState()).thenReturn(ServiceOffering.State.Inactive);
+-
+         userVmManagerImpl.createVirtualMachine(deployVMCmd);
+     }
+ 
+@@ -1203,8 +1203,8 @@
+         when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+         when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
++        serviceOffering = MockServiceOfferingVO.createServiceOfferingVO(ServiceOffering.State.Active);
+         when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+-        when(serviceOffering.getState()).thenReturn(ServiceOffering.State.Active);
+ 
+         when(entityManager.findById(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+         when(templateMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
+@@ -1558,8 +1558,8 @@
+         when(accountService.finalizeAccountId(nullable(String.class), nullable(Long.class), nullable(Long.class), eq(true))).thenReturn(accountId);
+         when(accountService.getActiveAccountById(accountId)).thenReturn(account);
+         when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(_dcMock);
++        serviceOffering = MockServiceOfferingVO.createServiceOfferingVO(ServiceOffering.State.Active);
+         when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+-        when(serviceOffering.getState()).thenReturn(ServiceOffering.State.Active);
+ 
+         when(entityManager.findById(VirtualMachineTemplate.class, templateId)).thenReturn(templateMock);
+         when(templateMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
+@@ -4740,4 +4740,17 @@
+         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+     }
++
++    public final class MockServiceOfferingVO {
++        private MockServiceOfferingVO() {
++        }
++
++        public static com.cloud.service.ServiceOfferingVO createServiceOfferingVO(
++                com.cloud.offering.ServiceOffering.State state) {
++            com.cloud.service.ServiceOfferingVO serviceOffering =
++                    Mockito.mock(com.cloud.service.ServiceOfferingVO.class);
++            when(serviceOffering.getState()).thenReturn(state);
++            return serviceOffering;
++        }
++    }
+ }

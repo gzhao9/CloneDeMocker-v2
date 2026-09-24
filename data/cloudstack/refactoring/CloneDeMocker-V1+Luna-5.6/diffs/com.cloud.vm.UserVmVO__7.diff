@@ -1,0 +1,226 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -1042,6 +1042,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testResetVMUserDataVMStateNotStopped() {
++        userVmVoMock = MockUserVmVO.createMockUserVmVO(VirtualMachine.State.Running);
+         CallContext callContextMock = Mockito.mock(CallContext.class);
+         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
+ 
+@@ -1054,7 +1055,6 @@
+         when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+ 
+ 
+-        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+ 
+         try {
+             userVmManagerImpl.resetVMUserData(cmd);
+@@ -1065,6 +1065,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testResetVMUserDataDontAcceptBothUserdataAndUserdataId() {
++        userVmVoMock = MockUserVmVO.createMockUserVmVO(VirtualMachine.State.Stopped);
+         CallContext callContextMock = Mockito.mock(CallContext.class);
+         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
+ 
+@@ -1077,7 +1078,6 @@
+         when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+ 
+ 
+-        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Stopped);
+ 
+         when(cmd.getUserdataId()).thenReturn(1L);
+ 
+@@ -1661,10 +1661,10 @@
+         long newTemplateId = 2L;
+         when(accountMock.getId()).thenReturn(userId);
+         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
++        userVmVoMock = MockUserVmVO.createMockUserVmVO(VirtualMachine.State.Starting);
+         when(userVmVoMock.getAccountId()).thenReturn(accountId);
+         when(userVmVoMock.getUuid()).thenReturn("a967643d-7633-4ab4-ac26-9c0b63f50cc1");
+         when(accountDao.findById(accountId)).thenReturn(callerAccount);
+-        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Starting);
+ 
+         userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+     }
+@@ -1676,11 +1676,11 @@
+         long currentTemplateId = 1L;
+         long newTemplateId = 2L;
+         when(accountMock.getId()).thenReturn(userId);
++         userVmVoMock = MockUserVmVO.createMockUserVmVO(VirtualMachine.State.Running);
+         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+         when(userVmVoMock.getAccountId()).thenReturn(accountId);
+         when(userVmVoMock.getUuid()).thenReturn("a967643d-7633-4ab4-ac26-9c0b63f50cc1");
+         when(accountDao.findById(accountId)).thenReturn(callerAccount);
+-        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+         when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+ 
+         VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+@@ -1696,12 +1696,12 @@
+         long accountId = 2L;
+         long currentTemplateId = 1L;
+         long newTemplateId = 2L;
++        userVmVoMock = MockUserVmVO.createMockUserVmVO(VirtualMachine.State.Running);
+         when(accountMock.getId()).thenReturn(userId);
+         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+         when(userVmVoMock.getAccountId()).thenReturn(accountId);
+         when(userVmVoMock.getUuid()).thenReturn("a967643d-7633-4ab4-ac26-9c0b63f50cc1");
+         when(accountDao.findById(accountId)).thenReturn(callerAccount);
+-        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+         when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+ 
+         VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+@@ -1724,10 +1724,10 @@
+         long currentTemplateId = 1L;
+         long newTemplateId = 2L;
+         when(accountMock.getId()).thenReturn(userId);
++        userVmVoMock = MockUserVmVO.createMockUserVmVO(VirtualMachine.State.Running);
+         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+         when(userVmVoMock.getAccountId()).thenReturn(accountId);
+         when(accountDao.findById(accountId)).thenReturn(callerAccount);
+-        when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+         when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+ 
+         VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+@@ -3801,9 +3801,8 @@
+         when(cmd.getStartVm()).thenReturn(true);
+         when(cmd.getEntityId()).thenReturn(vmId);
+ 
+-        UserVmVO vm = mock(UserVmVO.class);
+         when(vm.getId()).thenReturn(vmId);
+-        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
++        UserVmVO vm = MockUserVmVO.createMockUserVmVO(VirtualMachine.State.Running);
+         when(vm.getTemplateId()).thenReturn(templateId);
+ 
+         when(backupManager.restoreBackupToVM(backupId, vmId, false)).thenReturn(true);
+@@ -3844,9 +3843,8 @@
+             when(cmd.getVolumeIds()).thenReturn(volumeIds);
+             AsyncJobVO asyncJobMock = mock(AsyncJobVO.class);
+ 
+-            UserVmVO vm = mock(UserVmVO.class);
++            UserVmVO vm = MockUserVmVO.createMockUserVmVO(VirtualMachine.State.Running);
+             when(vm.getId()).thenReturn(vmId);
+-            when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+             when(vm.getUuid()).thenReturn("vm-uuid");
+             when(vm.getUserVmType()).thenReturn("User");
+             when(userVmDao.findById(vmId)).thenReturn(vm);
+@@ -4584,8 +4582,7 @@
+ 
+     @Test
+     public void testTransitionExpungingToErrorVmInExpungingState() throws Exception {
+-        UserVmVO vm = mock(UserVmVO.class);
+-        when(vm.getState()).thenReturn(VirtualMachine.State.Expunging);
++        UserVmVO vm = MockUserVmVO.createMockUserVmVO(VirtualMachine.State.Expunging);
+         when(vm.getUuid()).thenReturn("test-uuid");
+         when(userVmDao.findById(vmId)).thenReturn(vm);
+         when(virtualMachineManager.stateTransitTo(eq(vm), eq(VirtualMachine.Event.OperationFailedToError), eq(null))).thenReturn(true);
+@@ -4599,8 +4596,7 @@
+ 
+     @Test
+     public void testTransitionExpungingToErrorVmNotInExpungingState() throws Exception {
+-        UserVmVO vm = mock(UserVmVO.class);
+-        when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
++        UserVmVO vm = MockUserVmVO.createMockUserVmVO(VirtualMachine.State.Stopped);
+         when(userVmDao.findById(vmId)).thenReturn(vm);
+ 
+         java.lang.reflect.Method method = UserVmManagerImpl.class.getDeclaredMethod("transitionExpungingToError", long.class);
+@@ -4623,8 +4619,7 @@
+ 
+     @Test
+     public void testTransitionExpungingToErrorHandlesNoTransitionException() throws Exception {
+-        UserVmVO vm = mock(UserVmVO.class);
+-        when(vm.getState()).thenReturn(VirtualMachine.State.Expunging);
++        UserVmVO vm = MockUserVmVO.createMockUserVmVO(VirtualMachine.State.Expunging);
+         when(userVmDao.findById(vmId)).thenReturn(vm);
+         when(virtualMachineManager.stateTransitTo(eq(vm), eq(VirtualMachine.Event.OperationFailedToError), eq(null)))
+                 .thenThrow(new NoTransitionException("no transition"));
+@@ -4740,4 +4735,16 @@
+         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+     }
++
++    public final class MockUserVmVO {
++        private MockUserVmVO() {
++        }
++
++        public static com.cloud.vm.UserVmVO createMockUserVmVO(
++                com.cloud.vm.VirtualMachine.State state) {
++            com.cloud.vm.UserVmVO vm = mock(com.cloud.vm.UserVmVO.class);
++            when(vm.getState()).thenReturn(state);
++            return vm;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerTest.java
+@@ -560,7 +560,9 @@
+         List<Service> services = new ArrayList<Service>();
+         services.add(Service.Dhcp);
+         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
+-        when(_vmMock.getState()).thenReturn(State.Stopped);
++        _vmMock = MockUserVmVO.createMockUserVmVO(State.Stopped);
++        doReturn(8L).when(_vmMock).getAccountId();
++        lenient().when(_vmMock.getId()).thenReturn(314L);
+         lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
+         when(_accountDao.findByIdIncludingRemoved(anyLong())).thenReturn(_accountMock);
+ 
+@@ -666,8 +668,10 @@
+         List<Service> services = new ArrayList<Service>();
+         services.add(Service.Dhcp);
+         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
+-        when(_vmMock.getState()).thenReturn(State.Running);
+-
++
++        _vmMock = createMockUserVmVO(State.Running);
++        doReturn(8L).when(_vmMock).getAccountId();
++        lenient().when(_vmMock.getId()).thenReturn(314L);
+         Account caller = new AccountVO("testaccount", 1, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
+         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+         CallContext.register(user, caller);
+@@ -703,7 +707,9 @@
+         List<Service> services = new ArrayList<Service>();
+         services.add(Service.Dhcp);
+         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
+-        when(_vmMock.getState()).thenReturn(State.Stopped);
++        _vmMock = MockUserVmVO.createMockUserVmVO(State.Stopped);
++        doReturn(8L).when(_vmMock).getAccountId();
++        lenient().when(_vmMock.getId()).thenReturn(314L);
+         lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
+         when(_accountDao.findByIdIncludingRemoved(anyLong())).thenReturn(_accountMock);
+ 
+@@ -741,6 +747,9 @@
+ 
+         NicVO nic = new NicVO("nic", 1L, 2L, VirtualMachine.Type.User);
+         when(_nicDao.findById(anyLong())).thenReturn(nic);
++        _vmMock = MockUserVmVO.createMockUserVmVO(State.Stopped);
++        doReturn(8L).when(_vmMock).getAccountId();
++        lenient().when(_vmMock.getId()).thenReturn(314L);
+         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
+         when(_networkDao.findById(anyLong())).thenReturn(_networkMock);
+         doReturn(9L).when(_networkMock).getNetworkOfferingId();
+@@ -750,7 +759,6 @@
+         List<Service> services = new ArrayList<Service>();
+         services.add(Service.Dhcp);
+         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
+-        when(_vmMock.getState()).thenReturn(State.Stopped);
+         lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
+         when(_accountDao.findByIdIncludingRemoved(anyLong())).thenReturn(_accountMock);
+ 
+@@ -839,4 +847,16 @@
+         _userVmMgr.persistDeviceBusInfo(_vmMock, "lsilogic");
+         verify(_vmDao, times(1)).saveDetails(any(UserVmVO.class));
+     }
++
++    public final class MockUserVmVO {
++        private MockUserVmVO() {
++        }
++
++        public static com.cloud.vm.UserVmVO createMockUserVmVO(
++                com.cloud.vm.VirtualMachine.State state) {
++            com.cloud.vm.UserVmVO vm = mock(com.cloud.vm.UserVmVO.class);
++            when(vm.getState()).thenReturn(state);
++            return vm;
++        }
++    }
+ }

@@ -1,0 +1,124 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
+@@ -155,7 +155,7 @@
+         long hostId = 40L;
+ 
+         UserVmVO userVm = mock(UserVmVO.class);
+-        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
++        VMSnapshotVO vmSnapshot = MockVMSnapshotVO.createMockVMSnapshot(snapshotId);
+         VMSnapshotVO currentVmSnapshot = mock(VMSnapshotVO.class);
+         SnapshotDataStoreVO snapshotDataStoreVO = mock(SnapshotDataStoreVO.class);
+         SnapshotInfo snapshotInfo = mock(SnapshotInfo.class);
+@@ -164,7 +164,7 @@
+         VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(snapshotId, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+ 
+         when(vmSnapshot.getVmId()).thenReturn(vmId);
+-        when(vmSnapshot.getId()).thenReturn(snapshotId);
++
+         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+         when(userVm.getState()).thenReturn(VirtualMachine.State.Stopped);
+         when(userVm.getName()).thenReturn("i-10-VM");
+@@ -274,11 +274,10 @@
+     public void testDeleteNvramSnapshotIfNeededPassesPrimaryDataStoreToAgentCommand() {
+         long hostId = 40L;
+ 
+-        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
++        VMSnapshotVO vmSnapshot = MockVMSnapshotVO.createMockVMSnapshot(20L);
+         VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(20L, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+         PrimaryDataStoreTO primaryDataStore = mock(PrimaryDataStoreTO.class);
+ 
+-        when(vmSnapshot.getId()).thenReturn(20L);
+         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+         when(vmSnapshotDetailsDao.findDetail(20L, "kvmFileBasedStorageSnapshotNvram")).thenReturn(nvramDetail);
+         when(hostDetailsDao.findDetail(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM))
+@@ -303,10 +302,9 @@
+     public void testValidateHostSupportsNvramSidecarCleanupFailsWhenHostLacksNvramAwareCleanupCapability() {
+         long hostId = 40L;
+ 
+-        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
++        VMSnapshotVO vmSnapshot = MockVMSnapshotVO.createMockVMSnapshot(20L);
+         VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(20L, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+ 
+-        when(vmSnapshot.getId()).thenReturn(20L);
+         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+         when(vmSnapshotDetailsDao.findDetail(20L, "kvmFileBasedStorageSnapshotNvram")).thenReturn(nvramDetail);
+         when(hostDetailsDao.findDetail(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM)).thenReturn(null);
+@@ -337,7 +335,7 @@
+         long rootSnapshotId = 30L;
+         long dataStoreId = 40L;
+ 
+-        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
++        VMSnapshotVO vmSnapshot = org.apache.cloudstack.storage.vmsnapshot.MockVMSnapshotVO.createMockVMSnapshot(vmSnapshotId);
+         VolumeObjectTO rootVolume = mock(VolumeObjectTO.class);
+         PrimaryDataStoreTO liveRootVolumePrimaryDataStore = mock(PrimaryDataStoreTO.class);
+         PrimaryDataStoreTO rootSnapshotPrimaryDataStore = mock(PrimaryDataStoreTO.class);
+@@ -346,7 +344,7 @@
+         SnapshotObjectTO rootSnapshotObjectTo = mock(SnapshotObjectTO.class);
+         VolumeObjectTO rootSnapshotVolume = mock(VolumeObjectTO.class);
+ 
+-        when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
++        
+         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+         when(vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(vmSnapshotId)).thenReturn(List.of(rootSnapshotDataStore));
+         when(rootSnapshotDataStore.getSnapshotId()).thenReturn(rootSnapshotId);
+@@ -424,11 +422,10 @@
+         long hostId = 40L;
+ 
+         UserVmVO userVm = mock(UserVmVO.class);
+-        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
++        VMSnapshotVO vmSnapshot = MockVMSnapshotVO.createMockVMSnapshot(vmSnapshotId);
+         VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(vmSnapshotId, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+ 
+         when(vmSnapshot.getVmId()).thenReturn(vmId);
+-        when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
+         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+         when(userVm.getState()).thenReturn(VirtualMachine.State.Running);
+         when(strategy.userVmDao.findById(vmId)).thenReturn(userVm);
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/OntapVMSnapshotStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/OntapVMSnapshotStrategyTest.java
+@@ -591,8 +591,7 @@
+ 
+     @Test
+     void testBuildSnapshotName_Format() {
+-        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+-        when(vmSnapshot.getId()).thenReturn(SNAPSHOT_ID);
++        VMSnapshotVO vmSnapshot = MockVMSnapshot.createMockVMSnapshot(SNAPSHOT_ID);
+ 
+         String name = strategy.buildSnapshotName(vmSnapshot);
+ 
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockVMSnapshotVO.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockVMSnapshotVO.java
+@@ -0,0 +1,15 @@
++package org.apache.cloudstack.storage.vmsnapshot;
++
++import com.cloud.vm.snapshot.VMSnapshotVO;
++
++import static org.mockito.Mockito.when;
++
++import org.mockito.Mockito;
++
++public class MockVMSnapshotVO {
++    public static VMSnapshotVO createMockVMSnapshot(long snapshotId) {
++        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
++        when(vmSnapshot.getId()).thenReturn(snapshotId);
++        return vmSnapshot;
++    }
++}
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockVMSnapshotVO.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockVMSnapshotVO.java
+@@ -0,0 +1,15 @@
++package org.apache.cloudstack.storage.vmsnapshot;
++
++import com.cloud.vm.snapshot.VMSnapshotVO;
++
++import static org.mockito.Mockito.when;
++
++import org.mockito.Mockito;
++
++public class MockVMSnapshotVO {
++    public static VMSnapshotVO createMockVMSnapshot(long snapshotId) {
++        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
++        when(vmSnapshot.getId()).thenReturn(snapshotId);
++        return vmSnapshot;
++    }
++}

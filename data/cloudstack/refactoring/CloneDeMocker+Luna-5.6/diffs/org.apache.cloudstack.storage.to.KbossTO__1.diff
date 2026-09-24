@@ -1,0 +1,43 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
+@@ -206,6 +206,7 @@
+     @Test
+     public void cleanupVmTestEndOfChain() {
+         setupKbossTos();
++        kbossTO1 = createMockKbossTO(deltaPath1, volumeObjectToMock1);
+         Map<String, String> mapVolumeUUidToNewVolumePath = new HashMap<>();
+         String path1 = "path1";
+         String path2 = "path2";
+@@ -213,8 +214,7 @@
+         String vmName = "ttt";
+         doReturn(path1).when(volumeObjectToMock1).getPath();
+         doReturn(path2).when(volumeObjectToMock2).getPath();
+-        doReturn(deltaPath1).when(kbossTO1).getDeltaPathOnPrimary();
+-        doReturn(deltaPath2).when(kbossTO2).getDeltaPathOnPrimary();
++        kbossTO2 = createMockKbossTO(deltaPath2, volumeObjectToMock2);
+         doReturn(deltaMergeTreeToMock).when(kbossTO1).getDeltaMergeTreeTO();
+         doNothing().when(libvirtTakeKbossBackupCommandWrapperSpy).mergeBackupDelta(any(), any(), any(), any(), anyBoolean(), any(), anyBoolean());
+         doReturn(true).when(takeKbossBackupCommandMock).isEndChain();
+@@ -240,8 +240,8 @@
+         setupKbossTos();
+         Map<String, String> mapVolumeUUidToNewVolumePath = new HashMap<>();
+         String vmName = "ttt";
+-        doReturn(deltaPath1).when(kbossTO1).getDeltaPathOnPrimary();
+-        doReturn(deltaPath2).when(kbossTO2).getDeltaPathOnPrimary();
++        kbossTO1 = createMockKbossTO(deltaPath1, volumeObjectToMock1);
++        kbossTO2 = createMockKbossTO(deltaPath2, volumeObjectToMock2);
+ 
+         libvirtTakeKbossBackupCommandWrapperSpy.cleanupVm(takeKbossBackupCommandMock, libvirtComputingResourceMock, List.of(kbossTO1, kbossTO2), vmName, true,
+                 mapVolumeUUidToNewVolumePath);
+@@ -374,4 +374,11 @@
+         doReturn(volumeObjectToMock2).when(kbossTO2).getVolumeObjectTO();
+         doReturn(volUuid2).when(volumeObjectToMock2).getUuid();
+     }
++
++    private static KbossTO createMockKbossTO(String deltaPathOnPrimary, VolumeObjectTO volumeObjectTO) {
++        KbossTO kbossTO = Mockito.mock(KbossTO.class);
++        doReturn(deltaPathOnPrimary).when(kbossTO).getDeltaPathOnPrimary();
++        doReturn(volumeObjectTO).when(kbossTO).getVolumeObjectTO();
++        return kbossTO;
++    }
+ }
