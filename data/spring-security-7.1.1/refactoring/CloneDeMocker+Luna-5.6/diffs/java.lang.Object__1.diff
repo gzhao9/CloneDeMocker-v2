@@ -1,0 +1,44 @@
+--- a/oauth2/oauth2-resource-server/src/test/java/org/springframework/security/oauth2/server/resource/authentication/JwtAuthenticationProviderTests.java
++++ b/oauth2/oauth2-resource-server/src/test/java/org/springframework/security/oauth2/server/resource/authentication/JwtAuthenticationProviderTests.java
+@@ -56,10 +56,13 @@
+ 	@Mock
+ 	JwtDecoder jwtDecoder;
+ 
++	private Object mockDetails;
++
+ 	JwtAuthenticationProvider provider;
+ 
+ 	@BeforeEach
+ 	public void setup() {
++		this.mockDetails = mock(Object.class);
+ 		this.provider = new JwtAuthenticationProvider(this.jwtDecoder);
+ 		this.provider.setJwtAuthenticationConverter(this.jwtAuthenticationConverter);
+ 	}
+@@ -122,8 +125,7 @@
+ 	@Test
+ 	public void authenticateWhenConverterDoesNotSetAuthenticationDetailsThenProviderSetsItWithTokenDetails() {
+ 		BearerTokenAuthenticationToken token = this.authentication();
+-		Object details = mock(Object.class);
+-		token.setDetails(details);
++		token.setDetails(mockDetails);
+ 		Jwt jwt = TestJwts.jwt().build();
+ 		JwtAuthenticationToken authentication = new JwtAuthenticationToken(jwt);
+ 		given(this.jwtDecoder.decode(token.getToken())).willReturn(jwt);
+@@ -131,15 +133,14 @@
+ 		// @formatter:off
+ 		assertThat(this.provider.authenticate(token))
+ 				.isEqualTo(authentication).hasFieldOrPropertyWithValue("details",
+-						details);
++						mockDetails);
+ 		// @formatter:on
+ 	}
+ 
+ 	@Test
+ 	public void authenticateWhenConverterSetsAuthenticationDetailsThenProviderDoesNotOverwriteIt() {
+ 		BearerTokenAuthenticationToken token = this.authentication();
+-		Object details = mock(Object.class);
+-		token.setDetails(details);
++		token.setDetails(mockDetails);
+ 		Jwt jwt = TestJwts.jwt().build();
+ 		JwtAuthenticationToken authentication = new JwtAuthenticationToken(jwt);
+ 		Object expectedDetails = "To be kept as is";

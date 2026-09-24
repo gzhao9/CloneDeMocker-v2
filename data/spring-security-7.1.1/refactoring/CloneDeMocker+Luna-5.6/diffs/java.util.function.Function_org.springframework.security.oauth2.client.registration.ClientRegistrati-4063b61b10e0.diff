@@ -1,0 +1,58 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcIdTokenDecoderFactoryTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcIdTokenDecoderFactoryTests.java
+@@ -159,10 +159,9 @@
+ 
+ 	@Test
+ 	public void createDecoderWhenCustomJwsAlgorithmResolverSetThenApplied() {
+-		Function<ClientRegistration, JwsAlgorithm> customJwsAlgorithmResolver = mock(Function.class);
++		ClientRegistration clientRegistration = this.registration.build();
++		Function<ClientRegistration, JwsAlgorithm> customJwsAlgorithmResolver = createMockCustomJwsAlgorithmResolver(clientRegistration);
+ 		this.idTokenDecoderFactory.setJwsAlgorithmResolver(customJwsAlgorithmResolver);
+-		ClientRegistration clientRegistration = this.registration.build();
+-		given(customJwsAlgorithmResolver.apply(same(clientRegistration))).willReturn(MacAlgorithm.HS256);
+ 		this.idTokenDecoderFactory.createDecoder(clientRegistration);
+ 		verify(customJwsAlgorithmResolver).apply(same(clientRegistration));
+ 	}
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/ReactiveOidcIdTokenDecoderFactoryTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/ReactiveOidcIdTokenDecoderFactoryTests.java
+@@ -159,10 +159,9 @@
+ 
+ 	@Test
+ 	public void createDecoderWhenCustomJwsAlgorithmResolverSetThenApplied() {
+-		Function<ClientRegistration, JwsAlgorithm> customJwsAlgorithmResolver = mock(Function.class);
++		ClientRegistration clientRegistration = this.registration.build();
++		Function<ClientRegistration, JwsAlgorithm> customJwsAlgorithmResolver = createMockCustomJwsAlgorithmResolver(clientRegistration);
+ 		this.idTokenDecoderFactory.setJwsAlgorithmResolver(customJwsAlgorithmResolver);
+-		ClientRegistration clientRegistration = this.registration.build();
+-		given(customJwsAlgorithmResolver.apply(same(clientRegistration))).willReturn(MacAlgorithm.HS256);
+ 		this.idTokenDecoderFactory.createDecoder(clientRegistration);
+ 		verify(customJwsAlgorithmResolver).apply(same(clientRegistration));
+ 	}
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/MockCustomJwsAlgorithmResolver.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/MockCustomJwsAlgorithmResolver.java
+@@ -0,0 +1,25 @@
++package org.springframework.security.oauth2.client.oidc.authentication;
++
++import java.util.function.Function;
++
++import org.springframework.security.oauth2.client.registration.ClientRegistration;
++import org.springframework.security.oauth2.jose.jws.JwsAlgorithm;
++import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
++
++import static org.mockito.BDDMockito.given;
++import static org.mockito.ArgumentMatchers.same;
++import static org.mockito.Mockito.mock;
++
++public final class MockCustomJwsAlgorithmResolver {
++
++	private MockCustomJwsAlgorithmResolver() {
++	}
++
++	public static Function<ClientRegistration, JwsAlgorithm> createMockCustomJwsAlgorithmResolver(
++			ClientRegistration clientRegistration) {
++		Function<ClientRegistration, JwsAlgorithm> customJwsAlgorithmResolver = mock(Function.class);
++		given(customJwsAlgorithmResolver.apply(same(clientRegistration))).willReturn(MacAlgorithm.HS256);
++		return customJwsAlgorithmResolver;
++	}
++
++}

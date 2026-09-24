@@ -1,0 +1,42 @@
+--- a/config/src/test/java/org/springframework/security/config/annotation/web/configurers/SessionManagementConfigurerTests.java
++++ b/config/src/test/java/org/springframework/security/config/annotation/web/configurers/SessionManagementConfigurerTests.java
+@@ -27,6 +27,7 @@
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpServletResponse;
+ import jakarta.servlet.http.HttpSession;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.extension.ExtendWith;
+ import org.mockito.Answers;
+@@ -106,6 +107,13 @@
+ 
+ 	public final SpringTestContext spring = new SpringTestContext(this);
+ 
++	private SecurityContext securityContextMock;
++
++	@BeforeEach
++	void setUp() {
++		this.securityContextMock = mock(SecurityContext.class);
++	}
++
+ 	@Autowired
+ 	MockMvc mvc;
+ 
+@@ -123,7 +131,7 @@
+ 		SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO = mock(SecurityContextRepository.class);
+ 		given(SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO
+ 			.loadDeferredContext(any(HttpServletRequest.class)))
+-			.willReturn(new TestDeferredSecurityContext(mock(SecurityContext.class), false));
++			.willReturn(new TestDeferredSecurityContext(this.securityContextMock, false));
+ 		this.spring.register(SessionManagementSecurityContextRepositoryConfig.class).autowire();
+ 		this.mvc.perform(get("/"));
+ 	}
+@@ -133,7 +141,7 @@
+ 		SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO = mock(SecurityContextRepository.class);
+ 		given(SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO
+ 			.loadDeferredContext(any(HttpServletRequest.class)))
+-			.willReturn(new TestDeferredSecurityContext(mock(SecurityContext.class), false));
++			.willReturn(new TestDeferredSecurityContext(securityContextMock, false));
+ 		this.spring.register(SessionManagementSecurityContextRepositoryConfig.class).autowire();
+ 		this.mvc.perform(get("/"));
+ 		verify(SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO)

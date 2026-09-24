@@ -1,0 +1,41 @@
+--- a/config/src/test/java/org/springframework/security/config/annotation/web/configurers/SessionManagementConfigurerTests.java
++++ b/config/src/test/java/org/springframework/security/config/annotation/web/configurers/SessionManagementConfigurerTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.config.annotation.web.configurers;
+ 
++import org.mockito.Mock;
+ import java.io.IOException;
+ 
+ import jakarta.servlet.DispatcherType;
+@@ -103,6 +104,8 @@
+  */
+ @ExtendWith(SpringTestContextExtension.class)
+ public class SessionManagementConfigurerTests {
++	@Mock
++	private SecurityContext securityContext;
+ 
+ 	public final SpringTestContext spring = new SpringTestContext(this);
+ 
+@@ -121,9 +124,7 @@
+ 	@Test
+ 	public void sessionManagementWhenConfiguredThenDoesNotOverrideSecurityContextRepository() throws Exception {
+ 		SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO = mock(SecurityContextRepository.class);
+-		given(SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO
+-			.loadDeferredContext(any(HttpServletRequest.class)))
+-			.willReturn(new TestDeferredSecurityContext(mock(SecurityContext.class), false));
++		given(SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO.loadDeferredContext(any(HttpServletRequest.class))).willReturn(new TestDeferredSecurityContext(securityContext, false));
+ 		this.spring.register(SessionManagementSecurityContextRepositoryConfig.class).autowire();
+ 		this.mvc.perform(get("/"));
+ 	}
+@@ -131,9 +132,7 @@
+ 	@Test
+ 	public void sessionManagementWhenSecurityContextRepositoryIsConfiguredThenUseIt() throws Exception {
+ 		SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO = mock(SecurityContextRepository.class);
+-		given(SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO
+-			.loadDeferredContext(any(HttpServletRequest.class)))
+-			.willReturn(new TestDeferredSecurityContext(mock(SecurityContext.class), false));
++		given(SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO.loadDeferredContext(any(HttpServletRequest.class))).willReturn(new TestDeferredSecurityContext(securityContext, false));
+ 		this.spring.register(SessionManagementSecurityContextRepositoryConfig.class).autowire();
+ 		this.mvc.perform(get("/"));
+ 		verify(SessionManagementSecurityContextRepositoryConfig.SECURITY_CONTEXT_REPO)
