@@ -1,0 +1,47 @@
+--- a/server/src/test/java/com/cloud/network/Ipv6AddressManagerTest.java
++++ b/server/src/test/java/com/cloud/network/Ipv6AddressManagerTest.java
+@@ -239,14 +239,13 @@
+     @Test
+     public void setNICIPv6AddressTest() throws InsufficientAddressCapacityException {
+         NicProfile nic = new NicProfile();
+-        Network network = mock(Network.class);
++        Network network = MockNetwork.createMockNetwork();
+         DataCenter dc = mock(DataCenter.class);
+ 
+         nic.setMacAddress("1e:00:b1:00:0a:f6");
+ 
+         Mockito.when(network.getIp6Cidr()).thenReturn("2001:db8:100::/64");
+         Mockito.when(network.getIp6Gateway()).thenReturn("2001:db8:100::1");
+-        Mockito.when(network.getId()).thenReturn(1L);
+ 
+         Mockito.when(networkModel.getNetworkIp6Dns(network, dc)).thenReturn(new Pair<>("2001:db8::53:1", "2001:db8::53:2"));
+         Mockito.when(networkModel.isMACUnique("1e:00:b1:00:0a:f6", 1L)).thenReturn(true);
+--- a/server/src/test/java/com/cloud/network/NetworkModelTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkModelTest.java
+@@ -175,8 +175,7 @@
+         when(ipAddressDao.findById(anyLong())).thenReturn(fakeIp);
+         Account fakeAccount = mock(Account.class);
+         when(fakeAccount.getId()).thenReturn(1L);
+-        Network fakeNetwork = mock(Network.class);
+-        when(fakeNetwork.getId()).thenReturn(1L);
++        Network fakeNetwork = MockNetwork.createMockNetwork();
+         PublicIpAddress answer = modelImpl.getSourceNatIpAddressForGuestNetwork(fakeAccount, fakeNetwork);
+         Assert.assertNull(answer);
+         IPAddressVO fakeIp2 = new IPAddressVO(new Ip("76.75.75.75"), 1, 0xaabb10ddeeffL, 10, true);
+--- a/server/src/test/java/com/cloud/network/MockNetwork.java
++++ b/server/src/test/java/com/cloud/network/MockNetwork.java
+@@ -0,0 +1,14 @@
++package com.cloud.network;
++
++import org.mockito.Mockito;
++
++public final class MockNetwork {
++    private MockNetwork() {
++    }
++
++    public static Network createMockNetwork() {
++        Network network = Mockito.mock(Network.class);
++        Mockito.when(network.getId()).thenReturn(1L);
++        return network;
++    }
++}
