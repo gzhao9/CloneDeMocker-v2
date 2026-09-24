@@ -150,8 +150,17 @@ def record(project: str, mci_id: str, result: dict, run_id: str, model: str, har
         entry["v1OutputUnusable"] = True
     diff = REPO / ".clonedemocker" / "runs" / run_id / "refactoring" / (result.get("proposalId") or "_") / "changes.diff"
     lookup = {mci_id: diff} if diff.is_file() and diff.stat().st_size else {}
-    canonical_store.merge(project=project, repository_root=REPO, entries=[entry], detection_source=None,
-                          diff_lookup=lookup, model=model, harness=harness, use_mock=False)
+    # On Windows another process (IDE file watcher, antivirus) can hold the results file for a
+    # moment; opening it then fails with EINVAL/EACCES. Retry instead of losing the MCI.
+    for attempt in range(1, 6):
+        try:
+            canonical_store.merge(project=project, repository_root=REPO, entries=[entry], detection_source=None,
+                                  diff_lookup=lookup, model=model, harness=harness, use_mock=False)
+            break
+        except OSError as error:
+            if attempt == 5 or error.errno not in (13, 22):
+                raise
+            time.sleep(2 * attempt)
     return entry["classification"]
 
 
