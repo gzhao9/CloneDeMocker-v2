@@ -1,0 +1,57 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
+@@ -268,10 +268,10 @@
+         doReturn(parentPath).when(kbossTO1).getPathBackupParentOnSecondary();
+         doReturn(new ArrayList<>(List.of(deltaPath2))).when(kbossTO1).getVmSnapshotDeltaPaths();
+         doReturn(deltaPath1).when(kbossTO1).getDeltaPathOnSecondary();
++        kvmStoragePoolManagerMock = MockKVMStoragePoolManager.createMockKvmStoragePoolManager(kvmStoragePool3);
+         doReturn(kvmStoragePool1).when(kvmStoragePoolManagerMock).getStoragePoolByURI(secondaryUrl);
+         doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePoolByURI(secondaryUrl2);
+         doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
+-        doReturn(kvmStoragePool3).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
+ 
+         doReturn(parentBackupFullPath).when(kvmStoragePool2).getLocalPathFor(parentPath);
+         doReturn(backupDeltaFullPathOnPrimary1).when(kvmStoragePool3).getLocalPathFor(deltaPath2);
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtRestoreKbossBackupCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtRestoreKbossBackupCommandWrapperTest.java
+@@ -155,7 +155,7 @@
+     @Test
+     public void restoreVolumesTestQuickRestore() throws LibvirtException, QemuImgException {
+         doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
+-        doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
++        KVMStoragePoolManager kvmStoragePoolManagerMock = MockKVMStoragePoolManager.createMockKvmStoragePoolManager(kvmStoragePool2);
+         doReturn("p2").when(kvmStoragePool2).getLocalPathFor(any());
+         doReturn(qemuImgMock).when(libvirtRestoreKbossBackupCommandWrapperSpy).getQemuImg(anyInt());
+ 
+@@ -168,7 +168,7 @@
+     @Test
+     public void restoreVolumesTestNormalRestore() throws LibvirtException, QemuImgException {
+         doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
+-        doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
++        kvmStoragePoolManagerMock = MockKVMStoragePoolManager.createMockKvmStoragePoolManager(kvmStoragePool2);
+         doReturn("p2").when(kvmStoragePool2).getLocalPathFor(any());
+         doReturn(qemuImgMock).when(libvirtRestoreKbossBackupCommandWrapperSpy).getQemuImg(anyInt());
+ 
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockKVMStoragePoolManager.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockKVMStoragePoolManager.java
+@@ -0,0 +1,20 @@
++package com.cloud.hypervisor.kvm.resource.wrapper;
++
++import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
++import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
++
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.Mockito.doReturn;
++import static org.mockito.Mockito.mock;
++
++public final class MockKVMStoragePoolManager {
++
++    private MockKVMStoragePoolManager() {
++    }
++
++    public static KVMStoragePoolManager createMockKvmStoragePoolManager(KVMStoragePool storagePool) {
++        KVMStoragePoolManager kvmStoragePoolManagerMock = mock(KVMStoragePoolManager.class);
++        doReturn(storagePool).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
++        return kvmStoragePoolManagerMock;
++    }
++}

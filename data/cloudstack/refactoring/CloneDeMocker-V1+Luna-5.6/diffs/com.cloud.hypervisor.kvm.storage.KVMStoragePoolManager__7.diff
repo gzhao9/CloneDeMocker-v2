@@ -1,0 +1,127 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckAndRepairVolumeCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckAndRepairVolumeCommandWrapperTest.java
+@@ -65,12 +65,11 @@
+         StorageFilerTO spool = Mockito.mock(StorageFilerTO.class);
+         when(cmd.getPool()).thenReturn(spool);
+ 
+-        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
++        KVMStoragePoolManager storagePoolMgr = MockKVMStoragePoolManager.createMockKVMStoragePoolManager(Storage.StoragePoolType.PowerFlex, "b6be258b-42b8-49a4-ad51-3634ef8ff76a", pool);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+         KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
+         when(spool.getType()).thenReturn(Storage.StoragePoolType.PowerFlex);
+         when(spool.getUuid()).thenReturn("b6be258b-42b8-49a4-ad51-3634ef8ff76a");
+-        when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.PowerFlex, "b6be258b-42b8-49a4-ad51-3634ef8ff76a")).thenReturn(pool);
+ 
+         KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+         when(pool.getPhysicalDisk("cbac516a-0f1f-4559-921c-1a7c6c408ccf")).thenReturn(vol);
+@@ -95,4 +94,19 @@
+         }
+     }
+ 
++
++    public final class MockKVMStoragePoolManager {
++        private MockKVMStoragePoolManager() {
++        }
++
++        public static com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager createMockKVMStoragePoolManager(
++                com.cloud.storage.Storage.StoragePoolType storagePoolType,
++                String poolUuid,
++                com.cloud.hypervisor.kvm.storage.KVMStoragePool storagePool) {
++            com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager storagePoolManager =
++                    Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager.class);
++            when(storagePoolManager.getStoragePool(storagePoolType, poolUuid)).thenReturn(storagePool);
++            return storagePoolManager;
++        }
++    }
+ }
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
+@@ -66,7 +66,6 @@
+     public void testBackupNvramIfNeededCopiesActiveNvram() throws Exception {
+         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper();
+         LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
+-        KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+         VMSnapshotTO vmSnapshotTO = mock(VMSnapshotTO.class);
+@@ -88,8 +87,8 @@
+         when(dataStoreTO.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         when(dataStoreTO.getUuid()).thenReturn("pool-uuid");
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(activeNvram.toString());
++        MockKVMStoragePoolManager.createMockKVMStoragePoolManager(Storage.StoragePoolType.NetworkFilesystem, "pool-uuid", storagePool);
+         when(resource.getStoragePoolMgr()).thenReturn(storagePoolManager);
+-        when(storagePoolManager.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, "pool-uuid")).thenReturn(storagePool);
+         when(storagePool.getLocalPathFor(anyString())).thenAnswer(invocation -> poolDirectory.resolve(invocation.getArgument(0, String.class)).toString());
+ 
+         String nvramSnapshotPath = wrapper.backupNvramIfNeeded(command, resource);
+@@ -301,7 +300,7 @@
+     public void testDeleteNvramSnapshotIfNeededDeletesSidecarUsingPrimaryDataStore() throws Exception {
+         LibvirtDeleteDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtDeleteDiskOnlyVMSnapshotCommandWrapper();
+         LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
+-        KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
++        KVMStoragePoolManager storagePoolManager = MockKVMStoragePoolManager.createMockKVMStoragePoolManager(Storage.StoragePoolType.NetworkFilesystem, "pool-uuid", storagePool);
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+         DeleteDiskOnlyVmSnapshotCommand command = mock(DeleteDiskOnlyVmSnapshotCommand.class);
+         PrimaryDataStoreTO primaryDataStoreTO = mock(PrimaryDataStoreTO.class);
+@@ -315,7 +314,6 @@
+         when(command.getPrimaryDataStore()).thenReturn(primaryDataStoreTO);
+         when(primaryDataStoreTO.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         when(primaryDataStoreTO.getUuid()).thenReturn("pool-uuid");
+-        when(storagePoolManager.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, "pool-uuid")).thenReturn(storagePool);
+         when(storagePool.getLocalPathFor("nvram/42.fd")).thenReturn(snapshotNvram.toString());
+ 
+         wrapper.deleteNvramSnapshotIfNeeded(command, resource, storagePoolManager, List.of());
+@@ -818,4 +816,19 @@
+ 
+         assertFalse(answer.getResult());
+     }
++
++    public final class MockKVMStoragePoolManager {
++        private MockKVMStoragePoolManager() {
++        }
++
++        public static com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager createMockKVMStoragePoolManager(
++                com.cloud.storage.Storage.StoragePoolType storagePoolType,
++                String poolUuid,
++                com.cloud.hypervisor.kvm.storage.KVMStoragePool storagePool) {
++            com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager storagePoolManager =
++                    Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager.class);
++            when(storagePoolManager.getStoragePool(storagePoolType, poolUuid)).thenReturn(storagePool);
++            return storagePoolManager;
++        }
++    }
+ }
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtImportConvertedInstanceCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtImportConvertedInstanceCommandWrapperTest.java
+@@ -154,10 +154,9 @@
+         String destinationPoolUuid = UUID.randomUUID().toString();
+         List<String> destinationPools = List.of(destinationPoolUuid);
+ 
++        KVMStoragePoolManager storagePoolManager = MockKVMStoragePoolManager.createMockKVMStoragePoolManager(Storage.StoragePoolType.NetworkFilesystem, destinationPoolUuid, destinationPool);
+         KVMPhysicalDisk destDisk = Mockito.mock(KVMPhysicalDisk.class);
+         Mockito.when(destDisk.getPath()).thenReturn("xyz");
+-        Mockito.when(storagePoolManager.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, destinationPoolUuid))
+-                .thenReturn(destinationPool);
+         Mockito.when(destinationPool.getType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         Mockito.when(storagePoolManager.copyPhysicalDisk(Mockito.eq(sourceDisk), Mockito.anyString(), Mockito.eq(destinationPool), Mockito.anyInt()))
+                 .thenReturn(destDisk);
+@@ -242,4 +241,19 @@
+         Answer answer = importInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+         Assert.assertFalse(answer.getResult());
+     }
++
++    public final class MockKVMStoragePoolManager {
++        private MockKVMStoragePoolManager() {
++        }
++
++        public static com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager createMockKVMStoragePoolManager(
++                com.cloud.storage.Storage.StoragePoolType storagePoolType,
++                String poolUuid,
++                com.cloud.hypervisor.kvm.storage.KVMStoragePool storagePool) {
++            com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager storagePoolManager =
++                    Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager.class);
++            when(storagePoolManager.getStoragePool(storagePoolType, poolUuid)).thenReturn(storagePool);
++            return storagePoolManager;
++        }
++    }
+ }

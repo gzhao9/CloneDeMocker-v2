@@ -1,0 +1,73 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
+@@ -269,9 +269,9 @@
+         doReturn(new ArrayList<>(List.of(deltaPath2))).when(kbossTO1).getVmSnapshotDeltaPaths();
+         doReturn(deltaPath1).when(kbossTO1).getDeltaPathOnSecondary();
+         doReturn(kvmStoragePool1).when(kvmStoragePoolManagerMock).getStoragePoolByURI(secondaryUrl);
++        kvmStoragePoolManagerMock = MockKVMStoragePoolManager.createMockKvmStoragePoolManager(kvmStoragePool3);
+         doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePoolByURI(secondaryUrl2);
+         doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
+-        doReturn(kvmStoragePool3).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
+ 
+         doReturn(parentBackupFullPath).when(kvmStoragePool2).getLocalPathFor(parentPath);
+         doReturn(backupDeltaFullPathOnPrimary1).when(kvmStoragePool3).getLocalPathFor(deltaPath2);
+@@ -374,4 +374,19 @@
+         doReturn(volumeObjectToMock2).when(kbossTO2).getVolumeObjectTO();
+         doReturn(volUuid2).when(volumeObjectToMock2).getUuid();
+     }
++
++    public final class MockKVMStoragePoolManager {
++        private MockKVMStoragePoolManager() {
++        }
++
++        public static com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager createMockKvmStoragePoolManager(
++                com.cloud.hypervisor.kvm.storage.KVMStoragePool storagePoolReturn) {
++            com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager kvmStoragePoolManagerMock =
++                    Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager.class);
++            doReturn(storagePoolReturn)
++                    .when(kvmStoragePoolManagerMock)
++                    .getStoragePool(any(), any());
++            return kvmStoragePoolManagerMock;
++        }
++    }
+ }
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtRestoreKbossBackupCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtRestoreKbossBackupCommandWrapperTest.java
+@@ -155,7 +155,7 @@
+     @Test
+     public void restoreVolumesTestQuickRestore() throws LibvirtException, QemuImgException {
+         doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
+-        doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
++        kvmStoragePoolManagerMock = MockKVMStoragePoolManager.createMockKvmStoragePoolManager(kvmStoragePool2);
+         doReturn("p2").when(kvmStoragePool2).getLocalPathFor(any());
+         doReturn(qemuImgMock).when(libvirtRestoreKbossBackupCommandWrapperSpy).getQemuImg(anyInt());
+ 
+@@ -168,7 +168,7 @@
+     @Test
+     public void restoreVolumesTestNormalRestore() throws LibvirtException, QemuImgException {
+         doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
+-        doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
++        kvmStoragePoolManagerMock = MockKVMStoragePoolManager.createMockKvmStoragePoolManager(kvmStoragePool2);
+         doReturn("p2").when(kvmStoragePool2).getLocalPathFor(any());
+         doReturn(qemuImgMock).when(libvirtRestoreKbossBackupCommandWrapperSpy).getQemuImg(anyInt());
+ 
+@@ -178,4 +178,19 @@
+         verify(qemuImgMock).convert(any(), any());
+     }
+ 
++
++    public final class MockKVMStoragePoolManager {
++        private MockKVMStoragePoolManager() {
++        }
++
++        public static com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager createMockKvmStoragePoolManager(
++                com.cloud.hypervisor.kvm.storage.KVMStoragePool storagePoolReturn) {
++            com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager kvmStoragePoolManagerMock =
++                    Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager.class);
++            doReturn(storagePoolReturn)
++                    .when(kvmStoragePoolManagerMock)
++                    .getStoragePool(any(), any());
++            return kvmStoragePoolManagerMock;
++        }
++    }
+ }

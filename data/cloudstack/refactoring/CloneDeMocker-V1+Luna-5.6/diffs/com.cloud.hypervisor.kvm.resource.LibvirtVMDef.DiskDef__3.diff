@@ -1,0 +1,33 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/storage/KVMStorageProcessorTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/storage/KVMStorageProcessorTest.java
+@@ -496,16 +496,14 @@
+ 
+     @Test (expected = CloudRuntimeException.class)
+     public void getDiskLabelToSnapshotTestDiskPathDoesNotMatch() throws LibvirtException {
+-        LibvirtVMDef.DiskDef diskDefMock1 = Mockito.mock(LibvirtVMDef.DiskDef.class);
+-        Mockito.doReturn("test").when(diskDefMock1).getDiskPath();
+-
++
++        LibvirtVMDef.DiskDef diskDefMock1 = createMockDiskDef("test");
+         storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
+     }
+ 
+     @Test
+     public void getDiskLabelToSnapshotTestDiskMatches() throws LibvirtException {
+-        LibvirtVMDef.DiskDef diskDefMock1 = Mockito.mock(LibvirtVMDef.DiskDef.class);
+-        Mockito.doReturn("Path").when(diskDefMock1).getDiskPath();
++        LibvirtVMDef.DiskDef diskDefMock1 = createMockDiskDef("Path");
+         Mockito.doReturn("vda").when(diskDefMock1).getDiskLabel();
+ 
+         String result = storageProcessorSpy.getDiskLabelToSnapshot(List.of(diskDefMock1), "Path", Mockito.mock(Domain.class));
+@@ -765,4 +763,10 @@
+         // version is not even consulted for them.
+         storageProcessor.ensureLibvirtSupportsEncryptedRbdHotplug(StoragePoolType.NetworkFilesystem);
+     }
++
++    private static LibvirtVMDef.DiskDef createMockDiskDef(String diskPathReturn) {
++        LibvirtVMDef.DiskDef diskDefMock = Mockito.mock(LibvirtVMDef.DiskDef.class);
++        Mockito.doReturn(diskPathReturn).when(diskDefMock).getDiskPath();
++        return diskDefMock;
++    }
+ }
