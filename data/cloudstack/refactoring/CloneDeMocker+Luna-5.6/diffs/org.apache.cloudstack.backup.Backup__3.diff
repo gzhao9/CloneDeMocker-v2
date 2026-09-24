@@ -1,0 +1,41 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -190,6 +190,8 @@
+     @Mock
+     BackupDao backupDao;
+ 
++    private Backup backupMock;
++
+     @Mock
+     DataCenterDao dataCenterDao;
+ 
+@@ -291,6 +293,7 @@
+     @Before
+     public void setup() throws Exception {
+         gson = new Gson();
++        backupMock = mock(Backup.class);
+ 
+         closeable = MockitoAnnotations.openMocks(this);
+         when(backupOfferingDao.findById(null)).thenReturn(null);
+@@ -1475,8 +1478,7 @@
+         when(vm.getInstanceName()).thenReturn(instanceName);
+         when(vm.getBackupExternalId()).thenReturn(backupExternalId);
+         when(vm.getDataCenterId()).thenReturn(zoneId);
+-        Backup backup = mock(Backup.class);
+-        when(backupDao.listByVmIdAndOffering(zoneId, vmId, offeringId)).thenReturn(List.of(backup));
++        when(backupDao.listByVmIdAndOffering(zoneId, vmId, offeringId)).thenReturn(List.of(backupMock));
+ 
+         CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+                 () -> backupManager.checkAndRemoveBackupOfferingBeforeExpunge(vm));
+@@ -1499,10 +1501,9 @@
+         String mac2 = "00:11:22:33:44:56";
+ 
+         // Test case 1: Missing network information
+-        Backup backup1 = mock(Backup.class);
+         List<Long> networkIds1 = new ArrayList<>();
+         try {
+-            backupManager.getIpToNetworkMapFromBackup(backup1, true, networkIds1);
++            backupManager.getIpToNetworkMapFromBackup(backupMock, true, networkIds1);
+             fail("Expected CloudRuntimeException for missing network information");
+         } catch (CloudRuntimeException e) {
+             assertEquals("Backup doesn't contain network information. Please specify at least one valid network while creating instance", e.getMessage());
