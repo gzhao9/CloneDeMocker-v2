@@ -1,0 +1,52 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/OAuth2AuthorizationRequestRedirectFilterTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/OAuth2AuthorizationRequestRedirectFilterTests.java
+@@ -62,6 +62,13 @@
+  */
+ public class OAuth2AuthorizationRequestRedirectFilterTests {
+ 
++	private static FilterChain createMockFilterChain(String registrationId) throws java.io.IOException {
++		FilterChain filterChain = mock(FilterChain.class);
++		willThrow(new ClientAuthorizationRequiredException(registrationId)).given(filterChain)
++			.doFilter(any(ServletRequest.class), any(ServletResponse.class));
++		return filterChain;
++	}
++
+ 	private ClientRegistration registration1;
+ 
+ 	private ClientRegistration registration2;
+@@ -220,9 +227,7 @@
+ 		String requestUri = "/path";
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		willThrow(new ClientAuthorizationRequiredException(this.registration1.getRegistrationId())).given(filterChain)
+-			.doFilter(any(ServletRequest.class), any(ServletResponse.class));
++		FilterChain filterChain = createMockFilterChain(this.registration1.getRegistrationId());
+ 		this.filter.doFilter(request, response, filterChain);
+ 		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 		assertThat(response.getRedirectedUrl()).matches("https://example.com/login/oauth/authorize\\?"
+@@ -237,9 +242,7 @@
+ 		String requestUri = "/path";
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-		willThrow(new ClientAuthorizationRequiredException(this.registration1.getRegistrationId())).given(filterChain)
+-			.doFilter(any(ServletRequest.class), any(ServletResponse.class));
++		FilterChain filterChain = createMockFilterChain(this.registration1.getRegistrationId());
+ 		OAuth2AuthorizationRequestResolver resolver = mock(OAuth2AuthorizationRequestResolver.class);
+ 		OAuth2AuthorizationRequestRedirectFilter filter = new OAuth2AuthorizationRequestRedirectFilter(resolver);
+ 		filter.doFilter(request, response, filterChain);
+@@ -351,12 +354,10 @@
+ 		String requestUri = "/path";
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
++		FilterChain filterChain = createMockFilterChain(this.registration1.getRegistrationId());
+ 		willAnswer((invocation) -> assertThat((invocation.<HttpServletResponse>getArgument(1)).isCommitted()).isFalse())
+ 			.given(this.requestCache)
+ 			.saveRequest(any(HttpServletRequest.class), any(HttpServletResponse.class));
+-		willThrow(new ClientAuthorizationRequiredException(this.registration1.getRegistrationId())).given(filterChain)
+-			.doFilter(any(ServletRequest.class), any(ServletResponse.class));
+ 		this.filter.doFilter(request, response, filterChain);
+ 		assertThat(response.isCommitted()).isTrue();
+ 	}

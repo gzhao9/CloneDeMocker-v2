@@ -1,0 +1,134 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/OAuth2AuthorizationCodeGrantFilterTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/OAuth2AuthorizationCodeGrantFilterTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.oauth2.client.web;
+ 
++import org.mockito.Mock;
+ import java.util.HashMap;
+ import java.util.LinkedHashMap;
+ import java.util.Map;
+@@ -81,6 +82,8 @@
+  * @author Parikshit Dutta
+  */
+ public class OAuth2AuthorizationCodeGrantFilterTests {
++	@Mock
++	private FilterChain filterChain;
+ 
+ 	private ClientRegistration registration1;
+ 
+@@ -159,7 +162,6 @@
+ 		// NOTE: A valid Authorization Response contains either a 'code' or 'error'
+ 		// parameter.
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+@@ -169,7 +171,6 @@
+ 		MockHttpServletRequest authorizationRequest = createAuthorizationRequest("/path");
+ 		MockHttpServletRequest authorizationResponse = createAuthorizationResponse(authorizationRequest);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(authorizationResponse, response, filterChain);
+ 		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+@@ -182,7 +183,6 @@
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		this.setUpAuthorizationRequest(authorizationRequest, response, this.registration1);
+ 		authorizationResponse.setRequestURI(requestUri + "-no-match");
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(authorizationResponse, response, filterChain);
+ 		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+@@ -199,7 +199,6 @@
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		this.setUpAuthorizationRequest(authorizationRequest, response, this.registration1);
+ 		this.setUpAuthenticationResult(this.registration1);
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		MockHttpServletRequest authorizationResponse = createAuthorizationResponse(authorizationRequest);
+ 		this.filter.doFilter(authorizationResponse, response, filterChain);
+ 		verifyNoInteractions(filterChain);
+@@ -226,7 +225,6 @@
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		this.setUpAuthorizationRequest(authorizationRequest, response, this.registration1);
+ 		this.setUpAuthenticationResult(this.registration1);
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		// 1) Parameter value
+ 		Map<String, String> parametersNotMatch = new LinkedHashMap<>(parameters);
+ 		parametersNotMatch.put("param2", "value8");
+@@ -257,7 +255,6 @@
+ 		MockHttpServletRequest authorizationRequest = createAuthorizationRequest("/callback/client-1");
+ 		MockHttpServletRequest authorizationResponse = createAuthorizationResponse(authorizationRequest);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.setUpAuthorizationRequest(authorizationRequest, response, this.registration1);
+ 		this.setUpAuthenticationResult(this.registration1);
+ 		this.filter.doFilter(authorizationResponse, response, filterChain);
+@@ -269,7 +266,6 @@
+ 		MockHttpServletRequest authorizationRequest = createAuthorizationRequest("/callback/client-1");
+ 		MockHttpServletRequest authorizationResponse = createAuthorizationResponse(authorizationRequest);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.setUpAuthorizationRequest(authorizationRequest, response, this.registration1);
+ 		OAuth2Error error = new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT);
+ 		given(this.authenticationManager.authenticate(any(Authentication.class)))
+@@ -283,7 +279,7 @@
+ 		MockHttpServletRequest authorizationRequest = createAuthorizationRequest("/callback/client-1");
+ 		MockHttpServletRequest authorizationResponse = createAuthorizationResponse(authorizationRequest);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
++		// removed local mock; replaced with global field `filterChain`
+ 		this.setUpAuthorizationRequest(authorizationRequest, response, this.registration1);
+ 		this.setUpAuthenticationResult(this.registration1);
+ 		this.filter.doFilter(authorizationResponse, response, filterChain);
+@@ -301,7 +297,6 @@
+ 		MockHttpServletRequest authorizationRequest = createAuthorizationRequest("/callback/client-1");
+ 		MockHttpServletRequest authorizationResponse = createAuthorizationResponse(authorizationRequest);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.setUpAuthorizationRequest(authorizationRequest, response, this.registration1);
+ 		this.setUpAuthenticationResult(this.registration1);
+ 		this.filter.doFilter(authorizationResponse, response, filterChain);
+@@ -313,7 +308,6 @@
+ 		MockHttpServletRequest authorizationRequest = createAuthorizationRequest("/callback/client-1");
+ 		MockHttpServletRequest authorizationResponse = createAuthorizationResponse(authorizationRequest);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.setUpAuthorizationRequest(authorizationRequest, response, this.registration1);
+ 		this.setUpAuthenticationResult(this.registration1);
+ 		SecurityContextHolderStrategy strategy = mock(SecurityContextHolderStrategy.class);
+@@ -335,7 +329,7 @@
+ 		request.setRequestURI("/callback/client-1");
+ 		request.addParameter(OAuth2ParameterNames.CODE, "code");
+ 		request.addParameter(OAuth2ParameterNames.STATE, "state");
+-		FilterChain filterChain = mock(FilterChain.class);
++		// removed local mock; replaced with global field `filterChain`
+ 		this.setUpAuthorizationRequest(request, response, this.registration1);
+ 		this.setUpAuthenticationResult(this.registration1);
+ 		String redirectUrl = requestCache.getRequest(request, response).getRedirectUrl();
+@@ -348,7 +342,6 @@
+ 		MockHttpServletRequest authorizationRequest = createAuthorizationRequest("/callback/client-1");
+ 		MockHttpServletRequest authorizationResponse = createAuthorizationResponse(authorizationRequest);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.setUpAuthorizationRequest(authorizationRequest, response, this.registration1);
+ 		this.setUpAuthenticationResult(this.registration1);
+ 		RequestCache requestCache = mock(RequestCache.class);
+@@ -375,7 +368,7 @@
+ 		MockHttpServletRequest authorizationRequest = createAuthorizationRequest("/callback/client-1");
+ 		MockHttpServletRequest authorizationResponse = createAuthorizationResponse(authorizationRequest);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
++		// removed local mock; replaced with global field `filterChain`
+ 		this.setUpAuthorizationRequest(authorizationRequest, response, this.registration1);
+ 		this.setUpAuthenticationResult(this.registration1);
+ 		this.filter.doFilter(authorizationResponse, response, filterChain);
+@@ -403,7 +396,6 @@
+ 		MockHttpServletRequest authorizationRequest = createAuthorizationRequest("/callback/client-1");
+ 		MockHttpServletRequest authorizationResponse = createAuthorizationResponse(authorizationRequest);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.setUpAuthorizationRequest(authorizationRequest, response, this.registration1);
+ 		this.setUpAuthenticationResult(this.registration1);
+ 		this.filter.doFilter(authorizationResponse, response, filterChain);

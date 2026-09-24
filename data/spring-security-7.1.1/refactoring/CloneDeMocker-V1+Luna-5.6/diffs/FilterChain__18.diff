@@ -1,0 +1,102 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/OAuth2LoginAuthenticationFilterTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/OAuth2LoginAuthenticationFilterTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.oauth2.client.web;
+ 
++import org.mockito.Mock;
+ import java.util.Collection;
+ import java.util.HashMap;
+ import java.util.Map;
+@@ -77,6 +78,8 @@
+  * @author Joe Grandja
+  */
+ public class OAuth2LoginAuthenticationFilterTests {
++	@Mock
++	private FilterChain filterChain;
+ 
+ 	private ClientRegistration registration1;
+ 
+@@ -166,7 +169,6 @@
+ 		String requestUri = "/path";
+ 		MockHttpServletRequest request = get(requestUri).build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 		verify(this.filter, never()).attemptAuthentication(any(HttpServletRequest.class),
+@@ -181,7 +183,6 @@
+ 		// A valid Authorization Response contains either a 'code' or 'error' parameter.
+ 		// Don't set it to force an invalid Authorization Response.
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		ArgumentCaptor<AuthenticationException> authenticationExceptionArgCaptor = ArgumentCaptor
+ 			.forClass(AuthenticationException.class);
+@@ -200,8 +201,6 @@
+ 		MockHttpServletRequest request = get(requestUri).param(OAuth2ParameterNames.CODE, "code")
+ 			.param(OAuth2ParameterNames.STATE, "state")
+ 			.build();
+-		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.filter.doFilter(request, response, filterChain);
+ 		ArgumentCaptor<AuthenticationException> authenticationExceptionArgCaptor = ArgumentCaptor
+ 			.forClass(AuthenticationException.class);
+@@ -223,7 +222,6 @@
+ 			.param(OAuth2ParameterNames.STATE, state)
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		// @formatter:off
+ 		ClientRegistration registrationNotFound = ClientRegistration.withRegistrationId("registration-not-found")
+ 				.clientId("client-1")
+@@ -259,7 +257,7 @@
+ 			.param(OAuth2ParameterNames.STATE, state)
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
++		// removed local mock; replaced with global field `filterChain`
+ 		this.setUpAuthorizationRequest(request, response, this.registration2, state);
+ 		this.setUpAuthenticationResult(this.registration2);
+ 		this.filter.doFilter(request, response, filterChain);
+@@ -274,7 +272,6 @@
+ 			.param(OAuth2ParameterNames.STATE, state)
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.setUpAuthorizationRequest(request, response, this.registration1, state);
+ 		this.setUpAuthenticationResult(this.registration1);
+ 		this.filter.doFilter(request, response, filterChain);
+@@ -299,7 +296,6 @@
+ 			.param(OAuth2ParameterNames.STATE, state)
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.setUpAuthorizationRequest(request, response, this.registration2, state);
+ 		this.setUpAuthenticationResult(this.registration2);
+ 		this.filter.doFilter(request, response, filterChain);
+@@ -317,7 +313,7 @@
+ 			.param(OAuth2ParameterNames.STATE, state)
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
++		// removed local mock; replaced with global field `filterChain`
+ 		this.setUpAuthorizationRequest(request, response, this.registration2, state);
+ 		this.setUpAuthenticationResult(this.registration2);
+ 		this.filter.doFilter(request, response, filterChain);
+@@ -345,7 +341,6 @@
+ 			.param(OAuth2ParameterNames.STATE, state)
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.setUpAuthorizationRequest(request, response, this.registration2, state);
+ 		this.setUpAuthenticationResult(this.registration2);
+ 		this.filter.doFilter(request, response, filterChain);
+@@ -373,7 +368,6 @@
+ 			.param(OAuth2ParameterNames.STATE, state)
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+ 		this.setUpAuthorizationRequest(request, response, this.registration2, state);
+ 		this.setUpAuthenticationResult(this.registration2);
+ 		this.filter.doFilter(request, response, filterChain);

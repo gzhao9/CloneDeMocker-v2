@@ -1,0 +1,40 @@
+--- a/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
++++ b/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/authentication/Saml2WebSsoAuthenticationFilterTests.java
+@@ -65,10 +65,13 @@
+ 
+ 	private HttpServletResponse response = new MockHttpServletResponse();
+ 
++	private FilterChain chainMock;
++
+ 	private AuthenticationManager authenticationManager = mock(AuthenticationManager.class);
+ 
+ 	@BeforeEach
+ 	public void setup() {
++		this.chainMock = mock(FilterChain.class);
+ 		this.filter = new Saml2WebSsoAuthenticationFilter(this.repository);
+ 		this.request.setRequestURI("/login/saml2/sso/idp-registration-id");
+ 		this.request.setPathInfo("/login/saml2/sso/idp-registration-id");
+@@ -129,9 +132,8 @@
+ 		this.filter.setContinueChainWhenNoRelyingPartyRegistrationFound(true);
+ 		this.request.setRequestURI("/some/other/path/non-existent-id");
+ 		this.request.setPathInfo("/some/other/path/non-existent-id");
+-		FilterChain chain = mock(FilterChain.class);
+-		this.filter.doFilter(this.request, this.response, chain);
+-		verify(chain).doFilter(this.request, this.response);
++		this.filter.doFilter(this.request, this.response, chainMock);
++		verify(chainMock).doFilter(this.request, this.response);
+ 	}
+ 
+ 	@Test
+@@ -142,9 +144,8 @@
+ 		this.request.setRequestURI("/some/other/path/id");
+ 		this.request.setPathInfo("/some/other/path/id");
+ 		this.request.removeParameter(Saml2ParameterNames.SAML_RESPONSE);
+-		FilterChain chain = mock(FilterChain.class);
+-		this.filter.doFilter(this.request, this.response, chain);
+-		verify(chain).doFilter(this.request, this.response);
++		this.filter.doFilter(this.request, this.response, chainMock);
++		verify(chainMock).doFilter(this.request, this.response);
+ 	}
+ 
+ 	@Test
