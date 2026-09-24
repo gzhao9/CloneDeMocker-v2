@@ -1,0 +1,130 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -249,6 +249,9 @@
+     private NetworkVO networkMock;
+ 
+     @Mock
++    private NetworkVO currentNetworkMock;
++
++    @Mock
+     private GuestOSDao guestOSDao;
+ 
+     @Mock
+@@ -2854,7 +2857,6 @@
+     @Test
+     public void implementNetworkTestImplementedNetworkIsNullReturnCurrentNewNetwork() throws ResourceUnavailableException, InsufficientCapacityException {
+         CallContext callContextMock = Mockito.mock(CallContext.class);
+-        NetworkVO currentNetwork = Mockito.mock(NetworkVO.class);
+ 
+         try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+             Mockito.when(CallContext.current()).thenReturn(callContextMock);
+@@ -2864,16 +2866,15 @@
+             Mockito.doReturn(callerUser).when(userDao).findById(Mockito.anyLong());
+             Mockito.doReturn(null).when(_networkMgr).implementNetwork(Mockito.anyLong(), Mockito.any(), Mockito.any());
+ 
+-            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetwork);
+-
+-            Assert.assertEquals(newNetwork, currentNetwork);
++            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetworkMock);
++
++            Assert.assertEquals(newNetwork, currentNetworkMock);
+         }
+     }
+ 
+     @Test
+     public void implementNetworkTestImplementedNetworkFirstIsNullReturnCurrentNewNetwork() throws ResourceUnavailableException, InsufficientCapacityException {
+         CallContext callContextMock = Mockito.mock(CallContext.class);
+-        NetworkVO currentNetwork = Mockito.mock(NetworkVO.class);
+ 
+         try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+             Mockito.when(CallContext.current()).thenReturn(callContextMock);
+@@ -2886,16 +2887,15 @@
+             Mockito.doReturn(null).when(implementedNetwork).first();
+             Mockito.doReturn(implementedNetwork).when(_networkMgr).implementNetwork(Mockito.anyLong(), Mockito.any(), Mockito.any());
+ 
+-            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetwork);
+-
+-            Assert.assertEquals(newNetwork, currentNetwork);
++            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetworkMock);
++
++            Assert.assertEquals(newNetwork, currentNetworkMock);
+         }
+     }
+ 
+     @Test
+     public void implementNetworkTestImplementedNetworkSecondIsNullReturnCurrentNewNetwork() throws ResourceUnavailableException, InsufficientCapacityException {
+         CallContext callContextMock = Mockito.mock(CallContext.class);
+-        NetworkVO currentNetwork = Mockito.mock(NetworkVO.class);
+ 
+         try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+             Mockito.when(CallContext.current()).thenReturn(callContextMock);
+@@ -2909,16 +2909,15 @@
+             Mockito.doReturn(null).when(implementedNetwork).second();
+             Mockito.doReturn(implementedNetwork).when(_networkMgr).implementNetwork(Mockito.anyLong(), Mockito.any(), Mockito.any());
+ 
+-            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetwork);
+-
+-            Assert.assertEquals(newNetwork, currentNetwork);
++            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetworkMock);
++
++            Assert.assertEquals(newNetwork, currentNetworkMock);
+         }
+     }
+ 
+     @Test
+     public void implementNetworkTestImplementedNetworkSecondIsNotNullReturnImplementedNetworkSecond() throws ResourceUnavailableException, InsufficientCapacityException {
+         CallContext callContextMock = Mockito.mock(CallContext.class);
+-        NetworkVO currentNetwork = Mockito.mock(NetworkVO.class);
+ 
+         try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+             Mockito.when(CallContext.current()).thenReturn(callContextMock);
+@@ -2932,7 +2931,7 @@
+             Mockito.doReturn(networkMock).when(implementedNetwork).second();
+             Mockito.doReturn(implementedNetwork).when(_networkMgr).implementNetwork(Mockito.anyLong(), Mockito.any(), Mockito.any());
+ 
+-            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetwork);
++            Network newNetwork = userVmManagerImpl.implementNetwork(accountMock, _dcMock, currentNetworkMock);
+ 
+             Assert.assertEquals(newNetwork, networkMock);
+         }
+@@ -3150,9 +3149,8 @@
+         LinkedHashSet<NetworkVO> applicableNetworks = new LinkedHashSet<>();
+         LinkedHashMap<Network, List<? extends NicProfile>> networks = Mockito.spy(LinkedHashMap.class);
+ 
+-        NetworkVO networkVoMock2 = Mockito.mock(NetworkVO.class);
+         applicableNetworks.add(networkMock);
+-        applicableNetworks.add(networkVoMock2);
++        applicableNetworks.add(currentNetworkMock);
+ 
+         NetworkVO defaultNetwork = userVmManagerImpl.addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
+ 
+@@ -3595,7 +3593,6 @@
+         VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+ 
+-        NetworkVO network1 = mock(NetworkVO.class);
+         NetworkVO network2 = mock(NetworkVO.class);
+         when(backupManager.getDataDiskInfoListFromBackup(backup)).thenReturn(List.of(new VmDiskInfo(diskOffering, 10L, 1000L, 2000L)));
+         Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+@@ -3642,11 +3639,10 @@
+         Nic nic = mock(Nic.class);
+         when(nic.getNetworkId()).thenReturn(networkId);
+         when(networkModel.getDefaultNic(vmId)).thenReturn(nic);
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(_networkDao.findById(networkId)).thenReturn(network);
++        when(_networkDao.findById(networkId)).thenReturn(currentNetworkMock);
+         UserDataServiceProvider element = mock(UserDataServiceProvider.class);
+         when(element.saveSSHKey(any(), any(), any(), any())).thenReturn(true);
+-        when(_networkMgr.getSSHKeyResetProvider(network)).thenReturn(element);
++        when(_networkMgr.getSSHKeyResetProvider(currentNetworkMock)).thenReturn(element);
+ 
+         SSHKeyPairVO keyPair1 = mock(SSHKeyPairVO.class);
+         SSHKeyPairVO keyPair2 = mock(SSHKeyPairVO.class);
+@@ -3774,7 +3770,6 @@
+         VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+ 
+-        NetworkVO network1 = mock(NetworkVO.class);
+         NetworkVO network2 = mock(NetworkVO.class);
+         when(backupManager.getDataDiskInfoListFromBackup(backup)).thenReturn(List.of(new VmDiskInfo(diskOffering, 10L, 1000L, 2000L)));
+         Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
