@@ -1,0 +1,77 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -199,8 +199,7 @@
+     @Mock
+     private Domain domainMock;
+ 
+-    @Mock
+-    private VMInstanceVO vmInstanceVOMock;
++    private VMInstanceVO vmInstanceVOMock = createMockVMInstanceVO(null, null, null);
+ 
+     @Mock
+     private CreateBackupScheduleCmd createBackupScheduleCmdMock;
+@@ -374,6 +373,14 @@
+         updatedConfigKeyDepot = true;
+     }
+ 
++    private static VMInstanceVO createMockVMInstanceVO(Long accountId, Long backupOfferingId, Long dataCenterId) {
++        VMInstanceVO vmInstanceVOMock = Mockito.mock(VMInstanceVO.class);
++        when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
++        when(vmInstanceVOMock.getBackupOfferingId()).thenReturn(backupOfferingId);
++        when(vmInstanceVOMock.getDataCenterId()).thenReturn(dataCenterId);
++        return vmInstanceVOMock;
++    }
++
+     @Test
+     public void testExceptionWhenUpdateWithNullId() {
+         try {
+@@ -617,11 +624,8 @@
+         when(cmd.getSchedule()).thenReturn("00:00:00");
+         when(cmd.getQuiesceVM()).thenReturn(null);
+ 
+-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVMInstanceVO(accountId, backupOfferingId, zoneId);
+         when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+-        when(vm.getDataCenterId()).thenReturn(zoneId);
+-        when(vm.getAccountId()).thenReturn(accountId);
+-        when(vm.getBackupOfferingId()).thenReturn(backupOfferingId);
+ 
+         overrideBackupFrameworkConfigValue();
+ 
+@@ -696,10 +700,8 @@
+         Long oldBackupSize = 400000000L;
+         long domainId = 101L;
+ 
++        VMInstanceVO vmInstanceVOMock = createMockVMInstanceVO(accountId, backupOfferingId, zoneId);
+         when(vmInstanceDao.findById(vmId)).thenReturn(vmInstanceVOMock);
+-        when(vmInstanceVOMock.getDataCenterId()).thenReturn(zoneId);
+-        when(vmInstanceVOMock.getBackupOfferingId()).thenReturn(backupOfferingId);
+-        when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
+ 
+         overrideBackupFrameworkConfigValue();
+         when(backupOfferingDao.findById(backupOfferingId)).thenReturn(backupOfferingVOMock);
+@@ -772,10 +774,8 @@
+         Long accountId = 5L;
+         long domainId = 101L;
+ 
++        vmInstanceVOMock = createMockVMInstanceVO(accountId, backupOfferingId, zoneId);
+         when(vmInstanceDao.findById(vmId)).thenReturn(vmInstanceVOMock);
+-        when(vmInstanceVOMock.getDataCenterId()).thenReturn(zoneId);
+-        when(vmInstanceVOMock.getBackupOfferingId()).thenReturn(backupOfferingId);
+-        when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
+ 
+         overrideBackupFrameworkConfigValue();
+         BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
+@@ -814,11 +814,8 @@
+         long domainId = 101L;
+         long size = 10000L;
+ 
+-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVMInstanceVO(accountId, backupOfferingId, zoneId);
+         when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+-        when(vm.getDataCenterId()).thenReturn(zoneId);
+-        when(vm.getBackupOfferingId()).thenReturn(backupOfferingId);
+-        when(vm.getAccountId()).thenReturn(accountId);
+ 
+         VolumeVO volume = mock(VolumeVO.class);
+         when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
