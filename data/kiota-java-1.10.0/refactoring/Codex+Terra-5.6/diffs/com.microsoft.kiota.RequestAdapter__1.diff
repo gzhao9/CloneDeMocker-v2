@@ -1,0 +1,47 @@
+--- a/components/abstractions/src/test/java/com/microsoft/kiota/MultiPartBodyTest.java
++++ b/components/abstractions/src/test/java/com/microsoft/kiota/MultiPartBodyTest.java
+@@ -14,6 +14,12 @@
+ class MultiPartBodyTest {
+     private static <T> T nullValue() {
+         return java.util.Collections.<String, T>emptyMap().get("missing");
++    }
++
++    private MultipartBody multipartBodyWithRequestAdapter() {
++        final MultipartBody multipartBody = new MultipartBody();
++        multipartBody.requestAdapter = mock(RequestAdapter.class);
++        return multipartBody;
+     }
+ 
+     @Test
+@@ -44,18 +50,14 @@
+ 
+     @Test
+     void requiresPartsForSerialization() {
+-        final MultipartBody multipartBody = new MultipartBody();
++        final MultipartBody multipartBody = multipartBodyWithRequestAdapter();
+         final SerializationWriter writer = mock(SerializationWriter.class);
+-        final RequestAdapter requestAdapter = mock(RequestAdapter.class);
+-        multipartBody.requestAdapter = requestAdapter;
+         assertThrows(IllegalStateException.class, () -> multipartBody.serialize(writer));
+     }
+ 
+     @Test
+     void addsPart() {
+-        final MultipartBody multipartBody = new MultipartBody();
+-        final RequestAdapter requestAdapter = mock(RequestAdapter.class);
+-        multipartBody.requestAdapter = requestAdapter;
++        final MultipartBody multipartBody = multipartBodyWithRequestAdapter();
+         multipartBody.addOrReplacePart("foo", "bar", "baz");
+         final Object result = multipartBody.getPartValue("foo");
+         assertNotNull(result);
+@@ -64,9 +66,7 @@
+ 
+     @Test
+     void removesPart() {
+-        final MultipartBody multipartBody = new MultipartBody();
+-        final RequestAdapter requestAdapter = mock(RequestAdapter.class);
+-        multipartBody.requestAdapter = requestAdapter;
++        final MultipartBody multipartBody = multipartBodyWithRequestAdapter();
+         multipartBody.addOrReplacePart("foo", "bar", "baz");
+         multipartBody.removePart("FOO");
+         final Object result = multipartBody.getPartValue("foo");
