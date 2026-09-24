@@ -1,0 +1,89 @@
+--- a/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyChannelTest.java
++++ b/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyChannelTest.java
+@@ -81,12 +81,10 @@
+         Mockito.when(channel.eventLoop()).thenReturn(Mockito.mock(EventLoop.class));
+         Mockito.when(channel.alloc()).thenReturn(PooledByteBufAllocator.DEFAULT);
+         NettyChannel nettyChannel = NettyChannel.getOrAddChannel(channel, url, channelHandler);
+-        ChannelPromise future = Mockito.mock(ChannelPromise.class);
++        ChannelPromise future = NettyTestUtils.mockChannelPromise();
+         Mockito.when(future.await(1000)).thenReturn(true);
+-        Mockito.when(future.cause()).thenReturn(null);
+         Mockito.when(channel.writeAndFlush(Mockito.any())).thenReturn(future);
+         Mockito.when(channel.newPromise()).thenReturn(future);
+-        Mockito.when(future.addListener(Mockito.any())).thenReturn(future);
+         nettyChannel.send("msg", true);
+ 
+         NettyChannel finalNettyChannel = nettyChannel;
+@@ -109,11 +107,9 @@
+                 },
+                 "in timeout(1000ms) limit");
+ 
+-        ChannelPromise channelPromise = Mockito.mock(ChannelPromise.class);
++        ChannelPromise channelPromise = NettyTestUtils.mockChannelPromise();
+         Mockito.when(channel.newPromise()).thenReturn(channelPromise);
+         Mockito.when(channelPromise.await(1000)).thenReturn(true);
+-        Mockito.when(channelPromise.cause()).thenReturn(null);
+-        Mockito.when(channelPromise.addListener(Mockito.any())).thenReturn(channelPromise);
+         finalNettyChannel.send("msg", true);
+         ArgumentCaptor<GenericFutureListener> listenerArgumentCaptor =
+                 ArgumentCaptor.forClass(GenericFutureListener.class);
+--- a/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyClientHandlerTest.java
++++ b/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyClientHandlerTest.java
+@@ -32,8 +32,6 @@
+ import org.mockito.Mockito;
+ 
+ import static org.mockito.ArgumentMatchers.any;
+-import static org.mockito.Mockito.mock;
+-import static org.mockito.Mockito.when;
+ 
+ class NettyClientHandlerTest {
+ 
+@@ -48,11 +46,9 @@
+         Mockito.when(channel.eventLoop()).thenReturn(new NioEventLoopGroup().next());
+         Mockito.when(channel.alloc()).thenReturn(PooledByteBufAllocator.DEFAULT);
+ 
+-        ChannelPromise future = mock(ChannelPromise.class);
+-        when(channel.writeAndFlush(any())).thenReturn(future);
+-        when(future.cause()).thenReturn(null);
+-        when(channel.newPromise()).thenReturn(future);
+-        when(future.addListener(Mockito.any())).thenReturn(future);
++        ChannelPromise future = NettyTestUtils.mockChannelPromise();
++        Mockito.when(channel.writeAndFlush(any())).thenReturn(future);
++        Mockito.when(channel.newPromise()).thenReturn(future);
+ 
+         NettyClientHandler nettyClientHandler = new NettyClientHandler(url, handler);
+ 
+--- a/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyTestUtils.java
++++ b/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyTestUtils.java
+@@ -0,0 +1,31 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.dubbo.remoting.transport.netty4;
++
++import io.netty.channel.ChannelPromise;
++import org.mockito.Mockito;
++
++final class NettyTestUtils {
++    private NettyTestUtils() {}
++
++    static ChannelPromise mockChannelPromise() {
++        ChannelPromise future = Mockito.mock(ChannelPromise.class);
++        Mockito.when(future.cause()).thenReturn(null);
++        Mockito.when(future.addListener(Mockito.any())).thenReturn(future);
++        return future;
++    }
++}
