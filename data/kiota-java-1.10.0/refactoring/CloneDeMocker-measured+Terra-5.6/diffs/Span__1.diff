@@ -1,0 +1,49 @@
+--- a/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java
++++ b/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java
+@@ -27,10 +27,12 @@
+     private static final double DELTA = 0.01;
+ 
+     private RetryHandler retryHandler;
++    private Span retrySpan;
+ 
+     @BeforeEach
+     void setUp() {
+         retryHandler = new RetryHandler();
++        retrySpan = mock(Span.class);
+     }
+ 
+     private static Stream<Arguments> retryAfterHeaderValues() {
+@@ -90,7 +92,6 @@
+         Response mockResponse = mock(Response.class);
+         Request mockRequest = mock(Request.class);
+         RetryHandlerOption mockOption = mock(RetryHandlerOption.class);
+-        Span mockSpan = mock(Span.class);
+ 
+         // Setup mock behaviors
+         when(mockResponse.code()).thenReturn(429);
+@@ -107,7 +108,7 @@
+         // Call retryRequest - it should not throw IllegalArgumentException
+         // The main goal is to verify no exception is thrown when retry interval is negative
+         boolean result =
+-                retryHandler.retryRequest(mockResponse, 1, mockRequest, mockOption, mockSpan);
++                retryHandler.retryRequest(mockResponse, 1, mockRequest, mockOption, retrySpan);
+ 
+         // Verify the method returned true (should retry)
+         assertTrue(result, "Expected retryRequest to return true");
+@@ -119,7 +120,6 @@
+         Response mockResponse = mock(Response.class);
+         Request mockRequest = mock(Request.class);
+         RetryHandlerOption mockOption = mock(RetryHandlerOption.class);
+-        Span mockSpan = mock(Span.class);
+ 
+         // Setup mock behaviors to force negative retry interval
+         when(mockResponse.code()).thenReturn(503);
+@@ -135,7 +135,7 @@
+         // This verifies the fix for negative retry intervals
+         for (int i = 0; i < 5; i++) {
+             boolean result =
+-                    retryHandler.retryRequest(mockResponse, 1, mockRequest, mockOption, mockSpan);
++                    retryHandler.retryRequest(mockResponse, 1, mockRequest, mockOption, retrySpan);
+             // Verify each call succeeds without throwing IllegalArgumentException
+             assertTrue(result, "Expected retryRequest to return true on iteration " + i);
+         }
