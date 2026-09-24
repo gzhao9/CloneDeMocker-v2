@@ -1,0 +1,93 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyRotationTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyRotationTest.java
+@@ -128,8 +128,7 @@
+         when(hsmProfileDao.findById(oldProfileId)).thenReturn(hsmProfile);
+ 
+         // Old version should be marked as Previous
+-        KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
+-        when(oldVersion.getVersionNumber()).thenReturn(1);
++        KMSKekVersionVO oldVersion = createKmsKekVersion(1);
+         when(oldVersion.getId()).thenReturn(10L);
+         when(kmsKekVersionDao.getActiveVersion(kmsKeyId)).thenReturn(oldVersion);
+         when(kmsKekVersionDao.listByKmsKeyId(kmsKeyId)).thenReturn(List.of(oldVersion));
+@@ -138,8 +137,7 @@
+         when(kmsProvider.createKek(any(KeyPurpose.class), eq(newKekLabel), anyInt(), eq(oldProfileId)))
+                 .thenReturn("new-kek-id");
+ 
+-        KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
+-        when(newVersion.getVersionNumber()).thenReturn(2);
++        KMSKekVersionVO newVersion = createKmsKekVersion(2);
+         when(kmsKekVersionDao.persist(any(KMSKekVersionVO.class))).thenReturn(newVersion);
+ 
+         doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
+@@ -183,8 +181,7 @@
+         when(hsmProfile.getId()).thenReturn(newProfileId);
+         when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+ 
+-        KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
+-        when(oldVersion.getVersionNumber()).thenReturn(1);
++        KMSKekVersionVO oldVersion = createKmsKekVersion(1);
+         when(oldVersion.getId()).thenReturn(10L);
+         when(kmsKekVersionDao.getActiveVersion(kmsKeyId)).thenReturn(oldVersion);
+         when(kmsKekVersionDao.listByKmsKeyId(kmsKeyId)).thenReturn(List.of(oldVersion));
+@@ -193,8 +190,7 @@
+         when(kmsProvider.createKek(any(KeyPurpose.class), eq(newKekLabel), anyInt(), eq(newProfileId)))
+                 .thenReturn("new-kek-id");
+ 
+-        KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
+-        when(newVersion.getVersionNumber()).thenReturn(2);
++        KMSKekVersionVO newVersion = createKmsKekVersion(2);
+         when(kmsKekVersionDao.persist(any(KMSKekVersionVO.class))).thenReturn(newVersion);
+ 
+         doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
+@@ -289,8 +285,7 @@
+         when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+         when(hsmProfileDao.findById(oldProfileId)).thenReturn(hsmProfile);
+ 
+-        KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
+-        when(oldVersion.getVersionNumber()).thenReturn(1);
++        KMSKekVersionVO oldVersion = createKmsKekVersion(1);
+         when(oldVersion.getId()).thenReturn(10L);
+         when(kmsKekVersionDao.getActiveVersion(kmsKeyId)).thenReturn(oldVersion);
+         when(kmsKekVersionDao.listByKmsKeyId(kmsKeyId)).thenReturn(List.of(oldVersion));
+@@ -299,8 +294,7 @@
+         when(kmsProvider.createKek(any(KeyPurpose.class), anyString(), anyInt(), eq(oldProfileId)))
+                 .thenReturn("new-kek-id");
+ 
+-        KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
+-        when(newVersion.getVersionNumber()).thenReturn(2);
++        KMSKekVersionVO newVersion = createKmsKekVersion(2);
+         when(kmsKekVersionDao.persist(any(KMSKekVersionVO.class))).thenReturn(newVersion);
+ 
+         doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
+@@ -360,8 +354,7 @@
+         when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+         when(hsmProfileDao.findById(currentProfileId)).thenReturn(hsmProfile);
+ 
+-        KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
+-        when(oldVersion.getVersionNumber()).thenReturn(1);
++        KMSKekVersionVO oldVersion = createKmsKekVersion(1);
+         when(oldVersion.getId()).thenReturn(10L);
+         when(kmsKekVersionDao.getActiveVersion(kmsKeyId)).thenReturn(oldVersion);
+         when(kmsKekVersionDao.listByKmsKeyId(kmsKeyId)).thenReturn(List.of(oldVersion));
+@@ -369,8 +362,7 @@
+         when(kmsProvider.createKek(any(KeyPurpose.class), anyString(), anyInt(), eq(currentProfileId)))
+                 .thenReturn("new-kek-id");
+ 
+-        KMSKekVersionVO newVersion = mock(KMSKekVersionVO.class);
+-        when(newVersion.getVersionNumber()).thenReturn(2);
++        KMSKekVersionVO newVersion = createKmsKekVersion(2);
+         when(kmsKekVersionDao.persist(any(KMSKekVersionVO.class))).thenReturn(newVersion);
+ 
+         doReturn(kmsProvider).when(kmsManager).getKMSProvider(testProviderName);
+@@ -384,4 +376,10 @@
+         // Verify KMS key was not updated (same profile)
+         verify(kmsKey, never()).setHsmProfileId(currentProfileId);
+     }
++
++    private static KMSKekVersionVO createKmsKekVersion(int versionNumber) {
++        KMSKekVersionVO mock = Mockito.mock(KMSKekVersionVO.class);
++        when(mock.getVersionNumber()).thenReturn(versionNumber);
++        return mock;
++    }
+ }

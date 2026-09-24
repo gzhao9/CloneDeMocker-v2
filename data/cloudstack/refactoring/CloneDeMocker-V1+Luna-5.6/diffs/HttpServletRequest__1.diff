@@ -1,0 +1,57 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/request/ListQueryTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/request/ListQueryTest.java
+@@ -47,17 +47,8 @@
+ 
+     @Test
+     public void testFromRequest_ParsesAllContentMaxAndFollow() {
+-        final HttpServletRequest request = mock(HttpServletRequest.class);
+-        when(request.getParameterMap()).thenReturn(Map.of(
+-                "all_content", new String[]{"true"},
+-                "max", new String[]{"25"},
+-                "follow", new String[]{"tags, disk_attachments.disk, ,nics.reporteddevices"}
+-        ));
+-        when(request.getParameter("all_content")).thenReturn("true");
+-        when(request.getParameter("max")).thenReturn("25");
+-        when(request.getParameter("follow")).thenReturn("tags, disk_attachments.disk, ,nics.reporteddevices");
+-        when(request.getParameter("search")).thenReturn(null);
+ 
++        final HttpServletRequest request = createMockHttpServletRequest(Map.of("all_content", new String[] { "true" }, "max", new String[] { "25" }, "follow", new String[] { "tags, disk_attachments.disk, ,nics.reporteddevices" }), "true", "25", "tags, disk_attachments.disk, ,nics.reporteddevices", null);
+         final ListQuery query = ListQuery.fromRequest(request);
+ 
+         assertTrue(query.isAllContent());
+@@ -68,13 +59,9 @@
+ 
+     @Test
+     public void testFromRequest_SearchParserExtractsPageOnly() {
+-        final HttpServletRequest request = mock(HttpServletRequest.class);
+-        when(request.getParameterMap()).thenReturn(Map.of("search", new String[]{"sortby name page 3"}));
+-        when(request.getParameter("all_content")).thenReturn(null);
+-        when(request.getParameter("max")).thenReturn(null);
+-        when(request.getParameter("follow")).thenReturn(null);
+-        when(request.getParameter("search")).thenReturn("sortby name page 3");
+ 
++        final HttpServletRequest request = createMockHttpServletRequest(
++                Map.of("search", new String[] { "sortby name page 3" }), null, null, null, "sortby name page 3");
+         final ListQuery query = ListQuery.fromRequest(request);
+ 
+         // Only page key is extracted from search clause in oVirt format "page N"
+@@ -89,4 +76,19 @@
+ 
+         org.junit.Assert.assertEquals(Long.valueOf(20L), query.getOffset());
+     }
++
++    private static HttpServletRequest createMockHttpServletRequest(
++            Map<String, String[]> parameterMap,
++            String allContent,
++            String max,
++            String follow,
++            String search) {
++        final HttpServletRequest request = mock(HttpServletRequest.class);
++        when(request.getParameterMap()).thenReturn((Map<String, String[]>) parameterMap);
++        when(request.getParameter("all_content")).thenReturn(allContent);
++        when(request.getParameter("max")).thenReturn(max);
++        when(request.getParameter("follow")).thenReturn(follow);
++        when(request.getParameter("search")).thenReturn(search);
++        return request;
++    }
+ }

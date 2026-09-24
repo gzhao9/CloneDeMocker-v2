@@ -1,0 +1,125 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
+@@ -438,7 +438,7 @@
+         when(zoneDao.findById(anyLong())).thenReturn(dataCenterVO);
+         lenient().when(hostDao.findByDataCenterId(anyLong())).thenReturn(Collections.emptyList());
+         when(podDao.listByDataCenterId(anyLong())).thenReturn(Collections.emptyList());
+-        when(ipAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
++        ipAddressDao = MockDataCenterIpAddressDao.createMockDataCenterIpAddressDao(0);
+         when(publicIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
+         when(vmInstanceDao.listByZoneId(anyLong())).thenReturn(Collections.emptyList());
+         when(volumeDao.findByDc(anyLong())).thenReturn(Collections.emptyList());
+@@ -1410,4 +1410,19 @@
+         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
+         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
+     }
++
++    public final class MockDataCenterIpAddressDao {
++        private MockDataCenterIpAddressDao() {
++        }
++
++        public static com.cloud.dc.dao.DataCenterIpAddressDao createMockDataCenterIpAddressDao(int countReturn) {
++            com.cloud.dc.dao.DataCenterIpAddressDao ipAddressDao =
++                    Mockito.mock(com.cloud.dc.dao.DataCenterIpAddressDao.class);
++
++            Mockito.when(ipAddressDao.countIPs(Mockito.anyLong(), Mockito.anyBoolean()))
++                    .thenReturn(countReturn);
++
++            return ipAddressDao;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
+@@ -837,7 +837,7 @@
+     public void checkIfZoneIsDeletableSuccessTest() {
+         Mockito.when(_hostDao.listEnabledIdsByDataCenterId(anyLong())).thenReturn(new ArrayList<>());
+         Mockito.when(_podDao.listByDataCenterId(anyLong())).thenReturn(new ArrayList<HostPodVO>());
+-        Mockito.when(_privateIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
++        _privateIpAddressDao = MockDataCenterIpAddressDao.createMockDataCenterIpAddressDao(0);
+         Mockito.when(_publicIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
+         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
+         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
+@@ -851,7 +851,7 @@
+     public void checkIfZoneIsDeletableFailureOnHostTest() {
+         Mockito.when(_hostDao.listEnabledIdsByDataCenterId(anyLong())).thenReturn(List.of(1L));
+         Mockito.when(_podDao.listByDataCenterId(anyLong())).thenReturn(new ArrayList<HostPodVO>());
+-        Mockito.when(_privateIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
++        _privateIpAddressDao = MockDataCenterIpAddressDao.createMockDataCenterIpAddressDao(0);
+         Mockito.when(_publicIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
+         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
+         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
+@@ -869,7 +869,7 @@
+ 
+         Mockito.when(_hostDao.listEnabledIdsByDataCenterId(anyLong())).thenReturn(new ArrayList<>());
+         Mockito.when(_podDao.listByDataCenterId(anyLong())).thenReturn(arrayList);
+-        Mockito.when(_privateIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
++        _privateIpAddressDao = MockDataCenterIpAddressDao.createMockDataCenterIpAddress(0);
+         Mockito.when(_publicIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
+         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
+         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
+@@ -883,7 +883,7 @@
+     public void checkIfZoneIsDeletableFailureOnPrivateIpAddressTest() {
+         Mockito.when(_hostDao.listEnabledIdsByDataCenterId(anyLong())).thenReturn(new ArrayList<>());
+         Mockito.when(_podDao.listByDataCenterId(anyLong())).thenReturn(new ArrayList<HostPodVO>());
+-        Mockito.when(_privateIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(1);
++        _privateIpAddressDao = MockDataCenterIpAddressDao.createMockDataCenterIpAddressDao(1);
+         Mockito.when(_publicIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
+         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
+         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
+@@ -897,7 +897,7 @@
+     public void checkIfZoneIsDeletableFailureOnPublicIpAddressTest() {
+         Mockito.when(_hostDao.listEnabledIdsByDataCenterId(anyLong())).thenReturn(new ArrayList<>());
+         Mockito.when(_podDao.listByDataCenterId(anyLong())).thenReturn(new ArrayList<HostPodVO>());
+-        Mockito.when(_privateIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
++        _privateIpAddressDao = MockDataCenterIpAddressDao.createMockDataCenterIpAddress(0);
+         Mockito.when(_publicIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(1);
+         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
+         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
+@@ -915,7 +915,7 @@
+ 
+         Mockito.when(_hostDao.listEnabledIdsByDataCenterId(anyLong())).thenReturn(new ArrayList<>());
+         Mockito.when(_podDao.listByDataCenterId(anyLong())).thenReturn(new ArrayList<HostPodVO>());
+-        Mockito.when(_privateIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
++        _privateIpAddressDao = MockDataCenterIpAddressDao.createMockDataCenterIpAddressDao(0);
+         Mockito.when(_publicIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
+         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(arrayList);
+         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
+@@ -933,7 +933,7 @@
+ 
+         Mockito.when(_hostDao.listEnabledIdsByDataCenterId(anyLong())).thenReturn(new ArrayList<>());
+         Mockito.when(_podDao.listByDataCenterId(anyLong())).thenReturn(new ArrayList<HostPodVO>());
+-        Mockito.when(_privateIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
++        _privateIpAddressDao = MockDataCenterIpAddressDao.createMockDataCenterIpAddressDao(0);
+         Mockito.when(_publicIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
+         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
+         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(arrayList);
+@@ -951,7 +951,7 @@
+ 
+         Mockito.when(_hostDao.listEnabledIdsByDataCenterId(anyLong())).thenReturn(new ArrayList<>());
+         Mockito.when(_podDao.listByDataCenterId(anyLong())).thenReturn(new ArrayList<HostPodVO>());
+-        Mockito.when(_privateIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
++        _privateIpAddressDao = MockDataCenterIpAddressDao.createMockDataCenterIpAddressDao(0);
+         Mockito.when(_publicIpAddressDao.countIPs(anyLong(), anyBoolean())).thenReturn(0);
+         Mockito.when(_vmInstanceDao.listByZoneId(anyLong())).thenReturn(new ArrayList<VMInstanceVO>());
+         Mockito.when(_volumeDao.findByDc(anyLong())).thenReturn(new ArrayList<VolumeVO>());
+@@ -1508,4 +1508,19 @@
+                 "Validation failed: Command 'DhcpEntryCommand600' does not contain '='.",
+                 result.second());
+     }
++
++    public final class MockDataCenterIpAddressDao {
++        private MockDataCenterIpAddressDao() {
++        }
++
++        public static com.cloud.dc.dao.DataCenterIpAddressDao createMockDataCenterIpAddressDao(int countReturn) {
++            com.cloud.dc.dao.DataCenterIpAddressDao ipAddressDao =
++                    Mockito.mock(com.cloud.dc.dao.DataCenterIpAddressDao.class);
++
++            Mockito.when(ipAddressDao.countIPs(Mockito.anyLong(), Mockito.anyBoolean()))
++                    .thenReturn(countReturn);
++
++            return ipAddressDao;
++        }
++    }
+ }

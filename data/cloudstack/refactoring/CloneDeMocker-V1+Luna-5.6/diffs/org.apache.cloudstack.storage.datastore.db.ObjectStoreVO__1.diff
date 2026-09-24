@@ -1,0 +1,63 @@
+--- a/server/src/test/java/org/apache/cloudstack/storage/object/BucketApiServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/storage/object/BucketApiServiceImplTest.java
+@@ -146,8 +146,7 @@
+         Mockito.when(cmd.getObjectStoragePoolId()).thenReturn(poolId);
+         Mockito.when(cmd.getQuota()).thenReturn(quota);
+ 
+-        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+-        Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
++        ObjectStoreVO objectStoreVO = createObjectStoreVO(objectStoreId);
+         Mockito.when(objectStoreDao.findById(poolId)).thenReturn(objectStoreVO);
+         ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
+         Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
+@@ -185,8 +184,7 @@
+         Mockito.when(bucketDao.findById(bucketId)).thenReturn(bucket);
+         ReflectionTestUtils.setField(bucket, "accountId", ACCOUNT_ID);
+ 
+-        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+-        Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
++        ObjectStoreVO objectStoreVO = createObjectStoreVO(objectStoreId);
+         Mockito.when(objectStoreVO.getTotalSize()).thenReturn(10 * Resource.ResourceType.bytesToGiB);
+         Mockito.when(objectStoreDao.findById(poolId)).thenReturn(objectStoreVO);
+         ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
+@@ -213,8 +211,7 @@
+         when(accountManager.getAccount(ACCOUNT_ID)).thenReturn(mock(AccountVO.class));
+         Mockito.when(bucketDao.findById(bucketId)).thenReturn(bucket);
+ 
+-        ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+-        Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
++        ObjectStoreVO objectStoreVO = createObjectStoreVO(objectStoreId);
+         Mockito.when(objectStoreDao.findById(objectStoreId)).thenReturn(objectStoreVO);
+         ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
+         Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
+@@ -247,16 +244,21 @@
+         ReflectionTestUtils.setField(bucket, "objectStoreId", objectStoreId);
+         Mockito.when(bucketDao.findById(bucketId)).thenReturn(bucket);
+ 
++        ObjectStoreVO objectStoreVO = createObjectStoreVO(objectStoreId);
++        Mockito.when(objectStoreDao.findById(objectStoreId)).thenReturn(objectStoreVO);
++        ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
++        Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
++
++        bucketApiService.updateBucket(cmd, null);
++
++        Mockito.verify(resourceLimitManager, Mockito.times(1))
++                .decrementResourceCount(ACCOUNT_ID, Resource.ResourceType.object_storage,
++                        (bucketQuota - cmdQuota) * Resource.ResourceType.bytesToGiB);
++    }
++
++    private static ObjectStoreVO createObjectStoreVO(Long objectStoreId) {
+         ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
+         Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
+-        Mockito.when(objectStoreDao.findById(objectStoreId)).thenReturn(objectStoreVO);
+-        ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
+-        Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
+-
+-        bucketApiService.updateBucket(cmd, null);
+-
+-        Mockito.verify(resourceLimitManager, Mockito.times(1))
+-                .decrementResourceCount(ACCOUNT_ID, Resource.ResourceType.object_storage,
+-                        (bucketQuota - cmdQuota) * Resource.ResourceType.bytesToGiB);
++        return objectStoreVO;
+     }
+ }
