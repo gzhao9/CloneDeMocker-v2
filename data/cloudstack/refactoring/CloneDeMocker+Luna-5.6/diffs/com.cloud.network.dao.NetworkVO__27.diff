@@ -1,0 +1,72 @@
+--- a/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
++++ b/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
+@@ -247,14 +247,12 @@
+     @Test
+     public void assertExistingSourceNatAllocatedNetwork() {
+ 
+-        NetworkVO networkNat = Mockito.mock(NetworkVO.class);
++        NetworkVO networkNat = createMockNetworkVO(3L);
+         lenient().when(networkNat.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(networkNat.getNetworkOfferingId()).thenReturn(8L);
+         lenient().when(networkNat.getState()).thenReturn(Network.State.Implemented);
+         lenient().when(networkNat.getGuestType()).thenReturn(Network.GuestType.Isolated);
+-        when(networkNat.getId()).thenReturn(3L);
+         lenient().when(networkNat.getVpcId()).thenReturn(null);
+-        when(networkNat.getId()).thenReturn(3L);
+ 
+         IPAddressVO sourceNat = new IPAddressVO(new Ip("192.0.0.2"), 1L, 1L, 1L,true);
+ 
+@@ -264,6 +262,12 @@
+         boolean isSourceNat = ipAddressManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkNat);
+ 
+         assertFalse("Source NAT should be false", isSourceNat);
++    }
++
++    public static NetworkVO createMockNetworkVO(long id) {
++        NetworkVO network = Mockito.mock(NetworkVO.class);
++        Mockito.when(network.getId()).thenReturn(id);
++        return network;
+     }
+ 
+     @Test
+@@ -532,8 +536,7 @@
+     @Test
+     public void applyRulesNonVpcRuleStillWorksViaNetworkId() throws ResourceUnavailableException {
+         long networkId = 10L;
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getId()).thenReturn(networkId);
++        NetworkVO network = createMockNetworkVO(networkId);
+         when(networkDao.findById(networkId)).thenReturn(network);
+ 
+         FirewallRule rule = makeRule(networkId, null, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Ingress);
+--- a/server/src/test/java/com/cloud/network/NetworkModelImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkModelImplTest.java
+@@ -286,8 +286,7 @@
+     public void getNicProfile_validInputs_returnsNicProfile() {
+         VirtualMachine vm = mock(VirtualMachine.class);
+         Nic nic = mock(Nic.class);
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getId()).thenReturn(1L);
++        NetworkVO network = IpAddressManagerTest.createMockNetworkVO(1L);
+         when(nic.getNetworkId()).thenReturn(1L);
+         when(vm.getId()).thenReturn(10L);
+         when(_networksDao.findById(1L)).thenReturn(network);
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -1237,7 +1237,7 @@
+     @Test
+     public void testGetNicVlanValueForExternalVm_Nsx() {
+         NicTO nic = mock(NicTO.class);
+-        NetworkVO networkVO = mock(NetworkVO.class);
++        NetworkVO networkVO = IpAddressManagerTest.createMockNetworkVO(5L);
+         NsxService nsxService = mock(NsxService.class);
+         String broadcastUri = "nsx://segment";
+         when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+@@ -1247,7 +1247,6 @@
+         when(networkVO.getDataCenterId()).thenReturn(2L);
+         when(networkVO.getAccountId()).thenReturn(3L);
+         when(networkVO.getVpcId()).thenReturn(4L);
+-        when(networkVO.getId()).thenReturn(5L);
+         when(nsxService.getSegmentId(1L, 2L, 3L, 4L, 5L)).thenReturn("segment-123");
+         try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+             when(ComponentContext.getDelegateComponentOfType(NsxService.class)).thenReturn(nsxService);

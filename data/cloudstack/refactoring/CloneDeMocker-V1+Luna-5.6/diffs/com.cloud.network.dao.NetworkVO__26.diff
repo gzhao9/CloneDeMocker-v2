@@ -1,0 +1,177 @@
+--- a/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
++++ b/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
+@@ -211,9 +211,7 @@
+     @Test
+     public void assertSourceNatImplementedNetwork() {
+ 
+-        NetworkVO networkImplemented = Mockito.mock(NetworkVO.class);
+-        lenient().when(networkImplemented.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+-        lenient().when(networkImplemented.getNetworkOfferingId()).thenReturn(8L);
++        NetworkVO networkImplemented = MockNetworkVO.createMockNetworkVO(Network.GuestType.Isolated);
+         lenient().when(networkImplemented.getState()).thenReturn(Network.State.Implemented);
+         when(networkImplemented.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         when(networkImplemented.getVpcId()).thenReturn(null);
+@@ -230,11 +228,10 @@
+     @Test
+     public void assertSourceNatAllocatedNetwork() {
+ 
+-        NetworkVO networkAllocated = Mockito.mock(NetworkVO.class);
++        NetworkVO networkAllocated = MockNetworkVO.createMockNetworkVO(Network.GuestType.Isolated);
+         lenient().when(networkAllocated.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(networkAllocated.getNetworkOfferingId()).thenReturn(8L);
+         lenient().when(networkAllocated.getState()).thenReturn(Network.State.Allocated);
+-        when(networkAllocated.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         when(networkAllocated.getVpcId()).thenReturn(null);
+         when(networkAllocated.getId()).thenReturn(2L);
+ 
+@@ -640,4 +637,17 @@
+ 
+         assertFalse(result);
+     }
++
++    public final class MockNetworkVO {
++        private MockNetworkVO() {
++        }
++
++        public static com.cloud.network.dao.NetworkVO createMockNetworkVO(
++                com.cloud.network.Network.GuestType guestType) {
++            com.cloud.network.dao.NetworkVO network = org.mockito.Mockito.mock(
++                    com.cloud.network.dao.NetworkVO.class);
++            when(network.getGuestType()).thenReturn(guestType);
++            return network;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/network/NetworkModelTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkModelTest.java
+@@ -302,8 +302,7 @@
+         AccountVO caller = mock(AccountVO.class);
+         when(caller.getId()).thenReturn(accountId);
+         when(caller.getType()).thenReturn(Account.Type.NORMAL);
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
++        NetworkVO network = MockNetworkVO.createMockNetworkVO(Network.GuestType.Isolated);
+         when(network.getAccountId()).thenReturn(accountId);
+         when(accountDao.findById(accountId)).thenReturn(caller);
+         when(networkDao.listBy(caller.getId(), network.getId())).thenReturn(List.of(network));
+@@ -317,8 +316,7 @@
+         AccountVO caller = mock(AccountVO.class);
+         when(caller.getId()).thenReturn(accountId);
+         when(caller.getType()).thenReturn(Account.Type.ADMIN);
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
++        NetworkVO network = MockNetworkVO.createMockNetworkVO(Network.GuestType.Isolated);
+         when(network.getAccountId()).thenReturn(accountId);
+         when(accountDao.findById(accountId)).thenReturn(caller);
+         when(networkDao.listBy(caller.getId(), network.getId())).thenReturn(List.of(network));
+@@ -339,8 +337,7 @@
+         AccountVO caller = mock(AccountVO.class);
+         when(caller.getId()).thenReturn(accountId);
+         when(caller.getType()).thenReturn(Account.Type.NORMAL);
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
++        NetworkVO network = MockNetworkVO.createMockNetworkVO(Network.GuestType.Isolated);
+         when(network.getAccountId()).thenReturn(accountId);
+         when(accountDao.findById(accountId)).thenReturn(null);
+         networkModel.checkNetworkPermissions(caller, network);
+@@ -352,8 +349,7 @@
+         AccountVO caller = mock(AccountVO.class);
+         when(caller.getId()).thenReturn(accountId);
+         when(caller.getType()).thenReturn(Account.Type.NORMAL);
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
++        NetworkVO network = MockNetworkVO.createMockNetworkVO(Network.GuestType.Isolated);
+         when(network.getAccountId()).thenReturn(accountId);
+         when(accountDao.findById(accountId)).thenReturn(caller);
+         when(networkDao.listBy(caller.getId(), network.getId())).thenReturn(null);
+@@ -369,8 +365,7 @@
+         when(caller.getId()).thenReturn(id);
+         when(caller.getDomainId()).thenReturn(id);
+         when(caller.getType()).thenReturn(Account.Type.NORMAL);
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
++        NetworkVO network = MockNetworkVO.createMockNetworkVO(Network.GuestType.Shared);
+         when(network.getId()).thenReturn(id);
+         when(networkDao.findById(network.getId())).thenReturn(network);
+         NetworkDomainVO networkDomainVO = mock(NetworkDomainVO.class);
+@@ -391,8 +386,7 @@
+         when(caller.getId()).thenReturn(id);
+         when(caller.getDomainId()).thenReturn(subDomainId);
+         when(caller.getType()).thenReturn(Account.Type.NORMAL);
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
++        NetworkVO network = MockNetworkVO.createMockNetworkVO(Network.GuestType.Shared);
+         when(network.getId()).thenReturn(id);
+         when(networkDao.findById(network.getId())).thenReturn(network);
+         when(domainDao.findById(caller.getDomainId())).thenReturn(mock(DomainVO.class));
+@@ -411,8 +405,7 @@
+         when(caller.getId()).thenReturn(id);
+         when(caller.getDomainId()).thenReturn(subDomainId);
+         when(caller.getType()).thenReturn(Account.Type.NORMAL);
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
++        NetworkVO network = MockNetworkVO.createMockNetworkVO(Network.GuestType.Shared);
+         when(network.getId()).thenReturn(id);
+         when(networkDao.findById(network.getId())).thenReturn(network);
+         when(domainDao.findById(caller.getDomainId())).thenReturn(mock(DomainVO.class));
+@@ -423,4 +416,17 @@
+         when(domainManager.getDomainParentIds(subDomainId)).thenReturn(Set.of(0L));
+         networkModel.checkNetworkPermissions(caller, network);
+     }
++
++    public final class MockNetworkVO {
++        private MockNetworkVO() {
++        }
++
++        public static com.cloud.network.dao.NetworkVO createMockNetworkVO(
++                com.cloud.network.Network.GuestType guestType) {
++            com.cloud.network.dao.NetworkVO network = org.mockito.Mockito.mock(
++                    com.cloud.network.dao.NetworkVO.class);
++            when(network.getGuestType()).thenReturn(guestType);
++            return network;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -716,10 +716,9 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCheckAndUpdateNetworkNotSharedIp6Failure() {
+-        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
++        NetworkVO networkVO = MockNetworkVO.createMockNetworkVO(Network.GuestType.Shared);
+         Mockito.when(networkVO.getVpcId()).thenReturn(null);
+         Mockito.when(networkVO.getIp6Cidr()).thenReturn(null);
+-        Mockito.when(networkVO.getGuestType()).thenReturn(Network.GuestType.Shared);
+         Long offeringId = 1L;
+         NetworkOffering offering = Mockito.mock(NetworkOffering.class);
+         Mockito.when(offering.getId()).thenReturn(offeringId);
+@@ -729,9 +728,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCheckAndUpdateNetworkNotIsolatedIp6Failure() {
+-        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
++        NetworkVO networkVO = MockNetworkVO.createMockNetworkVO(Network.GuestType.Isolated);
+         Mockito.when(networkVO.getVpcId()).thenReturn(null);
+-        Mockito.when(networkVO.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         Long offeringId = 1L;
+         NetworkOffering offering = Mockito.mock(NetworkOffering.class);
+         Mockito.when(offering.getId()).thenReturn(offeringId);
+@@ -1378,4 +1376,17 @@
+ 
+         Assert.assertFalse(service.getAndValidateSupportForKeepMacAddressOnPublicNicParameter(false, networkOfferingVO));
+     }
++
++    public final class MockNetworkVO {
++        private MockNetworkVO() {
++        }
++
++        public static com.cloud.network.dao.NetworkVO createMockNetworkVO(
++                com.cloud.network.Network.GuestType guestType) {
++            com.cloud.network.dao.NetworkVO network = org.mockito.Mockito.mock(
++                    com.cloud.network.dao.NetworkVO.class);
++            when(network.getGuestType()).thenReturn(guestType);
++            return network;
++        }
++    }
+ }

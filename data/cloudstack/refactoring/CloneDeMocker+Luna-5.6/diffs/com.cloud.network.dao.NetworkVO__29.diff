@@ -1,0 +1,44 @@
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -238,6 +238,8 @@
+     @Mock
+     private NsxProviderDao nsxProviderDao;
+ 
++    private NetworkVO networkVOMock;
++
+     private static Date beforeDate;
+ 
+     private static Date afterDate;
+@@ -301,6 +303,7 @@
+     @Before
+     public void setup() throws Exception {
+         closeable = MockitoAnnotations.openMocks(this);
++        networkVOMock = Mockito.mock(NetworkVO.class);
+         overrideDefaultConfigValue(NetworkService.AllowUsersToSpecifyVRMtu, "_defaultValue", "true");
+         offering = Mockito.mock(NetworkOfferingVO.class);
+         network = Mockito.mock(Network.class);
+@@ -687,10 +690,9 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCheckAndUpdateNetworkDnsL2NetworkFailure() {
+-        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+         NetworkOffering offering = Mockito.mock(NetworkOffering.class);
+         Mockito.when(offering.getGuestType()).thenReturn(Network.GuestType.L2);
+-        service.checkAndUpdateNetworkDns(networkVO, offering, ip4Dns[0], null, null, null);
++        service.checkAndUpdateNetworkDns(networkVOMock, offering, ip4Dns[0], null, null, null);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+@@ -1259,11 +1261,10 @@
+     @Test(expected = CloudRuntimeException.class)
+     public void testGetNicVlanValueForExternalVm_Nsx_NoBean() {
+         NicTO nic = mock(NicTO.class);
+-        NetworkVO networkVO = mock(NetworkVO.class);
+         String broadcastUri = "nsx://segment";
+         when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+         when(nic.getNetworkId()).thenReturn(42L);
+-        when(networkDao.findById(42L)).thenReturn(networkVO);
++        when(networkDao.findById(42L)).thenReturn(networkVOMock);
+         try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+             when(ComponentContext.getDelegateComponentOfType(NsxService.class)).thenThrow(NoSuchBeanDefinitionException.class);
+             service.getNicVlanValueForExternalVm(nic);

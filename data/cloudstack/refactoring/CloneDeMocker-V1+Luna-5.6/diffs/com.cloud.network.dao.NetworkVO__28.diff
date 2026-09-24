@@ -1,0 +1,42 @@
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -526,7 +526,6 @@
+         User callingUser = mock(User.class);
+         UserVO userVO = mock(UserVO.class);
+         Account callingAccount = mock(Account.class);
+-        NetworkVO networkVO = mock(NetworkVO.class);
+         NicVO nicVO = mock(NicVO.class);
+         List<IPAddressVO> addresses = new ArrayList<>();
+         List<IpAddressTO> ips = new ArrayList<>();
+@@ -536,8 +535,8 @@
+ 
+         CallContext.register(callingUser, callingAccount);
+         Mockito.when(CallContext.current()).thenReturn(callContextMock);
+-        Mockito.when(networkVO.getVpcId()).thenReturn(null);
+-
++
++        NetworkVO networkVO = createNetworkVO();
+         Pair<Integer, Integer> updatedMtus = service.validateMtuOnUpdate(networkVO, zoneId, publicMtu, privateMtu);
+         Assert.assertEquals(publicMtu, updatedMtus.first());
+         Assert.assertEquals(privateMtu, updatedMtus.second());
+@@ -704,8 +703,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCheckAndUpdateNetworkDnsServiceFailure() {
+-        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+-        Mockito.when(networkVO.getVpcId()).thenReturn(null);
++        NetworkVO networkVO = createNetworkVO();
+         Long offeringId = 1L;
+         NetworkOffering offering = Mockito.mock(NetworkOffering.class);
+         Mockito.when(offering.getId()).thenReturn(offeringId);
+@@ -1378,4 +1376,10 @@
+ 
+         Assert.assertFalse(service.getAndValidateSupportForKeepMacAddressOnPublicNicParameter(false, networkOfferingVO));
+     }
++
++    private static NetworkVO createNetworkVO() {
++        NetworkVO networkVO = mock(NetworkVO.class);
++        Mockito.when(networkVO.getVpcId()).thenReturn(null);
++        return networkVO;
++    }
+ }
