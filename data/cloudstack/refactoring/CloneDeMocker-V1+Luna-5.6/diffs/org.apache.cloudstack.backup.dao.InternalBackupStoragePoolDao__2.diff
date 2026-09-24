@@ -1,0 +1,131 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -2042,7 +2042,7 @@
+     @Test (expected = CloudRuntimeException.class)
+     public void mergeCurrentDeltaIntoVolumeTestNullAnswer() {
+         doReturn(volumeId).when(volumeVoMock).getId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
++        internalBackupStoragePoolDaoMock = MockInternalBackupStoragePoolDao.createMockInternalBackupStoragePoolDao(internalBackupStoragePoolVoMock, volumeId);
+         doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
+         doReturn(null).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
+@@ -2061,7 +2061,7 @@
+     @Test
+     public void mergeCurrentDeltaIntoVolumeTestNoSucceedingSnapshot() {
+         doReturn(volumeId).when(volumeVoMock).getId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
++        internalBackupStoragePoolDaoMock = MockInternalBackupStoragePoolDao.createMockInternalBackupStoragePoolDao(internalBackupStoragePoolVoMock, volumeId);
+         doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
+         doReturn(null).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
+@@ -2089,7 +2089,7 @@
+     @Test
+     public void mergeCurrentDeltaIntoVolumeTestWithSucceedingSnapshotWithMoreDeltas() {
+         doReturn(volumeId).when(volumeVoMock).getId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
++        internalBackupStoragePoolDaoMock = MockInternalBackupStoragePoolDao.createMockInternalBackupStoragePoolDao(internalBackupStoragePoolVoMock, volumeId);
+         doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
+         doReturn(vmSnapshotVoMock).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
+@@ -3113,4 +3113,22 @@
+         verify(kbossBackupProviderSpy).releaseBackup(backupId);
+     }
+ 
++
++    public final class MockInternalBackupStoragePoolDao {
++        private MockInternalBackupStoragePoolDao() {
++        }
++
++        public static org.apache.cloudstack.backup.dao.InternalBackupStoragePoolDao createMockInternalBackupStoragePoolDao(
++                org.apache.cloudstack.backup.InternalBackupStoragePoolVO internalBackupStoragePoolVo,
++                long volumeId) {
++            org.apache.cloudstack.backup.dao.InternalBackupStoragePoolDao internalBackupStoragePoolDao =
++                    org.mockito.Mockito.mock(org.apache.cloudstack.backup.dao.InternalBackupStoragePoolDao.class);
++
++            org.mockito.Mockito.doReturn(internalBackupStoragePoolVo)
++                    .when(internalBackupStoragePoolDao)
++                    .findOneByVolumeId(volumeId);
++
++            return internalBackupStoragePoolDao;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
+@@ -161,7 +161,7 @@
+     @Test
+     public void configureChainInfoTestSetsChainInfoForGenericCommand() {
+         doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        internalBackupStoragePoolDaoMock = MockInternalBackupStoragePoolDao.createMockInternalBackupStoragePoolDao(internalBackupStoragePoolVoMock, VOLUME_ID);
+         doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+         Command cmdMock = mock(Command.class);
+@@ -175,7 +175,7 @@
+     @Test
+     public void configureChainInfoTestSetsDeleteChainForDeleteCommand() {
+         doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        internalBackupStoragePoolDaoMock = MockInternalBackupStoragePoolDao.createMockInternalBackupStoragePoolDao(internalBackupStoragePoolVoMock, VOLUME_ID);
+         doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+         DeleteCommand deleteCommand = new DeleteCommand(volumeObjectToMock);
+@@ -189,7 +189,7 @@
+     @Test
+     public void configureChainInfoTestSetsDeleteChainForRevertSnapshotCommand() {
+         doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        internalBackupStoragePoolDaoMock = MockInternalBackupStoragePoolDao.createMockInternalBackupStoragePoolDao(internalBackupStoragePoolVoMock, VOLUME_ID);
+         doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+         RevertSnapshotCommand revertSnapshotCommand = new RevertSnapshotCommand(snapshotObjectToMock, snapshotObjectToMock);
+@@ -214,7 +214,7 @@
+     @Test
+     public void cleanupBackupMetadataTestDeltaExistsButOtherDeltasRemainReturnsImmediately() {
+         doReturn(BACKUP_ID).when(internalBackupStoragePoolVoMock).getBackupId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        internalBackupStoragePoolDaoMock = createMockInternalBackupStoragePoolDao(internalBackupStoragePoolVoMock, VOLUME_ID);
+         doReturn(List.of(internalBackupStoragePoolVoMock, mock(InternalBackupStoragePoolVO.class)))
+                 .when(internalBackupStoragePoolDaoMock).listByBackupId(BACKUP_ID);
+ 
+@@ -229,7 +229,7 @@
+     @Test
+     public void cleanupBackupMetadataTestLastDeltaAndEndOfChainTrue() {
+         doReturn(BACKUP_ID).when(internalBackupStoragePoolVoMock).getBackupId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        internalBackupStoragePoolDaoMock = MockInternalBackupStoragePoolDao.createMockInternalBackupStoragePoolDao(internalBackupStoragePoolVoMock, VOLUME_ID);
+         doReturn(List.of()).when(internalBackupStoragePoolDaoMock).listByBackupId(BACKUP_ID);
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(BACKUP_ID);
+         doReturn(BACKUP_ID).when(internalBackupJoinVoMock).getId();
+@@ -248,7 +248,7 @@
+     @Test
+     public void cleanupBackupMetadataTestLastDeltaAndEndOfChainFalse() {
+         doReturn(BACKUP_ID).when(internalBackupStoragePoolVoMock).getBackupId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        internalBackupStoragePoolDaoMock = MockInternalBackupStoragePoolDao.createMockInternalBackupStoragePoolDao(internalBackupStoragePoolVoMock, VOLUME_ID);
+         doReturn(List.of()).when(internalBackupStoragePoolDaoMock).listByBackupId(BACKUP_ID);
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(BACKUP_ID);
+         doReturn(BACKUP_ID).when(internalBackupJoinVoMock).getId();
+@@ -548,4 +548,22 @@
+         verify(internalBackupServiceImplSpy).getInternalBackupProviderForZone(ZONE_ID);
+         verify(internalBackupProviderMock).prepareVmForSnapshotRevert(vmSnapshotMock, virtualMachineMock);
+     }
++
++    public final class MockInternalBackupStoragePoolDao {
++        private MockInternalBackupStoragePoolDao() {
++        }
++
++        public static org.apache.cloudstack.backup.dao.InternalBackupStoragePoolDao createMockInternalBackupStoragePoolDao(
++                org.apache.cloudstack.backup.InternalBackupStoragePoolVO internalBackupStoragePoolVo,
++                long volumeId) {
++            org.apache.cloudstack.backup.dao.InternalBackupStoragePoolDao internalBackupStoragePoolDao =
++                    org.mockito.Mockito.mock(org.apache.cloudstack.backup.dao.InternalBackupStoragePoolDao.class);
++
++            org.mockito.Mockito.doReturn(internalBackupStoragePoolVo)
++                    .when(internalBackupStoragePoolDao)
++                    .findOneByVolumeId(volumeId);
++
++            return internalBackupStoragePoolDao;
++        }
++    }
+ }
