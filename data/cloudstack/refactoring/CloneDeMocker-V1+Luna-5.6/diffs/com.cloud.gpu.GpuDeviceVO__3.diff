@@ -1,0 +1,59 @@
+--- a/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
+@@ -645,8 +645,7 @@
+         UnmanageGpuDeviceCmd cmd = mock(UnmanageGpuDeviceCmd.class);
+         when(cmd.getIds()).thenReturn(List.of(GPU_DEVICE_ID_LONG));
+ 
+-        GpuDeviceVO device = mock(GpuDeviceVO.class);
+-        when(device.getId()).thenReturn(GPU_DEVICE_ID_LONG);
++        GpuDeviceVO device = createGpuDeviceVO(GPU_DEVICE_ID_LONG);
+         when(device.getManagedState()).thenReturn(GpuDevice.ManagedState.Managed);
+         when(device.getVmId()).thenReturn(null);
+         when(device.getHostId()).thenReturn(HOST_ID);
+@@ -667,8 +666,7 @@
+         ManageGpuDeviceCmd cmd = mock(ManageGpuDeviceCmd.class);
+         when(cmd.getIds()).thenReturn(List.of(GPU_DEVICE_ID_LONG));
+ 
+-        GpuDeviceVO device = mock(GpuDeviceVO.class);
+-        when(device.getId()).thenReturn(GPU_DEVICE_ID_LONG);
++        GpuDeviceVO device = createGpuDeviceVO(GPU_DEVICE_ID_LONG);
+         when(device.getManagedState()).thenReturn(GpuDevice.ManagedState.Unmanaged);
+         when(device.getVmId()).thenReturn(null);
+         when(device.getHostId()).thenReturn(HOST_ID);
+@@ -1092,8 +1090,7 @@
+     @Test
+     public void testAddGpuDevicesToHost_DisableRemovedDevices() {
+         // Setup existing device that won't be in the new list
+-        GpuDeviceVO existingDevice = mock(GpuDeviceVO.class);
+-        when(existingDevice.getId()).thenReturn(GPU_DEVICE_ID_2);
++        GpuDeviceVO existingDevice = createGpuDeviceVO(GPU_DEVICE_ID_2);
+         when(existingDevice.getBusAddress()).thenReturn(GPU_BUS_ADDRESS_3);
+         List<GpuDeviceVO> existingDevices = List.of(existingDevice);
+ 
+@@ -1230,13 +1227,11 @@
+     @Test
+     public void testGetGpuDevicesToAllocate_SimpleDebug() {
+         // Simple test with minimal setup
+-        GpuDeviceVO device1 = mock(GpuDeviceVO.class);
+-        when(device1.getId()).thenReturn(GPU_DEVICE_ID_LONG);
++        GpuDeviceVO device1 = createGpuDeviceVO(GPU_DEVICE_ID_LONG);
+         when(device1.getNumaNode()).thenReturn(NUMA_NODE_0);
+         when(device1.getPciRoot()).thenReturn(PCI_ROOT_1);
+ 
+-        GpuDeviceVO device2 = mock(GpuDeviceVO.class);
+-        when(device2.getId()).thenReturn(GPU_DEVICE_ID_2);
++        GpuDeviceVO device2 = createGpuDeviceVO(GPU_DEVICE_ID_2);
+         when(device2.getNumaNode()).thenReturn(NUMA_NODE_0);
+         when(device2.getPciRoot()).thenReturn(PCI_ROOT_1);
+ 
+@@ -1492,4 +1487,10 @@
+         verify(parentDevice).setState(GpuDevice.State.Error);
+         verify(gpuDeviceDao).update(eq(PARENT_GPU_DEVICE_ID), eq(parentDevice));
+     }
++
++    private static GpuDeviceVO createGpuDeviceVO(Long id) {
++        GpuDeviceVO device = mock(GpuDeviceVO.class);
++        when(device.getId()).thenReturn(id);
++        return device;
++    }
+ }

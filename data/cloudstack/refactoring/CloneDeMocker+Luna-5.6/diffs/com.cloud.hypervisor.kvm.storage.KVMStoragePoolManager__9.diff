@@ -1,0 +1,34 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtUnprepareStorageClientCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtUnprepareStorageClientCommandWrapperTest.java
+@@ -53,9 +53,8 @@
+         details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, "1.1.1.1,2.2.2.2");
+         Mockito.when(cmd.getDetails()).thenReturn(details);
+ 
+-        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
++        KVMStoragePoolManager storagePoolMgr = createMockStoragePoolManager(cmd, new Pair<>(true, ""));
+         Mockito.when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+-        Mockito.when(storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid(), cmd.getDetails())).thenReturn(new Pair<>(true, ""));
+ 
+         UnprepareStorageClientAnswer result = (UnprepareStorageClientAnswer) libvirtUnprepareStorageClientCommandWrapperSpy.execute(cmd, libvirtComputingResourceMock);
+ 
+@@ -71,13 +70,18 @@
+         details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, "1.1.1.1,2.2.2.2");
+         Mockito.when(cmd.getDetails()).thenReturn(details);
+ 
+-        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
++        KVMStoragePoolManager storagePoolMgr = createMockStoragePoolManager(cmd, new Pair<>(false, "Unprepare storage client failed"));
+         Mockito.when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+-        Mockito.when(storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid(), cmd.getDetails())).thenReturn(new Pair<>(false, "Unprepare storage client failed"));
+ 
+         UnprepareStorageClientAnswer result = (UnprepareStorageClientAnswer) libvirtUnprepareStorageClientCommandWrapperSpy.execute(cmd, libvirtComputingResourceMock);
+ 
+         Assert.assertFalse(result.getResult());
+         Assert.assertEquals("Unprepare storage client failed", result.getDetails());
+     }
++
++    private static KVMStoragePoolManager createMockStoragePoolManager(UnprepareStorageClientCommand cmd, Pair<Boolean, String> result) {
++        KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
++        Mockito.when(storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid(), cmd.getDetails())).thenReturn(result);
++        return storagePoolMgr;
++    }
+ }

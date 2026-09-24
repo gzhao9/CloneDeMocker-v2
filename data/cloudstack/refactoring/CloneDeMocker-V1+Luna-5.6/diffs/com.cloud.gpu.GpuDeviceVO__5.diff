@@ -1,0 +1,44 @@
+--- a/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
+@@ -95,6 +95,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class GpuServiceImplTest {
++    @Mock
++    private GpuDeviceVO additionalDevice;
+ 
+     // Test Constants
+     private static final String GPU_DEVICE_ID = "1234";
+@@ -770,7 +772,6 @@
+         VgpuProfile vgpuProfile = mock(VgpuProfile.class);
+         when(vgpuProfile.getId()).thenReturn(VGPU_PROFILE_ID);
+ 
+-        GpuDeviceVO additionalDevice = mock(GpuDeviceVO.class);
+         List<GpuDeviceVO> availableDevices = List.of(mockGpuDevice, additionalDevice);
+         when(gpuDeviceDao.listDevicesForAllocation(HOST_ID, VGPU_PROFILE_ID)).thenReturn(availableDevices);
+ 
+@@ -1449,9 +1450,8 @@
+         when(child1.getState()).thenReturn(GpuDevice.State.Error);
+         childDevices.add(child1);
+ 
+-        GpuDeviceVO child2 = mock(GpuDeviceVO.class);
+-        childDevices.add(child2);
+-
++
++        childDevices.add(additionalDevice);
+         when(gpuDeviceDao.listByParentGpuDeviceId(PARENT_GPU_DEVICE_ID)).thenReturn(childDevices);
+         when(gpuDeviceDao.update(eq(PARENT_GPU_DEVICE_ID), any(GpuDeviceVO.class))).thenReturn(true);
+ 
+@@ -1480,9 +1480,9 @@
+         childDevices.add(child2);
+ 
+         // This child should not affect the final state since Error was found first
+-        GpuDeviceVO child3 = mock(GpuDeviceVO.class);
+-        childDevices.add(child3);
+-
++        // removed local mock; replaced with global field `additionalDevice`
++
++        childDevices.add(additionalDevice);
+         when(gpuDeviceDao.listByParentGpuDeviceId(PARENT_GPU_DEVICE_ID)).thenReturn(childDevices);
+         when(gpuDeviceDao.update(eq(PARENT_GPU_DEVICE_ID), any(GpuDeviceVO.class))).thenReturn(true);
+ 
