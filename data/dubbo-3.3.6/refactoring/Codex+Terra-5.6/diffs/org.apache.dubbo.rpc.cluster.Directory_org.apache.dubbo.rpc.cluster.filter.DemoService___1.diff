@@ -1,0 +1,85 @@
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/BroadCastClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/BroadCastClusterInvokerTest.java
+@@ -73,7 +73,7 @@
+ 
+     @Test
+     void testNormal() {
+-        given(dic.list(invocation)).willReturn(Arrays.asList(invoker1, invoker2, invoker3, invoker4));
++        stubDirectoryInvokers();
+         // Every invoker will be called
+         clusterInvoker.invoke(invocation);
+         assertTrue(invoker1.isInvoked());
+@@ -84,7 +84,7 @@
+ 
+     @Test
+     void testEx() {
+-        given(dic.list(invocation)).willReturn(Arrays.asList(invoker1, invoker2, invoker3, invoker4));
++        stubDirectoryInvokers();
+         invoker1.invokeThrowEx();
+         assertThrows(RpcException.class, () -> {
+             clusterInvoker.invoke(invocation);
+@@ -99,7 +99,7 @@
+ 
+     @Test
+     void testFailPercent() {
+-        given(dic.list(invocation)).willReturn(Arrays.asList(invoker1, invoker2, invoker3, invoker4));
++        stubDirectoryInvokers();
+         // We set the failure percentage to 75, which means that when the number of call failures is 4*(75/100) = 3,
+         // an exception will be thrown directly and subsequent invokers will not be called.
+         url = url.addParameter("broadcast.fail.percent", 75);
+@@ -115,6 +115,10 @@
+         assertTrue(invoker2.isInvoked());
+         assertTrue(invoker3.isInvoked());
+         assertFalse(invoker4.isInvoked());
++    }
++
++    private void stubDirectoryInvokers() {
++        given(dic.list(invocation)).willReturn(Arrays.asList(invoker1, invoker2, invoker3, invoker4));
+     }
+ }
+ 
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailSafeClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailSafeClusterInvokerTest.java
+@@ -57,12 +57,7 @@
+     public void setUp() throws Exception {
+         RpcContext.removeServiceContext();
+ 
+-        dic = mock(Directory.class);
+-
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+-        given(dic.list(invocation)).willReturn(invokers);
+-        given(dic.getInterface()).willReturn(DemoService.class);
++        stubDirectory(invokers);
+         invocation.setMethodName("method1");
+ 
+         invokers.add(invoker);
+@@ -78,6 +73,14 @@
+         given(invoker.invoke(invocation)).willReturn(result);
+         given(invoker.getUrl()).willReturn(url);
+         given(invoker.getInterface()).willReturn(DemoService.class);
++    }
++
++    private void stubDirectory(List<Invoker<DemoService>> directoryInvokers) {
++        dic = mock(Directory.class);
++        given(dic.getUrl()).willReturn(url);
++        given(dic.getConsumerUrl()).willReturn(url);
++        given(dic.list(invocation)).willReturn(directoryInvokers);
++        given(dic.getInterface()).willReturn(DemoService.class);
+     }
+ 
+     // TODO assert error log
+@@ -100,12 +103,7 @@
+ 
+     @Test
+     void testNoInvoke() {
+-        dic = mock(Directory.class);
+-
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+-        given(dic.list(invocation)).willReturn(null);
+-        given(dic.getInterface()).willReturn(DemoService.class);
++        stubDirectory(null);
+ 
+         invocation.setMethodName("method1");
+ 
