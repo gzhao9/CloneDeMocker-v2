@@ -1,0 +1,40 @@
+--- a/api/src/test/java/org/apache/cloudstack/api/command/user/vm/DeployVMCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/user/vm/DeployVMCmdTest.java
+@@ -321,12 +321,11 @@
+ 
+         ReflectionTestUtils.setField(cmd, "dataDisksDetails", dataDisksDetails);
+ 
+-        EntityManager entityMgr = mock(EntityManager.class);
+-        ReflectionTestUtils.setField(cmd, "_entityMgr", entityMgr);
+         DiskOffering diskOffering = mock(DiskOffering.class);
+         when(diskOffering.getDiskSize()).thenReturn(1024 * 1024 * 1024L);
+         when(diskOffering.isCustomizedIops()).thenReturn(true);
+-        when(entityMgr.findByUuid(DiskOffering.class, "offering-uuid")).thenReturn(diskOffering);
++        EntityManager entityMgr = createMockEntityMgr(diskOffering);
++        ReflectionTestUtils.setField(cmd, "_entityMgr", entityMgr);
+ 
+         List<VmDiskInfo> result = cmd.getDataDiskInfoList();
+ 
+@@ -438,10 +437,9 @@
+ 
+         DiskOffering mockOffering = mock(DiskOffering.class);
+ 
+-        EntityManager entityMgr = mock(EntityManager.class);
++        EntityManager entityMgr = createMockEntityMgr(mockOffering);
+         ReflectionTestUtils.setField(cmd, "_entityMgr", entityMgr);
+         when(entityMgr.findByUuid(VirtualMachineTemplate.class, "template-uuid")).thenReturn(mockTemplate);
+-        when(entityMgr.findByUuid(DiskOffering.class, "offering-uuid")).thenReturn(mockOffering);
+ 
+         Map<Long, DiskOffering> result = cmd.getDataDiskTemplateToDiskOfferingMap();
+ 
+@@ -624,4 +622,10 @@
+     public void testIsBlankInstance() {
+         assertFalse(cmd.isBlankInstance());
+     }
++
++    private static EntityManager createMockEntityMgr(DiskOffering diskOffering) {
++        EntityManager entityMgr = mock(EntityManager.class);
++        when(entityMgr.findByUuid(DiskOffering.class, "offering-uuid")).thenReturn(diskOffering);
++        return entityMgr;
++    }
+ }

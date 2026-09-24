@@ -1,0 +1,45 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
+@@ -1196,27 +1196,21 @@
+ 
+     @Test(expected = IllegalArgumentException.class)
+     public void testInvalidCreateDataCenterGuestIpv6Prefix() {
+-        CreateGuestNetworkIpv6PrefixCmd cmd = Mockito.mock(CreateGuestNetworkIpv6PrefixCmd.class);
+-        Mockito.when(cmd.getZoneId()).thenReturn(1L);
+-        Mockito.when(cmd.getPrefix()).thenReturn("Invalid");
++        CreateGuestNetworkIpv6PrefixCmd cmd = createMockCreateGuestNetworkIpv6PrefixCmd("Invalid");
+         Mockito.when(_zoneDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+         configurationMgr.createDataCenterGuestIpv6Prefix(cmd);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testWrongCreateDataCenterGuestIpv6Prefix() {
+-        CreateGuestNetworkIpv6PrefixCmd cmd = Mockito.mock(CreateGuestNetworkIpv6PrefixCmd.class);
+-        Mockito.when(cmd.getZoneId()).thenReturn(1L);
+-        Mockito.when(cmd.getPrefix()).thenReturn("fd17:5:8a43:e2a4:c000::/66");
++        CreateGuestNetworkIpv6PrefixCmd cmd = createMockCreateGuestNetworkIpv6PrefixCmd("fd17:5:8a43:e2a4:c000::/66");
+         Mockito.when(_zoneDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+         configurationMgr.createDataCenterGuestIpv6Prefix(cmd);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testConflictingCreateDataCenterGuestIpv6Prefix() {
+-        CreateGuestNetworkIpv6PrefixCmd cmd = Mockito.mock(CreateGuestNetworkIpv6PrefixCmd.class);
+-        Mockito.when(cmd.getZoneId()).thenReturn(1L);
+-        Mockito.when(cmd.getPrefix()).thenReturn("fd17:5:8a43:e2a5::/64");
++        CreateGuestNetworkIpv6PrefixCmd cmd = createMockCreateGuestNetworkIpv6PrefixCmd("fd17:5:8a43:e2a5::/64");
+         Mockito.when(_zoneDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+         DataCenterGuestIpv6PrefixVO prefix = Mockito.mock(DataCenterGuestIpv6PrefixVO.class);
+         Mockito.when(prefix.getPrefix()).thenReturn("fd17:5:8a43:e2a4::/62");
+@@ -1508,4 +1502,11 @@
+                 "Validation failed: Command 'DhcpEntryCommand600' does not contain '='.",
+                 result.second());
+     }
++
++    private static CreateGuestNetworkIpv6PrefixCmd createMockCreateGuestNetworkIpv6PrefixCmd(String prefix) {
++        CreateGuestNetworkIpv6PrefixCmd cmd = Mockito.mock(CreateGuestNetworkIpv6PrefixCmd.class);
++        Mockito.when(cmd.getZoneId()).thenReturn(1L);
++        Mockito.when(cmd.getPrefix()).thenReturn(prefix);
++        return cmd;
++    }
+ }

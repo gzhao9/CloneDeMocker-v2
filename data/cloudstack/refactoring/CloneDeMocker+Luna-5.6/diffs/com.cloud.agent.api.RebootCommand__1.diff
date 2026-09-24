@@ -1,0 +1,45 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -295,6 +295,7 @@
+     private HighAvailabilityManager _haMgr;
+     @Mock
+     VirtualMachineGuru guru;
++    private RebootCommand rebootCommandMock;
+ 
+     private ConfigDepotImpl configDepotImpl;
+     private boolean updatedConfigKeyDepot = false;
+@@ -303,6 +304,7 @@
+     public void setup() {
+         ReflectionTestUtils.getField(VirtualMachineManager.VmMetadataManufacturer, "s_depot");
+         virtualMachineManagerImpl.setHostAllocators(new ArrayList<>());
++        rebootCommandMock = mock(RebootCommand.class);
+ 
+         when(vmInstanceMock.getName()).thenReturn(vmName);
+         when(vmInstanceMock.getId()).thenReturn(vmInstanceVoMockId);
+@@ -1527,22 +1529,20 @@
+     public void updateRebootCommandWithExternalDetails_nonExternalHypervisor_noAction() {
+         Host host = mock(Host.class);
+         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        RebootCommand rebootCmd = mock(RebootCommand.class);
+         when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+-        virtualMachineManagerImpl.updateRebootCommandWithExternalDetails(host, vmTO, rebootCmd);
+-        verify(rebootCmd, never()).setExternalDetails(any());
++        virtualMachineManagerImpl.updateRebootCommandWithExternalDetails(host, vmTO, rebootCommandMock);
++        verify(rebootCommandMock, never()).setExternalDetails(any());
+     }
+ 
+     @Test
+     public void updateRebootCommandWithExternalDetails_externalHypervisor_setsExternalDetails() {
+         Host host = mock(Host.class);
+         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        RebootCommand rebootCmd = mock(RebootCommand.class);
+         when(host.getHypervisorType()).thenReturn(HypervisorType.External);
+         when(vmTO.getExternalDetails()).thenReturn(new HashMap<>());
+         when(extensionsManager.getExternalAccessDetails(eq(host), any())).thenReturn(new HashMap<>());
+-        virtualMachineManagerImpl.updateRebootCommandWithExternalDetails(host, vmTO, rebootCmd);
+-        verify(rebootCmd).setExternalDetails(any());
++        virtualMachineManagerImpl.updateRebootCommandWithExternalDetails(host, vmTO, rebootCommandMock);
++        verify(rebootCommandMock).setExternalDetails(any());
+     }
+ 
+     @Test

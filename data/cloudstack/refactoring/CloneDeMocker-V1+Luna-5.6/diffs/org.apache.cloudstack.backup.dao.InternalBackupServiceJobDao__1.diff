@@ -1,0 +1,145 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupCompressionServiceJobControllerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupCompressionServiceJobControllerTest.java
+@@ -446,8 +446,8 @@
+     @Test
+     public void searchAndDispatchJobsTestLockFailureReturnsEarly() {
+         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
+-        doReturn(false).when(internalBackupServiceJobDaoMock).lockInLockTable("compression_lock", 300);
+-
++
++        internalBackupServiceJobDaoMock = MockInternalBackupServiceJobDao.createMockInternalBackupServiceJobDao("compression_lock", false);
+         backupCompressionServiceJobControllerSpy.searchAndDispatchJobs();
+ 
+         verify(internalBackupServiceJobDaoMock).unlockFromLockTable(any());
+@@ -458,7 +458,7 @@
+     @Test
+     public void searchAndDispatchJobsTestTaskDisabledReturnsAfterReschedule() {
+         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
+-        doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("compression_lock", 300);
++        internalBackupServiceJobDaoMock = MockInternalBackupServiceJobDao.createMockInternalBackupServiceJobDao("compression_lock", true);
+         doNothing().when(backupCompressionServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(false).when(backupCompressionTaskEnabledMock).value();
+ 
+@@ -472,7 +472,7 @@
+     @Test
+     public void searchAndDispatchJobsTestZoneWithoutBackupFrameworkIsSkipped() {
+         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
+-        doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("compression_lock", 300);
++        internalBackupServiceJobDaoMock = MockInternalBackupServiceJobDao.createMockInternalBackupServiceJobDao("compression_lock", true);
+         doNothing().when(backupCompressionServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupCompressionTaskEnabledMock).value();
+         doReturn(false).when(backupCompressionServiceJobControllerSpy).isFrameworkEnabledForZone(dataCenterVoMock);
+@@ -486,7 +486,7 @@
+     @Test
+     public void searchAndDispatchJobsTestEmptyWaitingJobsSkipsDispatch() {
+         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
+-        doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("compression_lock", 300);
++        internalBackupServiceJobDaoMock = MockInternalBackupServiceJobDao.createMockInternalBackupServiceJobDao("compression_lock", true);
+         doNothing().when(backupCompressionServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupCompressionTaskEnabledMock).value();
+         doReturn(datacenterId).when(dataCenterVoMock).getId();
+@@ -504,7 +504,7 @@
+         Pair<HashMap<HostVO, Long>, Integer> executingJobsPair = new Pair<>(new HashMap<>(), 0);
+ 
+         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
+-        doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("compression_lock", 300);
++        internalBackupServiceJobDaoMock = MockInternalBackupServiceJobDao.createMockInternalBackupServiceJobDao("compression_lock", true);
+         doNothing().when(backupCompressionServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupCompressionTaskEnabledMock).value();
+         doReturn(datacenterId).when(dataCenterVoMock).getId();
+@@ -525,4 +525,23 @@
+         verify(internalBackupServiceJobDaoMock).unlockFromLockTable("compression_lock");
+         verify(internalBackupServiceJobDaoMock).listExecutingJobsByZoneIdAndJobType(eq(datacenterId), eq(InternalBackupServiceJobType.StartCompression));
+     }
++
++    public final class MockInternalBackupServiceJobDao {
++
++        private MockInternalBackupServiceJobDao() {
++        }
++
++        public static org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao createMockInternalBackupServiceJobDao(
++                String lockName,
++                boolean lockResult) {
++            org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao internalBackupServiceJobDaoMock =
++                    Mockito.mock(org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao.class);
++
++            doReturn(lockResult)
++                    .when(internalBackupServiceJobDaoMock)
++                    .lockInLockTable(lockName, 300);
++
++            return internalBackupServiceJobDaoMock;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupValidationServiceJobControllerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupValidationServiceJobControllerTest.java
+@@ -72,8 +72,8 @@
+     @Test
+     public void searchAndDispatchJobsTestLockFailureReturnsEarly() {
+         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
+-        doReturn(false).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
+ 
++        internalBackupServiceJobDaoMock = MockInternalBackupServiceJobDao.createMockInternalBackupServiceJobDao("validation_lock", false);
+         backupValidationServiceJobControllerSpy.searchAndDispatchJobs();
+ 
+         verify(internalBackupServiceJobDaoMock).unlockFromLockTable(any());
+@@ -84,7 +84,7 @@
+     @Test
+     public void searchAndDispatchJobsTestTaskDisabledReturnsAfterReschedule() {
+         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
+-        doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
++        internalBackupServiceJobDaoMock = MockInternalBackupServiceJobDao.createMockInternalBackupServiceJobDao("validation_lock", true);
+         doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(false).when(backupValidationTaskEnabledMock).value();
+ 
+@@ -98,7 +98,7 @@
+     @Test
+     public void searchAndDispatchJobsTestZoneWithoutBackupFrameworkIsSkipped() {
+         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
+-        doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
++        internalBackupServiceJobDaoMock = MockInternalBackupServiceJobDao.createMockInternalBackupServiceJobDao("validation_lock", true);
+         doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupValidationTaskEnabledMock).value();
+         doReturn(false).when(backupValidationServiceJobControllerSpy).isFrameworkEnabledForZone(dataCenterVoMock);
+@@ -112,7 +112,7 @@
+     @Test
+     public void searchAndDispatchJobsTestEmptyWaitingJobsSkipsDispatch() {
+         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
+-        doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
++        internalBackupServiceJobDaoMock = MockInternalBackupServiceJobDao.createMockInternalBackupServiceJobDao("validation_lock", true);
+         doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupValidationTaskEnabledMock).value();
+         doReturn(datacenterId).when(dataCenterVoMock).getId();
+@@ -130,7 +130,7 @@
+         Pair<HashMap<HostVO, Long>, Integer> executingJobsPair = new Pair<>(new HashMap<>(), 0);
+ 
+         doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
+-        doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
++        internalBackupServiceJobDaoMock = MockInternalBackupServiceJobDao.createMockInternalBackupServiceJobDao("validation_lock", true);
+         doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupValidationTaskEnabledMock).value();
+         doReturn(datacenterId).when(dataCenterVoMock).getId();
+@@ -147,4 +147,23 @@
+         verify(backupValidationServiceJobControllerSpy).submitQueuedJobsForExecution(any(), any(), any(), any(), eq(datacenterId));
+         verify(internalBackupServiceJobDaoMock).unlockFromLockTable("validation_lock");
+     }
++
++    public final class MockInternalBackupServiceJobDao {
++
++        private MockInternalBackupServiceJobDao() {
++        }
++
++        public static org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao createMockInternalBackupServiceJobDao(
++                String lockName,
++                boolean lockResult) {
++            org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao internalBackupServiceJobDaoMock =
++                    Mockito.mock(org.apache.cloudstack.backup.dao.InternalBackupServiceJobDao.class);
++
++            doReturn(lockResult)
++                    .when(internalBackupServiceJobDaoMock)
++                    .lockInLockTable(lockName, 300);
++
++            return internalBackupServiceJobDaoMock;
++        }
++    }
+ }
