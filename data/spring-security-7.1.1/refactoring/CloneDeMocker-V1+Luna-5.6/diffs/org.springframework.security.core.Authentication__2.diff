@@ -1,0 +1,53 @@
+--- a/web/src/test/java/org/springframework/security/web/session/DefaultSessionAuthenticationStrategyTests.java
++++ b/web/src/test/java/org/springframework/security/web/session/DefaultSessionAuthenticationStrategyTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.session;
+ 
++import org.mockito.Mock;
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpSession;
+ import org.junit.jupiter.api.Test;
+@@ -37,6 +38,8 @@
+  * @author Luke Taylor
+  */
+ public class DefaultSessionAuthenticationStrategyTests {
++	@Mock
++	private Authentication mockAuthentication;
+ 
+ 	@Test
+ 	public void newSessionShouldNotBeCreatedIfNoSessionExistsAndAlwaysCreateIsFalse() {
+@@ -66,7 +69,6 @@
+ 		String oldSessionId = session.getId();
+ 		ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
+ 		strategy.setApplicationEventPublisher(eventPublisher);
+-		Authentication mockAuthentication = mock(Authentication.class);
+ 		strategy.onAuthentication(mockAuthentication, request, new MockHttpServletResponse());
+ 		ArgumentCaptor<ApplicationEvent> eventArgumentCaptor = ArgumentCaptor.forClass(ApplicationEvent.class);
+ 		verify(eventPublisher).publishEvent(eventArgumentCaptor.capture());
+@@ -107,7 +109,7 @@
+ 		String oldSessionId = session.getId();
+ 		ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
+ 		strategy.setApplicationEventPublisher(eventPublisher);
+-		Authentication mockAuthentication = mock(Authentication.class);
++		// removed local mock; replaced with global field `mockAuthentication`
+ 		strategy.onAuthentication(mockAuthentication, request, new MockHttpServletResponse());
+ 		ArgumentCaptor<ApplicationEvent> eventArgumentCaptor = ArgumentCaptor.forClass(ApplicationEvent.class);
+ 		verify(eventPublisher).publishEvent(eventArgumentCaptor.capture());
+@@ -136,7 +138,7 @@
+ 		HttpServletRequest request = new MockHttpServletRequest();
+ 		HttpSession session = request.getSession();
+ 		session.setMaxInactiveInterval(1);
+-		Authentication mockAuthentication = mock(Authentication.class);
++		// removed local mock; replaced with global field `mockAuthentication`
+ 		strategy.onAuthentication(mockAuthentication, request, new MockHttpServletResponse());
+ 		assertThat(request.getSession().getMaxInactiveInterval()).isEqualTo(1);
+ 	}
+@@ -148,7 +150,6 @@
+ 		HttpServletRequest request = new MockHttpServletRequest();
+ 		HttpSession session = request.getSession();
+ 		session.setMaxInactiveInterval(1);
+-		Authentication mockAuthentication = mock(Authentication.class);
+ 		strategy.onAuthentication(mockAuthentication, request, new MockHttpServletResponse());
+ 		assertThat(request.getSession().getMaxInactiveInterval()).isNotEqualTo(1);
+ 	}

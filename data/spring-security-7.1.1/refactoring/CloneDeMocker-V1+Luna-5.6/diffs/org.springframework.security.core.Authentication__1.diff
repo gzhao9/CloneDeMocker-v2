@@ -1,0 +1,60 @@
+--- a/core/src/test/java/org/springframework/security/authorization/AuthenticatedReactiveAuthorizationManagerTests.java
++++ b/core/src/test/java/org/springframework/security/authorization/AuthenticatedReactiveAuthorizationManagerTests.java
+@@ -45,7 +45,7 @@
+ 
+ 	@Test
+ 	public void checkWhenAuthenticatedThenReturnTrue() {
+-		given(this.authentication.isAuthenticated()).willReturn(true);
++		this.authentication = MockAuthentication.createMockAuthentication();
+ 		boolean granted = this.manager.authorize(Mono.just(this.authentication), null).block().isGranted();
+ 		assertThat(granted).isTrue();
+ 	}
+@@ -79,4 +79,18 @@
+ 		// @formatter:on
+ 	}
+ 
++
++	public final class MockAuthentication {
++
++		private MockAuthentication() {
++			// Utility class
++		}
++
++		public static org.springframework.security.core.Authentication createMockAuthentication() {
++			org.springframework.security.core.Authentication authentication =
++					org.mockito.Mockito.mock(org.springframework.security.core.Authentication.class);
++			org.mockito.BDDMockito.given(authentication.isAuthenticated()).willReturn(true);
++			return authentication;
++		}
++	}
+ }
+--- a/core/src/test/java/org/springframework/security/authorization/AuthorityReactiveAuthorizationManagerTests.java
++++ b/core/src/test/java/org/springframework/security/authorization/AuthorityReactiveAuthorizationManagerTests.java
+@@ -69,7 +69,7 @@
+ 
+ 	@Test
+ 	public void checkWhenHasAuthorityAndAuthenticatedAndNoAuthoritiesThenReturnFalse() {
+-		given(this.authentication.isAuthenticated()).willReturn(true);
++		this.authentication = MockAuthentication.createMockAuthentication();
+ 		given(this.authentication.getAuthorities()).willReturn(Collections.emptyList());
+ 		boolean granted = this.manager.authorize(Mono.just(this.authentication), null).block().isGranted();
+ 		assertThat(granted).isFalse();
+@@ -176,4 +176,18 @@
+ 			.isThrownBy(() -> AuthorityReactiveAuthorizationManager.hasAnyAuthority("ADMIN", (String) null));
+ 	}
+ 
++
++	public final class MockAuthentication {
++
++		private MockAuthentication() {
++			// Utility class
++		}
++
++		public static org.springframework.security.core.Authentication createMockAuthentication() {
++			org.springframework.security.core.Authentication authentication =
++					org.mockito.Mockito.mock(org.springframework.security.core.Authentication.class);
++			org.mockito.BDDMockito.given(authentication.isAuthenticated()).willReturn(true);
++			return authentication;
++		}
++	}
+ }

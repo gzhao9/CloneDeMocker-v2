@@ -1,0 +1,59 @@
+--- a/oauth2/oauth2-core/src/test/java/org/springframework/security/oauth2/core/DelegatingOAuth2TokenValidatorTests.java
++++ b/oauth2/oauth2-core/src/test/java/org/springframework/security/oauth2/core/DelegatingOAuth2TokenValidatorTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.oauth2.core;
+ 
++import org.mockito.Mock;
+ import java.util.Arrays;
+ import java.util.Collection;
+ 
+@@ -35,13 +36,14 @@
+  * @author Josh Cummings
+  */
+ public class DelegatingOAuth2TokenValidatorTests {
++	@Mock
++	private OAuth2Token token;
+ 
+ 	private static final OAuth2Error DETAIL = new OAuth2Error("error", "description", "uri");
+ 
+ 	@Test
+ 	public void validateWhenNoValidatorsConfiguredThenReturnsSuccessfulResult() {
+ 		DelegatingOAuth2TokenValidator<OAuth2Token> tokenValidator = new DelegatingOAuth2TokenValidator<>();
+-		OAuth2Token token = mock(OAuth2Token.class);
+ 		assertThat(tokenValidator.validate(token).hasErrors()).isFalse();
+ 	}
+ 
+@@ -53,7 +55,7 @@
+ 		given(failure.validate(any(OAuth2Token.class))).willReturn(OAuth2TokenValidatorResult.failure(DETAIL));
+ 		DelegatingOAuth2TokenValidator<OAuth2Token> tokenValidator = new DelegatingOAuth2TokenValidator<>(
+ 				Arrays.asList(success, failure));
+-		OAuth2Token token = mock(OAuth2Token.class);
++		// removed local mock; replaced with global field `token`
+ 		OAuth2TokenValidatorResult result = tokenValidator.validate(token);
+ 		assertThat(result.hasErrors()).isTrue();
+ 		assertThat(result.getErrors()).containsExactly(DETAIL);
+@@ -69,7 +71,6 @@
+ 			.willReturn(OAuth2TokenValidatorResult.failure(otherDetail));
+ 		DelegatingOAuth2TokenValidator<OAuth2Token> tokenValidator = new DelegatingOAuth2TokenValidator<>(firstFailure,
+ 				secondFailure);
+-		OAuth2Token token = mock(OAuth2Token.class);
+ 		OAuth2TokenValidatorResult result = tokenValidator.validate(token);
+ 		assertThat(result.hasErrors()).isTrue();
+ 		assertThat(result.getErrors()).containsExactly(DETAIL, otherDetail);
+@@ -83,7 +84,6 @@
+ 		given(secondSuccess.validate(any(OAuth2Token.class))).willReturn(OAuth2TokenValidatorResult.success());
+ 		DelegatingOAuth2TokenValidator<OAuth2Token> tokenValidator = new DelegatingOAuth2TokenValidator<>(
+ 				Arrays.asList(firstSuccess, secondSuccess));
+-		OAuth2Token token = mock(OAuth2Token.class);
+ 		OAuth2TokenValidatorResult result = tokenValidator.validate(token);
+ 		assertThat(result.hasErrors()).isFalse();
+ 		assertThat(result.getErrors()).isEmpty();
+@@ -105,7 +105,6 @@
+ 				Arrays.asList(firstSuccess, secondSuccess));
+ 		DelegatingOAuth2TokenValidator<OAuth2Token> secondValidator = new DelegatingOAuth2TokenValidator<>(firstSuccess,
+ 				secondSuccess);
+-		OAuth2Token token = mock(OAuth2Token.class);
+ 		firstValidator.validate(token);
+ 		secondValidator.validate(token);
+ 		verify(firstSuccess, times(2)).validate(token);

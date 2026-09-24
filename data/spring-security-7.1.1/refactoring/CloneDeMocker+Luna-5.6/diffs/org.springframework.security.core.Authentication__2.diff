@@ -1,0 +1,82 @@
+--- a/web/src/test/java/org/springframework/security/web/session/DefaultSessionAuthenticationStrategyTests.java
++++ b/web/src/test/java/org/springframework/security/web/session/DefaultSessionAuthenticationStrategyTests.java
+@@ -18,6 +18,7 @@
+ 
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpSession;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.ArgumentCaptor;
+ 
+@@ -37,6 +38,13 @@
+  * @author Luke Taylor
+  */
+ public class DefaultSessionAuthenticationStrategyTests {
++
++	private Authentication authentication;
++
++	@BeforeEach
++	public void setup() {
++		this.authentication = mock(Authentication.class);
++	}
+ 
+ 	@Test
+ 	public void newSessionShouldNotBeCreatedIfNoSessionExistsAndAlwaysCreateIsFalse() {
+@@ -66,8 +74,7 @@
+ 		String oldSessionId = session.getId();
+ 		ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
+ 		strategy.setApplicationEventPublisher(eventPublisher);
+-		Authentication mockAuthentication = mock(Authentication.class);
+-		strategy.onAuthentication(mockAuthentication, request, new MockHttpServletResponse());
++		strategy.onAuthentication(authentication, request, new MockHttpServletResponse());
+ 		ArgumentCaptor<ApplicationEvent> eventArgumentCaptor = ArgumentCaptor.forClass(ApplicationEvent.class);
+ 		verify(eventPublisher).publishEvent(eventArgumentCaptor.capture());
+ 		assertThat(oldSessionId.equals(request.getSession().getId())).isFalse();
+@@ -78,7 +85,7 @@
+ 		SessionFixationProtectionEvent event = (SessionFixationProtectionEvent) eventArgumentCaptor.getValue();
+ 		assertThat(event.getOldSessionId()).isEqualTo(oldSessionId);
+ 		assertThat(event.getNewSessionId()).isEqualTo(request.getSession().getId());
+-		assertThat(event.getAuthentication()).isSameAs(mockAuthentication);
++		assertThat(event.getAuthentication()).isSameAs(authentication);
+ 	}
+ 
+ 	// See SEC-1077
+@@ -107,8 +114,7 @@
+ 		String oldSessionId = session.getId();
+ 		ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
+ 		strategy.setApplicationEventPublisher(eventPublisher);
+-		Authentication mockAuthentication = mock(Authentication.class);
+-		strategy.onAuthentication(mockAuthentication, request, new MockHttpServletResponse());
++		strategy.onAuthentication(authentication, request, new MockHttpServletResponse());
+ 		ArgumentCaptor<ApplicationEvent> eventArgumentCaptor = ArgumentCaptor.forClass(ApplicationEvent.class);
+ 		verify(eventPublisher).publishEvent(eventArgumentCaptor.capture());
+ 		assertThat(request.getSession().getAttribute("blah")).isNull();
+@@ -118,7 +124,7 @@
+ 		SessionFixationProtectionEvent event = (SessionFixationProtectionEvent) eventArgumentCaptor.getValue();
+ 		assertThat(event.getOldSessionId()).isEqualTo(oldSessionId);
+ 		assertThat(event.getNewSessionId()).isEqualTo(request.getSession().getId());
+-		assertThat(event.getAuthentication()).isSameAs(mockAuthentication);
++		assertThat(event.getAuthentication()).isSameAs(authentication);
+ 	}
+ 
+ 	@Test
+@@ -136,8 +142,7 @@
+ 		HttpServletRequest request = new MockHttpServletRequest();
+ 		HttpSession session = request.getSession();
+ 		session.setMaxInactiveInterval(1);
+-		Authentication mockAuthentication = mock(Authentication.class);
+-		strategy.onAuthentication(mockAuthentication, request, new MockHttpServletResponse());
++		strategy.onAuthentication(authentication, request, new MockHttpServletResponse());
+ 		assertThat(request.getSession().getMaxInactiveInterval()).isEqualTo(1);
+ 	}
+ 
+@@ -148,8 +153,7 @@
+ 		HttpServletRequest request = new MockHttpServletRequest();
+ 		HttpSession session = request.getSession();
+ 		session.setMaxInactiveInterval(1);
+-		Authentication mockAuthentication = mock(Authentication.class);
+-		strategy.onAuthentication(mockAuthentication, request, new MockHttpServletResponse());
++		strategy.onAuthentication(authentication, request, new MockHttpServletResponse());
+ 		assertThat(request.getSession().getMaxInactiveInterval()).isNotEqualTo(1);
+ 	}
+ 
