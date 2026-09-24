@@ -1,0 +1,39 @@
+--- a/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/XenServerGuruTest.java
++++ b/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/XenServerGuruTest.java
+@@ -79,9 +79,8 @@
+     public void beforeTest() {
+         Mockito.when(sourceDataMock.getHypervisorType()).thenReturn(HypervisorType.XenServer);
+ 
+-        Mockito.when(copyCommandMock.getSrcTO()).thenReturn(sourceDataMock);
+-        Mockito.when(copyCommandMock.getDestTO()).thenReturn(destinationDataMock);
+-
++
++        copyCommandMock = createCopyCommand(sourceDataMock, destinationDataMock);
+         Mockito.when(changedHost.getId()).thenReturn(changedHostId);
+         Mockito.lenient().when(defaultHost.getId()).thenReturn(defaultHostId);
+         Mockito.when(defaultHost.getDataCenterId()).thenReturn(zoneId);
+@@ -104,11 +103,9 @@
+ 
+     @Test
+     public void getCommandHostDelegationTestCommandIsStorageSubSystemCommand() {
+-        CopyCommand copyCommand = Mockito.mock(CopyCommand.class);
+         DataTO srcData = Mockito.mock(DataTO.class);
+         DataTO dstData = Mockito.mock(DataTO.class);
+-        Mockito.when(copyCommand.getSrcTO()).thenReturn(srcData);
+-        Mockito.when(copyCommand.getDestTO()).thenReturn(dstData);
++        CopyCommand copyCommand = createCopyCommand(srcData, dstData);
+         Mockito.when(srcData.getHypervisorType()).thenReturn(HypervisorType.XenServer);
+ 
+         Pair<Boolean, Long> pairHostToExecuteCommand = xenServerGuru.getCommandHostDelegation(defaultHostId, copyCommand);
+@@ -258,4 +255,11 @@
+         Assert.assertTrue(pairHostToExecuteCommand.first());
+         Assert.assertEquals(changedHostId, pairHostToExecuteCommand.second());
+     }
++
++    private static CopyCommand createCopyCommand(DataTO srcData, DataTO dstData) {
++        CopyCommand copyCommand = Mockito.mock(CopyCommand.class);
++        Mockito.when(copyCommand.getSrcTO()).thenReturn(srcData);
++        Mockito.when(copyCommand.getDestTO()).thenReturn(dstData);
++        return copyCommand;
++    }
+ }
