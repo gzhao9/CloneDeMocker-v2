@@ -1,0 +1,75 @@
+--- a/plugins/metrics/src/test/java/org/apache/cloudstack/metrics/MetricsServiceImplTest.java
++++ b/plugins/metrics/src/test/java/org/apache/cloudstack/metrics/MetricsServiceImplTest.java
+@@ -146,6 +146,12 @@
+                 .when(userVmDaoMock).listByIds(Mockito.anyList());
+     }
+ 
++    private static CallContext createMockCallContext(Account mockAccount) {
++        CallContext callContextMock = Mockito.mock(CallContext.class);
++        Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
++        return callContextMock;
++    }
++
+     @Test
+     public void searchForUserVmsInternalTestWithOnlyOneId() {
+         preparesearchForUserVmsInternalTest();
+@@ -178,9 +184,8 @@
+         Mockito.doReturn(null).when(listVMsUsageHistoryCmdMock).getName();
+         Mockito.doReturn(null).when(listVMsUsageHistoryCmdMock).getKeyword();
+         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
+-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+-            Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
++            CallContext callContextMock = createMockCallContext(mockAccount);
++            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+             Pair<List<UserVmVO>, Integer> result = spy.searchForUserVmsInternal(listVMsUsageHistoryCmdMock);
+ 
+             Mockito.verify(scMock).setParameters(stringCaptor1.capture(), objectArrayCaptor.capture());
+@@ -200,9 +205,8 @@
+         Mockito.doReturn(null).when(listVMsUsageHistoryCmdMock).getKeyword();
+ 
+         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
+-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+-            Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
++            CallContext callContextMock = createMockCallContext(mockAccount);
++            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+             Pair<List<UserVmVO>, Integer> result = spy.searchForUserVmsInternal(listVMsUsageHistoryCmdMock);
+ 
+             Mockito.verify(scMock).setParameters(stringCaptor1.capture(), objectArrayCaptor.capture());
+@@ -223,9 +227,8 @@
+         Mockito.doReturn("fakeKeyword").when(listVMsUsageHistoryCmdMock).getKeyword();
+ 
+         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
+-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+-            Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
++            CallContext callContextMock = createMockCallContext(mockAccount);
++            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+             Pair<List<UserVmVO>, Integer> result = spy.searchForUserVmsInternal(listVMsUsageHistoryCmdMock);
+ 
+             Mockito.verify(scMock, Mockito.times(2)).addOr(stringCaptor1.capture(), opCaptor.capture(), objectArrayCaptor.capture());
+@@ -386,9 +389,8 @@
+ 
+ 
+         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
+-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+-            Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
++            CallContext callContextMock = createMockCallContext(mockAccount);
++            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+             Pair<List<VolumeVO>, Integer> result = spy.searchForVolumesInternal(listVolumesUsageHistoryCmdMock);
+ 
+             Assert.assertNotNull(result);
+@@ -407,9 +409,8 @@
+ 
+ 
+         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+-            CallContext callContextMock = Mockito.mock(CallContext.class);
+-            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+-            Mockito.when(callContextMock.getCallingAccount()).thenReturn(mockAccount);
++            CallContext callContextMock = createMockCallContext(mockAccount);
++            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+             Mockito.when(callContextMock.getCallingAccountId()).thenReturn(1L);
+             Mockito.when(accountManager.isRootAdmin(1L)).thenReturn(true);
+             Mockito.when(mockAccount.getType()).thenReturn(Account.Type.ADMIN);
