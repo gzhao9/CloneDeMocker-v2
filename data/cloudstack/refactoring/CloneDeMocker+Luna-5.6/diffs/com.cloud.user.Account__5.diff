@@ -1,0 +1,51 @@
+--- a/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
+@@ -134,8 +134,7 @@
+ 
+     private final long accountMockId = 100L;
+ 
+-    @Mock
+-    private Account accountMock;
++    private Account accountMock = createMockAccount();
+ 
+     @Mock
+     private DomainVO domainVoMock;
+@@ -392,7 +391,7 @@
+         Mockito.lenient().when(_accountDao.findById(1L)).thenReturn(callingAccount);
+ 
+         Mockito.lenient().when(accountService.isNormalUser(Mockito.anyLong())).thenReturn(Boolean.TRUE);
+-        Mockito.lenient().when(accountMock.getAccountId()).thenReturn(2L);
++        accountMock = createMockAccount();
+ 
+         accountManagerImpl.getKeys(_getkeyscmd);
+     }
+@@ -419,7 +418,7 @@
+         Mockito.lenient().when(_accountDao.findById(2L)).thenReturn(callingAccount);
+ 
+         Mockito.lenient().when(accountService.isDomainAdmin(Mockito.anyLong())).thenReturn(Boolean.TRUE);
+-        Mockito.lenient().when(accountMock.getAccountId()).thenReturn(2L);
++        accountMock = createMockAccount();
+ 
+         accountManagerImpl.getKeys(_getkeyscmd);
+     }
+@@ -2003,8 +2002,7 @@
+ 
+     @Test(expected = PermissionDeniedException.class)
+     public void testCheckCallerRoleTypeAllowedToUpdateUserLowerAccountRoleType() {
+-        Account callingAccount = Mockito.mock(Account.class);
+-        Mockito.lenient().when(callingAccount.getAccountId()).thenReturn(2L);
++        Account callingAccount = createMockAccount();
+         Mockito.lenient().doReturn(callingAccount).when(accountManagerImpl).getAccount(2L);
+         Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(callingAccount);
+         Mockito.lenient().when(accountManagerImpl.getRoleType(Mockito.eq(callingAccount))).thenReturn(RoleType.DomainAdmin);
+@@ -2289,4 +2287,10 @@
+ 
+         accountManagerImpl.checkRoleEscalation(caller, requested);
+     }
++
++    private static Account createMockAccount() {
++        Account accountMock = Mockito.mock(Account.class);
++        Mockito.lenient().when(accountMock.getAccountId()).thenReturn(2L);
++        return accountMock;
++    }
+ }

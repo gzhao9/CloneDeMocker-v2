@@ -1,0 +1,54 @@
+--- a/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
+@@ -500,6 +500,12 @@
+         updateUserPwdChange();
+     }
+ 
++    private static Account createMockAccount(long accountId) {
++        Account newAccount = Mockito.mock(Account.class);
++        Mockito.when(newAccount.getId()).thenReturn(accountId);
++        return newAccount;
++    }
++
+     private void updateUserPwdChange() {
+         Mockito.doReturn(true).when(UpdateUserCmdMock).isPasswordChangeRequired();
+         Mockito.when(userVoMock.getAccountId()).thenReturn(10L);
+@@ -1919,8 +1925,7 @@
+         existingUser.setUsername("testuser");
+         existingUser.setAccountId(1L);
+ 
+-        Account newAccount = Mockito.mock(Account.class);
+-        Mockito.when(newAccount.getId()).thenReturn(1L);
++        Account newAccount = createMockAccount(1L);
+ 
+         AccountVO existingAccount = Mockito.mock(AccountVO.class);
+         Mockito.when(existingAccount.getUuid()).thenReturn("existing-account-uuid");
+@@ -1937,8 +1942,7 @@
+         existingUser.setUsername("testuser");
+         existingUser.setAccountId(2L);
+ 
+-        Account newAccount = Mockito.mock(Account.class);
+-        Mockito.when(newAccount.getId()).thenReturn(1L);
++        Account newAccount = createMockAccount(1L);
+ 
+         accountManagerImpl.assertUserNotAlreadyInAccount(existingUser, newAccount);
+     }
+@@ -2015,7 +2019,7 @@
+     @Test
+     public void testcheckCallerApiPermissionsForUserOperationsRootAdminSameCaller() {
+         Mockito.lenient().when(accountManagerImpl.getCurrentCallingAccount()).thenReturn(accountMock);
+-        Mockito.when(accountMock.getId()).thenReturn(2L);
++        accountMock = createMockAccount(2L);
+         Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(2L);
+         accountManagerImpl.checkCallerApiPermissionsForUserOrAccountOperations(accountMock);
+     }
+@@ -2125,8 +2129,7 @@
+ 
+     @Test
+     public void testCreateUserSuccess() {
+-        Account rootAdminAccount = Mockito.mock(Account.class);
+-        Mockito.when(rootAdminAccount.getId()).thenReturn(1L);
++        Account rootAdminAccount = createMockAccount(1L);
+         Mockito.when(accountManagerImpl.isRootAdmin(1L)).thenReturn(true);
+         User callingUser = Mockito.mock(User.class);
+         CallContext.register(callingUser, rootAdminAccount);

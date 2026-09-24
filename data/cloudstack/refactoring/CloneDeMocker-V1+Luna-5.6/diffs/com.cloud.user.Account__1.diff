@@ -1,0 +1,105 @@
+--- a/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
++++ b/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
+@@ -79,6 +79,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class FirewallManagerTest {
++    @Mock
++    private final Account caller;
+     private AutoCloseable closeable;
+ 
+     @Mock
+@@ -354,7 +356,6 @@
+ 
+     @Test
+     public void testValidateFirewallRuleVpcWithoutAssociatedNetworkUsesVpcCapabilities() {
+-        final Account caller = Mockito.mock(Account.class);
+         final IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         final NetworkVO network = Mockito.mock(NetworkVO.class);
+         final FirewallServiceProvider firewallServiceProvider = Mockito.mock(FirewallServiceProvider.class);
+@@ -510,40 +511,37 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcThrowsOnInvalidStartPort() {
+-        Account caller = Mockito.mock(Account.class);
++        // removed local mock; replaced with global field `caller`
+         _firewallMgr.validateFirewallRuleForVpc(caller, null, -1, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcThrowsOnInvalidEndPort() {
+-        Account caller = Mockito.mock(Account.class);
++        // removed local mock; replaced with global field `caller`
+         _firewallMgr.validateFirewallRuleForVpc(caller, null, 80, 70000, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcThrowsWhenStartPortGreaterThanEndPort() {
+-        Account caller = Mockito.mock(Account.class);
++        // removed local mock; replaced with global field `caller`
+         _firewallMgr.validateFirewallRuleForVpc(caller, null, 200, 100, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
+     }
+ 
+     @Test
+     public void testValidateFirewallRuleForVpcSystemTypeWithNullIpReturnsEarly() {
+         // System rule type + null IP should return without further validation
+-        Account caller = Mockito.mock(Account.class);
+         // Should not throw even though vpcId checks come after this
+         _firewallMgr.validateFirewallRuleForVpc(caller, null, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.System, 10L, FirewallRule.TrafficType.Ingress);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcThrowsWhenVpcIdNullAndNotSystemRule() {
+-        Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         _firewallMgr.validateFirewallRuleForVpc(caller, ipAddress, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, null, FirewallRule.TrafficType.Ingress);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcThrowsWhenActiveVpcNotFound() {
+-        Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         when(_vpcMgr.getActiveVpc(10L)).thenReturn(null);
+         _firewallMgr.validateFirewallRuleForVpc(caller, ipAddress, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
+@@ -551,7 +549,6 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcThrowsWhenFirewallServiceNotSupported() {
+-        Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         Vpc vpc = Mockito.mock(Vpc.class);
+         when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpc);
+@@ -562,7 +559,6 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcThrowsOnUnsupportedProtocol() {
+-        Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         Vpc vpc = Mockito.mock(Vpc.class);
+         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+@@ -583,7 +579,7 @@
+ 
+     @Test
+     public void testValidateFirewallRuleForVpcSucceedsWithSupportedProtocolAndTrafficType() {
+-        Account caller = Mockito.mock(Account.class);
++        // removed local mock; replaced with global field `caller`
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         Vpc vpc = Mockito.mock(Vpc.class);
+         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+@@ -607,7 +603,7 @@
+ 
+     @Test
+     public void testCreateFirewallRuleRoutesToVpcWhenVpcIdProvided() throws NetworkRuleConflictException {
+-        Account caller = Mockito.mock(Account.class);
++        // removed local mock; replaced with global field `caller`
+         FirewallRule vpcRule = Mockito.mock(FirewallRule.class);
+ 
+         doReturn(vpcRule).when(_firewallMgr).createFirewallRuleForVpc(
+@@ -634,7 +630,6 @@
+ 
+     @Test
+     public void testCreateFirewallRuleRoutesToNonVpcWhenVpcIdNull() throws NetworkRuleConflictException {
+-        Account caller = Mockito.mock(Account.class);
+         FirewallRule nonVpcRule = Mockito.mock(FirewallRule.class);
+ 
+         doReturn(nonVpcRule).when(_firewallMgr).createFirewallRuleForNonVPC(
