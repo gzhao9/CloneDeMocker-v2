@@ -1,0 +1,92 @@
+--- a/services/src/test/java/org/apache/druid/cli/DumpSegmentTest.java
++++ b/services/src/test/java/org/apache/druid/cli/DumpSegmentTest.java
+@@ -125,7 +125,6 @@
+   @Test
+   public void testDumpRows() throws Exception
+   {
+-    Injector injector = Mockito.mock(Injector.class);
+     ObjectMapper mapper = TestHelper.makeJsonMapper();
+     mapper.registerModules(BuiltInTypesModule.getJacksonModulesList());
+     mapper.setInjectableValues(
+@@ -134,9 +133,8 @@
+             .addValue(ObjectMapper.class.getName(), mapper)
+             .addValue(DefaultColumnFormatConfig.class, new DefaultColumnFormatConfig(null, null, null, null))
+     );
+-    Mockito.when(injector.getInstance(Key.get(ObjectMapper.class, Json.class))).thenReturn(mapper);
+-    Mockito.when(injector.getInstance(DefaultColumnFormatConfig.class)).thenReturn(new DefaultColumnFormatConfig(null, null, null, null));
+-
++
++    Injector injector = createInjector(mapper);
+     List<Segment> segments = createSegments(tempFolder, closer);
+     QueryableIndex queryableIndex = segments.get(0).as(QueryableIndex.class);
+ 
+@@ -199,7 +197,6 @@
+   @Test
+   public void testDumpNestedColumn() throws Exception
+   {
+-    Injector injector = Mockito.mock(Injector.class);
+     ObjectMapper mapper = TestHelper.makeJsonMapper();
+     mapper.registerModules(BuiltInTypesModule.getJacksonModulesList());
+     mapper.setInjectableValues(
+@@ -208,8 +205,7 @@
+             .addValue(ObjectMapper.class.getName(), mapper)
+             .addValue(DefaultColumnFormatConfig.class, new DefaultColumnFormatConfig(null, null, null, null))
+     );
+-    Mockito.when(injector.getInstance(Key.get(ObjectMapper.class, Json.class))).thenReturn(mapper);
+-    Mockito.when(injector.getInstance(DefaultColumnFormatConfig.class)).thenReturn(new DefaultColumnFormatConfig(null, null, null, null));
++    Injector injector = createInjector(mapper);
+ 
+     List<Segment> segments = createSegments(tempFolder, closer);
+     QueryableIndex queryableIndex = segments.get(0).as(QueryableIndex.class);
+@@ -232,7 +228,6 @@
+   @Test
+   public void testDumpNestedColumnPath() throws Exception
+   {
+-    Injector injector = Mockito.mock(Injector.class);
+     ObjectMapper mapper = TestHelper.makeJsonMapper();
+     mapper.registerModules(BuiltInTypesModule.getJacksonModulesList());
+     mapper.setInjectableValues(
+@@ -241,8 +236,7 @@
+             .addValue(ObjectMapper.class.getName(), mapper)
+             .addValue(DefaultColumnFormatConfig.class, new DefaultColumnFormatConfig(null, null, null, null))
+     );
+-    Mockito.when(injector.getInstance(Key.get(ObjectMapper.class, Json.class))).thenReturn(mapper);
+-    Mockito.when(injector.getInstance(DefaultColumnFormatConfig.class)).thenReturn(new DefaultColumnFormatConfig(null, null, null, null));
++    Injector injector = createInjector(mapper);
+ 
+     List<Segment> segments = createSegments(tempFolder, closer);
+     QueryableIndex queryableIndex = segments.get(0).as(QueryableIndex.class);
+@@ -281,7 +275,6 @@
+   @Test
+   public void testDumpV10Metadata() throws IOException
+   {
+-    Injector injector = Mockito.mock(Injector.class);
+     ObjectMapper mapper = TestHelper.makeJsonMapper();
+     mapper.registerModules(BuiltInTypesModule.getJacksonModulesList());
+     mapper.setInjectableValues(
+@@ -290,9 +283,8 @@
+             .addValue(ObjectMapper.class.getName(), mapper)
+             .addValue(DefaultColumnFormatConfig.class, new DefaultColumnFormatConfig(null, null, null, null))
+     );
+-    Mockito.when(injector.getInstance(Key.get(ObjectMapper.class, Json.class))).thenReturn(mapper);
+-    Mockito.when(injector.getInstance(DefaultColumnFormatConfig.class)).thenReturn(new DefaultColumnFormatConfig(null, null, null, null));
+-
++
++    Injector injector = createInjector(mapper);
+     File f = buildV10Segment();
+ 
+     File outputFile = tempFolder.newFile();
+@@ -366,4 +358,13 @@
+         IndexSpec.getDefault()
+     );
+   }
++
++    private static Injector createInjector(ObjectMapper mapper)
++    {
++        Injector injector = Mockito.mock(Injector.class);
++        Mockito.when(injector.getInstance(Key.get(ObjectMapper.class, Json.class))).thenReturn(mapper);
++        Mockito.when(injector.getInstance(DefaultColumnFormatConfig.class))
++               .thenReturn(new DefaultColumnFormatConfig(null, null, null, null));
++        return injector;
++    }
+ }
