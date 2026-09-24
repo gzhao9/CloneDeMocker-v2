@@ -1,0 +1,190 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -633,10 +633,9 @@
+         when(resourceLimitMgr.findCorrectResourceLimitForAccount(account, Resource.ResourceType.backup, null)).thenReturn(8L);
+         when(resourceLimitMgr.findCorrectResourceLimitForDomain(domain, Resource.ResourceType.backup, null)).thenReturn(8L);
+ 
+-        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
++        BackupOfferingVO offering = createMockBackupOfferingVO("test");
+         when(backupOfferingDao.findById(backupOfferingId)).thenReturn(offering);
+         when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
+-        when(offering.getProvider()).thenReturn("test");
+ 
+         BackupScheduleVO schedule = mock(BackupScheduleVO.class);
+         when(backupScheduleDao.findByVMAndIntervalType(vmId, DateUtil.IntervalType.DAILY)).thenReturn(schedule);
+@@ -702,9 +701,9 @@
+         when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
+ 
+         overrideBackupFrameworkConfigValue();
++         backupOfferingVOMock = createMockBackupOfferingVO("testbackupprovider");
+         when(backupOfferingDao.findById(backupOfferingId)).thenReturn(backupOfferingVOMock);
+         when(backupOfferingVOMock.isUserDrivenBackupAllowed()).thenReturn(true);
+-        when(backupOfferingVOMock.getProvider()).thenReturn("testbackupprovider");
+ 
+         Mockito.doReturn(scheduleId).when(backupManager).getBackupScheduleId(asyncJobVOMock);
+ 
+@@ -778,10 +777,9 @@
+         when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
+ 
+         overrideBackupFrameworkConfigValue();
+-        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
++        BackupOfferingVO offering = createMockBackupOfferingVO("testbackupprovider");
+         when(backupOfferingDao.findById(backupOfferingId)).thenReturn(offering);
+         when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
+-        when(offering.getProvider()).thenReturn("testbackupprovider");
+ 
+         Account account = Mockito.mock(Account.class);
+         when(accountManager.getAccount(accountId)).thenReturn(account);
+@@ -826,10 +824,9 @@
+         when(volumeApiService.getVolumePhysicalSize(null, null, null)).thenReturn(size);
+ 
+         overrideBackupFrameworkConfigValue();
+-        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
++        BackupOfferingVO offering = createMockBackupOfferingVO("testbackupprovider");
+         when(backupOfferingDao.findById(backupOfferingId)).thenReturn(offering);
+         when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
+-        when(offering.getProvider()).thenReturn("testbackupprovider");
+ 
+         Mockito.doReturn(scheduleId).when(backupManager).getBackupScheduleId(asyncJobVOMock);
+ 
+@@ -1237,7 +1234,7 @@
+ 
+         VMInstanceVO vm = mock(VMInstanceVO.class);
+         when(vm.getId()).thenReturn(vmId);
+-        BackupOfferingVO offering = mock(BackupOfferingVO.class);
++        BackupOfferingVO offering = createMockBackupOfferingVO("testbackupprovider");
+         Account owner = mock(Account.class);
+ 
+ 
+@@ -1248,7 +1245,6 @@
+         when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+         when(vm.getDataCenterId()).thenReturn(1L);
+         when(vm.getBackupOfferingId()).thenReturn(null);
+-        when(offering.getProvider()).thenReturn("testbackupprovider");
+         when(backupProvider.assignVMToBackupOffering(vm, offering)).thenReturn(true);
+         when(vm.getAccountId()).thenReturn(3L);
+         when(accountManager.getAccount(vm.getAccountId())).thenReturn(owner);
+@@ -1288,9 +1284,8 @@
+         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+         when(vmInstanceDao.update(vmId, vm)).thenReturn(true);
+ 
+-        BackupOfferingVO offering = mock(BackupOfferingVO.class);
++        BackupOfferingVO offering = createMockBackupOfferingVO("testbackupprovider");
+         when(backupOfferingDao.findById(vm.getBackupOfferingId())).thenReturn(offering);
+-        when(offering.getProvider()).thenReturn("testbackupprovider");
+         when(backupProvider.removeVMFromBackupOffering(vm)).thenReturn(true);
+         when(backupProvider.willDeleteBackupsOnOfferingRemoval()).thenReturn(true);
+         when(backupDao.listByVmId(null, vmId)).thenReturn(new ArrayList<>());
+@@ -1352,7 +1347,6 @@
+         when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+         when(vm.getHostId()).thenReturn(hostId);
+ 
+-        BackupOfferingVO offering = mock(BackupOfferingVO.class);
+         BackupProvider backupProvider = mock(BackupProvider.class);
+         when(backupProvider.supportsInstanceFromBackup()).thenReturn(true);
+ 
+@@ -1360,8 +1354,8 @@
+ 
+         when(backupDao.findById(backupId)).thenReturn(backup);
+         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        BackupOfferingVO offering = createMockBackupOfferingVO("testbackupprovider");
+         when(backupOfferingDao.findByIdIncludingRemoved(offeringId)).thenReturn(offering);
+-        when(offering.getProvider()).thenReturn("testbackupprovider");
+         when(backupManager.getBackupProvider("testbackupprovider")).thenReturn(backupProvider);
+         when(virtualMachineManager.stateTransitTo(vm, VirtualMachine.Event.RestoringRequested, hostId)).thenReturn(true);
+         when(virtualMachineManager.stateTransitTo(vm, VirtualMachine.Event.RestoringSuccess, hostId)).thenReturn(true);
+@@ -1408,7 +1402,7 @@
+         when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+         when(vm.getHostId()).thenReturn(hostId);
+ 
+-        BackupOfferingVO offering = mock(BackupOfferingVO.class);
++        BackupOfferingVO offering = createMockBackupOfferingVO("testbackupprovider");
+         BackupProvider backupProvider = mock(BackupProvider.class);
+         when(backupProvider.supportsInstanceFromBackup()).thenReturn(true);
+ 
+@@ -1417,7 +1411,6 @@
+         when(backupDao.findById(backupId)).thenReturn(backup);
+         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+         when(backupOfferingDao.findByIdIncludingRemoved(offeringId)).thenReturn(offering);
+-        when(offering.getProvider()).thenReturn("testbackupprovider");
+         when(backupManager.getBackupProvider("testbackupprovider")).thenReturn(backupProvider);
+         when(virtualMachineManager.stateTransitTo(vm, VirtualMachine.Event.RestoringRequested, hostId)).thenReturn(true);
+         when(virtualMachineManager.stateTransitTo(vm, VirtualMachine.Event.RestoringFailed, hostId)).thenReturn(true);
+@@ -1740,7 +1733,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void validateAndGetDefaultBackupRetentionIfRequiredTestThrowExceptionWhenBackupOfferingProviderIsVeeam() {
+-        Mockito.when(backupOfferingVOMock.getProvider()).thenReturn("veeam");
++        backupOfferingVOMock = createMockBackupOfferingVO("veeam");
+         backupManager.validateAndGetDefaultBackupRetentionIfRequired(1, backupOfferingVOMock, vmInstanceVOMock);
+     }
+ 
+@@ -2021,8 +2014,7 @@
+         BackupVO backup = mock(BackupVO.class);
+         when(backup.getBackupOfferingId()).thenReturn(backupOfferingId);
+ 
+-        BackupOfferingVO offering = mock(BackupOfferingVO.class);
+-        when(offering.getProvider()).thenReturn(providerName);
++        BackupOfferingVO offering = createMockBackupOfferingVO(providerName);
+ 
+         BackupProvider backupProvider = mock(BackupProvider.class);
+         when(backupProvider.crossZoneInstanceCreationEnabled(offering)).thenReturn(true);
+@@ -2049,9 +2041,8 @@
+         BackupVO backup = mock(BackupVO.class);
+         when(backup.getBackupOfferingId()).thenReturn(backupOfferingId);
+ 
+-        BackupOfferingVO offering = mock(BackupOfferingVO.class);
+-        when(offering.getProvider()).thenReturn(providerName);
+-
++
++        BackupOfferingVO offering = createMockBackupOfferingVO(providerName);
+         BackupProvider backupProvider = mock(BackupProvider.class);
+         when(backupProvider.crossZoneInstanceCreationEnabled(offering)).thenReturn(false);
+ 
+@@ -2120,9 +2111,8 @@
+         when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+         when(vm.getRemoved()).thenReturn(null);
+ 
+-        BackupOfferingVO offering = mock(BackupOfferingVO.class);
+-        when(offering.getProvider()).thenReturn("testbackupprovider");
+-
++
++        BackupOfferingVO offering = createMockBackupOfferingVO("testbackupprovider");
+         VolumeVO volume = mock(VolumeVO.class);
+         when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volume));
+ 
+@@ -2644,10 +2634,9 @@
+         when(cmd.getDomainIds()).thenReturn(providedDomainIds);
+ 
+         // source offering
+-        BackupOfferingVO sourceOffering = Mockito.mock(BackupOfferingVO.class);
++        BackupOfferingVO sourceOffering = createMockBackupOfferingVO("testbackupprovider");
+         when(sourceOffering.getZoneId()).thenReturn(zoneId);
+         when(sourceOffering.getExternalId()).thenReturn(externalId);
+-        when(sourceOffering.getProvider()).thenReturn("testbackupprovider");
+         when(sourceOffering.getDescription()).thenReturn("src desc");
+         when(sourceOffering.isUserDrivenBackupAllowed()).thenReturn(true);
+         when(sourceOffering.getName()).thenReturn("Source Offering");
+@@ -2692,10 +2681,9 @@
+         // Simulate resolver having provided the source offering domains (the real cmd#getDomainIds() would do this)
+         when(cmd.getDomainIds()).thenReturn(sourceDomainIds);
+ 
+-        BackupOfferingVO sourceOffering = Mockito.mock(BackupOfferingVO.class);
++        BackupOfferingVO sourceOffering = createMockBackupOfferingVO("testbackupprovider");
+         when(sourceOffering.getZoneId()).thenReturn(zoneId);
+         when(sourceOffering.getExternalId()).thenReturn("ext-src-2");
+-        when(sourceOffering.getProvider()).thenReturn("testbackupprovider");
+         when(sourceOffering.getDescription()).thenReturn("src desc 2");
+         when(sourceOffering.isUserDrivenBackupAllowed()).thenReturn(false);
+         when(sourceOffering.getName()).thenReturn("Source Offering 2");
+@@ -2874,4 +2862,10 @@
+         verify(backupOfferingDao).persist(any());
+         verify(backupOfferingDetailsDao, never()).saveDetails(any());
+     }
++
++    private static BackupOfferingVO createMockBackupOfferingVO(String provider) {
++        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
++        when(offering.getProvider()).thenReturn(provider);
++        return offering;
++    }
+ }

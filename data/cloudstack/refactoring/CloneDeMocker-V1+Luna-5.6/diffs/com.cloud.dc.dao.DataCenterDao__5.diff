@@ -1,0 +1,119 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -1094,7 +1094,7 @@
+         Mockito.when(networkDao.findById(anyLong())).thenReturn(networkVO);
+         Mockito.when(accountDao.findById(anyLong())).thenReturn(accountVO);
+         Mockito.when(domainDao.findById(anyLong())).thenReturn(domainVO);
+-        Mockito.when(dcDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dcDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         Mockito.when(vpcDao.findById(anyLong())).thenReturn(vpcVO);
+         Mockito.when(dataCenterVO.getId()).thenReturn(1L);
+         when(accountVO.getId()).thenReturn(2L);
+@@ -2241,4 +2241,18 @@
+         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
+     }
+ 
++
++    public final class MockDataCenterDao {
++        private MockDataCenterDao() {
++        }
++
++        public static com.cloud.dc.dao.DataCenterDao createMockDataCenterDao(
++                com.cloud.dc.DataCenterVO dataCenterVO) {
++            com.cloud.dc.dao.DataCenterDao dcDao =
++                    org.mockito.Mockito.mock(com.cloud.dc.dao.DataCenterDao.class);
++            org.mockito.Mockito.when(dcDao.findById(org.mockito.Mockito.anyLong()))
++                    .thenReturn(dataCenterVO);
++            return dcDao;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -531,8 +531,8 @@
+ 
+         Mockito.when(updateVmCommand.getId()).thenReturn(vmId);
+ 
+-        when(_dcDao.findById(anyLong())).thenReturn(_dcMock);
+-
++
++        _dcDao = MockDataCenterDao.createMockDataCenterDao(_dcMock);
+         Mockito.when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+ 
+         Mockito.when(callerAccount.getType()).thenReturn(Account.Type.ADMIN);
+@@ -4740,4 +4740,18 @@
+         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+     }
++
++    public final class MockDataCenterDao {
++        private MockDataCenterDao() {
++        }
++
++        public static com.cloud.dc.dao.DataCenterDao createMockDataCenterDao(
++                com.cloud.dc.DataCenterVO dataCenterVO) {
++            com.cloud.dc.dao.DataCenterDao dcDao =
++                    org.mockito.Mockito.mock(com.cloud.dc.dao.DataCenterDao.class);
++            org.mockito.Mockito.when(dcDao.findById(org.mockito.Mockito.anyLong()))
++                    .thenReturn(dataCenterVO);
++            return dcDao;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerTest.java
+@@ -567,7 +567,7 @@
+         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
+         when(_networkMock.getDataCenterId()).thenReturn(3L);
+         when(_networkMock.getGuestType()).thenReturn(GuestType.Isolated);
+-        when(_dcDao.findById(anyLong())).thenReturn(_dcMock);
++        _dcDao = MockDataCenterDao.createMockDataCenterDao(_dcMock);
+         when(_dcMock.getNetworkType()).thenReturn(NetworkType.Advanced);
+ 
+         when(_ipAddrMgr.allocateGuestIP(Mockito.eq(_networkMock), anyString())).thenReturn("10.10.10.10");
+@@ -614,7 +614,7 @@
+         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
+         when(_networkMock.getDataCenterId()).thenReturn(3L);
+         when(_networkMock.getGuestType()).thenReturn(GuestType.Shared);
+-        when(_dcDao.findById(anyLong())).thenReturn(_dcMock);
++        _dcDao = MockDataCenterDao.createMockDataCenterDao(_dcMock);
+         when(_dcMock.getNetworkType()).thenReturn(NetworkType.Advanced);
+ 
+         IPAddressVO newIp = mock(IPAddressVO.class);
+@@ -710,7 +710,7 @@
+         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
+         when(_networkMock.getDataCenterId()).thenReturn(3L);
+         when(_networkMock.getGuestType()).thenReturn(GuestType.Isolated);
+-        when(_dcDao.findById(anyLong())).thenReturn(_dcMock);
++        _dcDao = MockDataCenterDao.createMockDataCenterDao(_dcMock);
+         when(_dcMock.getNetworkType()).thenReturn(NetworkType.Advanced);
+ 
+         when(_ipAddrMgr.allocateGuestIP(Mockito.eq(_networkMock), anyString())).thenReturn(null);
+@@ -757,7 +757,7 @@
+         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
+         when(_networkMock.getDataCenterId()).thenReturn(3L);
+         when(_networkMock.getGuestType()).thenReturn(GuestType.Shared);
+-        when(_dcDao.findById(anyLong())).thenReturn(_dcMock);
++        _dcDao = MockDataCenterDao.createMockDataCenterDao(_dcMock);
+         when(_dcMock.getNetworkType()).thenReturn(NetworkType.Advanced);
+ 
+         lenient().when(_ipAddrMgr.allocatePublicIpForGuestNic(Mockito.eq(_networkMock), anyLong(), Mockito.eq(_accountMock), anyString())).thenReturn(null);
+@@ -839,4 +839,18 @@
+         _userVmMgr.persistDeviceBusInfo(_vmMock, "lsilogic");
+         verify(_vmDao, times(1)).saveDetails(any(UserVmVO.class));
+     }
++
++    public final class MockDataCenterDao {
++        private MockDataCenterDao() {
++        }
++
++        public static com.cloud.dc.dao.DataCenterDao createMockDataCenterDao(
++                com.cloud.dc.DataCenterVO dataCenterVO) {
++            com.cloud.dc.dao.DataCenterDao dcDao =
++                    org.mockito.Mockito.mock(com.cloud.dc.dao.DataCenterDao.class);
++            org.mockito.Mockito.when(dcDao.findById(org.mockito.Mockito.anyLong()))
++                    .thenReturn(dataCenterVO);
++            return dcDao;
++        }
++    }
+ }

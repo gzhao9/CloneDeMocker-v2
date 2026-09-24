@@ -1,0 +1,66 @@
+--- a/server/src/test/java/com/cloud/network/guru/DirectNetworkGuruTest.java
++++ b/server/src/test/java/com/cloud/network/guru/DirectNetworkGuruTest.java
+@@ -170,7 +170,7 @@
+     @Test
+     public void testUpdateNicProfile() {
+         NicProfile nicProfile = new NicProfile();
+-        when(dcDao.findById(Mockito.anyLong())).thenReturn(dc);
++        MockDataCenterDao.stubDataCenterDao(dcDao, dc);
+         when(networkModel.getNetworkIp4Dns(network, dc)).thenReturn(new Pair<>(ip4Dns[0], ip4Dns[1]));
+         when(networkModel.getNetworkIp6Dns(network, dc)).thenReturn(new Pair<>(ip6Dns[0], ip6Dns[1]));
+         guru.updateNicProfile(nicProfile, network);
+@@ -184,7 +184,7 @@
+     @Test
+     public void testUpdateNetworkProfile() {
+         NetworkProfile profile = new NetworkProfile(network);
+-        when(dcDao.findById(Mockito.anyLong())).thenReturn(dc);
++        MockDataCenterDao.stubDataCenterDao(dcDao, dc);
+         when(networkModel.getNetwork(Mockito.anyLong())).thenReturn(network);
+         when(networkModel.getNetworkIp4Dns(network, dc)).thenReturn(new Pair<>(ip4Dns[0], null));
+         when(networkModel.getNetworkIp6Dns(network, dc)).thenReturn(new Pair<>(ip6Dns[0], null));
+--- a/server/src/test/java/com/cloud/network/guru/ExternalGuestNetworkGuruTest.java
++++ b/server/src/test/java/com/cloud/network/guru/ExternalGuestNetworkGuruTest.java
+@@ -65,7 +65,7 @@
+         Mockito.when(networkOffering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+         Mockito.when(zone.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+-        Mockito.when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
++        MockDataCenterDao.stubDataCenterDao(dataCenterDao, zone);
+         PhysicalNetworkVO physicalNetwork = Mockito.mock(PhysicalNetworkVO.class);
+         Mockito.when(physicalNetworkDao.findById(Mockito.anyLong())).thenReturn(physicalNetwork);
+         DeploymentPlan plan = Mockito.mock(DeploymentPlan.class);
+@@ -88,7 +88,7 @@
+         NicProfile nicProfile = new NicProfile();
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+         Network network = Mockito.mock(Network.class);
+-        Mockito.when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
++        MockDataCenterDao.stubDataCenterDao(dataCenterDao, zone);
+         Mockito.when(networkModel.getNetworkIp4Dns(network, zone)).thenReturn(new Pair<>(ip4Dns[0], ip4Dns[1]));
+         Mockito.when(networkModel.getNetworkIp6Dns(network, zone)).thenReturn(new Pair<>(ip6Dns[0], ip6Dns[1]));
+         guru.updateNicProfile(nicProfile, network);
+@@ -104,7 +104,7 @@
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+         Network network = Mockito.mock(Network.class);
+         NetworkProfile profile = new NetworkProfile(network);
+-        Mockito.when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(zone);
++        MockDataCenterDao.stubDataCenterDao(dataCenterDao, zone);
+         Mockito.when(networkModel.getNetwork(Mockito.anyLong())).thenReturn(network);
+         Mockito.when(networkModel.getNetworkIp4Dns(network, zone)).thenReturn(new Pair<>(ip4Dns[0], null));
+         Mockito.when(networkModel.getNetworkIp6Dns(network, zone)).thenReturn(new Pair<>(ip6Dns[0], null));
+--- a/server/src/test/java/com/cloud/network/guru/MockDataCenterDao.java
++++ b/server/src/test/java/com/cloud/network/guru/MockDataCenterDao.java
+@@ -0,0 +1,14 @@
++package com.cloud.network.guru;
++
++import com.cloud.dc.DataCenterVO;
++import com.cloud.dc.dao.DataCenterDao;
++import org.mockito.Mockito;
++
++public final class MockDataCenterDao {
++    private MockDataCenterDao() {
++    }
++
++    public static void stubDataCenterDao(DataCenterDao dataCenterDao, DataCenterVO dataCenter) {
++        Mockito.when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(dataCenter);
++    }
++}

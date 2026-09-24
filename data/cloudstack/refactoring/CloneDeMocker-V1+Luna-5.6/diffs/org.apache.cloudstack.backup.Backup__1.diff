@@ -1,0 +1,80 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -1057,7 +1057,6 @@
+     public void getDataDiskInfoListFromBackup() {
+         Long size1 = 5L * 1024 * 1024 * 1024;
+         Long size2 = 10L * 1024 * 1024 * 1024;
+-        Backup backup = mock(Backup.class);
+ 
+         Backup.VolumeInfo volumeInfo0 = mock(Backup.VolumeInfo.class);
+         when(volumeInfo0.getType()).thenReturn(Volume.Type.ROOT);
+@@ -1075,8 +1074,8 @@
+         when(volumeInfo2.getMaxIops()).thenReturn(400L);
+         when(volumeInfo2.getType()).thenReturn(Volume.Type.DATADISK);
+         when(volumeInfo2.getDeviceId()).thenReturn(2L);
+-        when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo0, volumeInfo1, volumeInfo2));
+-
++
++        Backup backup = createMockBackup(List.of(volumeInfo0, volumeInfo1, volumeInfo2));
+         DiskOfferingVO diskOffering1 = mock(DiskOfferingVO.class);
+         when(diskOffering1.getUuid()).thenReturn("disk-offering-uuid-1");
+         when(diskOffering1.getState()).thenReturn(DiskOffering.State.Active);
+@@ -1107,7 +1106,6 @@
+     @Test
+     public void getDataDiskInfoListFromBackupNullIops() {
+         Long size = 5L * 1024 * 1024 * 1024;
+-        Backup backup = mock(Backup.class);
+         Backup.VolumeInfo volumeInfo1 = mock(Backup.VolumeInfo.class);
+         when(volumeInfo1.getDiskOfferingId()).thenReturn("disk-offering-uuid-1");
+         when(volumeInfo1.getSize()).thenReturn(size);
+@@ -1115,6 +1113,7 @@
+         when(volumeInfo1.getMaxIops()).thenReturn(null);
+         when(volumeInfo1.getType()).thenReturn(Volume.Type.DATADISK);
+         when(volumeInfo1.getDeviceId()).thenReturn(1L);
++        Backup backup = createMockBackup(List.of(volumeInfo1));
+         when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo1));
+ 
+         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+@@ -1137,13 +1136,12 @@
+     public void testCheckVmDisksSizeAgainstBackup() {
+         Long sizeInBackup = 5L * 1024 * 1024 * 1024;
+         Long sizeInCmd = 2L;
+-        Backup backup = mock(Backup.class);
+         Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+         when(volumeInfo.getDiskOfferingId()).thenReturn("disk-offering-uuid-1");
+         when(volumeInfo.getSize()).thenReturn(sizeInBackup);
+         when(volumeInfo.getType()).thenReturn(Volume.Type.DATADISK);
+-        when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo));
+-
++
++        Backup backup = createMockBackup(List.of(volumeInfo));
+         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+         when(diskOffering.getState()).thenReturn(DiskOffering.State.Active);
+         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering);
+@@ -1155,13 +1153,12 @@
+     @Test
+     public void testGetRootDiskInfoFromBackup() {
+         Long size = 5L * 1024 * 1024 * 1024;
+-        Backup backup = mock(Backup.class);
+         Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+         when(volumeInfo.getDiskOfferingId()).thenReturn("root-disk-offering-uuid");
+         when(volumeInfo.getSize()).thenReturn(size);
+         when(volumeInfo.getType()).thenReturn(Volume.Type.ROOT);
+-        when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo));
+-
++
++        Backup backup = createMockBackup(List.of(volumeInfo));
+         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+         when(diskOffering.getUuid()).thenReturn("root-disk-offering-uuid");
+         when(diskOfferingDao.findByUuid("root-disk-offering-uuid")).thenReturn(diskOffering);
+@@ -2874,4 +2871,10 @@
+         verify(backupOfferingDao).persist(any());
+         verify(backupOfferingDetailsDao, never()).saveDetails(any());
+     }
++
++    private static Backup createMockBackup(List<Backup.VolumeInfo> backedUpVolumes) {
++        Backup backup = mock(Backup.class);
++        when(backup.getBackedUpVolumes()).thenReturn(List.copyOf(backedUpVolumes));
++        return backup;
++    }
+ }

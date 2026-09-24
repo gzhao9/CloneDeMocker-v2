@@ -1,0 +1,134 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupCompressionServiceJobControllerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupCompressionServiceJobControllerTest.java
+@@ -445,7 +445,7 @@
+ 
+     @Test
+     public void searchAndDispatchJobsTestLockFailureReturnsEarly() {
+-        doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
++        dataCenterDaoMock = MockDataCenterDao.createMockDataCenterDao(dataCenterVoMock);
+         doReturn(false).when(internalBackupServiceJobDaoMock).lockInLockTable("compression_lock", 300);
+ 
+         backupCompressionServiceJobControllerSpy.searchAndDispatchJobs();
+@@ -457,7 +457,7 @@
+ 
+     @Test
+     public void searchAndDispatchJobsTestTaskDisabledReturnsAfterReschedule() {
+-        doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
++        dataCenterDaoMock = MockDataCenterDao.createMockDataCenterDao(dataCenterVoMock);
+         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("compression_lock", 300);
+         doNothing().when(backupCompressionServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(false).when(backupCompressionTaskEnabledMock).value();
+@@ -471,7 +471,7 @@
+ 
+     @Test
+     public void searchAndDispatchJobsTestZoneWithoutBackupFrameworkIsSkipped() {
+-        doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
++        dataCenterDaoMock = MockDataCenterDao.createMockDataCenterDao(dataCenterVoMock);
+         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("compression_lock", 300);
+         doNothing().when(backupCompressionServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupCompressionTaskEnabledMock).value();
+@@ -485,7 +485,7 @@
+ 
+     @Test
+     public void searchAndDispatchJobsTestEmptyWaitingJobsSkipsDispatch() {
+-        doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
++        dataCenterDaoMock = MockDataCenterDao.createMockDataCenterDao(dataCenterVoMock);
+         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("compression_lock", 300);
+         doNothing().when(backupCompressionServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupCompressionTaskEnabledMock).value();
+@@ -503,7 +503,7 @@
+     public void searchAndDispatchJobsTestHappyPathDispatchesJobs() {
+         Pair<HashMap<HostVO, Long>, Integer> executingJobsPair = new Pair<>(new HashMap<>(), 0);
+ 
+-        doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
++        dataCenterDaoMock = MockDataCenterDao.createMockDataCenterDao(dataCenterVoMock);
+         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("compression_lock", 300);
+         doNothing().when(backupCompressionServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupCompressionTaskEnabledMock).value();
+@@ -525,4 +525,19 @@
+         verify(internalBackupServiceJobDaoMock).unlockFromLockTable("compression_lock");
+         verify(internalBackupServiceJobDaoMock).listExecutingJobsByZoneIdAndJobType(eq(datacenterId), eq(InternalBackupServiceJobType.StartCompression));
+     }
++
++    public final class MockDataCenterDao {
++        private MockDataCenterDao() {
++        }
++
++        public static com.cloud.dc.dao.DataCenterDao createMockDataCenterDao(
++                com.cloud.dc.DataCenterVO dataCenterVoMock) {
++            com.cloud.dc.dao.DataCenterDao dataCenterDaoMock =
++                    Mockito.mock(com.cloud.dc.dao.DataCenterDao.class);
++            doReturn(java.util.List.of(dataCenterVoMock))
++                    .when(dataCenterDaoMock)
++                    .listEnabledZones();
++            return dataCenterDaoMock;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupValidationServiceJobControllerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupValidationServiceJobControllerTest.java
+@@ -71,7 +71,7 @@
+ 
+     @Test
+     public void searchAndDispatchJobsTestLockFailureReturnsEarly() {
+-        doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
++        dataCenterDaoMock = MockDataCenterDao.createMockDataCenterDao(dataCenterVoMock);
+         doReturn(false).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
+ 
+         backupValidationServiceJobControllerSpy.searchAndDispatchJobs();
+@@ -83,7 +83,7 @@
+ 
+     @Test
+     public void searchAndDispatchJobsTestTaskDisabledReturnsAfterReschedule() {
+-        doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
++        dataCenterDaoMock = MockDataCenterDao.createMockDataCenterDao(dataCenterVoMock);
+         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
+         doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(false).when(backupValidationTaskEnabledMock).value();
+@@ -97,7 +97,7 @@
+ 
+     @Test
+     public void searchAndDispatchJobsTestZoneWithoutBackupFrameworkIsSkipped() {
+-        doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
++        dataCenterDaoMock = MockDataCenterDao.createMockDataCenterDao(dataCenterVoMock);
+         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
+         doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupValidationTaskEnabledMock).value();
+@@ -111,7 +111,7 @@
+ 
+     @Test
+     public void searchAndDispatchJobsTestEmptyWaitingJobsSkipsDispatch() {
+-        doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
++        dataCenterDaoMock = MockDataCenterDao.createMockDataCenterDao(dataCenterVoMock);
+         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
+         doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupValidationTaskEnabledMock).value();
+@@ -129,7 +129,7 @@
+     public void searchAndDispatchJobsTestHappyPathDispatchesJobs() {
+         Pair<HashMap<HostVO, Long>, Integer> executingJobsPair = new Pair<>(new HashMap<>(), 0);
+ 
+-        doReturn(List.of(dataCenterVoMock)).when(dataCenterDaoMock).listEnabledZones();
++        dataCenterDaoMock = MockDataCenterDao.createMockDataCenterDao(dataCenterVoMock);
+         doReturn(true).when(internalBackupServiceJobDaoMock).lockInLockTable("validation_lock", 300);
+         doNothing().when(backupValidationServiceJobControllerSpy).rescheduleLostJobs();
+         doReturn(true).when(backupValidationTaskEnabledMock).value();
+@@ -147,4 +147,19 @@
+         verify(backupValidationServiceJobControllerSpy).submitQueuedJobsForExecution(any(), any(), any(), any(), eq(datacenterId));
+         verify(internalBackupServiceJobDaoMock).unlockFromLockTable("validation_lock");
+     }
++
++    public final class MockDataCenterDao {
++        private MockDataCenterDao() {
++        }
++
++        public static com.cloud.dc.dao.DataCenterDao createMockDataCenterDao(
++                com.cloud.dc.DataCenterVO dataCenterVoMock) {
++            com.cloud.dc.dao.DataCenterDao dataCenterDaoMock =
++                    Mockito.mock(com.cloud.dc.dao.DataCenterDao.class);
++            doReturn(java.util.List.of(dataCenterVoMock))
++                    .when(dataCenterDaoMock)
++                    .listEnabledZones();
++            return dataCenterDaoMock;
++        }
++    }
+ }

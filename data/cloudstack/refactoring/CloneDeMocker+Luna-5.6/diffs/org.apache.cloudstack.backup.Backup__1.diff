@@ -1,0 +1,77 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -1057,7 +1057,6 @@
+     public void getDataDiskInfoListFromBackup() {
+         Long size1 = 5L * 1024 * 1024 * 1024;
+         Long size2 = 10L * 1024 * 1024 * 1024;
+-        Backup backup = mock(Backup.class);
+ 
+         Backup.VolumeInfo volumeInfo0 = mock(Backup.VolumeInfo.class);
+         when(volumeInfo0.getType()).thenReturn(Volume.Type.ROOT);
+@@ -1075,7 +1074,7 @@
+         when(volumeInfo2.getMaxIops()).thenReturn(400L);
+         when(volumeInfo2.getType()).thenReturn(Volume.Type.DATADISK);
+         when(volumeInfo2.getDeviceId()).thenReturn(2L);
+-        when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo0, volumeInfo1, volumeInfo2));
++        Backup backup = createMockBackup(List.of(volumeInfo0, volumeInfo1, volumeInfo2));
+ 
+         DiskOfferingVO diskOffering1 = mock(DiskOfferingVO.class);
+         when(diskOffering1.getUuid()).thenReturn("disk-offering-uuid-1");
+@@ -1107,7 +1106,6 @@
+     @Test
+     public void getDataDiskInfoListFromBackupNullIops() {
+         Long size = 5L * 1024 * 1024 * 1024;
+-        Backup backup = mock(Backup.class);
+         Backup.VolumeInfo volumeInfo1 = mock(Backup.VolumeInfo.class);
+         when(volumeInfo1.getDiskOfferingId()).thenReturn("disk-offering-uuid-1");
+         when(volumeInfo1.getSize()).thenReturn(size);
+@@ -1115,7 +1113,7 @@
+         when(volumeInfo1.getMaxIops()).thenReturn(null);
+         when(volumeInfo1.getType()).thenReturn(Volume.Type.DATADISK);
+         when(volumeInfo1.getDeviceId()).thenReturn(1L);
+-        when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo1));
++        Backup backup = createMockBackup(List.of(volumeInfo1));
+ 
+         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+         when(diskOffering.getUuid()).thenReturn("disk-offering-uuid-1");
+@@ -1137,12 +1135,11 @@
+     public void testCheckVmDisksSizeAgainstBackup() {
+         Long sizeInBackup = 5L * 1024 * 1024 * 1024;
+         Long sizeInCmd = 2L;
+-        Backup backup = mock(Backup.class);
+         Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+         when(volumeInfo.getDiskOfferingId()).thenReturn("disk-offering-uuid-1");
+         when(volumeInfo.getSize()).thenReturn(sizeInBackup);
+         when(volumeInfo.getType()).thenReturn(Volume.Type.DATADISK);
+-        when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo));
++        Backup backup = createMockBackup(List.of(volumeInfo));
+ 
+         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+         when(diskOffering.getState()).thenReturn(DiskOffering.State.Active);
+@@ -1155,12 +1152,11 @@
+     @Test
+     public void testGetRootDiskInfoFromBackup() {
+         Long size = 5L * 1024 * 1024 * 1024;
+-        Backup backup = mock(Backup.class);
+         Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+         when(volumeInfo.getDiskOfferingId()).thenReturn("root-disk-offering-uuid");
+         when(volumeInfo.getSize()).thenReturn(size);
+         when(volumeInfo.getType()).thenReturn(Volume.Type.ROOT);
+-        when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo));
++        Backup backup = createMockBackup(List.of(volumeInfo));
+ 
+         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+         when(diskOffering.getUuid()).thenReturn("root-disk-offering-uuid");
+@@ -2616,6 +2612,12 @@
+             assertTrue(result.first().stream().anyMatch(o -> o.getName().equals("Global Offering")));
+             assertTrue(result.first().stream().anyMatch(o -> o.getName().equals("User Domain Offering")));
+         }
++    }
++
++    private static Backup createMockBackup(List<Backup.VolumeInfo> backedUpVolumes) {
++        Backup backup = mock(Backup.class);
++        when(backup.getBackedUpVolumes()).thenReturn(backedUpVolumes);
++        return backup;
+     }
+ 
+     private BackupOfferingVO createMockOffering(Long id, String name) {
