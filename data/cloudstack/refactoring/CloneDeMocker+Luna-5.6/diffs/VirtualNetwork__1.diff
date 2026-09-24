@@ -1,0 +1,266 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -273,6 +273,7 @@
+     DataCenterDao dataCenterDao;
+     @Mock
+     IpAddressManager ipAddressManager;
++    private VirtualNetwork virtualNetworkMock;
+ 
+     TungstenServiceImpl tungstenService;
+ 
+@@ -281,6 +282,7 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
++        virtualNetworkMock = mock(VirtualNetwork.class);
+         tungstenService = new TungstenServiceImpl();
+         tungstenService.projectDao = projectDao;
+         tungstenService.tungstenProviderDao = tungstenProviderDao;
+@@ -384,7 +386,6 @@
+     @Test
+     public void createManagementNetworkTest() {
+         Network managementNetwork = mock(Network.class);
+-        VirtualNetwork managementVirtualNetwork = mock(VirtualNetwork.class);
+         VirtualNetwork fabricVirtualNetwork = mock(VirtualNetwork.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+         TungstenAnswer createTungstenNetworkAnswer = MockTungstenAnswerFactory.get(true);
+@@ -403,7 +404,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(createTungstenPolicyAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(applyTungstenPolicyAnswer);
+ 
+-        when(createTungstenNetworkAnswer.getApiObjectBase()).thenReturn(managementVirtualNetwork);
++        when(createTungstenNetworkAnswer.getApiObjectBase()).thenReturn(virtualNetworkMock);
+         when(createTungstenPolicyAnswer.getApiObjectBase()).thenReturn(networkPolicy);
+         when(getTungstenFabricNetworkAnswer.getApiObjectBase()).thenReturn(fabricVirtualNetwork);
+ 
+@@ -439,14 +440,13 @@
+         TungstenAnswer getTungstenFabricNetworkAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer deleteTungstenFabricPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer deleteTungstenNetworkAnswer = MockTungstenAnswerFactory.get(true);
+-        VirtualNetwork fabricVirtualNetwork = mock(VirtualNetwork.class);
+ 
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(),
+                 eq(Networks.TrafficType.Management))).thenReturn(managementNetwork);
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenFabricNetworkCommand.class), anyLong())).thenReturn(getTungstenFabricNetworkAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteTungstenFabricPolicyAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkCommand.class), anyLong())).thenReturn(deleteTungstenNetworkAnswer);
+-        when(getTungstenFabricNetworkAnswer.getApiObjectBase()).thenReturn(fabricVirtualNetwork);
++        when(getTungstenFabricNetworkAnswer.getApiObjectBase()).thenReturn(virtualNetworkMock);
+ 
+         assertTrue(tungstenService.deleteManagementNetwork(1L));
+     }
+@@ -931,7 +931,6 @@
+         TungstenAnswer listTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenNetworkPolicy tungstenNetworkPolicy = mock(TungstenNetworkPolicy.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+@@ -940,7 +939,7 @@
+         when(listTungstenPolicyAnswer.getTungstenModelList()).thenReturn(List.of(tungstenNetworkPolicy));
+         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
+         when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(
+-                List.of(virtualNetwork));
++                List.of(virtualNetworkMock));
+ 
+         assertNotNull(tungstenService.listTungstenPolicy(1L, 2L, 3L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
+@@ -948,13 +947,12 @@
+     @Test
+     public void listTungstenNetworkTest() {
+         TungstenAnswer listTungstenNetworkAnswer = MockTungstenAnswerFactory.get(true);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenNetworkCommand.class), anyLong())).thenReturn(listTungstenNetworkAnswer);
+-        doReturn(List.of(virtualNetwork)).when(listTungstenNetworkAnswer).getApiObjectBaseList();
+-        when((virtualNetwork.getName())).thenReturn("guestNetwork1");
++        doReturn(List.of(virtualNetworkMock)).when(listTungstenNetworkAnswer).getApiObjectBaseList();
++        when((virtualNetworkMock.getName())).thenReturn("guestNetwork1");
+ 
+         assertNotNull(tungstenService.listTungstenNetwork(1L, "948f421c-edde-4518-a391-09299cc25dc2", false));
+     }
+@@ -1057,14 +1055,13 @@
+         TungstenAnswer removeTungstenPolicyRuleAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenNetworkPolicy tungstenNetworkPolicy = mock(TungstenNetworkPolicy.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenPolicyRuleCommand.class), anyLong())).thenReturn(removeTungstenPolicyRuleAnswer);
+         when(removeTungstenPolicyRuleAnswer.getTungstenModel()).thenReturn(tungstenNetworkPolicy);
+         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
+-        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
++        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(List.of(virtualNetworkMock));
+ 
+         assertNotNull(tungstenService.removeTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
+     }
+@@ -1074,7 +1071,6 @@
+         TungstenAnswer createTungstenTagAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenTag tungstenTag = mock(TungstenTag.class);
+         Tag tag = mock(Tag.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         VirtualMachine virtualMachine = mock(VirtualMachine.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+@@ -1084,7 +1080,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenTagCommand.class), anyLong())).thenReturn(createTungstenTagAnswer);
+         when(createTungstenTagAnswer.getTungstenModel()).thenReturn(tungstenTag);
+         when(tungstenTag.getTag()).thenReturn(tag);
+-        doReturn(List.of(virtualNetwork)).when(tungstenTag).getVirtualNetworkList();
++        doReturn(List.of(virtualNetworkMock)).when(tungstenTag).getVirtualNetworkList();
+         doReturn(List.of(virtualMachine)).when(tungstenTag).getVirtualMachineList();
+         doReturn(List.of(virtualMachineInterface)).when(tungstenTag).getVirtualMachineInterfaceList();
+         doReturn(List.of(networkPolicy)).when(tungstenTag).getNetworkPolicyList();
+@@ -1110,7 +1106,6 @@
+         TungstenAnswer listTungstenTagAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenTag tungstenTag = mock(TungstenTag.class);
+         Tag tag = mock(Tag.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         VirtualMachine virtualMachine = mock(VirtualMachine.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+@@ -1121,7 +1116,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenTagCommand.class), anyLong())).thenReturn(listTungstenTagAnswer);
+         when(listTungstenTagAnswer.getTungstenModelList()).thenReturn(List.of(tungstenTag));
+         when(tungstenTag.getTag()).thenReturn(tag);
+-        doReturn(List.of(virtualNetwork)).when(tungstenTag).getVirtualNetworkList();
++        doReturn(List.of(virtualNetworkMock)).when(tungstenTag).getVirtualNetworkList();
+         doReturn(List.of(virtualMachine)).when(tungstenTag).getVirtualMachineList();
+         doReturn(List.of(virtualMachineInterface)).when(tungstenTag).getVirtualMachineInterfaceList();
+         doReturn(List.of(networkPolicy)).when(tungstenTag).getNetworkPolicyList();
+@@ -1167,14 +1162,13 @@
+         TungstenAnswer applyTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenNetworkPolicy tungstenNetworkPolicy = mock(TungstenNetworkPolicy.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(applyTungstenPolicyAnswer);
+         when(applyTungstenPolicyAnswer.getTungstenModel()).thenReturn(tungstenNetworkPolicy);
+         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
+-        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
++        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(List.of(virtualNetworkMock));
+ 
+         assertNotNull(tungstenService.applyTungstenPolicy(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85", 1, 1));
+     }
+@@ -1185,7 +1179,6 @@
+         TungstenTag tungstenTag = mock(TungstenTag.class);
+         Tag tag = mock(Tag.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         VirtualMachine virtualMachine = mock(VirtualMachine.class);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+@@ -1195,7 +1188,7 @@
+         when(applyTungstenTagAnswer.getTungstenModel()).thenReturn(tungstenTag);
+         when(tungstenTag.getTag()).thenReturn(tag);
+         when(tungstenTag.getNetworkPolicyList()).thenReturn(List.of(networkPolicy));
+-        when(tungstenTag.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
++        when(tungstenTag.getVirtualNetworkList()).thenReturn(List.of(virtualNetworkMock));
+         when(tungstenTag.getVirtualMachineList()).thenReturn(List.of(virtualMachine));
+         when(tungstenTag.getVirtualMachineInterfaceList()).thenReturn(List.of(virtualMachineInterface));
+ 
+@@ -1209,14 +1202,13 @@
+         TungstenAnswer removeTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenNetworkPolicy tungstenNetworkPolicy = mock(TungstenNetworkPolicy.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenPolicyCommand.class), anyLong())).thenReturn(removeTungstenPolicyAnswer);
+         when(removeTungstenPolicyAnswer.getTungstenModel()).thenReturn(tungstenNetworkPolicy);
+         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
+-        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
++        when(tungstenNetworkPolicy.getVirtualNetworkList()).thenReturn(List.of(virtualNetworkMock));
+ 
+         assertNotNull(tungstenService.removeTungstenPolicy(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
+     }
+@@ -1227,7 +1219,6 @@
+         TungstenTag tungstenTag = mock(TungstenTag.class);
+         Tag tag = mock(Tag.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         VirtualMachine virtualMachine = mock(VirtualMachine.class);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+@@ -1237,7 +1228,7 @@
+         when(removeTungstenTagAnswer.getTungstenModel()).thenReturn(tungstenTag);
+         when(tungstenTag.getTag()).thenReturn(tag);
+         when(tungstenTag.getNetworkPolicyList()).thenReturn(List.of(networkPolicy));
+-        when(tungstenTag.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
++        when(tungstenTag.getVirtualNetworkList()).thenReturn(List.of(virtualNetworkMock));
+         when(tungstenTag.getVirtualMachineList()).thenReturn(List.of(virtualMachine));
+         when(tungstenTag.getVirtualMachineInterfaceList()).thenReturn(List.of(virtualMachineInterface));
+ 
+@@ -1590,14 +1581,13 @@
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenRoutingLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
+         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
+-        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
++        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetworkMock));
+ 
+         assertNotNull(tungstenService.createRoutingLogicalRouter(1L, "default-domain:default-project", "testLR"));
+     }
+@@ -1608,7 +1598,6 @@
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+@@ -1617,7 +1606,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenNetworkGatewayToLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
+         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
+-        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
++        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetworkMock));
+ 
+         assertNotNull(tungstenService.addNetworkGatewayToLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
+     }
+@@ -1627,14 +1616,13 @@
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenRoutingLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+         when(tungstenAnswer.getTungstenModelList()).thenReturn(List.of(tungstenLogicalRouter));
+         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
+-        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
++        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetworkMock));
+ 
+         assertNotNull(tungstenService.listRoutingLogicalRouter(1L, null, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
+@@ -1646,7 +1634,6 @@
+         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
+         TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+-        VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+@@ -1655,7 +1642,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenNetworkGatewayFromLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
+         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
+-        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
++        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetworkMock));
+ 
+         assertNotNull(tungstenService.removeNetworkGatewayFromLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
+     }

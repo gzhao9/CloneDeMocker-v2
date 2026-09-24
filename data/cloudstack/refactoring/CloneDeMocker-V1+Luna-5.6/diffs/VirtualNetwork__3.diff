@@ -1,0 +1,122 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
+@@ -181,6 +181,8 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class TungstenResourceTest {
+     @Mock
++    private VirtualNetwork virtualNetwork2;
++    @Mock
+     TungstenApi tungstenApi;
+ 
+     TungstenResource tungstenResource;
+@@ -555,7 +557,6 @@
+             "b604c7f7-1dbc-42d8-bceb-2c0898034a7a", 1, 1);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         List<VirtualNetwork> virtualNetworkList = Arrays.asList(virtualNetwork1, virtualNetwork2);
+ 
+         when(networkPolicy.getUuid()).thenReturn("ac617be6-bf80-4086-9d6a-c05ff78e2264");
+@@ -909,7 +910,6 @@
+     public void executeRequestCreateTungstenPolicyCommandTest() {
+         TungstenCommand command = new CreateTungstenPolicyCommand("name", "projectFqn");
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         List<VirtualNetwork> virtualNetworks = Arrays.asList(virtualNetwork1, virtualNetwork2);
+         when(tungstenApi.createTungstenPolicy(anyString(), anyString(), anyString())).thenReturn(new NetworkPolicy());
+         when(tungstenApi.getNetworksFromNetworkPolicy(any(NetworkPolicy.class))).thenReturn(virtualNetworks);
+@@ -934,7 +934,6 @@
+         TungstenCommand command = new RemoveTungstenPolicyRuleCommand("accdbdc0-0fe1-11ec-82a8-0242ac130003",
+                 "b1e71054-0fe1-11ec-82a8-0242ac130003");
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         List<VirtualNetwork> virtualNetworks = Arrays.asList(virtualNetwork1, virtualNetwork2);
+         when(tungstenApi.removeTungstenNetworkPolicyRule(anyString(), anyString())).thenReturn(new NetworkPolicy());
+         when(tungstenApi.getNetworksFromNetworkPolicy(any(NetworkPolicy.class))).thenReturn(virtualNetworks);
+@@ -956,10 +955,8 @@
+         TungstenCommand command = new ListTungstenPolicyCommand("projectFqn", "2e51abf8-1097-11ec-82a8-0242ac130003",
+                 null, null);
+         NetworkPolicy networkPolicy1 = mock(NetworkPolicy.class);
+-        NetworkPolicy networkPolicy2 = mock(NetworkPolicy.class);
+         Answer<List<ApiObjectBase>> networkPoliciesAnswer = setupApiObjectBaseListAnswer(networkPolicy1, networkPolicy2);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         List<VirtualNetwork> virtualNetworks = Arrays.asList(virtualNetwork1, virtualNetwork2);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+@@ -978,7 +975,6 @@
+     public void executeRequestListTungstenNetworkCommandTest() {
+         TungstenCommand command = new ListTungstenNetworkCommand("projectFqn", "2e51abf8-1097-11ec-82a8-0242ac130003");
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+         when(tungstenApi.listTungstenNetwork(anyString(), anyString())).thenAnswer(virtualNetworksAnswer);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+@@ -1012,7 +1008,7 @@
+         TungstenCommand command = new CreateTungstenTagCommand("tagType", "tagValue");
+         Tag tag = mock(Tag.class);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
++        // removed local mock; replaced with global field `virtualNetwork2`
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+         VirtualMachine virtualMachine1 = mock(VirtualMachine.class);
+         VirtualMachine virtualMachine2 = mock(VirtualMachine.class);
+@@ -1107,7 +1103,6 @@
+             null, "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652");
+         Tag tag = mock(Tag.class);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+         VirtualMachine virtualMachine1 = mock(VirtualMachine.class);
+         VirtualMachine virtualMachine2 = mock(VirtualMachine.class);
+@@ -1139,7 +1134,7 @@
+                 "caa4d57a-10a6-11ec-82a8-0242ac130003");
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
++        // removed local mock; replaced with global field `virtualNetwork2`
+         List<VirtualNetwork> virtualNetworks = Arrays.asList(virtualNetwork1, virtualNetwork2);
+         when(tungstenApi.removeTungstenPolicy(anyString(), anyString())).thenReturn(networkPolicy);
+         when(tungstenApi.getNetworksFromNetworkPolicy(any(NetworkPolicy.class))).thenReturn(virtualNetworks);
+@@ -1158,7 +1153,6 @@
+             "caa4d57a-10a6-11ec-82a8-0242ac130003");
+         Tag tag = mock(Tag.class);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+         VirtualMachine virtualMachine1 = mock(VirtualMachine.class);
+         VirtualMachine virtualMachine2 = mock(VirtualMachine.class);
+@@ -1373,7 +1367,7 @@
+         TungstenCommand command = new CreateTungstenRoutingLogicalRouterCommand("projectFqn", "logicalRouterName");
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
++        // removed local mock; replaced with global field `virtualNetwork2`
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+         when(tungstenApi.createRoutingLogicalRouter(anyString(), anyString(), anyString())).thenReturn(logicalRouter);
+         when(tungstenApi.listConnectedNetworkFromLogicalRouter(any(LogicalRouter.class))).thenAnswer(virtualNetworksAnswer);
+@@ -1388,7 +1382,7 @@
+                 "439a7efc-113e-11ec-82a8-0242ac130003", "10.0.0.0");
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
++        // removed local mock; replaced with global field `virtualNetwork2`
+         Answer<List<ApiObjectBase>> virtualNetworksAnswer = setupApiObjectBaseListAnswer(virtualNetwork1, virtualNetwork2);
+         when(tungstenApi.addNetworkGatewayToLogicalRouter(anyString(), anyString(), anyString())).thenReturn(logicalRouter);
+         when(tungstenApi.listConnectedNetworkFromLogicalRouter(any(LogicalRouter.class))).thenAnswer(virtualNetworksAnswer);
+@@ -1403,7 +1397,6 @@
+                 "439a7efc-113e-11ec-82a8-0242ac130003");
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         List<VirtualNetwork> virtualNetworks = Arrays.asList(virtualNetwork1, virtualNetwork2);
+         when(tungstenApi.removeNetworkGatewayFromLogicalRouter(anyString(), anyString())).thenReturn(logicalRouter);
+         when(tungstenApi.listConnectedNetworkFromLogicalRouter(any(LogicalRouter.class))).thenReturn(virtualNetworks);
+@@ -1419,7 +1412,6 @@
+         LogicalRouter logicalRouter2 = mock(LogicalRouter.class);
+         Answer<List<ApiObjectBase>> logicalRoutersAnswer = setupApiObjectBaseListAnswer(logicalRouter1, logicalRouter2);
+         VirtualNetwork virtualNetwork1 = mock(VirtualNetwork.class);
+-        VirtualNetwork virtualNetwork2 = mock(VirtualNetwork.class);
+         List<VirtualNetwork> virtualNetworks = Arrays.asList(virtualNetwork1, virtualNetwork2);
+         when(tungstenApi.listRoutingLogicalRouter(anyString())).thenAnswer(logicalRoutersAnswer);
+         when(tungstenApi.listConnectedNetworkFromLogicalRouter(any(LogicalRouter.class))).thenReturn(virtualNetworks);

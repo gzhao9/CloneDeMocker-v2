@@ -1,0 +1,45 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -883,12 +883,10 @@
+ 
+     @Test
+     public void postStateTransitionEventWithVmStartedTest() {
+-        StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition = mock(StateMachine2.Transition.class);
+         VMInstanceVO vo = mock(VMInstanceVO.class);
+         Object opaque = mock(Object.class);
+ 
+-        when(transition.getCurrentState()).thenReturn(VirtualMachine.State.Starting);
+-        when(transition.getToState()).thenReturn(VirtualMachine.State.Running);
++        StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition = createMockTransition(VirtualMachine.State.Starting, VirtualMachine.State.Running);
+         when(tungstenService.addTungstenVmSecurityGroup(any(VMInstanceVO.class))).thenReturn(true);
+ 
+         assertTrue(tungstenElement.postStateTransitionEvent(transition, vo, true, opaque));
+@@ -896,12 +894,10 @@
+ 
+     @Test
+     public void postStateTransitionEventWithVmStopedTest() {
+-        StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition = mock(StateMachine2.Transition.class);
+         VMInstanceVO vo = mock(VMInstanceVO.class);
+         Object opaque = mock(Object.class);
+ 
+-        when(transition.getCurrentState()).thenReturn(VirtualMachine.State.Stopping);
+-        when(transition.getToState()).thenReturn(VirtualMachine.State.Stopped);
++        StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition = createMockTransition(VirtualMachine.State.Stopping, VirtualMachine.State.Stopped);
+         when(tungstenService.removeTungstenVmSecurityGroup(any(VMInstanceVO.class))).thenReturn(true);
+ 
+         assertTrue(tungstenElement.postStateTransitionEvent(transition, vo, true, opaque));
+@@ -962,4 +958,14 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    private static StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> createMockTransition(
++            VirtualMachine.State currentState,
++            VirtualMachine.State toState) {
++        StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition =
++                mock(StateMachine2.Transition.class);
++        when(transition.getCurrentState()).thenReturn(currentState);
++        when(transition.getToState()).thenReturn(toState);
++        return transition;
++    }
+ }
