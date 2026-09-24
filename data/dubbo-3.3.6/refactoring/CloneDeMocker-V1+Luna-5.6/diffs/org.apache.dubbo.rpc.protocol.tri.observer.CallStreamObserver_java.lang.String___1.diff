@@ -1,0 +1,76 @@
+--- a/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java
++++ b/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java
+@@ -16,6 +16,7 @@
+  */
+ package org.apache.dubbo.mutiny;
+ 
++import org.mockito.Mock;
+ import org.apache.dubbo.rpc.protocol.tri.observer.CallStreamObserver;
+ 
+ import java.util.concurrent.Flow;
+@@ -29,12 +30,13 @@
+  * Unit test for AbstractTripleMutinySubscriber
+  */
+ public class TripleMutinySubscriberTest {
++    @Mock
++    private CallStreamObserver<String> downstream;
+ 
+     @Test
+     void testSubscribeBindsDownstreamAndRequests() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream = Mockito.mock(CallStreamObserver.class);
+ 
+         subscriber.onSubscribe(subscription); // bind subscription
+         subscriber.subscribe(downstream); // bind downstream
+@@ -46,7 +48,7 @@
+     void testOnNextPassesItemAndRequestsNext() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream = Mockito.mock(CallStreamObserver.class);
++        // removed local mock; replaced with global field `downstream`
+ 
+         subscriber.onSubscribe(subscription);
+         subscriber.subscribe(downstream);
+@@ -61,7 +63,6 @@
+     void testOnErrorMarksDoneAndPropagates() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream = Mockito.mock(CallStreamObserver.class);
+         RuntimeException error = new RuntimeException("boom");
+ 
+         subscriber.onSubscribe(subscription);
+@@ -76,7 +77,6 @@
+     void testOnCompleteMarksDoneAndNotifies() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream = Mockito.mock(CallStreamObserver.class);
+ 
+         subscriber.onSubscribe(subscription);
+         subscriber.subscribe(downstream);
+@@ -102,15 +102,14 @@
+     void testSubscribeTwiceDoesNotRebind() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream1 = Mockito.mock(CallStreamObserver.class);
+         CallStreamObserver<String> downstream2 = Mockito.mock(CallStreamObserver.class);
+ 
+         subscriber.onSubscribe(subscription);
+-        subscriber.subscribe(downstream1);
++        subscriber.subscribe(downstream);
+         subscriber.subscribe(downstream2);
+ 
+         subscriber.onNext("test");
+-        Mockito.verify(downstream1).onNext("test");
++        Mockito.verify(downstream).onNext("test");
+         Mockito.verify(downstream2, Mockito.never()).onNext(Mockito.any());
+     }
+ 
+@@ -131,7 +130,6 @@
+     void testOnNextAfterDoneDoesNothing() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream = Mockito.mock(CallStreamObserver.class);
+ 
+         subscriber.onSubscribe(subscription);
+         subscriber.subscribe(downstream);
