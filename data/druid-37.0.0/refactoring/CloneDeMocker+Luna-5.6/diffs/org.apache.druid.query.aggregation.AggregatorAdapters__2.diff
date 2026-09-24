@@ -1,0 +1,60 @@
+--- a/processing/src/test/java/org/apache/druid/query/groupby/epinephelinae/HashVectorGrouperTest.java
++++ b/processing/src/test/java/org/apache/druid/query/groupby/epinephelinae/HashVectorGrouperTest.java
+@@ -30,22 +30,22 @@
+ 
+ public class HashVectorGrouperTest
+ {
++  private final AggregatorAdapters sharedAggregatorAdapters = Mockito.mock(AggregatorAdapters.class);
+   @Test
+   public void testCloseAggregatorAdaptorsShouldBeClosed()
+   {
+     final ByteBuffer buffer = ByteBuffer.wrap(new byte[4096]);
+-    final AggregatorAdapters aggregatorAdapters = Mockito.mock(AggregatorAdapters.class);
+     final HashVectorGrouper grouper = new HashVectorGrouper(
+         Suppliers.ofInstance(buffer),
+         1024,
+-        aggregatorAdapters,
++        sharedAggregatorAdapters,
+         Integer.MAX_VALUE,
+         0.f,
+         0
+     );
+     grouper.initVectorized(512);
+     grouper.close();
+-    Mockito.verify(aggregatorAdapters, Mockito.times(2)).reset();
++    Mockito.verify(sharedAggregatorAdapters, Mockito.times(2)).reset();
+   }
+ 
+   @Test
+@@ -56,11 +56,10 @@
+     final int bufferSize = 100 * 1024;
+     final WritableMemory keySpace = WritableMemory.allocate(keySize * maxVectorSize);
+     final ByteBuffer buffer = ByteBuffer.wrap(new byte[bufferSize]);
+-    final AggregatorAdapters aggregatorAdapters = Mockito.mock(AggregatorAdapters.class);
+-    final HashVectorGrouper grouper = new HashVectorGrouper(
+-        Suppliers.ofInstance(buffer),
+-        keySize,
+-        aggregatorAdapters,
++    final HashVectorGrouper grouper = new HashVectorGrouper(
++        Suppliers.ofInstance(buffer),
++        keySize,
++        sharedAggregatorAdapters,
+         8,
+         0.f,
+         4
+@@ -76,11 +75,10 @@
+     final int keySize = 10000;
+     final int bufferSize = 100 * 1024;
+     final ByteBuffer buffer = ByteBuffer.wrap(new byte[bufferSize]);
+-    final AggregatorAdapters aggregatorAdapters = Mockito.mock(AggregatorAdapters.class);
+-    final HashVectorGrouper grouper = new HashVectorGrouper(
+-        Suppliers.ofInstance(buffer),
+-        keySize,
+-        aggregatorAdapters,
++    final HashVectorGrouper grouper = new HashVectorGrouper(
++        Suppliers.ofInstance(buffer),
++        keySize,
++        sharedAggregatorAdapters,
+         4,
+         0.f,
+         4

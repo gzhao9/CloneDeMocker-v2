@@ -1,0 +1,85 @@
+--- a/processing/src/test/java/org/apache/druid/query/aggregation/any/DoubleAnyAggregatorFactoryTest.java
++++ b/processing/src/test/java/org/apache/druid/query/aggregation/any/DoubleAnyAggregatorFactoryTest.java
+@@ -80,7 +80,7 @@
+   @Test
+   public void factorizeVectorForNumericTypeShouldReturnDoubleVectorAggregator()
+   {
+-    Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
++    selectorFactory = createMockVectorColumnSelectorFactory(FIELD_NAME, capabilities, valueSelector);
+     Mockito.doReturn(true).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+@@ -90,7 +90,7 @@
+   @Test
+   public void factorizeVectorForStringTypeShouldReturnDoubleVectorAggregatorWithNilSelector()
+   {
+-    Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
++    selectorFactory = createMockVectorColumnSelectorFactory(FIELD_NAME, capabilities, valueSelector);
+     Mockito.doReturn(false).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+--- a/processing/src/test/java/org/apache/druid/query/aggregation/any/FloatAnyAggregatorFactoryTest.java
++++ b/processing/src/test/java/org/apache/druid/query/aggregation/any/FloatAnyAggregatorFactoryTest.java
+@@ -80,7 +80,7 @@
+   @Test
+   public void factorizeVectorForNumericTypeShouldReturnFloatVectorAggregator()
+   {
+-    Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
++    selectorFactory = createMockVectorColumnSelectorFactory(FIELD_NAME, capabilities, valueSelector);
+     Mockito.doReturn(true).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+@@ -90,7 +90,7 @@
+   @Test
+   public void factorizeVectorForStringTypeShouldReturnFloatVectorAggregatorWithNilSelector()
+   {
+-    Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
++    selectorFactory = createMockVectorColumnSelectorFactory(FIELD_NAME, capabilities, valueSelector);
+     Mockito.doReturn(false).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+--- a/processing/src/test/java/org/apache/druid/query/aggregation/any/LongAnyAggregatorFactoryTest.java
++++ b/processing/src/test/java/org/apache/druid/query/aggregation/any/LongAnyAggregatorFactoryTest.java
+@@ -80,7 +80,7 @@
+   @Test
+   public void factorizeVectorWithNumericColumnShouldReturnLongVectorAggregator()
+   {
+-    Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
++    selectorFactory = createMockVectorColumnSelectorFactory(FIELD_NAME, capabilities, valueSelector);
+     Mockito.doReturn(true).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+@@ -90,7 +90,7 @@
+   @Test
+   public void factorizeVectorForStringTypeShouldReturnLongVectorAggregatorWithNilSelector()
+   {
+-    Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
++    selectorFactory = createMockVectorColumnSelectorFactory(FIELD_NAME, capabilities, valueSelector);
+     Mockito.doReturn(false).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+--- a/processing/src/test/java/org/apache/druid/query/aggregation/any/MockVectorColumnSelectorFactory.java
++++ b/processing/src/test/java/org/apache/druid/query/aggregation/any/MockVectorColumnSelectorFactory.java
+@@ -0,0 +1,22 @@
++package org.apache.druid.query.aggregation.any;
++
++import org.apache.druid.segment.column.ColumnCapabilities;
++import org.apache.druid.segment.vector.VectorColumnSelectorFactory;
++import org.apache.druid.segment.vector.VectorValueSelector;
++import org.mockito.Mockito;
++
++public class MockVectorColumnSelectorFactory
++{
++  public static VectorColumnSelectorFactory createMockVectorColumnSelectorFactory(
++      String fieldName,
++      ColumnCapabilities capabilities,
++      VectorValueSelector valueSelector
++  )
++  {
++    VectorColumnSelectorFactory selectorFactory = Mockito.mock(VectorColumnSelectorFactory.class);
++    Mockito.doReturn(null).when(selectorFactory).getColumnCapabilities(fieldName);
++    Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(fieldName);
++    Mockito.doReturn(valueSelector).when(selectorFactory).makeValueSelector(fieldName);
++    return selectorFactory;
++  }
++}

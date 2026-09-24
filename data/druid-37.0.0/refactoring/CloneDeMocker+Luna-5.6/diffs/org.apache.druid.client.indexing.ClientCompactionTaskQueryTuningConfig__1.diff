@@ -1,0 +1,44 @@
+--- a/server/src/test/java/org/apache/druid/server/coordinator/duty/CompactSegmentsTest.java
++++ b/server/src/test/java/org/apache/druid/server/coordinator/duty/CompactSegmentsTest.java
+@@ -2038,10 +2038,8 @@
+     @Test
+     public void testIsParallelModeNonRangePartitionVaryingMaxNumConcurrentSubTasks()
+     {
+-      ClientCompactionTaskQueryTuningConfig tuningConfig = Mockito.mock(ClientCompactionTaskQueryTuningConfig.class);
+-      Mockito.when(tuningConfig.getPartitionsSpec()).thenReturn(Mockito.mock(PartitionsSpec.class));
+-
+-      Mockito.when(tuningConfig.getMaxNumConcurrentSubTasks()).thenReturn(null);
++      ClientCompactionTaskQueryTuningConfig tuningConfig = createMockClientCompactionTaskQueryTuningConfig(null);
++
+       Assert.assertFalse(CompactionSlotManager.isParallelMode(tuningConfig));
+ 
+       Mockito.when(tuningConfig.getMaxNumConcurrentSubTasks()).thenReturn(1);
+@@ -2070,9 +2068,7 @@
+     @Test
+     public void testFindMaxNumTaskSlotsUsedByOneCompactionTaskWhenIsParallelMode()
+     {
+-      ClientCompactionTaskQueryTuningConfig tuningConfig = Mockito.mock(ClientCompactionTaskQueryTuningConfig.class);
+-      Mockito.when(tuningConfig.getPartitionsSpec()).thenReturn(Mockito.mock(PartitionsSpec.class));
+-      Mockito.when(tuningConfig.getMaxNumConcurrentSubTasks()).thenReturn(2);
++      ClientCompactionTaskQueryTuningConfig tuningConfig = createMockClientCompactionTaskQueryTuningConfig(2);
+       Assert.assertEquals(3, CompactionSlotManager.getMaxTaskSlotsForNativeCompactionTask(tuningConfig));
+     }
+ 
+@@ -2084,6 +2080,17 @@
+       Mockito.when(tuningConfig.getMaxNumConcurrentSubTasks()).thenReturn(1);
+       Assert.assertEquals(1, CompactionSlotManager.getMaxTaskSlotsForNativeCompactionTask(tuningConfig));
+     }
++  }
++
++  private static ClientCompactionTaskQueryTuningConfig createMockClientCompactionTaskQueryTuningConfig(
++      Integer maxNumConcurrentSubTasks
++  )
++  {
++    final ClientCompactionTaskQueryTuningConfig tuningConfig =
++        Mockito.mock(ClientCompactionTaskQueryTuningConfig.class);
++    Mockito.when(tuningConfig.getMaxNumConcurrentSubTasks()).thenReturn(maxNumConcurrentSubTasks);
++    Mockito.when(tuningConfig.getPartitionsSpec()).thenReturn(Mockito.mock(PartitionsSpec.class));
++    return tuningConfig;
+   }
+ 
+   private static ArgumentCaptor<Object> setUpMockClient(final OverlordClient mockClient)
