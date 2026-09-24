@@ -1,0 +1,40 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/services/PkiResourceRouteHandlerTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/services/PkiResourceRouteHandlerTest.java
+@@ -48,12 +48,11 @@
+     @Test
+     public void testHandleReturnsCertificateDownload() throws Exception {
+         final PkiResourceRouteHandler handler = new PkiResourceRouteHandler();
+-        final CAManager caManager = mock(CAManager.class);
+         final MockHttpServletRequest request = new MockHttpServletRequest("GET", "/services/pki-resource");
+         final MockHttpServletResponse response = new MockHttpServletResponse();
+         final String certificate = "-----BEGIN CERTIFICATE-----\nveeam\n-----END CERTIFICATE-----\n";
++        final CAManager caManager = createMockCaManager(certificate);
+         handler.caManager = caManager;
+-        when(caManager.getCaCertificate(null)).thenReturn(certificate);
+ 
+         handler.handle(request, response, "/services/pki-resource", Negotiation.OutFormat.JSON,
+                 new VeeamControlServlet(Collections.emptyList()));
+@@ -98,11 +97,10 @@
+     @Test
+     public void testHandleRejectsEmptyCertificateData() throws Exception {
+         final PkiResourceRouteHandler handler = new PkiResourceRouteHandler();
+-        final CAManager caManager = mock(CAManager.class);
++        final CAManager caManager = createMockCaManager("");
+         final MockHttpServletRequest request = new MockHttpServletRequest("GET", "/services/pki-resource");
+         final MockHttpServletResponse response = new MockHttpServletResponse();
+         handler.caManager = caManager;
+-        when(caManager.getCaCertificate(null)).thenReturn("");
+ 
+         handler.handle(request, response, "/services/pki-resource", Negotiation.OutFormat.JSON,
+                 new VeeamControlServlet(Collections.emptyList()));
+@@ -124,4 +122,10 @@
+         assertEquals(404, response.getStatus());
+         assertTrue(response.getContentAsString().contains("\"reason\":\"Not found\""));
+     }
++
++    private static CAManager createMockCaManager(String certificate) {
++        final CAManager caManager = mock(CAManager.class);
++        when(caManager.getCaCertificate(null)).thenReturn(certificate);
++        return caManager;
++    }
+ }

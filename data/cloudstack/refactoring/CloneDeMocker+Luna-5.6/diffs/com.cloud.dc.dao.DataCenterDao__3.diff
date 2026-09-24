@@ -1,0 +1,97 @@
+--- a/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerImplTest.java
+@@ -223,7 +223,7 @@
+         Mockito.when(volumeVO.getDataCenterId()).thenReturn(1L);
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+         Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Edge);
+-        Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
++        dataCenterDao = createMockDataCenterDao(1L, zone);
+         snapshotManager.validatePolicyZones(List.of(1L), null, volumeVO, Mockito.mock(Account.class));
+     }
+ 
+@@ -233,7 +233,7 @@
+         Mockito.when(volumeVO.getDataCenterId()).thenReturn(1L);
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+         Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Core);
+-        Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
++        dataCenterDao = createMockDataCenterDao(1L, zone);
+         Mockito.when(dataCenterDao.findById(2L)).thenReturn(null);
+         snapshotManager.validatePolicyZones(List.of(2L), null, volumeVO, Mockito.mock(Account.class));
+     }
+@@ -244,7 +244,7 @@
+         Mockito.when(volumeVO.getDataCenterId()).thenReturn(1L);
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+         Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Core);
+-        Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
++        dataCenterDao = createMockDataCenterDao(1L, zone);
+         DataCenterVO zone1 = Mockito.mock(DataCenterVO.class);
+         Mockito.when(zone1.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
+         Mockito.when(dataCenterDao.findById(2L)).thenReturn(zone1);
+@@ -258,11 +258,11 @@
+         Mockito.when(volumeVO.getDataCenterId()).thenReturn(1L);
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+         Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Core);
+-        Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
+         DataCenterVO zone1 = Mockito.mock(DataCenterVO.class);
+         Mockito.when(zone1.getType()).thenReturn(DataCenter.Type.Edge);
+         Mockito.when(zone1.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+-        Mockito.when(dataCenterDao.findById(2L)).thenReturn(zone1);
++        dataCenterDao = createMockDataCenterDao(2L, zone1);
++        Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
+         snapshotManager.validatePolicyZones(List.of(2L), null, volumeVO, Mockito.mock(Account.class));
+     }
+ 
+@@ -272,7 +272,7 @@
+         Mockito.when(volumeVO.getDataCenterId()).thenReturn(1L);
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+         Mockito.when(zone.getType()).thenReturn(DataCenter.Type.Core);
+-        Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
++        dataCenterDao = createMockDataCenterDao(1L, zone);
+         DataCenterVO zone1 = Mockito.mock(DataCenterVO.class);
+         Mockito.when(zone1.getType()).thenReturn(DataCenter.Type.Core);
+         Mockito.when(zone1.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+@@ -297,7 +297,7 @@
+         final long destZoneId = 2L;
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+         Mockito.when(zone.getId()).thenReturn(destZoneId);
+-        Mockito.when(dataCenterDao.findById(destZoneId)).thenReturn(zone);
++        dataCenterDao = createMockDataCenterDao(destZoneId, zone);
+         SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+         Mockito.when(ref.getDataStoreId()).thenReturn(storeId);
+         Mockito.when(ref.getRole()).thenReturn(DataStoreRole.Image);
+@@ -427,7 +427,7 @@
+         DataCenterVO dataCenterVO = Mockito.mock(DataCenterVO.class);
+         Mockito.when(dataCenterVO.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+         Mockito.when(dataCenterVO.getType()).thenReturn(DataCenter.Type.Core);
+-        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(dataCenterVO);
++        dataCenterDao = createMockDataCenterDao(zoneId, dataCenterVO);
+         Assert.assertNotNull(snapshotManager.getCheckedDestinationZoneForSnapshotCopy(zoneId, false));
+     }
+ 
+--- a/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerTest.java
++++ b/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerTest.java
+@@ -543,7 +543,7 @@
+         }
+         DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+         Mockito.when(dc.getType()).thenReturn(dcType);
+-        Mockito.when(dataCenterDao.findById(1L)).thenReturn(dc);
++        dataCenterDao = createMockDataCenterDao(1L, dc);
+     }
+     @Test
+     public void testIsBackupSnapshotToSecondaryForCoreZoneNullConfig() {
+--- a/server/src/test/java/com/cloud/storage/snapshot/MockDataCenterDaoWithFindById.java
++++ b/server/src/test/java/com/cloud/storage/snapshot/MockDataCenterDaoWithFindById.java
+@@ -0,0 +1,13 @@
++package com.cloud.storage.snapshot;
++
++import com.cloud.dc.DataCenterVO;
++import com.cloud.dc.dao.DataCenterDao;
++import org.mockito.Mockito;
++
++public class MockDataCenterDaoWithFindById {
++    public static DataCenterDao createMockDataCenterDao(long zoneId, DataCenterVO dataCenterVO) {
++        DataCenterDao dataCenterDao = Mockito.mock(DataCenterDao.class);
++        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(dataCenterVO);
++        return dataCenterDao;
++    }
++}

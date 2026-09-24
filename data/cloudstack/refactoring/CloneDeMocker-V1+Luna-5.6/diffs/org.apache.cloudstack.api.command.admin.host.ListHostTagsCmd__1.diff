@@ -1,0 +1,38 @@
+--- a/server/src/test/java/com/cloud/api/query/QueryManagerImplTest.java
++++ b/server/src/test/java/com/cloud/api/query/QueryManagerImplTest.java
+@@ -124,6 +124,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class QueryManagerImplTest {
++    @Mock
++    private ListHostTagsCmd cmd;
+     public static final long USER_ID = 1;
+     public static final long ACCOUNT_ID = 1;
+ 
+@@ -692,7 +694,6 @@
+     @Test
+     public void searchForHostTagsRootAdminSkipsDedicationFiltering() {
+         Mockito.when(accountManager.isRootAdmin(account.getId())).thenReturn(true);
+-        ListHostTagsCmd cmd = Mockito.mock(ListHostTagsCmd.class);
+         setupHostTagSearchBuilder(new Pair<>(new ArrayList<>(), 0));
+ 
+         try (MockedStatic<ViewResponseHelper> ignored = Mockito.mockStatic(ViewResponseHelper.class)) {
+@@ -714,7 +715,6 @@
+         Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+         Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+         Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(new ArrayList<>());
+-        ListHostTagsCmd cmd = Mockito.mock(ListHostTagsCmd.class);
+         setupHostTagSearchBuilder(null);
+ 
+         try (MockedStatic<ViewResponseHelper> ignored = Mockito.mockStatic(ViewResponseHelper.class)) {
+@@ -736,8 +736,8 @@
+         Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+         Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(
+                 List.of(new DedicatedResourceVO(null, null, null, 10L, 5L, null, 1L)));
+-        ListHostTagsCmd cmd = Mockito.mock(ListHostTagsCmd.class);
+-
++
++        // removed local mock; replaced with global field `cmd`
+         HostTagVO tagVO = Mockito.mock(HostTagVO.class);
+         Mockito.when(tagVO.getId()).thenReturn(1L);
+         SearchCriteria<HostTagVO> sc = setupHostTagSearchBuilder(new Pair<>(List.of(tagVO), 1));
