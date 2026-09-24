@@ -1,0 +1,32 @@
+--- a/api/src/test/java/org/apache/cloudstack/api/command/user/backup/ListBackupScheduleCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/user/backup/ListBackupScheduleCmdTest.java
+@@ -47,6 +47,9 @@
+     @Mock
+     private ResponseGenerator responseGenerator;
+ 
++    @Mock
++    private CallContext mockCallContext;
++
+     private ListBackupScheduleCmd cmd;
+ 
+     @Before
+@@ -67,7 +70,6 @@
+         Mockito.when(responseGenerator.createBackupScheduleResponse(schedule)).thenReturn(scheduleResponse);
+ 
+         Account mockAccount = Mockito.mock(Account.class);
+-        CallContext callContext = Mockito.mock(CallContext.class);
+         try (org.mockito.MockedStatic<CallContext> mocked = Mockito.mockStatic(CallContext.class)) {
+             cmd.execute();
+         }
+@@ -81,10 +83,9 @@
+     @Test
+     public void testExecuteWithNoSchedules() {
+         Mockito.when(backupManager.listBackupSchedules(cmd)).thenReturn(new ArrayList<>());
+-        CallContext callContext = Mockito.mock(CallContext.class);
+ 
+         try (org.mockito.MockedStatic<CallContext> mocked = Mockito.mockStatic(CallContext.class)) {
+-            mocked.when(CallContext::current).thenReturn(callContext);
++            mocked.when(CallContext::current).thenReturn(mockCallContext);
+             cmd.execute();
+         } catch (ResourceUnavailableException | InsufficientCapacityException | ResourceAllocationException |
+                  NetworkRuleConflictException e) {
