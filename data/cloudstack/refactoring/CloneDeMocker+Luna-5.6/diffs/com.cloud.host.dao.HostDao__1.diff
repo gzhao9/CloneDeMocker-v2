@@ -1,0 +1,57 @@
+--- a/engine/storage/volume/src/test/java/org/apache/cloudstack/storage/volume/VolumeServiceTest.java
++++ b/engine/storage/volume/src/test/java/org/apache/cloudstack/storage/volume/VolumeServiceTest.java
+@@ -263,7 +263,7 @@
+         hostIds.add(1L);
+         Mockito.when(storageManagerMock.getUpHostsInPool(1L)).thenReturn(hostIds);
+         Mockito.when(hostMock.getId()).thenReturn(1L);
+-        Mockito.when(hostDaoMock.findById(1L)).thenReturn(hostMock);
++        hostDaoMock = createMockHostDao(1L, hostMock);
+ 
+         CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(null);
+         Mockito.when(volume.getpayload()).thenReturn(payload);
+@@ -305,7 +305,7 @@
+         hostIds.add(1L);
+         Mockito.when(storageManagerMock.getUpHostsInPool(1L)).thenReturn(hostIds);
+         Mockito.when(hostMock.getId()).thenReturn(1L);
+-        Mockito.when(hostDaoMock.findById(1L)).thenReturn(hostMock);
++        hostDaoMock = createMockHostDao(1L, hostMock);
+ 
+         CheckAndRepairVolumePayload payload = new CheckAndRepairVolumePayload(null);
+         Mockito.when(volume.getpayload()).thenReturn(payload);
+--- a/server/src/test/java/org/apache/cloudstack/storage/volume/VolumeImportUnmanageManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/storage/volume/VolumeImportUnmanageManagerImplTest.java
+@@ -108,8 +108,7 @@
+     private AccountManager accountMgr;
+     @Mock
+     private AgentManager agentManager;
+-    @Mock
+-    private HostDao hostDao;
++        private HostDao hostDao = createMockHostDao(hostId, hostVO);
+     @Mock
+     private DiskOfferingDao diskOfferingDao;
+     @Mock
+@@ -205,7 +204,7 @@
+ 
+         when(hostVO.getHypervisorType()).thenReturn(hypervisorType);
+         when(hostVO.getId()).thenReturn(hostId);
+-        when(hostDao.findById(hostId)).thenReturn(hostVO);
++        hostDao = createMockHostDao(hostId, hostVO);
+ 
+         when(storagePoolHostVO.getLocalPath()).thenReturn(localPath);
+         when(storagePoolHostDao.findByPoolHost(poolId, hostId)).thenReturn(storagePoolHostVO);
+--- a/engine/storage/volume/src/test/java/org/apache/cloudstack/storage/volume/MockHostDao.java
++++ b/engine/storage/volume/src/test/java/org/apache/cloudstack/storage/volume/MockHostDao.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.storage.volume;
++
++import com.cloud.host.HostVO;
++import com.cloud.host.dao.HostDao;
++import org.mockito.Mockito;
++
++public class MockHostDao {
++    public static HostDao createMockHostDao(long hostId, HostVO host) {
++        HostDao hostDao = Mockito.mock(HostDao.class);
++        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
++        return hostDao;
++    }
++}
