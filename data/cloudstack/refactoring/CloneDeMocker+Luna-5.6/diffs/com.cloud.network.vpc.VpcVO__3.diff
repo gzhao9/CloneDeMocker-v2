@@ -1,0 +1,40 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxElementTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxElementTest.java
+@@ -239,14 +239,12 @@
+         2L, 5L, 6L, false, false);
+ 
+         NicVO nic = Mockito.mock(NicVO.class);
+-        VpcVO vpc = Mockito.mock(VpcVO.class);
++        VpcVO vpc = createMockVpcVO(1L, "vpc1");
+ 
+         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddress);
+         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vm);
+         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
+         when(vpcDao.findById(anyLong())).thenReturn(vpc);
+-        when(vpc.getId()).thenReturn(1L);
+-        when(vpc.getName()).thenReturn("vpc1");
+         when(nsxService.createStaticNatRule(anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyBoolean(), anyLong(), anyString(), anyString())).thenReturn(true);
+ 
+         assertTrue(nsxElement.applyStaticNats(networkVO, List.of(rule)));
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/MockVpcVO.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/MockVpcVO.java
+@@ -0,0 +1,19 @@
++package org.apache.cloudstack.service;
++
++import com.cloud.network.vpc.VpcVO;
++
++import static org.mockito.Mockito.when;
++
++import org.mockito.Mockito;
++
++public final class MockVpcVO {
++    private MockVpcVO() {
++    }
++
++    public static VpcVO createMockVpcVO(long vpcId, String vpcName) {
++        VpcVO vpc = Mockito.mock(VpcVO.class);
++        when(vpc.getId()).thenReturn(vpcId);
++        when(vpc.getName()).thenReturn(vpcName);
++        return vpc;
++    }
++}

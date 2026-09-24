@@ -1,0 +1,83 @@
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisPublicNetworkGuruTest.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisPublicNetworkGuruTest.java
+@@ -197,9 +197,10 @@
+         String vpcName = "test-vpc";
+         String vpcCidr = "172.20.10.1/28";
+         String networkName = "vpc-tier";
+-        Mockito.when(vpc.getAccountId()).thenReturn(accountId);
++        vpc = MockVpcVO.createMockVpcVO(accountId, domainId);
++        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpc);
++        Mockito.when(vpc.getId()).thenReturn(vpcId);
+         Mockito.when(vpc.getZoneId()).thenReturn(zoneId);
+-        Mockito.when(vpc.getDomainId()).thenReturn(domainId);
+         Mockito.when(vpc.getVpcOfferingId()).thenReturn(vpcOfferingId);
+         Mockito.when(vpc.getName()).thenReturn(vpcName);
+         Mockito.when(vpc.getCidr()).thenReturn(vpcCidr);
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxElementTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxElementTest.java
+@@ -374,12 +374,10 @@
+         LoadBalancingRule.LbDestination destination = new LoadBalancingRule.LbDestination(6443, 6443, "172.30.110.11", false);
+         LoadBalancingRule rule = new LoadBalancingRule(lb, List.of(destination), null, null, new Ip("10.1.13.10"), null, "TCP");
+ 
+-        VpcVO vpc = Mockito.mock(VpcVO.class);
++        VpcVO vpc = MockVpcVO.createMockVpcVO(5L, 2L);
+ 
+         IPAddressVO ipAddress = new IPAddressVO(new Ip("10.1.13.10"), 1L, 1L, 1L,false);
+         when(vpcDao.findById(anyLong())).thenReturn(vpc);
+-        when(vpc.getDomainId()).thenReturn(2L);
+-        when(vpc.getAccountId()).thenReturn(5L);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddress);
+         when(nsxService.createLbRule(any(NsxNetworkRule.class))).thenReturn(true);
+ 
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxServiceImplTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxServiceImplTest.java
+@@ -117,14 +117,14 @@
+ 
+     @Test
+     public void testUpdateVpcSourceNatIp() {
+-        VpcVO vpc = mock(VpcVO.class);
++
+         IpAddress ipAddress = mock(IpAddress.class);
+         Ip ip = Mockito.mock(Ip.class);
+         when(ip.addr()).thenReturn("10.1.10.10");
+         when(ipAddress.getAddress()).thenReturn(ip);
+         long vpcId = 1L;
+-        when(vpc.getAccountId()).thenReturn(accountId);
+-        when(vpc.getDomainId()).thenReturn(domainId);
++        VpcVO vpc = MockVpcVO.createMockVpcVO(accountId, domainId);
++
+         when(vpc.getZoneId()).thenReturn(zoneId);
+         when(vpc.getId()).thenReturn(vpcId);
+         NsxAnswer answer = mock(NsxAnswer.class);
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/MockVpcVO.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/MockVpcVO.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.service;
++
++import com.cloud.network.vpc.VpcVO;
++import org.mockito.Mockito;
++
++public class MockVpcVO {
++    public static VpcVO createMockVpcVO(long accountId, long domainId) {
++        VpcVO vpc = Mockito.mock(VpcVO.class);
++        Mockito.when(vpc.getAccountId()).thenReturn(accountId);
++        Mockito.when(vpc.getDomainId()).thenReturn(domainId);
++        return vpc;
++    }
++}
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/MockVpcVO.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/MockVpcVO.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.service;
++
++import com.cloud.network.vpc.VpcVO;
++import org.mockito.Mockito;
++
++public class MockVpcVO {
++    public static VpcVO createMockVpcVO(long accountId, long domainId) {
++        VpcVO vpc = Mockito.mock(VpcVO.class);
++        Mockito.when(vpc.getAccountId()).thenReturn(accountId);
++        Mockito.when(vpc.getDomainId()).thenReturn(domainId);
++        return vpc;
++    }
++}

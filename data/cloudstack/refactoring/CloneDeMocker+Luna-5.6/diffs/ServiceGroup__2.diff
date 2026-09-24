@@ -1,0 +1,47 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -1264,11 +1264,17 @@
+         assertNotNull(tungstenService.createTungstenAddressGroup(1L, "test", "192.168.100.0", 24));
+     }
+ 
++    private static ServiceGroup createMockServiceGroup(FirewallServiceGroupType firewallServiceGroupType) {
++        ServiceGroup serviceGroup = createMockServiceGroup(firewallServiceGroupType);
++        
++        return serviceGroup;
++    }
++
+     @Test
+     public void createTungstenServiceGroupTest() {
+         TungstenAnswer createTungstenServiceGroupAnswer = MockTungstenAnswerFactory.get(true);
+-        ServiceGroup serviceGroup = mock(ServiceGroup.class);
+         FirewallServiceGroupType firewallServiceGroupType = mock(FirewallServiceGroupType.class);
++        ServiceGroup serviceGroup = createMockServiceGroup(firewallServiceGroupType);
+         FirewallServiceType firewallServiceType = mock(FirewallServiceType.class);
+         PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+@@ -1276,7 +1282,6 @@
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenServiceGroupCommand.class), anyLong())).thenReturn(createTungstenServiceGroupAnswer);
+         when(createTungstenServiceGroupAnswer.getApiObjectBase()).thenReturn(serviceGroup);
+-        when(serviceGroup.getFirewallServiceList()).thenReturn(firewallServiceGroupType);
+         when(firewallServiceGroupType.getFirewallService()).thenReturn(List.of(firewallServiceType));
+         when(firewallServiceType.getDstPorts()).thenReturn(portType);
+ 
+@@ -1433,8 +1438,8 @@
+     @Test
+     public void listTungstenServiceGroupTest() {
+         TungstenAnswer listTungstenServiceGroupAnswer = MockTungstenAnswerFactory.get(true);
+-        ServiceGroup serviceGroup = mock(ServiceGroup.class);
+         FirewallServiceGroupType firewallServiceGroupType = mock(FirewallServiceGroupType.class);
++        ServiceGroup serviceGroup = createMockServiceGroup(firewallServiceGroupType);
+         FirewallServiceType firewallServiceType = mock(FirewallServiceType.class);
+         PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+@@ -1442,7 +1447,6 @@
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenServiceGroupCommand.class), anyLong())).thenReturn(listTungstenServiceGroupAnswer);
+         doReturn(List.of(serviceGroup)).when(listTungstenServiceGroupAnswer).getApiObjectBaseList();
+-        when(serviceGroup.getFirewallServiceList()).thenReturn(firewallServiceGroupType);
+         when(firewallServiceGroupType.getFirewallService()).thenReturn(List.of(firewallServiceType));
+         when(firewallServiceType.getDstPorts()).thenReturn(portType);
+ 

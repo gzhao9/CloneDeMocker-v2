@@ -1,0 +1,77 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/vrouter/VRouterApiConnectorImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/vrouter/VRouterApiConnectorImplTest.java
+@@ -42,6 +42,7 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class VRouterApiConnectorImplTest {
+     VRouterApiConnector vRouterApiConnector;
++    private Port portMock;
+ 
+     MockedStatic<EntityUtils> entityUtilsMocked;
+ 
+@@ -49,6 +50,7 @@
+ 
+     @Before
+     public void setup() {
++        portMock = mock(Port.class);
+         VRouter vRouter = mock(VRouter.class);
+         vRouterApiConnector = new VRouterApiConnectorImpl(vRouter);
+         httpClientsMocked = Mockito.mockStatic(HttpClients.class);
+@@ -63,33 +65,30 @@
+ 
+     @Test
+     public void addPortTest() throws Exception {
+-        Port port = mock(Port.class);
+-        CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+-        CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
+-        HttpEntity httpEntity = mock(HttpEntity.class);
+-
+-        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
+-        when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
+-        when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
+-        entityUtilsMocked.when(()-> EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
+-
+-        assertTrue(vRouterApiConnector.addPort(port));
++        CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
++        CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
++        HttpEntity httpEntity = mock(HttpEntity.class);
++
++        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
++        when(httpClient.execute(any(HttpUriRequest.class))).thenReturn(closeableHttpResponse);
++        when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
++        entityUtilsMocked.when(()-> EntityUtils.toString(any(HttpEntity.class))).thenReturn("{}");
++
++        assertTrue(vRouterApiConnector.addPort(portMock));
+     }
+ 
+     @Test
+     public void addPortWithExceptionTest() throws Exception {
+-        Port port = mock(Port.class);
+-        CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+-
+-        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
+-        when(httpClient.execute(any(HttpUriRequest.class))).thenThrow(IOException.class);
+-
+-        assertFalse(vRouterApiConnector.addPort(port));
++        CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
++
++        httpClientsMocked.when(HttpClients::createDefault).thenReturn(httpClient);
++        when(httpClient.execute(any(HttpUriRequest.class))).thenThrow(IOException.class);
++
++        assertFalse(vRouterApiConnector.addPort(portMock));
+     }
+ 
+     @Test
+     public void addPortWithFailTest() throws Exception {
+-        Port port = mock(Port.class);
+         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
+         CloseableHttpResponse closeableHttpResponse = mock(CloseableHttpResponse.class);
+         HttpEntity httpEntity = mock(HttpEntity.class);
+@@ -99,7 +98,7 @@
+         when(closeableHttpResponse.getEntity()).thenReturn(httpEntity);
+         entityUtilsMocked.when(()-> EntityUtils.toString(any(HttpEntity.class))).thenReturn("{error:404}");
+ 
+-        assertFalse(vRouterApiConnector.addPort(port));
++        assertFalse(vRouterApiConnector.addPort(portMock));
+     }
+ 
+     @Test
