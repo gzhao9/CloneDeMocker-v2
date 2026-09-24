@@ -1,0 +1,36 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -160,6 +160,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class ExtensionsManagerImplTest {
++    @Mock
++    private ManagementServerHostVO msHost;
+ 
+     @Spy
+     @InjectMocks
+@@ -256,7 +258,6 @@
+         Extension ext = mock(Extension.class);
+         Answer[] answers = new Answer[]{new Answer(mock(PrepareExtensionPathCommand.class), true, "ok")};
+         String json = GsonHelper.getGson().toJson(answers);
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+         Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, msHost, "op");
+         assertTrue(result.first());
+         assertEquals("ok", result.second());
+@@ -267,7 +268,7 @@
+         Extension ext = mock(Extension.class);
+         Answer[] answers = new Answer[]{new Answer(mock(PrepareExtensionPathCommand.class), false, "fail")};
+         String json = GsonHelper.getGson().toJson(answers);
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
++        // removed local mock; replaced with global field `msHost`
+         Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, msHost, "op");
+         assertFalse(result.first());
+         assertEquals("fail", result.second());
+@@ -611,7 +612,6 @@
+         when(ext.getRelativePath()).thenReturn("entry.sh");
+         when(externalProvisioner.getChecksumForExtensionPath("ext", "entry.sh")).thenReturn("checksum123");
+         when(extensionDao.createForUpdate(anyLong())).thenReturn(ext);
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+         doReturn(new Pair<>(true, "checksum123")).when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, msHost);
+         extensionsManager.checkExtensionPathState(ext, Collections.singletonList(msHost));
+         verify(extensionsManager).updateExtensionPathReady(ext, true);

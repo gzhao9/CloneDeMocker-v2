@@ -1,0 +1,218 @@
+--- a/plugins/maintenance/src/test/java/org/apache/cloudstack/maintenance/ManagementServerMaintenanceManagerImplTest.java
++++ b/plugins/maintenance/src/test/java/org/apache/cloudstack/maintenance/ManagementServerMaintenanceManagerImplTest.java
+@@ -35,6 +35,7 @@
+ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+ import org.apache.cloudstack.management.ManagementServerHost;
+ import org.junit.Assert;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.mockito.InjectMocks;
+@@ -76,6 +77,13 @@
+     @Mock
+     ManagementServerHostDao msHostDao;
+ 
++    private ManagementServerHostVO msHost2Mock;
++
++    @Before
++    public void setUp() {
++        msHost2Mock = mock(ManagementServerHostVO.class);
++    }
++
+     private long prepareCountPendingJobs() {
+         long expectedCount = 1L;
+         Mockito.doReturn(expectedCount).when(jobManagerMock).countPendingNonPseudoJobs(1L);
+@@ -92,8 +100,7 @@
+     @Test
+     public void prepareForShutdown() {
+         Mockito.doNothing().when(jobManagerMock).disableAsyncJobs();
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+-        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
++        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost2Mock);
+         spy.prepareForShutdown();
+         Mockito.verify(jobManagerMock).disableAsyncJobs();
+ 
+@@ -120,8 +127,7 @@
+     public void triggerShutdown() {
+         Mockito.doNothing().when(jobManagerMock).disableAsyncJobs();
+         Mockito.lenient().when(spy.isShutdownTriggered()).thenReturn(false);
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+-        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
++        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost2Mock);
+         spy.triggerShutdown();
+         Mockito.verify(jobManagerMock).disableAsyncJobs();
+ 
+@@ -158,9 +164,8 @@
+     public void prepareForShutdownCmdOtherMsHostsInPreparingState() {
+         ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
+         Mockito.when(msHost1.getState()).thenReturn(ManagementServerHost.State.Up);
+-        ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
+-        List<ManagementServerHostVO> msHostList = new ArrayList<>();
+-        msHostList.add(msHost2);
++        List<ManagementServerHostVO> msHostList = new ArrayList<>();
++        msHostList.add(msHost2Mock);
+         Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+         PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+@@ -283,9 +288,8 @@
+     public void triggerShutdownCmdMsInUpStateAndOtherMsHostsInPreparingState() {
+         ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
+         Mockito.when(msHost1.getState()).thenReturn(ManagementServerHost.State.Up);
+-        ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
+-        List<ManagementServerHostVO> msHostList = new ArrayList<>();
+-        msHostList.add(msHost2);
++        List<ManagementServerHostVO> msHostList = new ArrayList<>();
++        msHostList.add(msHost2Mock);
+         Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+         TriggerShutdownCmd cmd = mock(TriggerShutdownCmd.class);
+@@ -312,8 +316,7 @@
+     @Test
+     public void prepareForMaintenanceAndCancelFromMaintenanceState() {
+         Mockito.doNothing().when(jobManagerMock).disableAsyncJobs();
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+-        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
++        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost2Mock);
+         spy.prepareForMaintenance("static", false);
+         Mockito.verify(jobManagerMock).disableAsyncJobs();
+ 
+@@ -329,8 +332,7 @@
+     @Test
+     public void prepareForMaintenanceAndCancelFromPreparingForMaintenanceState() {
+         Mockito.doNothing().when(jobManagerMock).disableAsyncJobs();
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+-        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
++        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost2Mock);
+         spy.prepareForMaintenance("static", false);
+         Mockito.verify(jobManagerMock).disableAsyncJobs();
+ 
+@@ -355,8 +357,7 @@
+ 
+     @Test
+     public void cancelPreparingForMaintenance() {
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+-        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost);
++        Mockito.when(msHostDao.findByMsid(anyLong())).thenReturn(msHost2Mock);
+ 
+         spy.cancelPreparingForMaintenance(null);
+         Mockito.verify(jobManagerMock).enableAsyncJobs();
+@@ -377,9 +378,8 @@
+ 
+     @Test
+     public void prepareForMaintenanceCmdOnlyOneMsHostsWithUpState() {
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+-        List<ManagementServerHostVO> msHostList = new ArrayList<>();
+-        msHostList.add(msHost);
++        List<ManagementServerHostVO> msHostList = new ArrayList<>();
++        msHostList.add(msHost2Mock);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+         PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
+         Mockito.when(cmd.getAlgorithm()).thenReturn("test algorithm");
+@@ -392,29 +392,27 @@
+ 
+     @Test
+     public void prepareForMaintenanceCmdNoMsHost() {
+-        ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
+         ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
+         List<ManagementServerHostVO> msHostList = new ArrayList<>();
++        msHostList.add(msHost2Mock);
++        msHostList.add(msHost2);
++        Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
++        Mockito.when(msHostDao.findById(1L)).thenReturn(null);
++        PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
++        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++
++        Assert.assertThrows(CloudRuntimeException.class, () -> {
++            spy.prepareForMaintenance(cmd);
++        });
++    }
++
++    @Test
++    public void prepareForMaintenanceCmdMsHostWithNonUpState() {
++        ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
++        Mockito.when(msHost1.getState()).thenReturn(ManagementServerHost.State.Maintenance);
++        List<ManagementServerHostVO> msHostList = new ArrayList<>();
+         msHostList.add(msHost1);
+-        msHostList.add(msHost2);
+-        Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+-        Mockito.when(msHostDao.findById(1L)).thenReturn(null);
+-        PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
+-
+-        Assert.assertThrows(CloudRuntimeException.class, () -> {
+-            spy.prepareForMaintenance(cmd);
+-        });
+-    }
+-
+-    @Test
+-    public void prepareForMaintenanceCmdMsHostWithNonUpState() {
+-        ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
+-        Mockito.when(msHost1.getState()).thenReturn(ManagementServerHost.State.Maintenance);
+-        ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
+-        List<ManagementServerHostVO> msHostList = new ArrayList<>();
+-        msHostList.add(msHost1);
+-        msHostList.add(msHost2);
++        msHostList.add(msHost2Mock);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+         PrepareForMaintenanceCmd cmd = mock(PrepareForMaintenanceCmd.class);
+@@ -429,10 +427,9 @@
+     public void prepareForMaintenanceCmdOtherMsHostsInPreparingState() {
+         ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
+         Mockito.when(msHost1.getState()).thenReturn(ManagementServerHost.State.Up);
+-        ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
+         List<ManagementServerHostVO> msHostList1 = new ArrayList<>();
+         msHostList1.add(msHost1);
+-        msHostList1.add(msHost2);
++        msHostList1.add(msHost2Mock);
+         ManagementServerHostVO msHost3 = mock(ManagementServerHostVO.class);
+         List<ManagementServerHostVO> msHostList2 = new ArrayList<>();
+         msHostList2.add(msHost3);
+@@ -451,10 +448,9 @@
+     public void prepareForMaintenanceCmdNoIndirectMsHosts() {
+         ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
+         Mockito.when(msHost1.getState()).thenReturn(ManagementServerHost.State.Up);
+-        ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
+         List<ManagementServerHostVO> msHostList = new ArrayList<>();
+         msHostList.add(msHost1);
+-        msHostList.add(msHost2);
++        msHostList.add(msHost2Mock);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.PreparingForMaintenance, ManagementServerHost.State.PreparingForShutDown)).thenReturn(new ArrayList<>());
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+@@ -473,10 +469,9 @@
+     public void prepareForMaintenanceCmdNullResponseFromClusterManager() {
+         ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
+         Mockito.when(msHost1.getState()).thenReturn(ManagementServerHost.State.Up);
+-        ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
+         List<ManagementServerHostVO> msHostList = new ArrayList<>();
+         msHostList.add(msHost1);
+-        msHostList.add(msHost2);
++        msHostList.add(msHost2Mock);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.PreparingForMaintenance, ManagementServerHost.State.PreparingForShutDown)).thenReturn(new ArrayList<>());
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+@@ -494,10 +489,9 @@
+     public void prepareForMaintenanceCmdFailedResponseFromClusterManager() {
+         ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
+         Mockito.when(msHost1.getState()).thenReturn(ManagementServerHost.State.Up);
+-        ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
+         List<ManagementServerHostVO> msHostList = new ArrayList<>();
+         msHostList.add(msHost1);
+-        msHostList.add(msHost2);
++        msHostList.add(msHost2Mock);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.PreparingForMaintenance, ManagementServerHost.State.PreparingForShutDown)).thenReturn(new ArrayList<>());
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+@@ -515,10 +509,9 @@
+     public void prepareForMaintenanceCmdSuccessResponseFromClusterManager() {
+         ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
+         Mockito.when(msHost1.getState()).thenReturn(ManagementServerHost.State.Up);
+-        ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
+         List<ManagementServerHostVO> msHostList = new ArrayList<>();
+         msHostList.add(msHost1);
+-        msHostList.add(msHost2);
++        msHostList.add(msHost2Mock);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.Up)).thenReturn(msHostList);
+         Mockito.when(msHostDao.listBy(ManagementServerHost.State.PreparingForMaintenance, ManagementServerHost.State.PreparingForShutDown)).thenReturn(new ArrayList<>());
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);

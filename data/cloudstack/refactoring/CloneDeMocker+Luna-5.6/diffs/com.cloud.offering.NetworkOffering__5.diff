@@ -1,0 +1,36 @@
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -126,6 +126,9 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class NetworkServiceImplTest {
+     @Mock
++    private NetworkOffering networkOfferingMock;
++
++    @Mock
+     Object job;
+     @Mock
+     Object _responseObject;
+@@ -924,8 +927,7 @@
+             Assert.fail(String.format("Unable to set network guestType, %s", e.getMessage()));
+         }
+         networkVO.setIp6Cidr("cidr");
+-        NetworkOffering offering = Mockito.mock(NetworkOffering.class);
+-        boolean updated = service.checkAndUpdateNetworkDns(networkVO, offering, "", null, "", null);
++        boolean updated = service.checkAndUpdateNetworkDns(networkVO, networkOfferingMock, "", null, "", null);
+         Assert.assertTrue(updated);
+         Assert.assertNull(networkVO.getDns1());
+         Assert.assertNull(networkVO.getDns2());
+@@ -1207,12 +1209,11 @@
+         ReflectionTestUtils.setField(createNetworkCmd, "physicalNetworkId", null);
+         NetworkVO networkVO = Mockito.spy(NetworkVO.class);
+         IpAddress ipAddress = Mockito.mock(IPAddressVO.class);
+-        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+         Long networkId = 7l;
+         when(networkVO.getId()).thenReturn(networkId);
+         when(networkVO.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         when(networkDao.findById(networkId)).thenReturn(networkVO);
+-        when(entityMgr.findById(NetworkOffering.class, networkOfferingId)).thenReturn(ntwkOff);
++        when(entityMgr.findById(NetworkOffering.class, networkOfferingId)).thenReturn(networkOfferingMock);
+         when(entityMgr.findById(eq(DataCenter.class), anyLong())).thenReturn(dc);
+         when(ipAddress.getId()).thenReturn(5l);
+         when(networkVO.getId()).thenReturn(networkId);

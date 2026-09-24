@@ -1,0 +1,64 @@
+--- a/server/src/test/java/com/cloud/network/vpn/Site2SiteVpnManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/vpn/Site2SiteVpnManagerImplTest.java
+@@ -210,9 +210,7 @@
+ 
+     @Test
+     public void testCreateVpnGatewaySuccess() {
+-        CreateVpnGatewayCmd cmd = mock(CreateVpnGatewayCmd.class);
+-        when(cmd.getVpcId()).thenReturn(VPC_ID);
+-        when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
++        CreateVpnGatewayCmd cmd = createMockCreateVpnGatewayCmd();
+         when(cmd.isDisplay()).thenReturn(true);
+ 
+         when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
+@@ -228,10 +226,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateVpnGatewayInvalidVpc() {
+-        CreateVpnGatewayCmd cmd = mock(CreateVpnGatewayCmd.class);
+-        when(cmd.getVpcId()).thenReturn(VPC_ID);
+-        when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+-
++
++        CreateVpnGatewayCmd cmd = createMockCreateVpnGatewayCmd();
+         when(_vpcDao.findById(VPC_ID)).thenReturn(null);
+ 
+         site2SiteVpnManager.createVpnGateway(cmd);
+@@ -239,10 +235,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateVpnGatewayAlreadyExists() {
+-        CreateVpnGatewayCmd cmd = mock(CreateVpnGatewayCmd.class);
+-        when(cmd.getVpcId()).thenReturn(VPC_ID);
+-        when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+-
++
++        CreateVpnGatewayCmd cmd = createMockCreateVpnGatewayCmd();
+         when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
+         when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(vpnGateway);
+ 
+@@ -251,10 +245,8 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testCreateVpnGatewayNoSourceNatIp() {
+-        CreateVpnGatewayCmd cmd = mock(CreateVpnGatewayCmd.class);
+-        when(cmd.getVpcId()).thenReturn(VPC_ID);
+-        when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+-
++
++        CreateVpnGatewayCmd cmd = createMockCreateVpnGatewayCmd();
+         when(_vpcDao.findById(VPC_ID)).thenReturn(vpc);
+         when(_vpnGatewayDao.findByVpcId(VPC_ID)).thenReturn(null);
+         when(_ipAddressDao.listByAssociatedVpc(VPC_ID, true)).thenReturn(new ArrayList<>());
+@@ -941,4 +933,11 @@
+         assertFalse("Should detect obsolete encryption in ESP policy", result.isEmpty());
+         assertEquals("Should detect obsolete encryption in ESP policy", "[3des]", result.toString());
+     }
++
++    private static CreateVpnGatewayCmd createMockCreateVpnGatewayCmd() {
++        CreateVpnGatewayCmd cmd = mock(CreateVpnGatewayCmd.class);
++        when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
++        when(cmd.getVpcId()).thenReturn(VPC_ID);
++        return cmd;
++    }
+ }

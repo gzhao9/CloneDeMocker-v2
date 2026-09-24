@@ -1,0 +1,114 @@
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -688,8 +688,7 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCheckAndUpdateNetworkDnsL2NetworkFailure() {
+         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+-        NetworkOffering offering = Mockito.mock(NetworkOffering.class);
+-        Mockito.when(offering.getGuestType()).thenReturn(Network.GuestType.L2);
++        NetworkOffering offering = createMockNetworkOffering(Network.GuestType.L2);
+         service.checkAndUpdateNetworkDns(networkVO, offering, ip4Dns[0], null, null, null);
+     }
+ 
+@@ -697,8 +696,7 @@
+     public void testCheckAndUpdateNetworkDnsVpcTierFailure() {
+         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+         Mockito.when(networkVO.getVpcId()).thenReturn(1L);
+-        NetworkOffering offering = Mockito.mock(NetworkOffering.class);
+-        Mockito.when(offering.getGuestType()).thenReturn(Network.GuestType.Shared);
++        NetworkOffering offering = createMockNetworkOffering(Network.GuestType.Shared);
+         service.checkAndUpdateNetworkDns(networkVO, offering, ip4Dns[0], null, null, null);
+     }
+ 
+@@ -707,9 +705,8 @@
+         NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+         Mockito.when(networkVO.getVpcId()).thenReturn(null);
+         Long offeringId = 1L;
+-        NetworkOffering offering = Mockito.mock(NetworkOffering.class);
++        NetworkOffering offering = createMockNetworkOffering(Network.GuestType.Shared);
+         Mockito.when(offering.getId()).thenReturn(offeringId);
+-        Mockito.when(offering.getGuestType()).thenReturn(Network.GuestType.Shared);
+         Mockito.when(networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(offeringId, Network.Service.Dns)).thenReturn(false);
+         service.checkAndUpdateNetworkDns(networkVO, offering, ip4Dns[0], null, null, null);
+     }
+@@ -1088,8 +1085,7 @@
+ 
+     @Test
+     public void validateNotSharedNetworkRouterIPv4() {
+-        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+-        when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.L2);
++        NetworkOffering ntwkOff = createMockNetworkOffering(Network.GuestType.L2);
+         service.validateSharedNetworkRouterIPs(null, null, null, null, null, null, null, null, null, ntwkOff);
+     }
+ 
+@@ -1101,8 +1097,7 @@
+         String routerPv6 = "fd17:ac56:1234:2000::fb";
+         String startIPv6 = "fd17:ac56:1234:2000::1";
+         String endIPv6 = "fd17:ac56:1234:2000::fc";
+-        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+-        when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.Shared);
++        NetworkOffering ntwkOff = createMockNetworkOffering(Network.GuestType.Shared);
+         service.validateSharedNetworkRouterIPs(IP4_GATEWAY, startIP, endIP, IP4_NETMASK, routerIPv4, routerPv6, startIPv6, endIPv6, IP6_CIDR, ntwkOff);
+     }
+ 
+@@ -1114,8 +1109,7 @@
+         String routerPv6 = "fd17:ac56:1234:2000::fb";
+         String startIPv6 = "fd17:ac56:1234:2000::1";
+         String endIPv6 = "fd17:ac56:1234:2000::fc";
+-        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+-        when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.Shared);
++        NetworkOffering ntwkOff = createMockNetworkOffering(Network.GuestType.Shared);
+         boolean passing = false;
+         try {
+             service.validateSharedNetworkRouterIPs(IP4_GATEWAY, startIP, endIP, IP4_NETMASK, routerIPv4, routerPv6, startIPv6, endIPv6, IP6_CIDR, ntwkOff);
+@@ -1134,17 +1128,15 @@
+         String routerPv6 = "fd17:ac56:1234:2000::1";
+         String startIPv6 = "fd17:ac56:1234:2000::1";
+         String endIPv6 = null;
+-        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+-        when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.Shared);
+         service.validateSharedNetworkRouterIPs(IP4_GATEWAY, startIP, endIP, IP4_NETMASK, routerIPv4, routerPv6, startIPv6, endIPv6, IP6_CIDR, ntwkOff);
++        NetworkOffering ntwkOff = createMockNetworkOffering(Network.GuestType.Shared);
+     }
+ 
+     @Test
+     public void validateSharedNetworkIPv6RouterNotInRange() {
+         String routerIPv4 = null;
+         String routerIPv6 = "fd17:ac56:1234:2001::1";
+-        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+-        when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.Shared);
++        NetworkOffering ntwkOff = createMockNetworkOffering(Network.GuestType.Shared);
+         boolean passing = true;
+         try {
+             service.validateSharedNetworkRouterIPs(IP4_GATEWAY, null, null, IP4_NETMASK, routerIPv4, routerIPv6, null, null, IP6_CIDR, ntwkOff);
+@@ -1158,8 +1150,7 @@
+     @Test
+     public void invalidateSharedNetworkIPv6RouterAddress() {
+         String routerIPv6 = "fd17:ac56:1234:2000::fg";
+-        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+-        when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.Shared);
++        NetworkOffering ntwkOff = createMockNetworkOffering(Network.GuestType.Shared);
+         boolean passing = false;
+         try {
+             service.validateSharedNetworkRouterIPs(IP4_GATEWAY, null, null, IP4_NETMASK, null, routerIPv6, null, null, IP6_CIDR, ntwkOff);
+@@ -1173,8 +1164,7 @@
+     @Test
+     public void invalidateSharedNetworkIPv4RouterAddress() {
+         String routerIPv4 = "10.100.1000.1";
+-        NetworkOffering ntwkOff = Mockito.mock(NetworkOffering.class);
+-        when(ntwkOff.getGuestType()).thenReturn(Network.GuestType.Shared);
++        NetworkOffering ntwkOff = createMockNetworkOffering(Network.GuestType.Shared);
+         boolean passing = false;
+         try {
+             service.validateSharedNetworkRouterIPs(IP4_GATEWAY, null, null, IP4_NETMASK, routerIPv4, null, null, null, IP6_CIDR, ntwkOff);
+@@ -1378,4 +1368,10 @@
+ 
+         Assert.assertFalse(service.getAndValidateSupportForKeepMacAddressOnPublicNicParameter(false, networkOfferingVO));
+     }
++
++    private static NetworkOffering createMockNetworkOffering(Network.GuestType guestType) {
++        NetworkOffering offering = Mockito.mock(NetworkOffering.class);
++        Mockito.when(offering.getGuestType()).thenReturn(guestType);
++        return offering;
++    }
+ }
