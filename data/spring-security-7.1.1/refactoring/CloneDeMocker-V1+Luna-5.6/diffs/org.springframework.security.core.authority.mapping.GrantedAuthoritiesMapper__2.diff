@@ -1,0 +1,66 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcAuthorizationCodeAuthenticationProviderTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcAuthorizationCodeAuthenticationProviderTests.java
+@@ -296,9 +296,7 @@
+ 		given(principal.getAuthorities()).willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> authorities);
+ 		given(this.userService.loadUser(any())).willReturn(principal);
+ 		List<GrantedAuthority> mappedAuthorities = AuthorityUtils.createAuthorityList("ROLE_OIDC_USER");
+-		GrantedAuthoritiesMapper authoritiesMapper = mock(GrantedAuthoritiesMapper.class);
+-		given(authoritiesMapper.mapAuthorities(anyCollection()))
+-			.willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> mappedAuthorities);
++		GrantedAuthoritiesMapper authoritiesMapper = MockGrantedAuthoritiesMapper.createGrantedAuthoritiesMapper(mappedAuthorities);
+ 		this.authenticationProvider.setAuthoritiesMapper(authoritiesMapper);
+ 		OAuth2LoginAuthenticationToken authentication = (OAuth2LoginAuthenticationToken) this.authenticationProvider
+ 			.authenticate(new OAuth2LoginAuthenticationToken(this.clientRegistration, this.authorizationExchange));
+@@ -351,4 +349,19 @@
+ 		// @formatter:on
+ 	}
+ 
++
++	public final class MockGrantedAuthoritiesMapper {
++
++		private MockGrantedAuthoritiesMapper() {
++		}
++
++		public static org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper createGrantedAuthoritiesMapper(
++				java.util.List<org.springframework.security.core.GrantedAuthority> mappedAuthorities) {
++			org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper authoritiesMapper =
++					mock(org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper.class);
++			given(authoritiesMapper.mapAuthorities(anyCollection()))
++					.willAnswer((Answer<java.util.List<org.springframework.security.core.GrantedAuthority>>) invocation -> mappedAuthorities);
++			return authoritiesMapper;
++		}
++	}
+ }
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcAuthorizationCodeReactiveAuthenticationManagerTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcAuthorizationCodeReactiveAuthenticationManagerTests.java
+@@ -353,9 +353,7 @@
+ 		ArgumentCaptor<OidcUserRequest> userRequestArgCaptor = ArgumentCaptor.forClass(OidcUserRequest.class);
+ 		given(this.userService.loadUser(userRequestArgCaptor.capture())).willReturn(Mono.just(user));
+ 		List<GrantedAuthority> mappedAuthorities = AuthorityUtils.createAuthorityList("ROLE_OIDC_USER");
+-		GrantedAuthoritiesMapper authoritiesMapper = mock(GrantedAuthoritiesMapper.class);
+-		given(authoritiesMapper.mapAuthorities(anyCollection()))
+-			.willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> mappedAuthorities);
++		GrantedAuthoritiesMapper authoritiesMapper = MockGrantedAuthoritiesMapper.createGrantedAuthoritiesMapper(mappedAuthorities);
+ 		given(this.jwtDecoder.decode(any())).willReturn(Mono.just(idToken));
+ 		this.manager.setJwtDecoderFactory((c) -> this.jwtDecoder);
+ 		this.manager.setAuthoritiesMapper(authoritiesMapper);
+@@ -393,4 +391,19 @@
+ 		return new OAuth2AuthorizationCodeAuthenticationToken(clientRegistration, authorizationExchange);
+ 	}
+ 
++
++	public final class MockGrantedAuthoritiesMapper {
++
++		private MockGrantedAuthoritiesMapper() {
++		}
++
++		public static org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper createGrantedAuthoritiesMapper(
++				java.util.List<org.springframework.security.core.GrantedAuthority> mappedAuthorities) {
++			org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper authoritiesMapper =
++					mock(org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper.class);
++			given(authoritiesMapper.mapAuthorities(anyCollection()))
++					.willAnswer((Answer<java.util.List<org.springframework.security.core.GrantedAuthority>>) invocation -> mappedAuthorities);
++			return authoritiesMapper;
++		}
++	}
+ }

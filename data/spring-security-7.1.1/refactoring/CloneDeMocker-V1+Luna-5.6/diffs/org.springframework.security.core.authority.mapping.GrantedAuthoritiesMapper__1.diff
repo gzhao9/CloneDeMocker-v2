@@ -1,0 +1,74 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/authentication/OAuth2LoginAuthenticationProviderTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/authentication/OAuth2LoginAuthenticationProviderTests.java
+@@ -186,9 +186,7 @@
+ 		given(principal.getAuthorities()).willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> authorities);
+ 		given(this.userService.loadUser(any())).willReturn(principal);
+ 		List<GrantedAuthority> mappedAuthorities = AuthorityUtils.createAuthorityList("ROLE_OAUTH2_USER");
+-		GrantedAuthoritiesMapper authoritiesMapper = mock(GrantedAuthoritiesMapper.class);
+-		given(authoritiesMapper.mapAuthorities(anyCollection()))
+-			.willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> mappedAuthorities);
++		GrantedAuthoritiesMapper authoritiesMapper = MockGrantedAuthoritiesMapper.createGrantedAuthoritiesMapper(mappedAuthorities);
+ 		this.authenticationProvider.setAuthoritiesMapper(authoritiesMapper);
+ 		OAuth2LoginAuthenticationToken authentication = (OAuth2LoginAuthenticationToken) this.authenticationProvider
+ 			.authenticate(new OAuth2LoginAuthenticationToken(this.clientRegistration, this.authorizationExchange));
+@@ -240,4 +238,23 @@
+ 		// @formatter:on
+ 	}
+ 
++
++	public final class MockGrantedAuthoritiesMapper {
++
++		private MockGrantedAuthoritiesMapper() {
++		}
++
++		public static org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper createGrantedAuthoritiesMapper(
++				java.util.List<org.springframework.security.core.GrantedAuthority> mappedAuthorities) {
++			org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper authoritiesMapper =
++					org.mockito.Mockito.mock(
++							org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper.class);
++
++			org.mockito.BDDMockito.given(authoritiesMapper.mapAuthorities(
++							org.mockito.ArgumentMatchers.anyCollection()))
++					.willAnswer((org.mockito.stubbing.Answer<java.util.List<org.springframework.security.core.GrantedAuthority>>) invocation -> mappedAuthorities);
++
++			return authoritiesMapper;
++		}
++	}
+ }
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/authentication/OAuth2LoginReactiveAuthenticationManagerTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/authentication/OAuth2LoginReactiveAuthenticationManagerTests.java
+@@ -196,9 +196,7 @@
+ 				Collections.singletonMap("user", "rob"), "user");
+ 		given(this.userService.loadUser(any())).willReturn(Mono.just(user));
+ 		List<GrantedAuthority> mappedAuthorities = AuthorityUtils.createAuthorityList("ROLE_OAUTH_USER");
+-		GrantedAuthoritiesMapper authoritiesMapper = mock(GrantedAuthoritiesMapper.class);
+-		given(authoritiesMapper.mapAuthorities(anyCollection()))
+-			.willAnswer((Answer<List<GrantedAuthority>>) (invocation) -> mappedAuthorities);
++		GrantedAuthoritiesMapper authoritiesMapper = MockGrantedAuthoritiesMapper.createGrantedAuthoritiesMapper(mappedAuthorities);
+ 		this.manager.setAuthoritiesMapper(authoritiesMapper);
+ 		OAuth2LoginAuthenticationToken result = (OAuth2LoginAuthenticationToken) this.manager.authenticate(loginToken())
+ 			.block();
+@@ -222,4 +220,23 @@
+ 		return new OAuth2AuthorizationCodeAuthenticationToken(clientRegistration, authorizationExchange);
+ 	}
+ 
++
++	public final class MockGrantedAuthoritiesMapper {
++
++		private MockGrantedAuthoritiesMapper() {
++		}
++
++		public static org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper createGrantedAuthoritiesMapper(
++				java.util.List<org.springframework.security.core.GrantedAuthority> mappedAuthorities) {
++			org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper authoritiesMapper =
++					org.mockito.Mockito.mock(
++							org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper.class);
++
++			org.mockito.BDDMockito.given(authoritiesMapper.mapAuthorities(
++							org.mockito.ArgumentMatchers.anyCollection()))
++					.willAnswer((org.mockito.stubbing.Answer<java.util.List<org.springframework.security.core.GrantedAuthority>>) invocation -> mappedAuthorities);
++
++			return authoritiesMapper;
++		}
++	}
+ }

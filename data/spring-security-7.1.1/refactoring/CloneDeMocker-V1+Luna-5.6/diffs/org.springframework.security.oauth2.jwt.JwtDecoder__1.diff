@@ -1,0 +1,40 @@
+--- a/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/SupplierJwtDecoderTests.java
++++ b/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/SupplierJwtDecoderTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.oauth2.jwt;
+ 
++import org.mockito.Mock;
+ import java.util.function.Supplier;
+ 
+ import org.junit.jupiter.api.Test;
+@@ -33,10 +34,11 @@
+  * @author Josh Cummings
+  */
+ public class SupplierJwtDecoderTests {
++	@Mock
++	private JwtDecoder jwtDecoder;
+ 
+ 	@Test
+ 	public void decodeWhenUninitializedThenSupplierInitializes() {
+-		JwtDecoder jwtDecoder = mock(JwtDecoder.class);
+ 		SupplierJwtDecoder supplierJwtDecoder = new SupplierJwtDecoder(() -> jwtDecoder);
+ 		supplierJwtDecoder.decode("token");
+ 		verify(jwtDecoder).decode("token");
+@@ -53,7 +55,7 @@
+ 
+ 	@Test
+ 	public void decodeWhenInitializedThenCaches() {
+-		JwtDecoder jwtDecoder = mock(JwtDecoder.class);
++		// removed local mock; replaced with global field `jwtDecoder`
+ 		Supplier<JwtDecoder> supplier = mock(Supplier.class);
+ 		given(supplier.get()).willReturn(jwtDecoder);
+ 		JwtDecoder supplierJwtDecoder = new SupplierJwtDecoder(supplier);
+@@ -65,7 +67,6 @@
+ 
+ 	@Test
+ 	public void decodeWhenInitializationInitiallyFailsThenRecoverable() {
+-		JwtDecoder jwtDecoder = mock(JwtDecoder.class);
+ 		Supplier<JwtDecoder> broken = mock(Supplier.class);
+ 		given(broken.get()).willThrow(RuntimeException.class);
+ 		JwtDecoder supplierJwtDecoder = new SupplierJwtDecoder(broken);

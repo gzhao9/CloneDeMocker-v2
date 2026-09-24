@@ -1,0 +1,65 @@
+--- a/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/SupplierJwtDecoderTests.java
++++ b/oauth2/oauth2-jose/src/test/java/org/springframework/security/oauth2/jwt/SupplierJwtDecoderTests.java
+@@ -18,6 +18,7 @@
+ 
+ import java.util.function.Supplier;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+@@ -34,12 +35,18 @@
+  */
+ public class SupplierJwtDecoderTests {
+ 
++	private JwtDecoder mockJwtDecoder;
++
++	@BeforeEach
++	public void setup() {
++		this.mockJwtDecoder = mock(JwtDecoder.class);
++	}
++
+ 	@Test
+ 	public void decodeWhenUninitializedThenSupplierInitializes() {
+-		JwtDecoder jwtDecoder = mock(JwtDecoder.class);
+-		SupplierJwtDecoder supplierJwtDecoder = new SupplierJwtDecoder(() -> jwtDecoder);
++		SupplierJwtDecoder supplierJwtDecoder = new SupplierJwtDecoder(() -> mockJwtDecoder);
+ 		supplierJwtDecoder.decode("token");
+-		verify(jwtDecoder).decode("token");
++		verify(mockJwtDecoder).decode("token");
+ 	}
+ 
+ 	@Test
+@@ -53,28 +60,26 @@
+ 
+ 	@Test
+ 	public void decodeWhenInitializedThenCaches() {
+-		JwtDecoder jwtDecoder = mock(JwtDecoder.class);
+ 		Supplier<JwtDecoder> supplier = mock(Supplier.class);
+-		given(supplier.get()).willReturn(jwtDecoder);
++		given(supplier.get()).willReturn(mockJwtDecoder);
+ 		JwtDecoder supplierJwtDecoder = new SupplierJwtDecoder(supplier);
+ 		supplierJwtDecoder.decode("token");
+ 		supplierJwtDecoder.decode("token");
+ 		verify(supplier, times(1)).get();
+-		verify(jwtDecoder, times(2)).decode("token");
++		verify(mockJwtDecoder, times(2)).decode("token");
+ 	}
+ 
+ 	@Test
+ 	public void decodeWhenInitializationInitiallyFailsThenRecoverable() {
+-		JwtDecoder jwtDecoder = mock(JwtDecoder.class);
+ 		Supplier<JwtDecoder> broken = mock(Supplier.class);
+ 		given(broken.get()).willThrow(RuntimeException.class);
+ 		JwtDecoder supplierJwtDecoder = new SupplierJwtDecoder(broken);
+ 		assertThatExceptionOfType(JwtDecoderInitializationException.class)
+ 			.isThrownBy(() -> supplierJwtDecoder.decode("token"));
+ 		reset(broken);
+-		given(broken.get()).willReturn(jwtDecoder);
++		given(broken.get()).willReturn(mockJwtDecoder);
+ 		supplierJwtDecoder.decode("token");
+-		verify(jwtDecoder).decode("token");
++		verify(mockJwtDecoder).decode("token");
+ 	}
+ 
+ }

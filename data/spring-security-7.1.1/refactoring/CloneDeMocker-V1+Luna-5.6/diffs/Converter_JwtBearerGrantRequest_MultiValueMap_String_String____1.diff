@@ -1,0 +1,90 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientJwtBearerTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientJwtBearerTokenResponseClientTests.java
+@@ -381,10 +381,9 @@
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		JwtBearerGrantRequest grantRequest = new JwtBearerGrantRequest(clientRegistration, this.jwtAssertion);
+-		Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> parametersConverter = MockParametersConverter.createMockParametersConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.setParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(parametersConverter).convert(grantRequest);
+@@ -399,10 +398,9 @@
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		Set<String> scopes = clientRegistration.getScopes();
+ 		JwtBearerGrantRequest grantRequest = new JwtBearerGrantRequest(clientRegistration, this.jwtAssertion);
+-		Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> parametersConverter = MockParametersConverter.createMockParametersConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.addParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(parametersConverter).convert(grantRequest);
+@@ -445,4 +443,18 @@
+ 		return "%s=%s".formatted(parameterName, URLEncoder.encode(parameterValue, StandardCharsets.UTF_8));
+ 	}
+ 
++
++	public final class MockParametersConverter {
++
++		private MockParametersConverter() {
++		}
++
++		public static Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> createMockParametersConverter(
++				JwtBearerGrantRequest request,
++				MultiValueMap<String, String> parameters) {
++			Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
++			given(parametersConverter.convert(request)).willReturn(parameters);
++			return parametersConverter;
++		}
++	}
+ }
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveJwtBearerTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveJwtBearerTokenResponseClientTests.java
+@@ -237,10 +237,9 @@
+ 	public void getTokenResponseWhenParametersConverterAddedThenCalled() throws Exception {
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		JwtBearerGrantRequest request = new JwtBearerGrantRequest(clientRegistration, this.jwtAssertion);
+-		Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> addedParametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(addedParametersConverter.convert(request)).willReturn(parameters);
++		Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> addedParametersConverter = MockParametersConverter.createMockParameters(request, parameters);
+ 		this.client.addParametersConverter(addedParametersConverter);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.client.getTokenResponse(request).block();
+@@ -255,10 +254,9 @@
+ 	public void getTokenResponseWhenParametersConverterSetThenCalled() throws Exception {
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		JwtBearerGrantRequest request = new JwtBearerGrantRequest(clientRegistration, this.jwtAssertion);
+-		Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(request)).willReturn(parameters);
++		Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> parametersConverter = MockParametersConverter.createMockParametersConverter(request, parameters);
+ 		this.client.setParametersConverter(parametersConverter);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.client.getTokenResponse(request).block();
+@@ -413,4 +411,18 @@
+ 		return "%s=%s".formatted(parameterName, URLEncoder.encode(parameterValue, StandardCharsets.UTF_8));
+ 	}
+ 
++
++	public final class MockParametersConverter {
++
++		private MockParametersConverter() {
++		}
++
++		public static Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> createMockParametersConverter(
++				JwtBearerGrantRequest request,
++				MultiValueMap<String, String> parameters) {
++			Converter<JwtBearerGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
++			given(parametersConverter.convert(request)).willReturn(parameters);
++			return parametersConverter;
++		}
++	}
+ }
