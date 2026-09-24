@@ -1,0 +1,80 @@
+--- a/processing/src/test/java/org/apache/druid/data/input/impl/CloudObjectInputSourceTest.java
++++ b/processing/src/test/java/org/apache/druid/data/input/impl/CloudObjectInputSourceTest.java
+@@ -19,6 +19,7 @@
+ 
+ package org.apache.druid.data.input.impl;
+ 
++import org.mockito.Mock;
+ import com.google.common.collect.Lists;
+ import org.apache.druid.data.input.InputEntity;
+ import org.apache.druid.data.input.InputSplit;
+@@ -44,6 +45,8 @@
+ 
+ public class CloudObjectInputSourceTest
+ {
++    @Mock
++    private CloudObjectInputSource inputSource;
+   private static final String SCHEME = "s3";
+ 
+   private static final List<URI> URIS = Collections.singletonList(
+@@ -75,11 +78,8 @@
+   @Test
+   public void testGetUris()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, URIS, null, null, null, SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
+-
++
++    // removed local mock; replaced with global field `inputSource`
+     Assert.assertEquals(
+         URIS,
+         inputSource.getUris()
+@@ -89,10 +89,6 @@
+   @Test
+   public void testGetPrefixes()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, null, PREFIXES, null, null, SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
+ 
+     Assert.assertEquals(
+         PREFIXES,
+@@ -103,30 +99,23 @@
+   @Test
+   public void testGetObjectGlob()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, URIS, null, null, "**.parquet", SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
+-
++
++    // removed local mock; replaced with global field `inputSource`
+     Assert.assertEquals("**.parquet", inputSource.getObjectGlob());
+   }
+ 
+   @Test
+   public void testInequality()
+   {
+-    CloudObjectInputSource inputSource1 = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, URIS, null, null, "**.parquet", SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
+ 
+     CloudObjectInputSource inputSource2 = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+         .useConstructor(SCHEME, URIS, null, null, "**.csv", SystemFields.none())
+         .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+     );
+ 
+-    Assert.assertEquals("**.parquet", inputSource1.getObjectGlob());
+-    Assert.assertEquals("**.csv", inputSource2.getObjectGlob());
+-    Assert.assertFalse(inputSource2.equals(inputSource1));
++    Assert.assertEquals("**.parquet", inputSource.getObjectGlob());
++    Assert.assertEquals("**.csv", inputSource.getObjectGlob());
++    Assert.assertFalse(inputSource2.equals(inputSource));
+   }
+ 
+   @Test

@@ -1,0 +1,48 @@
+--- a/processing/src/test/java/org/apache/druid/query/filter/LikeDimFilterTest.java
++++ b/processing/src/test/java/org/apache/druid/query/filter/LikeDimFilterTest.java
+@@ -45,6 +45,8 @@
+   @Rule
+   public MockitoRule mockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
+ 
++  private final BitmapColumnIndex sharedBitmapColumnIndex = Mockito.mock(BitmapColumnIndex.class);
++
+   @Test
+   public void testSerde() throws IOException
+   {
+@@ -113,17 +115,16 @@
+     final ColumnIndexSelector indexSelector = Mockito.mock(ColumnIndexSelector.class);
+     final ColumnIndexSupplier indexSupplier = Mockito.mock(ColumnIndexSupplier.class);
+     final LexicographicalRangeIndexes rangeIndex = Mockito.mock(LexicographicalRangeIndexes.class);
+-    final BitmapColumnIndex bitmapColumnIndex = Mockito.mock(BitmapColumnIndex.class);
+ 
+     Mockito.when(indexSelector.getIndexSupplier("dim0")).thenReturn(indexSupplier);
+     Mockito.when(indexSupplier.as(LexicographicalRangeIndexes.class)).thenReturn(rangeIndex);
+     Mockito.when(
+         // Verify that likeFilter uses forRange without a matcher predicate; it's unnecessary and slows things down
+         rangeIndex.forRange("f", false, "f" + Character.MAX_VALUE, false)
+-    ).thenReturn(bitmapColumnIndex);
++    ).thenReturn(sharedBitmapColumnIndex);
+ 
+     final BitmapColumnIndex retVal = likeFilter.getBitmapColumnIndex(indexSelector);
+-    Assert.assertSame("likeFilter returns the intended bitmapColumnIndex", bitmapColumnIndex, retVal);
++    Assert.assertSame("likeFilter returns the intended bitmapColumnIndex", sharedBitmapColumnIndex, retVal);
+   }
+ 
+   @Test
+@@ -137,14 +138,13 @@
+     final ColumnIndexSelector indexSelector = Mockito.mock(ColumnIndexSelector.class);
+     final ColumnIndexSupplier indexSupplier = Mockito.mock(ColumnIndexSupplier.class);
+     final StringValueSetIndexes valueIndex = Mockito.mock(StringValueSetIndexes.class);
+-    final BitmapColumnIndex bitmapColumnIndex = Mockito.mock(BitmapColumnIndex.class);
+ 
+     Mockito.when(indexSelector.getIndexSupplier("dim0")).thenReturn(indexSupplier);
+     Mockito.when(indexSupplier.as(StringValueSetIndexes.class)).thenReturn(valueIndex);
+-    Mockito.when(valueIndex.forValue("f")).thenReturn(bitmapColumnIndex);
++    Mockito.when(valueIndex.forValue("f")).thenReturn(sharedBitmapColumnIndex);
+ 
+     final BitmapColumnIndex retVal = likeFilter.getBitmapColumnIndex(indexSelector);
+-    Assert.assertSame("likeFilter returns the intended bitmapColumnIndex", bitmapColumnIndex, retVal);
++    Assert.assertSame("likeFilter returns the intended bitmapColumnIndex", sharedBitmapColumnIndex, retVal);
+   }
+ 
+   @Test

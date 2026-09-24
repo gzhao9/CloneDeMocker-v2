@@ -1,0 +1,51 @@
+--- a/processing/src/test/java/org/apache/druid/query/filter/InDimFilterTest.java
++++ b/processing/src/test/java/org/apache/druid/query/filter/InDimFilterTest.java
+@@ -66,6 +66,8 @@
+   @Rule
+   public MockitoRule mockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
+ 
++  private final BitmapColumnIndex sharedBitmapColumnIndex = Mockito.mock(BitmapColumnIndex.class);
++
+   @Test
+   public void testDeserialization() throws IOException
+   {
+@@ -754,17 +756,16 @@
+     final ColumnIndexSelector indexSelector = Mockito.mock(ColumnIndexSelector.class);
+     final ColumnIndexSupplier indexSupplier = Mockito.mock(ColumnIndexSupplier.class);
+     final Utf8ValueSetIndexes valueIndexes = Mockito.mock(Utf8ValueSetIndexes.class);
+-    final BitmapColumnIndex bitmapColumnIndex = Mockito.mock(BitmapColumnIndex.class);
+ 
+     final InDimFilter.ValuesSet expectedValuesSet = new InDimFilter.ValuesSet();
+     expectedValuesSet.addAll(Arrays.asList("v1", "v2"));
+ 
+     Mockito.when(indexSelector.getIndexSupplier("dim0")).thenReturn(indexSupplier);
+     Mockito.when(indexSupplier.as(Utf8ValueSetIndexes.class)).thenReturn(valueIndexes);
+-    Mockito.when(valueIndexes.forSortedValuesUtf8(expectedValuesSet.toUtf8())).thenReturn(bitmapColumnIndex);
++    Mockito.when(valueIndexes.forSortedValuesUtf8(expectedValuesSet.toUtf8())).thenReturn(sharedBitmapColumnIndex);
+ 
+     final BitmapColumnIndex retVal = inFilter.getBitmapColumnIndex(indexSelector);
+-    Assert.assertSame("inFilter returns the intended bitmapColumnIndex", bitmapColumnIndex, retVal);
++    Assert.assertSame("inFilter returns the intended bitmapColumnIndex", sharedBitmapColumnIndex, retVal);
+   }
+ 
+   @Test
+@@ -778,7 +779,6 @@
+     final ColumnIndexSelector indexSelector = Mockito.mock(ColumnIndexSelector.class);
+     final ColumnIndexSupplier indexSupplier = Mockito.mock(ColumnIndexSupplier.class);
+     final StringValueSetIndexes valueIndex = Mockito.mock(StringValueSetIndexes.class);
+-    final BitmapColumnIndex bitmapColumnIndex = Mockito.mock(BitmapColumnIndex.class);
+ 
+     final InDimFilter.ValuesSet expectedValuesSet = new InDimFilter.ValuesSet();
+     expectedValuesSet.addAll(Arrays.asList("v1", "v2"));
+@@ -786,9 +786,9 @@
+     Mockito.when(indexSelector.getIndexSupplier("dim0")).thenReturn(indexSupplier);
+     Mockito.when(indexSupplier.as(Utf8ValueSetIndexes.class)).thenReturn(null); // Will check for UTF-8 first.
+     Mockito.when(indexSupplier.as(StringValueSetIndexes.class)).thenReturn(valueIndex);
+-    Mockito.when(valueIndex.forSortedValues(expectedValuesSet)).thenReturn(bitmapColumnIndex);
++    Mockito.when(valueIndex.forSortedValues(expectedValuesSet)).thenReturn(sharedBitmapColumnIndex);
+ 
+     final BitmapColumnIndex retVal = inFilter.getBitmapColumnIndex(indexSelector);
+-    Assert.assertSame("inFilter returns the intended bitmapColumnIndex", bitmapColumnIndex, retVal);
++    Assert.assertSame("inFilter returns the intended bitmapColumnIndex", sharedBitmapColumnIndex, retVal);
+   }
+ }

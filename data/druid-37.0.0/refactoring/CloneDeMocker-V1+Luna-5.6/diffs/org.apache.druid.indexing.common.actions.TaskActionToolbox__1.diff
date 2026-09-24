@@ -1,0 +1,58 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateLocationActionTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateLocationActionTest.java
+@@ -66,9 +66,8 @@
+     TaskLocation myLocation = TaskLocation.create(hostName.getHostAddress(), 1, 2);
+     UpdateLocationAction action = new UpdateLocationAction(myLocation);
+     Task task = NoopTask.create();
+-    TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
++    TaskActionToolbox toolbox = MockTaskActionToolbox.createTaskActionToolbox();
+     TaskRunner runner = mock(TaskRunner.class);
+-    when(toolbox.getTaskRunner()).thenReturn(Optional.absent());
+     action.perform(task, toolbox);
+     verify(runner, never()).updateStatus(any(), any());
+   }
+@@ -92,4 +91,15 @@
+         () -> new UpdateLocationAction(null)
+     );
+   }
++
++    public final class MockTaskActionToolbox {
++        private MockTaskActionToolbox() {
++        }
++
++        public static TaskActionToolbox createTaskActionToolbox() {
++            TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
++            when(toolbox.getTaskRunner()).thenReturn(Optional.absent());
++            return toolbox;
++        }
++    }
+ }
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateStatusActionTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateStatusActionTest.java
+@@ -83,9 +83,8 @@
+   {
+     UpdateStatusAction action = new UpdateStatusAction("", TaskStatus.success(ID));
+     Task task = NoopTask.create();
+-    TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+     TaskRunner runner = mock(TaskRunner.class);
+-    when(toolbox.getTaskRunner()).thenReturn(Optional.absent());
++    TaskActionToolbox toolbox = MockTaskActionToolbox.createTaskActionToolbox();
+     action.perform(task, toolbox);
+     verify(runner, never()).updateStatus(any(), any());
+   }
+@@ -97,4 +96,15 @@
+     UpdateStatusAction two = new UpdateStatusAction("", TaskStatus.failure(ID, "error"));
+     Assert.assertEquals(one, two);
+   }
++
++    public final class MockTaskActionToolbox {
++        private MockTaskActionToolbox() {
++        }
++
++        public static TaskActionToolbox createTaskActionToolbox() {
++            TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
++            when(toolbox.getTaskRunner()).thenReturn(Optional.absent());
++            return toolbox;
++        }
++    }
+ }

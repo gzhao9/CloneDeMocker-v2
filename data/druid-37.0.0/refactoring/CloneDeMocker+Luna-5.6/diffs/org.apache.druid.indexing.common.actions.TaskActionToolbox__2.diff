@@ -1,0 +1,68 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateLocationActionTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateLocationActionTest.java
+@@ -51,9 +51,8 @@
+     TaskLocation myLocation = TaskLocation.create(hostName.getHostAddress(), 1, 2);
+     UpdateLocationAction action = new UpdateLocationAction(myLocation);
+     Task task = NoopTask.create();
+-    TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+     TaskRunner runner = mock(TaskRunner.class);
+-    when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
++    TaskActionToolbox toolbox = MockTaskActionToolbox.createMockTaskActionToolbox(runner);
+     action.perform(task, toolbox);
+     verify(runner, times(1)).updateLocation(eq(task), eq(myLocation));
+   }
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateStatusActionTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateStatusActionTest.java
+@@ -46,9 +46,8 @@
+   {
+     UpdateStatusAction action = new UpdateStatusAction("successful");
+     Task task = NoopTask.create();
+-    TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+     TaskRunner runner = mock(TaskRunner.class);
+-    when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
++    TaskActionToolbox toolbox = MockTaskActionToolbox.createMockTaskActionToolbox(runner);
+     action.perform(task, toolbox);
+     verify(runner, times(1)).updateStatus(eq(task), eq(TaskStatus.success(task.getId())));
+   }
+@@ -58,9 +57,8 @@
+   {
+     UpdateStatusAction action = new UpdateStatusAction("failure");
+     Task task = NoopTask.create();
+-    TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+     TaskRunner runner = mock(TaskRunner.class);
+-    when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
++    TaskActionToolbox toolbox = MockTaskActionToolbox.createMockTaskActionToolbox(runner);
+     action.perform(task, toolbox);
+     verify(runner, times(1)).updateStatus(eq(task), eq(TaskStatus.failure(task.getId(), "Error with task")));
+   }
+@@ -69,9 +67,8 @@
+   public void testTaskStatusFull()
+   {
+     Task task = NoopTask.create();
+-    TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+     TaskRunner runner = mock(TaskRunner.class);
+-    when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
++    TaskActionToolbox toolbox = MockTaskActionToolbox.createMockTaskActionToolbox(runner);
+     TaskStatus taskStatus = TaskStatus.failure(task.getId(), "custom error message");
+     UpdateStatusAction action = new UpdateStatusAction("failure", taskStatus);
+     action.perform(task, toolbox);
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/MockTaskActionToolbox.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/MockTaskActionToolbox.java
+@@ -0,0 +1,17 @@
++package org.apache.druid.indexing.common.actions;
++
++import java.util.Optional;
++import org.apache.druid.indexing.overlord.TaskRunner;
++
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++public class MockTaskActionToolbox
++{
++  public static TaskActionToolbox createMockTaskActionToolbox(TaskRunner runner)
++  {
++    TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
++    when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
++    return toolbox;
++  }
++}
