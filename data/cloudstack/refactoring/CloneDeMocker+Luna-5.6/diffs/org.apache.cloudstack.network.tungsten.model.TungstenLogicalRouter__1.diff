@@ -1,0 +1,102 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -1588,16 +1588,14 @@
+     @Test
+     public void createRoutingLogicalRouterTest() {
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+-        TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenRoutingLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
++        TungstenLogicalRouter tungstenLogicalRouter = createMockTungstenLogicalRouter(logicalRouter, virtualNetwork);
+         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
+-        when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
+-        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
+ 
+         assertNotNull(tungstenService.createRoutingLogicalRouter(1L, "default-domain:default-project", "testLR"));
+     }
+@@ -1606,7 +1604,6 @@
+     public void addNetworkGatewayToLogicalRouterTest() {
+         NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+-        TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+@@ -1615,9 +1612,8 @@
+         when(networkDao.findByUuid(anyString())).thenReturn(networkVO);
+         when(ipAddressManager.acquireLastGuestIpAddress(any(Network.class))).thenReturn("192.168.100.100");
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenNetworkGatewayToLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
++        TungstenLogicalRouter tungstenLogicalRouter = createMockTungstenLogicalRouter(logicalRouter, virtualNetwork);
+         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
+-        when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
+-        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
+ 
+         assertNotNull(tungstenService.addNetworkGatewayToLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
+     }
+@@ -1625,16 +1621,14 @@
+     @Test
+     public void listRoutingLogicalRouterTest() {
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+-        TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
++        TungstenLogicalRouter tungstenLogicalRouter = createMockTungstenLogicalRouter(logicalRouter, virtualNetwork);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenRoutingLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+         when(tungstenAnswer.getTungstenModelList()).thenReturn(List.of(tungstenLogicalRouter));
+-        when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
+-        when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
+ 
+         assertNotNull(tungstenService.listRoutingLogicalRouter(1L, null, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
+@@ -1644,7 +1638,6 @@
+         NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
+-        TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+@@ -1653,19 +1646,25 @@
+         when(networkDao.findByUuid(anyString())).thenReturn(networkVO);
+         when(tungstenGuestNetworkIpAddressDao.findByNetworkAndLogicalRouter(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenNetworkGatewayFromLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
++        TungstenLogicalRouter tungstenLogicalRouter = createMockTungstenLogicalRouter(logicalRouter, virtualNetwork);
+         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
++
++        assertNotNull(tungstenService.removeNetworkGatewayFromLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
++    }
++
++    @Test
++    public void deleteLogicalRouterTest() {
++        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
++
++        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenRoutingLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
++
++        assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
++    }
++
++    private static TungstenLogicalRouter createMockTungstenLogicalRouter(LogicalRouter logicalRouter, VirtualNetwork virtualNetwork) {
++        TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
+         when(tungstenLogicalRouter.getVirtualNetworkList()).thenReturn(List.of(virtualNetwork));
+-
+-        assertNotNull(tungstenService.removeNetworkGatewayFromLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
+-    }
+-
+-    @Test
+-    public void deleteLogicalRouterTest() {
+-        TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+-
+-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenRoutingLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+-
+-        assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
++        return tungstenLogicalRouter;
+     }
+ }

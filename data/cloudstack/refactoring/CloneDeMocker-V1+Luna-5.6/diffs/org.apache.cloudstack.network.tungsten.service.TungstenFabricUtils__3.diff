@@ -1,0 +1,103 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -674,9 +674,9 @@
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswer);
++        tungstenFabricUtils = MockTungstenFabricUtils.createTungstenFabricUtils(deleteTungstenNetworkPolicyAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmInterfaceCommand.class), anyLong())).thenReturn(deleteVmiAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong())).thenReturn(deleteVmAnswer);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteTungstenNetworkPolicyAnswer);
+ 
+         assertTrue(tungstenElement.release(network, nicProfile, virtualMachineProfile, reservationContext));
+     }
+@@ -737,8 +737,8 @@
+         TungstenAnswer tungstenDeleteNPAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         when(ipAddressDao.listByAssociatedNetwork(anyLong(), anyBoolean())).thenReturn(ipAddressVOList);
++        tungstenFabricUtils = MockTungstenFabricUtils.createTungstenFabricUtils(tungstenDeleteNPAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenFloatingIpCommand.class), anyLong())).thenReturn(tungstenDeleteFIPAnswer);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(tungstenDeleteNPAnswer);
+ 
+         assertTrue(tungstenElement.destroy(network, reservationContext));
+     }
+@@ -876,8 +876,8 @@
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+         when(firewallRuleVO.getPurpose()).thenReturn(FirewallRule.Purpose.Firewall);
+         when(firewallRuleVO.getTrafficType()).thenReturn(FirewallRule.TrafficType.Ingress);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteNetworkPolicyAnswer);
+-
++
++        tungstenFabricUtils = MockTungstenFabricUtils.createTungstenFabricUtils(deleteNetworkPolicyAnswer);
+         assertTrue(tungstenElement.applyFWRules(network, List.of(firewallRuleVO)));
+     }
+ 
+@@ -962,4 +962,22 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    public final class MockTungstenFabricUtils {
++
++        private MockTungstenFabricUtils() {
++        }
++
++        public static org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils createTungstenFabricUtils(
++                org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer deleteTungstenNetworkPolicyAnswer) {
++            org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils tungstenFabricUtils =
++                    Mockito.mock(org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils.class);
++
++            when(tungstenFabricUtils.sendTungstenCommand(
++                    any(org.apache.cloudstack.network.tungsten.service.command.DeleteTungstenNetworkPolicyCommand.class),
++                    anyLong())).thenReturn(deleteTungstenNetworkPolicyAnswer);
++
++            return tungstenFabricUtils;
++        }
++    }
+ }
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -441,10 +441,10 @@
+         TungstenAnswer deleteTungstenNetworkAnswer = MockTungstenAnswerFactory.get(true);
+         VirtualNetwork fabricVirtualNetwork = mock(VirtualNetwork.class);
+ 
++        tungstenFabricUtils = MockTungstenFabricUtils.createTungstenFabricUtils(deleteTungstenFabricPolicyAnswer);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(),
+                 eq(Networks.TrafficType.Management))).thenReturn(managementNetwork);
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenFabricNetworkCommand.class), anyLong())).thenReturn(getTungstenFabricNetworkAnswer);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteTungstenFabricPolicyAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkCommand.class), anyLong())).thenReturn(deleteTungstenNetworkAnswer);
+         when(getTungstenFabricNetworkAnswer.getApiObjectBase()).thenReturn(fabricVirtualNetwork);
+ 
+@@ -531,7 +531,7 @@
+         TungstenAnswer deleteTungstenNetworkAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteTungstenNetworkPolicyAnswer);
++        tungstenFabricUtils = MockTungstenFabricUtils.createTungstenFabricUtils(deleteTungstenNetworkPolicyAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenFloatingIpPoolCommand.class), anyLong())).thenReturn(deleteTungstenFloatingIpPoolAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkCommand.class), anyLong())).thenReturn(deleteTungstenNetworkAnswer);
+ 
+@@ -1668,4 +1668,22 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    public final class MockTungstenFabricUtils {
++
++        private MockTungstenFabricUtils() {
++        }
++
++        public static org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils createTungstenFabricUtils(
++                org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer deleteTungstenNetworkPolicyAnswer) {
++            org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils tungstenFabricUtils =
++                    Mockito.mock(org.apache.cloudstack.network.tungsten.service.TungstenFabricUtils.class);
++
++            when(tungstenFabricUtils.sendTungstenCommand(
++                    any(org.apache.cloudstack.network.tungsten.service.command.DeleteTungstenNetworkPolicyCommand.class),
++                    anyLong())).thenReturn(deleteTungstenNetworkPolicyAnswer);
++
++            return tungstenFabricUtils;
++        }
++    }
+ }

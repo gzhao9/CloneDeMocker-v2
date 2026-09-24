@@ -1,0 +1,74 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -595,7 +595,7 @@
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(createTungstenVMAnswer);
++        tungstenFabricUtils = createMockTungstenFabricUtils(createTungstenVMAnswer);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(createTungstenNetworkPolicyAnswer);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
+@@ -622,7 +622,7 @@
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Management);
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(createTungstenVMAnswer);
++        tungstenFabricUtils = createMockTungstenFabricUtils(createTungstenVMAnswer);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+ 
+         assertTrue(tungstenElement.prepare(network, nicProfile, virtualMachineProfile, deployDestination, reservationContext));
+@@ -647,7 +647,7 @@
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Management);
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(createTungstenVMAnswer);
++        tungstenFabricUtils = createMockTungstenFabricUtils(createTungstenVMAnswer);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+ 
+         tungstenElement.prepare(network, nicProfile, virtualMachineProfile, deployDestination, reservationContext);
+@@ -922,7 +922,7 @@
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(tungstenAnswer);
++        tungstenFabricUtils = createMockTungstenFabricUtils(tungstenAnswer);
+ 
+         assertTrue(tungstenElement.prepareMigration(nic, network, vm, dest, context));
+     }
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
+@@ -483,8 +483,7 @@
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class),
+-            anyLong())).thenReturn(new TungstenAnswer(new TungstenCommand(), true, ""));
++        tungstenFabricUtils = createMockTungstenFabricUtils(new TungstenAnswer(new TungstenCommand(), true, ""));
+ 
+         guru.prepareMigration(nic, network, vm, dest, context);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class),
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockTungstenFabricUtils.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockTungstenFabricUtils.java
+@@ -0,0 +1,21 @@
++package org.apache.cloudstack.network.tungsten.service;
++
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.ArgumentMatchers.anyLong;
++import static org.mockito.Mockito.when;
++
++import org.apache.cloudstack.network.tungsten.agent.api.TungstenAnswer;
++import org.mockito.Mockito;
++
++public final class MockTungstenFabricUtils {
++
++    private MockTungstenFabricUtils() {
++    }
++
++    public static TungstenFabricUtils createMockTungstenFabricUtils(TungstenAnswer sendTungstenCommandReturn) {
++        TungstenFabricUtils tungstenFabricUtils = Mockito.mock(TungstenFabricUtils.class);
++        when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong()))
++            .thenReturn(sendTungstenCommandReturn);
++        return tungstenFabricUtils;
++    }
++}
