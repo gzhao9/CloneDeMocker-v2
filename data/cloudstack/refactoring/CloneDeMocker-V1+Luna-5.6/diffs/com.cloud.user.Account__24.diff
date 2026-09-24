@@ -1,0 +1,51 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
+@@ -47,6 +47,8 @@
+  */
+ @RunWith(MockitoJUnitRunner.class)
+ public class KMSManagerImplAccessTest {
++    @Mock
++    private Account caller;
+ 
+     @Spy
+     @InjectMocks
+@@ -118,7 +120,7 @@
+     @Test(expected = PermissionDeniedException.class)
+     public void testFindKMSKeyAndCheckAccess_ThrowsWhenPermissionDenied() {
+         KMSKeyVO key = mock(KMSKeyVO.class);
+-        Account caller = mock(Account.class);
++        // removed local mock; replaced with global field `caller`
+         when(kmsKeyDao.findById(1L)).thenReturn(key);
+         doThrow(new PermissionDeniedException("denied"))
+                 .when(accountManager).checkAccess(caller, null, true, key);
+@@ -129,7 +131,7 @@
+     @Test
+     public void testFindKMSKeyAndCheckAccess_ReturnsKeyOnSuccess() {
+         KMSKeyVO key = mock(KMSKeyVO.class);
+-        Account caller = mock(Account.class);
++        // removed local mock; replaced with global field `caller`
+         when(kmsKeyDao.findById(1L)).thenReturn(key);
+ 
+         KMSKeyVO result = kmsManager.findKMSKeyAndCheckAccess(1L, caller);
+@@ -153,10 +155,9 @@
+         KMSKeyVO key = mock(KMSKeyVO.class);
+         when(key.getAccountId()).thenReturn(2L);
+ 
+-        Account owner = mock(Account.class);
+-        when(kmsKeyDao.findById(1L)).thenReturn(key);
+-
+-        kmsManager.checkKmsKeyForVolumeEncryption(owner, 1L, null);
++        when(kmsKeyDao.findById(1L)).thenReturn(key);
++
++        kmsManager.checkKmsKeyForVolumeEncryption(caller, 1L, null);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+@@ -256,7 +257,6 @@
+         HSMProfileVO profile = mock(HSMProfileVO.class);
+         when(profile.getIsPublic()).thenReturn(false);
+ 
+-        Account caller = mock(Account.class);
+         doThrow(new PermissionDeniedException("denied"))
+                 .when(accountManager).checkAccess(caller, null, true, profile);
+ 

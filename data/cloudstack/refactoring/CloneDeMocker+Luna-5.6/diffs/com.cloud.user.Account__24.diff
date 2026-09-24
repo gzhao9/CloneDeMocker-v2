@@ -1,0 +1,81 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
+@@ -26,6 +26,7 @@
+ import org.apache.cloudstack.framework.kms.KeyPurpose;
+ import org.apache.cloudstack.kms.dao.HSMProfileDao;
+ import org.apache.cloudstack.kms.dao.KMSKeyDao;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.mockito.InjectMocks;
+@@ -67,6 +68,13 @@
+     @Mock
+     private AccountManager accountManager;
+ 
++    private Account callerAccount;
++
++    @Before
++    public void setUp() {
++        callerAccount = mock(Account.class);
++    }
++
+     @Test
+     public void testHasPermission_ReturnsFalseWhenCallerAccountIdIsNull() {
+         assertFalse(kmsManager.hasPermission(null, mock(KMSKey.class)));
+@@ -118,21 +126,19 @@
+     @Test(expected = PermissionDeniedException.class)
+     public void testFindKMSKeyAndCheckAccess_ThrowsWhenPermissionDenied() {
+         KMSKeyVO key = mock(KMSKeyVO.class);
+-        Account caller = mock(Account.class);
+         when(kmsKeyDao.findById(1L)).thenReturn(key);
+         doThrow(new PermissionDeniedException("denied"))
+-                .when(accountManager).checkAccess(caller, null, true, key);
+-
+-        kmsManager.findKMSKeyAndCheckAccess(1L, caller);
++                .when(accountManager).checkAccess(callerAccount, null, true, key);
++
++        kmsManager.findKMSKeyAndCheckAccess(1L, callerAccount);
+     }
+ 
+     @Test
+     public void testFindKMSKeyAndCheckAccess_ReturnsKeyOnSuccess() {
+         KMSKeyVO key = mock(KMSKeyVO.class);
+-        Account caller = mock(Account.class);
+-        when(kmsKeyDao.findById(1L)).thenReturn(key);
+-
+-        KMSKeyVO result = kmsManager.findKMSKeyAndCheckAccess(1L, caller);
++        when(kmsKeyDao.findById(1L)).thenReturn(key);
++
++        KMSKeyVO result = kmsManager.findKMSKeyAndCheckAccess(1L, callerAccount);
+ 
+         assertSame(key, result);
+     }
+@@ -153,10 +159,9 @@
+         KMSKeyVO key = mock(KMSKeyVO.class);
+         when(key.getAccountId()).thenReturn(2L);
+ 
+-        Account owner = mock(Account.class);
+-        when(kmsKeyDao.findById(1L)).thenReturn(key);
+-
+-        kmsManager.checkKmsKeyForVolumeEncryption(owner, 1L, null);
++        when(kmsKeyDao.findById(1L)).thenReturn(key);
++
++        kmsManager.checkKmsKeyForVolumeEncryption(callerAccount, 1L, null);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+@@ -256,11 +261,10 @@
+         HSMProfileVO profile = mock(HSMProfileVO.class);
+         when(profile.getIsPublic()).thenReturn(false);
+ 
+-        Account caller = mock(Account.class);
+         doThrow(new PermissionDeniedException("denied"))
+-                .when(accountManager).checkAccess(caller, null, true, profile);
+-
+-        kmsManager.checkHSMProfileAccess(caller, profile, true);
++                .when(accountManager).checkAccess(callerAccount, null, true, profile);
++
++        kmsManager.checkHSMProfileAccess(callerAccount, profile, true);
+     }
+ 
+     @Test
