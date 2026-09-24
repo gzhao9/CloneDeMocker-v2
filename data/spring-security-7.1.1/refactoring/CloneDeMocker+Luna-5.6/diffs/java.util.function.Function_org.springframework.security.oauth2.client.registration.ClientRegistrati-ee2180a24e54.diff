@@ -1,0 +1,61 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcIdTokenDecoderFactoryTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/OidcIdTokenDecoderFactoryTests.java
+@@ -148,11 +148,9 @@
+ 
+ 	@Test
+ 	public void createDecoderWhenCustomJwtValidatorFactorySetThenApplied() {
+-		Function<ClientRegistration, OAuth2TokenValidator<Jwt>> customJwtValidatorFactory = mock(Function.class);
++		ClientRegistration clientRegistration = this.registration.build();
++		Function<ClientRegistration, OAuth2TokenValidator<Jwt>> customJwtValidatorFactory = createMockJwtValidatorFactory(clientRegistration);
+ 		this.idTokenDecoderFactory.setJwtValidatorFactory(customJwtValidatorFactory);
+-		ClientRegistration clientRegistration = this.registration.build();
+-		given(customJwtValidatorFactory.apply(same(clientRegistration)))
+-			.willReturn(new OidcIdTokenValidator(clientRegistration));
+ 		this.idTokenDecoderFactory.createDecoder(clientRegistration);
+ 		verify(customJwtValidatorFactory).apply(same(clientRegistration));
+ 	}
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/ReactiveOidcIdTokenDecoderFactoryTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/ReactiveOidcIdTokenDecoderFactoryTests.java
+@@ -148,11 +148,9 @@
+ 
+ 	@Test
+ 	public void createDecoderWhenCustomJwtValidatorFactorySetThenApplied() {
+-		Function<ClientRegistration, OAuth2TokenValidator<Jwt>> customJwtValidatorFactory = mock(Function.class);
++		ClientRegistration clientRegistration = this.registration.build();
++		Function<ClientRegistration, OAuth2TokenValidator<Jwt>> customJwtValidatorFactory = createMockJwtValidatorFactory(clientRegistration);
+ 		this.idTokenDecoderFactory.setJwtValidatorFactory(customJwtValidatorFactory);
+-		ClientRegistration clientRegistration = this.registration.build();
+-		given(customJwtValidatorFactory.apply(same(clientRegistration)))
+-			.willReturn(new OidcIdTokenValidator(clientRegistration));
+ 		this.idTokenDecoderFactory.createDecoder(clientRegistration);
+ 		verify(customJwtValidatorFactory).apply(same(clientRegistration));
+ 	}
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/MockJwtValidatorFactory.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/oidc/authentication/MockJwtValidatorFactory.java
+@@ -0,0 +1,26 @@
++package org.springframework.security.oauth2.client.oidc.authentication;
++
++import java.util.function.Function;
++
++import org.mockito.Mockito;
++import org.springframework.security.oauth2.client.registration.ClientRegistration;
++import org.springframework.security.oauth2.core.OAuth2TokenValidator;
++import org.springframework.security.oauth2.jwt.Jwt;
++
++import static org.mockito.ArgumentMatchers.same;
++import static org.mockito.BDDMockito.given;
++
++public final class MockJwtValidatorFactory {
++
++	private MockJwtValidatorFactory() {
++	}
++
++	public static Function<ClientRegistration, OAuth2TokenValidator<Jwt>> createMockJwtValidatorFactory(
++			ClientRegistration clientRegistration) {
++		Function<ClientRegistration, OAuth2TokenValidator<Jwt>> customJwtValidatorFactory = Mockito.mock(Function.class);
++		given(customJwtValidatorFactory.apply(same(clientRegistration)))
++				.willReturn(new OidcIdTokenValidator(clientRegistration));
++		return customJwtValidatorFactory;
++	}
++
++}
