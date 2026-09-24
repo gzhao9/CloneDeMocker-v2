@@ -68,6 +68,7 @@ def deliver(entry_id: str, body: str) -> list[str]:
         path.write_text(body, encoding="utf-8", newline=chr(10))
         written.append(f"collab/inbox/{name}/unread/{entry_id}.md")
         print(f"post: {entry_id} delivered to collab/inbox/{name}/unread/")
+    return written
 
 
 def a_owns(rel: str) -> bool:
