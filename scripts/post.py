@@ -144,9 +144,15 @@ def _publish_attempt(entry_id, git, repo, extra) -> bool:
     # agent's copy of files a peer also edits, which is how A reverted 58 of B's
     # and C's files earlier today.
     paths += [rel for rel in extra if (repo / rel).is_file() and rel not in paths]
+    # Base on the tracking ref, never FETCH_HEAD: a concurrent fetch can leave FETCH_HEAD
+    # empty, and an unchecked read-tree of nothing published a tree without 3482 files
+    # (f5a8435b, 2026-09-24).
+    head = git("rev-parse", "--verify", "github/main^{commit}").stdout.strip()
+    if not head:
+        return False
     with tempfile.TemporaryDirectory() as tmp:
         env = {"GIT_INDEX_FILE": str(Path(tmp) / "index")}
-        if git("read-tree", "FETCH_HEAD", env=env).returncode != 0:
+        if git("read-tree", head, env=env).returncode != 0:
             return False
         for rel in paths:
             blob = git("hash-object", "-w", "--", rel).stdout.strip()
@@ -163,19 +169,22 @@ def _publish_attempt(entry_id, git, repo, extra) -> bool:
         # that it was removed -- it is the normal state of a peer's mailbox. The delete is
         # only sound where A is the only writer, which is A's own inbox and nowhere else.
         on_disk = set(paths)
-        upstream = git("ls-tree", "-r", "--name-only", "FETCH_HEAD").stdout
+        upstream = git("ls-tree", "-r", "--name-only", head).stdout
         for rel in (x.strip() for x in upstream.splitlines()):
             if rel and rel not in on_disk and a_owns(rel):
                 git("update-index", "--force-remove", rel, env=env)
         tree = git("write-tree", env=env).stdout.strip()
         if not tree:
             return False
-        head = git("rev-parse", "FETCH_HEAD").stdout.strip()
         if git("diff", "--quiet", f"{head}^{{tree}}", tree).returncode == 0:
             print(f"post: {entry_id} already matches the remote board")
             return True
+        deleted = git("diff-tree", "-r", "--diff-filter=D", "--name-only", f"{head}^{{tree}}", tree).stdout.split()
+        stray = [rel for rel in deleted if not rel.startswith(f"collab/inbox/{ME}/")]
+        if stray:
+            sys.exit(f"post: refusing to publish, {len(stray)} deletions outside A's inbox, e.g. {stray[:3]}")
         sha = git("commit-tree", tree, "-p", head, "-m", f"board: {entry_id}").stdout.strip()
-        if sha and git("push", "github", f"{sha}:main").returncode == 0:
+        if sha and git("push", "github", f"{sha}:main", env={"CLONEDEMOCKER_ALLOW_PUSH": "1"}).returncode == 0:
             print(f"post: {entry_id} pushed as {sha[:8]} (working tree untouched)")
             return True
     return False
