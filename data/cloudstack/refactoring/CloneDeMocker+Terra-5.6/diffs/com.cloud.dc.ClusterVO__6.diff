@@ -1,0 +1,77 @@
+--- a/server/src/test/java/org/apache/cloudstack/cluster/ClusterDrsServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/cluster/ClusterDrsServiceImplTest.java
+@@ -237,8 +237,7 @@
+ 
+     @Test
+     public void testGetDrsPlanWithDisabledCluster() throws ConfigurationException {
+-        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+-        Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
++        ClusterVO cluster = createMockCluster(Grouping.AllocationState.Disabled);
+ 
+         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 5);
+         assertEquals(0, result.size());
+@@ -246,8 +245,7 @@
+ 
+     @Test
+     public void testGetDrsPlanWithZeroMaxIterations() throws ConfigurationException {
+-        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+-        Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
++        ClusterVO cluster = createMockCluster(Grouping.AllocationState.Enabled);
+ 
+         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, 0);
+         assertEquals(0, result.size());
+@@ -255,8 +253,7 @@
+ 
+     @Test
+     public void testGetDrsPlanWithNegativeMaxIterations() throws ConfigurationException {
+-        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+-        Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
++        ClusterVO cluster = createMockCluster(Grouping.AllocationState.Enabled);
+ 
+         List<Ternary<VirtualMachine, Host, Host>> result = clusterDrsService.getDrsPlan(cluster, -1);
+         assertEquals(0, result.size());
+@@ -668,9 +665,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testGenerateDrsPlanClusterDisabled() {
+-        ClusterVO cluster = Mockito.mock(ClusterVO.class);
++        ClusterVO cluster = createMockCluster(Grouping.AllocationState.Disabled);
+         Mockito.when(cluster.getName()).thenReturn("testCluster");
+-        Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
+ 
+         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
+ 
+@@ -680,9 +676,8 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testGenerateDrsPlanClusterNotCloudManaged() {
+ 
+-        ClusterVO cluster = Mockito.mock(ClusterVO.class);
++        ClusterVO cluster = createMockCluster(Grouping.AllocationState.Enabled);
+         Mockito.when(cluster.getName()).thenReturn("testCluster");
+-        Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+ 
+         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
+ 
+@@ -703,9 +698,8 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testGenerateDrsPlanConfigurationException() throws ConfigurationException {
+-        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+-        Mockito.when(cluster.getId()).thenReturn(1L);
+-        Mockito.when(cluster.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
++        ClusterVO cluster = createMockCluster(Grouping.AllocationState.Enabled);
++        Mockito.when(cluster.getId()).thenReturn(1L);
+         Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
+         Mockito.when(clusterDrsService.getDrsPlan(cluster, 5)).thenThrow(new ConfigurationException("test"));
+         Mockito.when(cmd.getMaxMigrations()).thenReturn(5);
+@@ -951,4 +945,10 @@
+ 
+         Mockito.verify(clusterDrsService, Mockito.times(2)).executeDrsPlan(Mockito.any(ClusterDrsPlanVO.class));
+     }
++
++    private static ClusterVO createMockCluster(Grouping.AllocationState allocationState) {
++        ClusterVO cluster = Mockito.mock(ClusterVO.class);
++        Mockito.when(cluster.getAllocationState()).thenReturn(allocationState);
++        return cluster;
++    }
+ }
