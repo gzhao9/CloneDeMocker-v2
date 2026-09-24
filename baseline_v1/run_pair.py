@@ -46,6 +46,7 @@ sys.path.insert(0, str(REPO))
 
 from studio import canonical_store  # noqa: E402
 from studio.detection_service import DetectionService  # noqa: E402
+from studio.harness import HarnessEvidence  # noqa: E402
 from studio.model_provider import ModelProvider, ModelResult  # noqa: E402
 from studio.refactoring_agent import RefactoringAgent  # noqa: E402
 from baseline_v1.v1_agent import V1RefactoringAgent  # noqa: E402
@@ -140,6 +141,8 @@ def record(project: str, mci_id: str, result: dict, run_id: str, model: str, har
         entry["v1KeyNormalized"] = True
     if result.get("v1FuzzyApply"):
         entry["v1FuzzyApply"] = result["v1FuzzyApply"]
+    if result.get("baselineSharedFromV2"):
+        entry["baselineSharedFromV2"] = result["baselineSharedFromV2"]
     if result.get("reason") and entry["classification"] != "SUCCESS":
         entry["declineReason"] = str(result.get("reason"))[:2000]
     why = f"{entry.get('validationReason') or ''} {result.get('reason') or ''}"
@@ -201,6 +204,11 @@ def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: i
         if should_run is not None and not should_run(mci_id):
             skipped += 1
             continue
+        # The ledger keeps only passing baselines, so a baseline that fails -- often by hanging
+        # to the 3600 s harness timeout -- was run again for V1 over the same untouched source
+        # and scope. Hand V2's broken baseline to V1 for this MCI instead: same evidence the
+        # ledger would give for a passing one, same verdict, one run instead of two.
+        shared_broken_baseline = None
         for name, agent_cls, harness, kwargs, done in (
             ("V2", PairV2Agent, HARNESS_V2, {"max_retries": 2, "use_cache": False}, v2_done),
             ("V1", PairV1Agent, HARNESS_V1, {"max_retries": 0, "use_cache": False}, v1_done),
@@ -210,6 +218,8 @@ def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: i
             provider = TimedProvider(base)
             agent = agent_cls(service, provider=provider)
             started = time.time()
+            if name == "V1" and shared_broken_baseline is not None:
+                kwargs = {**kwargs, "baseline_evidence_override": HarnessEvidence.from_dict(shared_broken_baseline)}
             try:
                 result = agent.run(run_id, [mci_id], model, user_instruction="", run_pit=False,
                                    api_profile="default", use_mock=False, sequence_selection=None,
@@ -219,6 +229,10 @@ def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: i
                 log(f"  {name} {mci_id}: TOOL ERROR {type(error).__name__}: {str(error)[:200]}")
                 continue
             result = provider.stamp(result)
+            if name == "V2" and (result.get("harness") or {}).get("baselineBroken"):
+                shared_broken_baseline = result["harness"]["baseline"]
+            if "baseline_evidence_override" in kwargs:
+                result = {**result, "baselineSharedFromV2": "broken baseline replayed from V2's run of this MCI"}
             # Keep every raw reply next to the proposal (local only), so a decline or a failed
             # write-back can be checked against what the model actually said.
             reply_dir = REPO / ".clonedemocker" / "runs" / run_id / "refactoring" / (result.get("proposalId") or "_")
