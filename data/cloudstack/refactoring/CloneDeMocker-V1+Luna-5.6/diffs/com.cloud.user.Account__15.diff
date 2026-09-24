@@ -1,0 +1,68 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
+@@ -111,6 +111,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class ServerAdapterTest {
++    @Mock
++    private Account account;
+ 
+     @InjectMocks
+     ServerAdapter serverAdapter;
+@@ -630,7 +632,6 @@
+     @Test
+     public void testGetServiceOfferingFromRequest_AccessDenied_ReturnsNull() {
+         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid2")).thenReturn(offering);
+         doThrow(new PermissionDeniedException("denied"))
+                 .when(accountService).checkAccess(eq(account), eq(offering), any());
+@@ -641,7 +642,6 @@
+     @Test
+     public void testGetServiceOfferingFromRequest_NotCustomized_CpuMemoryMismatch_ReturnsNull() {
+         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid3")).thenReturn(offering);
+         doNothing().when(accountService).checkAccess(eq(account), eq(offering), any());
+         when(offering.isCustomized()).thenReturn(false);
+@@ -653,7 +653,6 @@
+     @Test
+     public void testGetServiceOfferingFromRequest_NotCustomized_CpuMemoryMatch_ReturnsOffering() {
+         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid4")).thenReturn(offering);
+         doNothing().when(accountService).checkAccess(eq(account), eq(offering), any());
+         when(offering.isCustomized()).thenReturn(false);
+@@ -667,7 +666,6 @@
+     @Test
+     public void testGetServiceOfferingFromRequest_Customized_ValidParams_SetsAndReturnsOffering() {
+         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid5")).thenReturn(offering);
+         doNothing().when(accountService).checkAccess(eq(account), eq(offering), any());
+         when(offering.isCustomized()).thenReturn(true);
+@@ -684,7 +682,6 @@
+     @Test
+     public void testGetServiceOfferingFromRequest_Customized_InvalidParams_ReturnsNull() {
+         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid6")).thenReturn(offering);
+         doNothing().when(accountService).checkAccess(eq(account), eq(offering), any());
+         when(offering.isCustomized()).thenReturn(true);
+@@ -698,7 +695,6 @@
+     @Test
+     public void testAccountCannotAccessNetwork_CanAccess_ReturnsFalse() {
+         NetworkVO network = mock(NetworkVO.class);
+-        Account account = mock(Account.class);
+         when(accountService.getActiveAccountById(1L)).thenReturn(account);
+         doNothing().when(networkModel).checkNetworkPermissions(account, network);
+ 
+@@ -708,7 +704,7 @@
+     @Test
+     public void testAccountCannotAccessNetwork_CannotAccess_ReturnsTrue() {
+         NetworkVO network = mock(NetworkVO.class);
+-        Account account = mock(Account.class);
++        // removed local mock; replaced with global field `account`
+         when(accountService.getActiveAccountById(1L)).thenReturn(account);
+         doThrow(new CloudRuntimeException("Access denied"))
+                 .when(networkModel).checkNetworkPermissions(account, network);

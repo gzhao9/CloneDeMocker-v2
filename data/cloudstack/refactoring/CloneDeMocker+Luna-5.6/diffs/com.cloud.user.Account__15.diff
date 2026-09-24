@@ -1,0 +1,121 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
+@@ -115,6 +115,8 @@
+     @InjectMocks
+     ServerAdapter serverAdapter;
+ 
++    private Account accountMock;
++
+     @Mock AccountService accountService;
+     @Mock DataCenterDao dataCenterDao;
+     @Mock DataCenterJoinDao dataCenterJoinDao;
+@@ -148,6 +150,7 @@
+     @Before
+     public void setupCallContext() {
+         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
++        accountMock = mock(Account.class);
+     }
+ 
+     @After
+@@ -630,51 +633,47 @@
+     @Test
+     public void testGetServiceOfferingFromRequest_AccessDenied_ReturnsNull() {
+         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid2")).thenReturn(offering);
+         doThrow(new PermissionDeniedException("denied"))
+-                .when(accountService).checkAccess(eq(account), eq(offering), any());
+-
+-        assertNull(serverAdapter.getServiceOfferingFromRequest(null, account, "uuid2", 2, 1024));
++                .when(accountService).checkAccess(eq(accountMock), eq(offering), any());
++
++        assertNull(serverAdapter.getServiceOfferingFromRequest(null, accountMock, "uuid2", 2, 1024));
+     }
+ 
+     @Test
+     public void testGetServiceOfferingFromRequest_NotCustomized_CpuMemoryMismatch_ReturnsNull() {
+         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid3")).thenReturn(offering);
+-        doNothing().when(accountService).checkAccess(eq(account), eq(offering), any());
++        doNothing().when(accountService).checkAccess(eq(accountMock), eq(offering), any());
+         when(offering.isCustomized()).thenReturn(false);
+         when(offering.getCpu()).thenReturn(4);
+ 
+-        assertNull(serverAdapter.getServiceOfferingFromRequest(null, account, "uuid3", 2, 1024));
++        assertNull(serverAdapter.getServiceOfferingFromRequest(null, accountMock, "uuid3", 2, 1024));
+     }
+ 
+     @Test
+     public void testGetServiceOfferingFromRequest_NotCustomized_CpuMemoryMatch_ReturnsOffering() {
+         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid4")).thenReturn(offering);
+-        doNothing().when(accountService).checkAccess(eq(account), eq(offering), any());
++        doNothing().when(accountService).checkAccess(eq(accountMock), eq(offering), any());
+         when(offering.isCustomized()).thenReturn(false);
+         when(offering.getCpu()).thenReturn(2);
+         when(offering.getRamSize()).thenReturn(1024);
+         DataCenterVO zone = mock(DataCenterVO.class);
+ 
+-        assertEquals(offering, serverAdapter.getServiceOfferingFromRequest(zone, account, "uuid4", 2, 1024));
++        assertEquals(offering, serverAdapter.getServiceOfferingFromRequest(zone, accountMock, "uuid4", 2, 1024));
+     }
+ 
+     @Test
+     public void testGetServiceOfferingFromRequest_Customized_ValidParams_SetsAndReturnsOffering() {
+         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid5")).thenReturn(offering);
+-        doNothing().when(accountService).checkAccess(eq(account), eq(offering), any());
++        doNothing().when(accountService).checkAccess(eq(accountMock), eq(offering), any());
+         when(offering.isCustomized()).thenReturn(true);
+         doNothing().when(userVmManager).validateCustomParameters(eq(offering), any());
+         DataCenterVO zone = mock(DataCenterVO.class);
+ 
+-        ServiceOfferingVO result = serverAdapter.getServiceOfferingFromRequest(zone, account, "uuid5", 2, 1024);
++        ServiceOfferingVO result = serverAdapter.getServiceOfferingFromRequest(zone, accountMock, "uuid5", 2, 1024);
+ 
+         assertEquals(offering, result);
+         verify(offering).setCpu(2);
+@@ -684,23 +683,21 @@
+     @Test
+     public void testGetServiceOfferingFromRequest_Customized_InvalidParams_ReturnsNull() {
+         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid6")).thenReturn(offering);
+-        doNothing().when(accountService).checkAccess(eq(account), eq(offering), any());
++        doNothing().when(accountService).checkAccess(eq(accountMock), eq(offering), any());
+         when(offering.isCustomized()).thenReturn(true);
+         doThrow(new InvalidParameterValueException("invalid"))
+                 .when(userVmManager).validateCustomParameters(eq(offering), any());
+ 
+-        assertNull(serverAdapter.getServiceOfferingFromRequest(null, account, "uuid6", 2, 1024));
++        assertNull(serverAdapter.getServiceOfferingFromRequest(null, accountMock, "uuid6", 2, 1024));
+     }
+ 
+ 
+     @Test
+     public void testAccountCannotAccessNetwork_CanAccess_ReturnsFalse() {
+         NetworkVO network = mock(NetworkVO.class);
+-        Account account = mock(Account.class);
+-        when(accountService.getActiveAccountById(1L)).thenReturn(account);
+-        doNothing().when(networkModel).checkNetworkPermissions(account, network);
++        when(accountService.getActiveAccountById(1L)).thenReturn(accountMock);
++        doNothing().when(networkModel).checkNetworkPermissions(accountMock, network);
+ 
+         assertFalse(serverAdapter.accountCannotAccessNetwork(network, 1L));
+     }
+@@ -708,10 +705,9 @@
+     @Test
+     public void testAccountCannotAccessNetwork_CannotAccess_ReturnsTrue() {
+         NetworkVO network = mock(NetworkVO.class);
+-        Account account = mock(Account.class);
+-        when(accountService.getActiveAccountById(1L)).thenReturn(account);
++        when(accountService.getActiveAccountById(1L)).thenReturn(accountMock);
+         doThrow(new CloudRuntimeException("Access denied"))
+-                .when(networkModel).checkNetworkPermissions(account, network);
++                .when(networkModel).checkNetworkPermissions(accountMock, network);
+ 
+         assertTrue(serverAdapter.accountCannotAccessNetwork(network, 1L));
+     }
