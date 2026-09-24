@@ -1,0 +1,104 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
+@@ -79,23 +79,20 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testHasPermission_ThrowsWhenKeyIsDisabled() {
+-        KMSKey key = mock(KMSKey.class);
+-        when(key.isEnabled()).thenReturn(false);
++        KMSKey key = org.apache.cloudstack.kms.MockKMSKey.createMockKmsKey(false);
+         kmsManager.hasPermission(1L, key);
+     }
+ 
+     @Test
+     public void testHasPermission_ReturnsFalseWhenCallerAccountNotFound() {
+-        KMSKey key = mock(KMSKey.class);
+-        when(key.isEnabled()).thenReturn(true);
++        KMSKey key = MockKMSKey.createMockKmsKey(true);
+ 
+         assertFalse(kmsManager.hasPermission(1L, key));
+     }
+ 
+     @Test
+     public void testHasPermission_ReturnsFalseWhenPermissionDenied() {
+-        KMSKey key = mock(KMSKey.class);
+-        when(key.isEnabled()).thenReturn(true);
++        KMSKey key = MockKMSKey.createMockKmsKey(true);
+         when(key.getAccountId()).thenReturn(10L);
+ 
+         assertFalse(kmsManager.hasPermission(1L, key));
+@@ -103,8 +100,7 @@
+ 
+     @Test
+     public void testHasPermission_ReturnsTrueWhenAccessGranted() {
+-        KMSKey key = mock(KMSKey.class);
+-        when(key.isEnabled()).thenReturn(true);
++        KMSKey key = MockKMSKey.createMockKmsKey(true);
+         when(key.getAccountId()).thenReturn(1L);
+         assertTrue(kmsManager.hasPermission(1L, key));
+     }
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
+@@ -190,23 +190,20 @@
+ 
+     @Test(expected = KMSException.class)
+     public void testGenerateVolumeKeyWithKek_ThrowsWhenKeyDisabled() throws KMSException {
+-        KMSKey key = mock(KMSKey.class);
+-        when(key.isEnabled()).thenReturn(false);
++        KMSKey key = MockKMSKey.createMockKmsKey(false);
+         kmsManager.generateVolumeKeyWithKek(key, 1L);
+     }
+ 
+     @Test(expected = KMSException.class)
+     public void testGenerateVolumeKeyWithKek_ThrowsWhenWrongPurpose() throws KMSException {
+-        KMSKey key = mock(KMSKey.class);
+-        when(key.isEnabled()).thenReturn(true);
++        KMSKey key = MockKMSKey.createMockKmsKey(true);
+         when(key.getPurpose()).thenReturn(KeyPurpose.TLS_CERT);
+         kmsManager.generateVolumeKeyWithKek(key, 1L);
+     }
+ 
+     @Test(expected = KMSException.class)
+     public void testGenerateVolumeKeyWithKek_ThrowsWhenNoActiveKekVersion() throws KMSException {
+-        KMSKey key = mock(KMSKey.class);
+-        when(key.isEnabled()).thenReturn(true);
++        KMSKey key = org.apache.cloudstack.kms.MockKMSKey.createMockKmsKey(true);
+         when(key.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+         when(key.getId()).thenReturn(1L);
+         when(kmsKekVersionDao.getActiveVersion(1L)).thenReturn(null);
+@@ -216,8 +213,7 @@
+ 
+     @Test(expected = KMSException.class)
+     public void testGenerateVolumeKeyWithKek_ThrowsWhenHsmProfileDisabled() throws KMSException {
+-        KMSKey key = mock(KMSKey.class);
+-        when(key.isEnabled()).thenReturn(true);
++        KMSKey key = MockKMSKey.createMockKmsKey(true);
+         when(key.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+         when(key.getId()).thenReturn(1L);
+ 
+@@ -234,8 +230,7 @@
+ 
+     @Test
+     public void testGenerateVolumeKeyWithKek_HappyPath() {
+-        KMSKey key = mock(KMSKey.class);
+-        when(key.isEnabled()).thenReturn(true);
++        KMSKey key = org.apache.cloudstack.kms.MockKMSKey.createMockKmsKey(true);
+         when(key.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+         when(key.getId()).thenReturn(1L);
+ 
+--- a/server/src/test/java/org/apache/cloudstack/kms/MockKMSKey.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/MockKMSKey.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.kms;
++
++import org.mockito.Mockito;
++
++import static org.mockito.Mockito.when;
++
++public class MockKMSKey {
++    public static KMSKey createMockKmsKey(boolean enabled) {
++        KMSKey key = Mockito.mock(KMSKey.class);
++        when(key.isEnabled()).thenReturn(enabled);
++        return key;
++    }
++}

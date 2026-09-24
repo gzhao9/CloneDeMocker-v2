@@ -1,0 +1,96 @@
+--- a/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
+@@ -686,7 +686,7 @@
+ 
+         final ClusterVO cluster = new ClusterVO();
+         cluster.setHypervisorType(String.valueOf(HypervisorType.XenServer));
+-        Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
++        clusterDao = createMockClusterDao(1L, cluster);
+ 
+         ChangeStoragePoolScopeCmd cmd = mockChangeStoragePooolScopeCmd("ZONE");
+         storageManagerImpl.changeStoragePoolScope(cmd);
+@@ -697,7 +697,7 @@
+         prepareTestChangeStoragePoolScope(ScopeType.ZONE, StoragePoolStatus.Disabled);
+ 
+         final ClusterVO cluster = new ClusterVO();
+-        Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
++        clusterDao = createMockClusterDao(1L, cluster);
+ 
+         VMInstanceVO instance = Mockito.mock(VMInstanceVO.class);
+         Pair<List<VMInstanceVO>, Integer> vms = new Pair<>(List.of(instance), 1);
+@@ -943,7 +943,7 @@
+ 
+         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+         Mockito.when(host.getClusterId()).thenReturn(2L);
+-        Mockito.when(clusterDao.findById(2L)).thenReturn(cluster);
++        clusterDao = createMockClusterDao(2L, cluster);
+         Mockito.when(cluster.getPodId()).thenReturn(3L);
+         Mockito.when(podDao.findById(3L)).thenReturn(pod);
+         Mockito.when(pod.getDataCenterId()).thenReturn(4L);
+@@ -975,7 +975,7 @@
+ 
+         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+         Mockito.when(host.getClusterId()).thenReturn(2L);
+-        Mockito.when(clusterDao.findById(2L)).thenReturn(cluster);
++        clusterDao = createMockClusterDao(2L, cluster);
+         Mockito.when(cluster.getPodId()).thenReturn(3L);
+         Mockito.when(podDao.findById(3L)).thenReturn(pod);
+         Mockito.when(pod.getDataCenterId()).thenReturn(4L);
+@@ -1522,7 +1522,7 @@
+ 
+         Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group8,group9");
+ 
+-        Mockito.when(clusterDao.findById(clusterId)).thenReturn(clusterVO);
++        clusterDao = createMockClusterDao(clusterId, clusterVO);
+         Mockito.when(podDao.findById(podId)).thenReturn(podVO);
+         Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
+ 
+@@ -1548,7 +1548,7 @@
+ 
+         Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group8,group9");
+ 
+-        Mockito.when(clusterDao.findById(clusterId)).thenReturn(clusterVO);
++        clusterDao = createMockClusterDao(clusterId, clusterVO);
+         Mockito.when(podDao.findById(podId)).thenReturn(podVO);
+         Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
+ 
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -2149,7 +2149,7 @@
+         StoragePool pool = Mockito.mock(StoragePool.class);
+         when(vm.getDataCenterId()).thenReturn(1L);
+         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(1L, 2L));
+-        when(clusterDao.findById(1L)).thenReturn(cluster);
++        clusterDao = createMockClusterDao(1L, cluster);
+         when(cluster.getPodId()).thenReturn(1L);
+         when(podDao.findById(1L)).thenReturn(pod);
+         when(volumeToAttach.getDiskOfferingId()).thenReturn(1L);
+@@ -2170,7 +2170,7 @@
+         HostPodVO pod = Mockito.mock(HostPodVO.class);
+         mockDiskOffering();
+         when(vm.getDataCenterId()).thenReturn(1L);
+-        when(clusterDao.findById(1L)).thenReturn(cluster);
++        clusterDao = createMockClusterDao(1L, cluster);
+         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(clusterHostId);
+         when(podDao.findById(anyLong())).thenReturn(pod);
+         when(volumeToAttach.getDiskOfferingId()).thenReturn(1L);
+--- a/server/src/test/java/com/cloud/storage/MockClusterDao.java
++++ b/server/src/test/java/com/cloud/storage/MockClusterDao.java
+@@ -0,0 +1,17 @@
++package com.cloud.storage;
++
++import com.cloud.dc.dao.ClusterDao;
++import com.cloud.dc.dao.ClusterVO;
++import org.mockito.Mockito;
++
++public final class MockClusterDao {
++
++    private MockClusterDao() {
++    }
++
++    public static ClusterDao createMockClusterDao(long clusterId, ClusterVO cluster) {
++        ClusterDao clusterDao = Mockito.mock(ClusterDao.class);
++        Mockito.when(clusterDao.findById(clusterId)).thenReturn(cluster);
++        return clusterDao;
++    }
++}
