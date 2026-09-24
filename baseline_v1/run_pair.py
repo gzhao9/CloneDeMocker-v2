@@ -149,12 +149,17 @@ def done_ids(project: str, model: str, harness: str) -> set[str]:
 
 
 def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: int = 0,
-                after_mci=None) -> dict:
+                after_mci=None, should_run=None, reverse: bool = False) -> dict:
     """Run every MCI of one detection run through V2 then V1. Resumable: MCIs already in both
-    datasets are skipped. `after_mci(project, mci_id)` runs after each MCI (the driver syncs there)."""
+    datasets are skipped. `after_mci(project, mci_id)` runs after each MCI (the driver syncs there).
+    `should_run(mci_id)` is asked right before each MCI, so routing and work another machine has
+    already published are decided on current data, not on a list frozen at start. `reverse`
+    walks the list from the end (two machines sharing a project start at opposite ends)."""
     service = DetectionService(REPO)
     _, raw = service.load_raw_detection(run_id)
     ordered = [item["id"] for item in service._indexed_instances(raw)]
+    if reverse:
+        ordered.reverse()
     base = RefactoringAgent._openai_provider("default")
     workspace = f"pair-{project}"
 
@@ -163,9 +168,14 @@ def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: i
     todo = [m for m in ordered if m not in v2_done or m not in v1_done]
     if limit:
         todo = todo[:limit]
-    log(f"pair run: {project}, {len(ordered)} MCIs, {len(todo)} to do, model {model}")
+    log(f"pair run: {project}, {len(ordered)} MCIs, {len(todo)} to do, model {model}"
+        + (", reverse" if reverse else ""))
     errors = 0
+    skipped = 0
     for mci_id in todo:
+        if should_run is not None and not should_run(mci_id):
+            skipped += 1
+            continue
         for name, agent_cls, harness, kwargs, done in (
             ("V2", PairV2Agent, HARNESS_V2, {"max_retries": 2, "use_cache": False}, v2_done),
             ("V1", PairV1Agent, HARNESS_V1, {"max_retries": 0, "use_cache": False}, v1_done),
@@ -203,10 +213,11 @@ def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: i
                    if verdict != "SUCCESS" else ""))
         if after_mci:
             after_mci(project, mci_id)
-    log(f"pair run: {project} pass finished ({errors} tool errors)")
-    return {"todo": len(todo), "errors": errors,
-            "remaining": len([m for m in ordered if m not in done_ids(project, model, HARNESS_V2)
-                              or m not in done_ids(project, model, HARNESS_V1)])}
+    log(f"pair run: {project} pass finished ({errors} tool errors, {skipped} routed elsewhere/done by a peer)")
+    v2_now, v1_now = done_ids(project, model, HARNESS_V2), done_ids(project, model, HARNESS_V1)
+    mine = [m for m in ordered if should_run is None or should_run(m)]
+    return {"todo": len(todo), "errors": errors, "skipped": skipped,
+            "remaining": len([m for m in mine if m not in v2_now or m not in v1_now])}
 
 
 def main() -> None:

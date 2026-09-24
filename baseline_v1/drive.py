@@ -104,6 +104,7 @@ def sync(lane: str, project: str, note: str) -> bool:
             index.unlink(missing_ok=True)
             plumb("read-tree", base)
             for rel in files:
+                merge_with_remote(base, rel)
                 blob = git("hash-object", "-w", "--", rel).stdout.strip()
                 plumb("update-index", "--add", "--cacheinfo", f"100644,{blob},{rel}")
             tree = plumb("write-tree").stdout.strip()
@@ -119,6 +120,92 @@ def sync(lane: str, project: str, note: str) -> bool:
         index.unlink(missing_ok=True)
     issue(lane, f"{project}: push failed 5 times ({note}); rows are on disk, next sync retries")
     return False
+
+
+def merge_with_remote(base: str, rel: str) -> None:
+    """Fold rows another machine published into this file before it replaces the remote copy.
+
+    Two machines share CloudStack's pair datasets. Writing this host's copy over the remote one
+    would not merge, it would replace -- dropping every row the other host added since. Rows
+    present only remotely are adopted; for rows on both sides this host's copy wins (it is the
+    one that just ran them). The local file is updated too, so it stays a superset.
+    """
+    if not (rel.endswith("refactoring-results.json") or rel.endswith("refactoring-results.csv")):
+        return
+    shown = subprocess.run(["git", "show", f"{base}:{rel}"], cwd=REPO, capture_output=True)
+    if shown.returncode != 0 or not shown.stdout:
+        return
+    remote_text = shown.stdout.decode("utf-8", "replace")
+    path = REPO / rel
+    if rel.endswith(".json"):
+        local = json.loads(path.read_text(encoding="utf-8"))
+        remote = json.loads(remote_text).get("results", {})
+        missing = {k: v for k, v in remote.items() if k not in local["results"]}
+        if missing:
+            local["results"].update(missing)
+            local["totalMcis"] = len(local["results"])
+            path.write_text(json.dumps(local, ensure_ascii=False, indent=2), encoding="utf-8", newline=chr(10))
+    else:
+        import csv, io
+        mine = list(csv.DictReader(path.open(encoding="utf-8")))
+        theirs = list(csv.DictReader(io.StringIO(remote_text)))
+        seen = {r.get("mciId") for r in mine}
+        extra = [r for r in theirs if r.get("mciId") not in seen]
+        if extra and mine:
+            with path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=list(mine[0].keys()), extrasaction="ignore")
+                writer.writeheader()
+                writer.writerows(mine + extra)
+
+
+ROUTE: dict = {"reverse": False, "round1": None}
+ROUND1_SETUP = "CloneDeMocker+Terra-5.6"
+_remote_cache: dict = {"at": 0.0}
+
+
+def _remote_rows(rel: str) -> dict:
+    shown = subprocess.run(["git", "show", f"{REMOTE}/main:{rel}"], cwd=REPO, capture_output=True)
+    if shown.returncode != 0 or not shown.stdout:
+        return {}
+    return json.loads(shown.stdout.decode("utf-8", "replace")).get("results", {})
+
+
+def make_should_run(project: str):
+    """Decide per MCI, on the remote's current data, whether this lane runs it.
+
+    --round1-failures skip: leave MCIs whose round-1 verdict is not SUCCESS to C (A and B).
+    --round1-failures only: run only those (C). An MCI round 1 has not graded yet counts as
+    not-failed, so exactly one side takes it. Any MCI the remote already has in both pair
+    datasets was done by another machine and is skipped.
+    """
+    def refresh() -> None:
+        if time.time() - _remote_cache["at"] < 120:
+            return
+        git("fetch", "-q", REMOTE, "main")
+        base = f"data/{project}/refactoring"
+        _remote_cache.update({
+            "at": time.time(),
+            "round1": _remote_rows(f"{base}/{ROUND1_SETUP}/refactoring-results.json") if ROUTE["round1"] else {},
+            "v2": _remote_rows(f"{base}/{SETUPS[0]}/refactoring-results.json"),
+            "v1": _remote_rows(f"{base}/{SETUPS[1]}/refactoring-results.json"),
+        })
+
+    def should_run(mci_id: str) -> bool:
+        try:
+            refresh()
+        except Exception:  # noqa: BLE001 - offline: fall back to the last view
+            pass
+        if mci_id in _remote_cache.get("v2", {}) and mci_id in _remote_cache.get("v1", {}):
+            return False
+        verdict = (_remote_cache.get("round1", {}).get(mci_id) or {}).get("classification")
+        failed = verdict is not None and verdict != "SUCCESS"
+        if ROUTE["round1"] == "skip":
+            return not failed
+        if ROUTE["round1"] == "only":
+            return failed
+        return True
+
+    return should_run
 
 
 def run_id_for(project: str) -> str:
@@ -150,7 +237,8 @@ def worker(lane: str, projects: list[str]) -> None:
                 sync(lane, proj, f"{count['n']} MCIs")
 
         for attempt in range(2):                     # a second pass retries tool errors once
-            summary = run_pair.run_project(run_id, project, after_mci=after)
+            summary = run_pair.run_project(run_id, project, after_mci=after,
+                                           should_run=make_should_run(project), reverse=ROUTE["reverse"])
             sync(lane, project, "pass end")
             if not summary["remaining"]:
                 break
@@ -165,7 +253,8 @@ def supervise(lane: str, projects: list[str]) -> None:
     restarts: list[float] = []
     while True:
         roots = [a for name in projects if name in PROJECT_ROOTS for a in ("--root", f"{name}={PROJECT_ROOTS[name]}")]
-        child = subprocess.Popen([sys.executable, __file__, "--lane", lane, "--worker", *roots, *projects],
+        route = (["--reverse"] if ROUTE["reverse"] else []) + (["--round1-failures", ROUTE["round1"]] if ROUTE["round1"] else [])
+        child = subprocess.Popen([sys.executable, __file__, "--lane", lane, "--worker", *roots, *route, *projects],
                                  cwd=REPO, stdout=log, stderr=subprocess.STDOUT)
         code = child.wait()
         if code == 0:
@@ -185,8 +274,13 @@ if __name__ == "__main__":
     parser.add_argument("--worker", action="store_true")
     parser.add_argument("--root", action="append", default=[],
                         help="NAME=PATH, where this host keeps a project (e.g. on Linux)")
+    parser.add_argument("--reverse", action="store_true", help="walk the MCI list from the end")
+    parser.add_argument("--round1-failures", choices=("skip", "only"), default=None,
+                        help="skip: leave round-1 failures to C; only: run just those (C)")
     parser.add_argument("projects", nargs="+")
     args = parser.parse_args()
+    ROUTE["reverse"] = args.reverse
+    ROUTE["round1"] = args.round1_failures
     for pair in args.root:
         name, _, path = pair.partition("=")
         PROJECT_ROOTS[name] = path
