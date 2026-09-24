@@ -1,0 +1,40 @@
+--- a/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java
++++ b/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java
+@@ -110,11 +110,8 @@
+                 .addParameter(Constants.AUTHENTICATOR_KEY, "accesskey")
+                 .addParameter(Constants.AUTH_KEY, true);
+         Invoker invoker = mock(Invoker.class);
+-        Invocation invocation = mock(RpcInvocation.class);
++        Invocation invocation = mockInvocationWithAccessKeyPair(System.currentTimeMillis());
+         when(invocation.getObjectAttachment(Constants.REQUEST_SIGNATURE_KEY)).thenReturn("dubbo");
+-        when(invocation.getObjectAttachment(Constants.AK_KEY)).thenReturn("ak");
+-        when(invocation.getObjectAttachment(CommonConstants.CONSUMER)).thenReturn("test-consumer");
+-        when(invocation.getObjectAttachment(Constants.REQUEST_TIMESTAMP_KEY)).thenReturn(System.currentTimeMillis());
+         when(invoker.getUrl()).thenReturn(url);
+ 
+         ProviderAuthFilter providerAuthFilter = new ProviderAuthFilter(FrameworkModel.defaultModel());
+@@ -139,10 +136,7 @@
+                 .addParameter(Constants.AUTH_KEY, true);
+ 
+         Invoker invoker = mock(Invoker.class);
+-        Invocation invocation = mock(RpcInvocation.class);
+-        when(invocation.getObjectAttachment(Constants.AK_KEY)).thenReturn("ak");
+-        when(invocation.getObjectAttachment(CommonConstants.CONSUMER)).thenReturn("test-consumer");
+-        when(invocation.getObjectAttachment(Constants.REQUEST_TIMESTAMP_KEY)).thenReturn(currentTimeMillis);
++        Invocation invocation = mockInvocationWithAccessKeyPair(currentTimeMillis);
+         when(invocation.getMethodName()).thenReturn(method);
+         Object[] fakeParams = new Object[] {"dubbo1", "dubbo3"};
+         when(invocation.getArguments()).thenReturn(fakeParams);
+@@ -196,4 +190,12 @@
+         Result result = providerAuthFilter.invoke(invoker, invocation);
+         assertNull(result);
+     }
++
++    private Invocation mockInvocationWithAccessKeyPair(long timestamp) {
++        Invocation invocation = mock(RpcInvocation.class);
++        when(invocation.getObjectAttachment(Constants.AK_KEY)).thenReturn("ak");
++        when(invocation.getObjectAttachment(CommonConstants.CONSUMER)).thenReturn("test-consumer");
++        when(invocation.getObjectAttachment(Constants.REQUEST_TIMESTAMP_KEY)).thenReturn(timestamp);
++        return invocation;
++    }
+ }
