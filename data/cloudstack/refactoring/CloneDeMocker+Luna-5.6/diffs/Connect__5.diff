@@ -1,0 +1,40 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckVirtualMachineCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckVirtualMachineCommandWrapperTest.java
+@@ -171,7 +171,7 @@
+         when(libvirtException.getMessage()).thenReturn("Domain not found");
+         when(libvirtComputingResource.getVmState(conn, VM_NAME)).thenReturn(PowerState.PowerOn);
+         when(libvirtComputingResource.getVncPort(conn, VM_NAME)).thenReturn(5900);
+-        when(conn.domainLookupByName(VM_NAME)).thenThrow(libvirtException);
++        MockConnectWithDomainLookupFailure.configure(conn, VM_NAME, libvirtException);
+ 
+         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) wrapper.execute(command, libvirtComputingResource);
+ 
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPreMigrationCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPreMigrationCommandWrapperTest.java
+@@ -173,7 +173,7 @@
+         LibvirtException libvirtException = Mockito.mock(LibvirtException.class);
+         when(libvirtException.getMessage()).thenReturn("Connection failed");
+         when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+-        when(connect.domainLookupByName(VM_NAME)).thenThrow(libvirtException);
++        MockConnectWithDomainLookupFailure.configure(connect, VM_NAME, libvirtException);
+ 
+         Answer answer = wrapper.execute(preMigrationCommand, libvirtComputingResource);
+ 
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockConnectWithDomainLookupFailure.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockConnectWithDomainLookupFailure.java
+@@ -0,0 +1,15 @@
++package com.cloud.hypervisor.kvm.resource.wrapper;
++
++import org.libvirt.Connect;
++import org.libvirt.LibvirtException;
++
++import static org.mockito.Mockito.when;
++
++public final class MockConnectWithDomainLookupFailure {
++    private MockConnectWithDomainLookupFailure() {
++    }
++
++    public static void configure(Connect connect, String vmName, LibvirtException libvirtException) throws LibvirtException {
++        when(connect.domainLookupByName(vmName)).thenThrow(libvirtException);
++    }
++}

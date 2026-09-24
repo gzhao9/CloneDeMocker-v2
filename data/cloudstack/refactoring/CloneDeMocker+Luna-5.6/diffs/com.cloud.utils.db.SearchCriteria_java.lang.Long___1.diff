@@ -1,0 +1,50 @@
+--- a/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
+@@ -276,6 +276,8 @@
+     @Mock
+     NetworkOrchestrationService networkOrchestrationService;
+ 
++    private SearchCriteria<Long> searchCriteriaMock3;
++
+     AccountVO account;
+     UserVO user;
+ 
+@@ -416,6 +418,8 @@
+     @Before
+     public void setUp() {
+ 
++        searchCriteriaMock3 = Mockito.mock(SearchCriteria.class);
++
+         account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
+         account.setId(5L);
+         user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
+@@ -607,12 +611,11 @@
+     @Test
+     public void testUpdateCondition() throws ResourceInUseException {
+         GenericSearchBuilder<AutoScalePolicyConditionMapVO, Long> searchBuilderMock = Mockito.mock(GenericSearchBuilder.class);
+-        SearchCriteria<Long> searchCriteriaMock = Mockito.mock(SearchCriteria.class);
+ 
+         Mockito.doReturn(searchBuilderMock).when(autoScalePolicyConditionMapDao).createSearchBuilder(any());
+         when(searchBuilderMock.entity()).thenReturn(autoScalePolicyConditionMapVOMock);
+-        Mockito.doReturn(searchCriteriaMock).when(searchBuilderMock).create();
+-        Mockito.doReturn(Arrays.asList()).when(autoScalePolicyConditionMapDao).customSearch(searchCriteriaMock, null);
++        Mockito.doReturn(searchCriteriaMock3).when(searchBuilderMock).create();
++        Mockito.doReturn(Arrays.asList()).when(autoScalePolicyConditionMapDao).customSearch(searchCriteriaMock3, null);
+ 
+         when(conditionDao.update(eq(conditionId), any())).thenReturn(true);
+ 
+@@ -657,12 +660,11 @@
+     @Test(expected = ResourceInUseException.class)
+     public void testUpdateConditionWithPolicies() throws ResourceInUseException {
+         GenericSearchBuilder<AutoScalePolicyConditionMapVO, Long> genericSearchBuilderMock = Mockito.mock(GenericSearchBuilder.class);
+-        SearchCriteria<Long> searchCriteriaLongMock = Mockito.mock(SearchCriteria.class);
+ 
+         Mockito.doReturn(genericSearchBuilderMock).when(autoScalePolicyConditionMapDao).createSearchBuilder(Long.class);
+         when(genericSearchBuilderMock.entity()).thenReturn(autoScalePolicyConditionMapVOMock);
+-        Mockito.doReturn(searchCriteriaLongMock).when(genericSearchBuilderMock).create();
+-        Mockito.doReturn(Arrays.asList(scaleUpPolicyId)).when(autoScalePolicyConditionMapDao).customSearch(searchCriteriaLongMock, null);
++        Mockito.doReturn(searchCriteriaMock3).when(genericSearchBuilderMock).create();
++        Mockito.doReturn(Arrays.asList(scaleUpPolicyId)).when(autoScalePolicyConditionMapDao).customSearch(searchCriteriaMock3, null);
+ 
+         SearchBuilder<AutoScaleVmGroupPolicyMapVO> searchBuilderMock1 = Mockito.mock(SearchBuilder.class);
+         Mockito.doReturn(searchBuilderMock1).when(autoScaleVmGroupPolicyMapDao).createSearchBuilder();

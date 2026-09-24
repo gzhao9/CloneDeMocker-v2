@@ -1,0 +1,46 @@
+--- a/server/src/test/java/com/cloud/resource/ResourceManagerImplTest.java
++++ b/server/src/test/java/com/cloud/resource/ResourceManagerImplTest.java
+@@ -188,6 +188,12 @@
+         f.set(configKey, o);
+     }
+ 
++    private static PrimaryDataStoreInfo createMockPrimaryDataStoreInfo() {
++        PrimaryDataStoreInfo primaryStore = Mockito.mock(PrimaryDataStoreInfo.class);
++        Mockito.when(primaryStore.getClusterId()).thenReturn(1L);
++        return primaryStore;
++    }
++
+     @Before
+     public void setup() throws Exception {
+         closeable = MockitoAnnotations.openMocks(this);
+@@ -1074,27 +1080,24 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testNoUpHostsThrowsException() {
+-        PrimaryDataStoreInfo primaryStore = Mockito.mock(PrimaryDataStoreInfo.class);
+-        Mockito.when(primaryStore.getClusterId()).thenReturn(1L);
++        PrimaryDataStoreInfo primaryStore = createMockPrimaryDataStoreInfo();
+         Mockito.doReturn(Collections.emptyList()).when(resourceManager).listAllUpHosts(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong());
+         resourceManager.getEligibleUpHostsInClusterForStorageConnection(primaryStore);
+     }
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testNoUpAndEnabledHostsThrowsException() {
+-        PrimaryDataStoreInfo primaryStore = Mockito.mock(PrimaryDataStoreInfo.class);
+-        Mockito.when(primaryStore.getClusterId()).thenReturn(1L);
++        PrimaryDataStoreInfo primaryStore = createMockPrimaryDataStoreInfo();
+         Mockito.doReturn(Collections.emptyList()).when(resourceManager).listAllUpAndEnabledHosts(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong());
+         resourceManager.getEligibleUpAndEnabledHostsInClusterForStorageConnection(primaryStore);
+     }
+ 
+     @Test
+     public void testEligibleHostsMatchingStorageAccessGroups() {
+-        PrimaryDataStoreInfo primaryStore = Mockito.mock(PrimaryDataStoreInfo.class);
++        PrimaryDataStoreInfo primaryStore = createMockPrimaryDataStoreInfo();
+         DataStore dataStore = Mockito.mock(DataStore.class);
+         Mockito.when(primaryStore.getId()).thenReturn(1L);
+         Mockito.when(dataStore.getId()).thenReturn(1L);
+-        Mockito.when(primaryStore.getClusterId()).thenReturn(1L);
+ 
+         HostVO host1 = Mockito.mock(HostVO.class);
+         HostVO host2 = Mockito.mock(HostVO.class);
