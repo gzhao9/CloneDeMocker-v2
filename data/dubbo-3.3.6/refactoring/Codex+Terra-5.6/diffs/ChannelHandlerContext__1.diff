@@ -1,0 +1,68 @@
+--- a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java
++++ b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java
+@@ -42,9 +42,8 @@
+ class ForeignHostPermitHandlerTest {
+     @Test
+     void shouldShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndEmptyWhiteList() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         Channel channel = mock(Channel.class);
+-        when(context.channel()).thenReturn(channel);
++        ChannelHandlerContext context = mockContext(channel);
+         InetAddress addr = mock(InetAddress.class);
+         when(addr.isLoopbackAddress()).thenReturn(false);
+         InetSocketAddress address = new InetSocketAddress(addr, 12345);
+@@ -67,9 +66,8 @@
+ 
+     @Test
+     void shouldShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndNotMatchWhiteList() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         Channel channel = mock(Channel.class);
+-        when(context.channel()).thenReturn(channel);
++        ChannelHandlerContext context = mockContext(channel);
+         InetAddress addr = mock(InetAddress.class);
+         when(addr.isLoopbackAddress()).thenReturn(false);
+         when(addr.getHostAddress()).thenReturn("179.23.44.1");
+@@ -94,9 +92,8 @@
+ 
+     @Test
+     void shouldNotShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndMatchWhiteList() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         Channel channel = mock(Channel.class);
+-        when(context.channel()).thenReturn(channel);
++        ChannelHandlerContext context = mockContext(channel);
+         InetAddress addr = mock(InetAddress.class);
+         when(addr.isLoopbackAddress()).thenReturn(false);
+         when(addr.getHostAddress()).thenReturn("175.23.44.1");
+@@ -113,9 +110,8 @@
+ 
+     @Test
+     void shouldNotShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndMatchWhiteListRange() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         Channel channel = mock(Channel.class);
+-        when(context.channel()).thenReturn(channel);
++        ChannelHandlerContext context = mockContext(channel);
+         InetAddress addr = mock(InetAddress.class);
+         when(addr.isLoopbackAddress()).thenReturn(false);
+         when(addr.getHostAddress()).thenReturn("192.168.1.199");
+@@ -133,9 +129,8 @@
+     @Test
+     void shouldNotShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndNotMatchWhiteListAndPermissionConfig()
+             throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         Channel channel = mock(Channel.class);
+-        when(context.channel()).thenReturn(channel);
++        ChannelHandlerContext context = mockContext(channel);
+         ChannelFuture future = mock(ChannelFuture.class);
+         when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(future);
+         ForeignHostPermitHandler handler = new ForeignHostPermitHandler(QosConfiguration.builder()
+@@ -147,4 +142,10 @@
+         handler.handlerAdded(context);
+         verify(future, never()).addListener(ChannelFutureListener.CLOSE);
+     }
++
++    private ChannelHandlerContext mockContext(Channel channel) {
++        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
++        when(context.channel()).thenReturn(channel);
++        return context;
++    }
+ }
