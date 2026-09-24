@@ -1,0 +1,73 @@
+--- a/multi-stage-query/src/test/java/org/apache/druid/msq/exec/RunWorkOrderTest.java
++++ b/multi-stage-query/src/test/java/org/apache/druid/msq/exec/RunWorkOrderTest.java
+@@ -40,13 +40,12 @@
+     final WorkOrder workOrder = Mockito.mock(WorkOrder.class);
+     final CounterTracker counters = Mockito.mock(CounterTracker.class);
+     final WorkerContext workerContext = Mockito.mock(WorkerContext.class);
+-    final FrameContext frameContext = Mockito.mock(FrameContext.class);
+     final WorkerStorageParameters storageParameters = Mockito.mock(WorkerStorageParameters.class);
+     final InputChannelFactory inputChannelFactory = Mockito.mock(InputChannelFactory.class);
+     final RunWorkOrderListener listener = Mockito.mock(RunWorkOrderListener.class);
+ 
+-    Mockito.when(frameContext.storageParameters()).thenReturn(storageParameters);
+ 
++    final FrameContext frameContext = createMockFrameContext(storageParameters);
+     final RunWorkOrder runWorkOrder =
+         new RunWorkOrder(
+             workOrder,
+@@ -76,13 +75,12 @@
+     final WorkOrder workOrder = Mockito.mock(WorkOrder.class);
+     final CounterTracker counters = Mockito.mock(CounterTracker.class);
+     final WorkerContext workerContext = Mockito.mock(WorkerContext.class);
+-    final FrameContext frameContext = Mockito.mock(FrameContext.class);
+     final WorkerStorageParameters storageParameters = Mockito.mock(WorkerStorageParameters.class);
+     final InputChannelFactory inputChannelFactory = Mockito.mock(InputChannelFactory.class);
+     final RunWorkOrderListener listener = Mockito.mock(RunWorkOrderListener.class);
+ 
+-    Mockito.when(frameContext.storageParameters()).thenReturn(storageParameters);
+ 
++    final FrameContext frameContext = createMockFrameContext(storageParameters);
+     final RunWorkOrder runWorkOrder =
+         new RunWorkOrder(
+             workOrder,
+@@ -117,13 +115,12 @@
+     final WorkOrder workOrder = Mockito.mock(WorkOrder.class);
+     final CounterTracker counters = Mockito.mock(CounterTracker.class);
+     final WorkerContext workerContext = Mockito.mock(WorkerContext.class);
+-    final FrameContext frameContext = Mockito.mock(FrameContext.class);
+     final WorkerStorageParameters storageParameters = Mockito.mock(WorkerStorageParameters.class);
+     final InputChannelFactory inputChannelFactory = Mockito.mock(InputChannelFactory.class);
+     final RunWorkOrderListener listener = Mockito.mock(RunWorkOrderListener.class);
+ 
+     final ISE exception = new ISE("oops");
+-    Mockito.when(frameContext.storageParameters()).thenReturn(storageParameters);
++    final FrameContext frameContext = createMockFrameContext(storageParameters);
+     Mockito.doThrow(exception).when(exec).cancel(CANCELLATION_ID);
+ 
+     final RunWorkOrder runWorkOrder =
+@@ -155,13 +152,12 @@
+     final WorkOrder workOrder = Mockito.mock(WorkOrder.class);
+     final CounterTracker counters = Mockito.mock(CounterTracker.class);
+     final WorkerContext workerContext = Mockito.mock(WorkerContext.class);
+-    final FrameContext frameContext = Mockito.mock(FrameContext.class);
+     final WorkerStorageParameters storageParameters = Mockito.mock(WorkerStorageParameters.class);
+     final InputChannelFactory inputChannelFactory = Mockito.mock(InputChannelFactory.class);
+     final RunWorkOrderListener listener = Mockito.mock(RunWorkOrderListener.class);
+ 
+     final ISE exception = new ISE("oops");
+-    Mockito.when(frameContext.storageParameters()).thenReturn(storageParameters);
++    final FrameContext frameContext = createMockFrameContext(storageParameters);
+     Mockito.doThrow(exception).when(frameContext).close();
+ 
+     final RunWorkOrder runWorkOrder =
+@@ -185,4 +181,10 @@
+     Mockito.verify(frameContext).close();
+     Mockito.verify(listener).onFailure(ArgumentMatchers.eq(exception));
+   }
++
++    private static FrameContext createMockFrameContext(final WorkerStorageParameters storageParameters) {
++        final FrameContext frameContext = Mockito.mock(FrameContext.class);
++        Mockito.when(frameContext.storageParameters()).thenReturn(storageParameters);
++        return frameContext;
++    }
+ }

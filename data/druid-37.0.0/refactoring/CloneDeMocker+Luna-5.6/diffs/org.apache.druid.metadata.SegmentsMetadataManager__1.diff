@@ -1,0 +1,80 @@
+--- a/server/src/test/java/org/apache/druid/segment/metadata/CoordinatorSegmentMetadataCacheTest.java
++++ b/server/src/test/java/org/apache/druid/segment/metadata/CoordinatorSegmentMetadataCacheTest.java
+@@ -129,9 +129,7 @@
+   public void setUp() throws Exception
+   {
+     super.setUp();
+-    segmentsMetadataManager = Mockito.mock(SegmentsMetadataManager.class);
+-    Mockito.when(segmentsMetadataManager.getRecentDataSourcesSnapshot())
+-           .thenReturn(DataSourcesSnapshot.fromUsedSegments(List.of()));
++    segmentsMetadataManager = createMockSegmentsMetadataManager(DataSourcesSnapshot.fromUsedSegments(List.of()));
+     SegmentsMetadataManagerConfig metadataManagerConfig =
+         new SegmentsMetadataManagerConfig(Period.millis(10), null, null);
+     segmentsMetadataManagerConfigSupplier = Suppliers.ofInstance(metadataManagerConfig);
+@@ -588,9 +586,7 @@
+   {
+     String datasource = "newSegmentAddTest";
+     CountDownLatch addSegmentLatch = new CountDownLatch(2);
+-    SegmentsMetadataManager segmentsMetadataManager = Mockito.mock(SegmentsMetadataManager.class);
+-    Mockito.when(segmentsMetadataManager.getRecentDataSourcesSnapshot())
+-           .thenReturn(DataSourcesSnapshot.fromUsedSegments(List.of()));
++    SegmentsMetadataManager segmentsMetadataManager = createMockSegmentsMetadataManager(DataSourcesSnapshot.fromUsedSegments(List.of()));
+     SegmentsMetadataManagerConfig metadataManagerConfig = Mockito.mock(SegmentsMetadataManagerConfig.class);
+     Mockito.when(metadataManagerConfig.getPollDuration()).thenReturn(Period.millis(1000));
+     Supplier<SegmentsMetadataManagerConfig> segmentsMetadataManagerConfigSupplier = Suppliers.ofInstance(metadataManagerConfig);
+@@ -643,9 +639,9 @@
+   {
+     String datasource = "newSegmentAddTest";
+     CountDownLatch addSegmentLatch = new CountDownLatch(1);
+-    SegmentsMetadataManager segmentsMetadataManager = Mockito.mock(SegmentsMetadataManager.class);
+-    Mockito.when(segmentsMetadataManager.getRecentDataSourcesSnapshot())
+-           .thenReturn(DataSourcesSnapshot.fromUsedSegments(List.of()));
++    SegmentsMetadataManager segmentsMetadataManager = createMockSegmentsMetadataManager(
++        DataSourcesSnapshot.fromUsedSegments(List.of())
++    );
+     SegmentsMetadataManagerConfig metadataManagerConfig = Mockito.mock(SegmentsMetadataManagerConfig.class);
+     Mockito.when(metadataManagerConfig.getPollDuration()).thenReturn(Period.millis(1000));
+     Supplier<SegmentsMetadataManagerConfig> segmentsMetadataManagerConfigSupplier = Suppliers.ofInstance(metadataManagerConfig);
+@@ -695,9 +691,7 @@
+   {
+     String datasource = "newSegmentAddTest";
+     CountDownLatch addSegmentLatch = new CountDownLatch(1);
+-    SegmentsMetadataManager segmentsMetadataManager = Mockito.mock(SegmentsMetadataManager.class);
+-    Mockito.when(segmentsMetadataManager.getRecentDataSourcesSnapshot())
+-           .thenReturn(DataSourcesSnapshot.fromUsedSegments(List.of()));
++    SegmentsMetadataManager segmentsMetadataManager = createMockSegmentsMetadataManager(DataSourcesSnapshot.fromUsedSegments(List.of()));
+     SegmentsMetadataManagerConfig metadataManagerConfig = Mockito.mock(SegmentsMetadataManagerConfig.class);
+     Mockito.when(metadataManagerConfig.getPollDuration()).thenReturn(Period.millis(1000));
+     Supplier<SegmentsMetadataManagerConfig> segmentsMetadataManagerConfigSupplier = Suppliers.ofInstance(metadataManagerConfig);
+@@ -1834,6 +1828,13 @@
+     Assert.assertEquals(existingMetadata.getNumReplicas(), currentMetadata.getNumReplicas());
+   }
+ 
++  private static SegmentsMetadataManager createMockSegmentsMetadataManager(DataSourcesSnapshot recentDataSourcesSnapshot)
++  {
++    SegmentsMetadataManager segmentsMetadataManager = Mockito.mock(SegmentsMetadataManager.class);
++    Mockito.when(segmentsMetadataManager.getRecentDataSourcesSnapshot()).thenReturn(recentDataSourcesSnapshot);
++    return segmentsMetadataManager;
++  }
++
+   private CoordinatorSegmentMetadataCache setupForColdDatasourceSchemaTest(ServiceEmitter emitter)
+   {
+     // foo has both hot and cold segments
+@@ -1882,7 +1883,7 @@
+ 
+     segmentSchemaCache.resetSchemaForPublishedSegments(segmentStatsMap.build(), schemaPayloadMap.build());
+ 
+-    Mockito.when(segmentsMetadataManager.getRecentDataSourcesSnapshot()).thenReturn(
++    segmentsMetadataManager = createMockSegmentsMetadataManager(
+         DataSourcesSnapshot.fromUsedSegments(List.of(segment1, segment2, coldSegment, singleColdSegment))
+     );
+ 
+@@ -2101,7 +2102,7 @@
+     );
+     segmentSchemaCache.resetSchemaForPublishedSegments(segmentStatsMap.build(), schemaPayloadMap.build());
+ 
+-    Mockito.when(segmentsMetadataManager.getRecentDataSourcesSnapshot()).thenReturn(
++    segmentsMetadataManager = createMockSegmentsMetadataManager(
+         DataSourcesSnapshot.fromUsedSegments(List.of(coldSegmentAlpha, hotSegmentGamma, coldSegmentGamma))
+     );
+ 

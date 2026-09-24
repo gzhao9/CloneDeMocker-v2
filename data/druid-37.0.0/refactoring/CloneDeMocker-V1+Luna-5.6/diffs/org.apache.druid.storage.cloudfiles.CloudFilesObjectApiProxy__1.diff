@@ -1,0 +1,42 @@
+--- a/extensions-contrib/cloudfiles-extensions/src/test/java/org/apache/druid/storage/cloudfiles/CloudFilesByteSourceTest.java
++++ b/extensions-contrib/cloudfiles-extensions/src/test/java/org/apache/druid/storage/cloudfiles/CloudFilesByteSourceTest.java
+@@ -38,12 +38,11 @@
+   {
+     final String path = "path";
+ 
+-    CloudFilesObjectApiProxy objectApi = mock(CloudFilesObjectApiProxy.class);
+     CloudFilesObject cloudFilesObject = mock(CloudFilesObject.class);
+     Payload payload = mock(Payload.class);
+     InputStream stream = mock(InputStream.class);
+ 
+-    when(objectApi.get(path, 0)).thenReturn(cloudFilesObject);
++    CloudFilesObjectApiProxy objectApi = createMockCloudFilesObjectApiProxy(path, cloudFilesObject);
+     when(cloudFilesObject.getPayload()).thenReturn(payload);
+     when(payload.openStream()).thenReturn(stream);
+     payload.close();
+@@ -62,12 +61,11 @@
+   {
+     final String path = "path";
+ 
+-    CloudFilesObjectApiProxy objectApi = mock(CloudFilesObjectApiProxy.class);
+     CloudFilesObject cloudFilesObject = mock(CloudFilesObject.class);
+     Payload payload = mock(Payload.class);
+     InputStream stream = mock(InputStream.class);
+ 
+-    when(objectApi.get(path, 0)).thenReturn(cloudFilesObject);
++    CloudFilesObjectApiProxy objectApi = createMockCloudFilesObjectApiProxy(path, cloudFilesObject);
+     when(cloudFilesObject.getPayload()).thenReturn(payload);
+     when(payload.openStream()).thenThrow(new IOException())
+                               .thenReturn(stream);
+@@ -88,4 +86,11 @@
+     verify(cloudFilesObject).getPayload();
+     verify(payload, times(2)).openStream();
+   }
++
++    private static CloudFilesObjectApiProxy createMockCloudFilesObjectApiProxy(
++            String path, CloudFilesObject cloudFilesObject) {
++        CloudFilesObjectApiProxy objectApi = mock(CloudFilesObjectApiProxy.class);
++        when(objectApi.get(path, 0)).thenReturn(cloudFilesObject);
++        return objectApi;
++    }
+ }
