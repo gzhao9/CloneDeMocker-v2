@@ -1,0 +1,112 @@
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ContextFilterTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ContextFilterTest.java
+@@ -30,6 +30,7 @@
+ 
+ import org.junit.jupiter.api.Test;
+ 
++import static org.apache.dubbo.rpc.filter.DemoServiceInvokerTestUtils.mockInvoker;
+ import static org.junit.jupiter.api.Assertions.assertNotNull;
+ import static org.mockito.BDDMockito.given;
+ import static org.mockito.Mockito.mock;
+@@ -53,9 +54,8 @@
+         given(invocation.getArguments()).willReturn(new Object[] {"hello"});
+         given(invocation.getObjectAttachments()).willReturn(null);
+ 
+-        invoker = mock(Invoker.class);
++        invoker = mockInvoker();
+         given(invoker.isAvailable()).willReturn(true);
+-        given(invoker.getInterface()).willReturn(DemoService.class);
+         AppResponse result = new AppResponse();
+         result.setValue("High");
+         given(invoker.invoke(invocation)).willReturn(result);
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ExceptionFilterTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ExceptionFilterTest.java
+@@ -33,6 +33,7 @@
+ import org.junit.jupiter.api.Test;
+ 
+ import static org.apache.dubbo.common.constants.LoggerCodeConstants.CONFIG_FILTER_VALIDATION_EXCEPTION;
++import static org.apache.dubbo.rpc.filter.DemoServiceInvokerTestUtils.mockInvoker;
+ import static org.junit.jupiter.api.Assertions.assertEquals;
+ import static org.mockito.ArgumentMatchers.eq;
+ import static org.mockito.BDDMockito.given;
+@@ -52,8 +53,7 @@
+         ExceptionFilter exceptionFilter = new ExceptionFilter();
+         RpcInvocation invocation = new RpcInvocation(
+                 "sayHello", DemoService.class.getName(), "", new Class<?>[] {String.class}, new Object[] {"world"});
+-        Invoker<DemoService> invoker = mock(Invoker.class);
+-        given(invoker.getInterface()).willReturn(DemoService.class);
++        Invoker<DemoService> invoker = mockInvoker();
+         given(invoker.invoke(eq(invocation))).willThrow(exception);
+ 
+         try {
+@@ -86,9 +86,8 @@
+         AppResponse appResponse = new AppResponse();
+         appResponse.setException(new IllegalArgumentException("java"));
+ 
+-        Invoker<DemoService> invoker = mock(Invoker.class);
++        Invoker<DemoService> invoker = mockInvoker();
+         when(invoker.invoke(invocation)).thenReturn(appResponse);
+-        when(invoker.getInterface()).thenReturn(DemoService.class);
+ 
+         Result newResult = exceptionFilter.invoke(invoker, invocation);
+ 
+@@ -106,9 +105,8 @@
+         AppResponse appResponse = new AppResponse();
+         appResponse.setException(new LocalException("localException"));
+ 
+-        Invoker<DemoService> invoker = mock(Invoker.class);
++        Invoker<DemoService> invoker = mockInvoker();
+         when(invoker.invoke(invocation)).thenReturn(appResponse);
+-        when(invoker.getInterface()).thenReturn(DemoService.class);
+ 
+         Result newResult = exceptionFilter.invoke(invoker, invocation);
+ 
+@@ -127,9 +125,8 @@
+         mockRpcResult.setException(new HessianException("hessian"));
+         Result mockAsyncResult = AsyncRpcResult.newDefaultAsyncResult(mockRpcResult, invocation);
+ 
+-        Invoker<DemoService> invoker = mock(Invoker.class);
++        Invoker<DemoService> invoker = mockInvoker();
+         when(invoker.invoke(invocation)).thenReturn(mockAsyncResult);
+-        when(invoker.getInterface()).thenReturn(DemoService.class);
+ 
+         Result asyncResult = exceptionFilter.invoke(invoker, invocation);
+ 
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/DemoServiceInvokerTestUtils.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/DemoServiceInvokerTestUtils.java
+@@ -0,0 +1,35 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.dubbo.rpc.filter;
++
++import org.apache.dubbo.rpc.Invoker;
++import org.apache.dubbo.rpc.support.DemoService;
++
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++final class DemoServiceInvokerTestUtils {
++
++    private DemoServiceInvokerTestUtils() {}
++
++    @SuppressWarnings("unchecked")
++    static Invoker<DemoService> mockInvoker() {
++        Invoker<DemoService> invoker = mock(Invoker.class);
++        when(invoker.getInterface()).thenReturn(DemoService.class);
++        return invoker;
++    }
++}
