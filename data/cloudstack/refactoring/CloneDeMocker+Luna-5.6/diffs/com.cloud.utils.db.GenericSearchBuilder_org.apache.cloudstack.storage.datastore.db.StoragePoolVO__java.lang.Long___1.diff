@@ -1,0 +1,33 @@
+--- a/engine/schema/src/test/java/org/apache/cloudstack/storage/datastore/db/PrimaryDataStoreDaoImplTest.java
++++ b/engine/schema/src/test/java/org/apache/cloudstack/storage/datastore/db/PrimaryDataStoreDaoImplTest.java
+@@ -167,9 +167,8 @@
+ 
+     @Test
+     public void testListAllIds() {
+-        GenericSearchBuilder<StoragePoolVO, Long> genericSearchBuilder = mock(SearchBuilder.class);
+         StoragePoolVO entityVO = mock(StoragePoolVO.class);
+-        when(genericSearchBuilder.entity()).thenReturn(entityVO);
++        GenericSearchBuilder<StoragePoolVO, Long> genericSearchBuilder = createMockGenericSearchBuilder(entityVO);
+         doReturn(genericSearchBuilder).when(primaryDataStoreDao).createSearchBuilder(Long.class);
+         List<Long> mockIds = Arrays.asList(1L, 2L, 3L);
+         doReturn(mockIds).when(primaryDataStoreDao).customSearch(any(), isNull());
+@@ -183,13 +182,17 @@
+ 
+     @Test
+     public void testListAllIdsEmptyResult() {
+-        GenericSearchBuilder<StoragePoolVO, Long> genericSearchBuilder = mock(SearchBuilder.class);
+         StoragePoolVO entityVO = mock(StoragePoolVO.class);
+-        when(genericSearchBuilder.entity()).thenReturn(entityVO);
++        GenericSearchBuilder<StoragePoolVO, Long> genericSearchBuilder = createMockGenericSearchBuilder(entityVO);
+         doReturn(genericSearchBuilder).when(primaryDataStoreDao).createSearchBuilder(Long.class);
+         doReturn(Collections.emptyList()).when(primaryDataStoreDao).customSearch(any(), isNull());
+         List<Long> result = primaryDataStoreDao.listAllIds();
+         verify(primaryDataStoreDao).customSearch(genericSearchBuilder.create(), null);
+         assertTrue(result.isEmpty());
+     }
++    private static GenericSearchBuilder<StoragePoolVO, Long> createMockGenericSearchBuilder(StoragePoolVO entityVO) {
++        GenericSearchBuilder<StoragePoolVO, Long> genericSearchBuilder = mock(SearchBuilder.class);
++        when(genericSearchBuilder.entity()).thenReturn(entityVO);
++        return genericSearchBuilder;
++    }
+ }

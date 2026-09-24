@@ -1,0 +1,54 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
+@@ -63,6 +63,8 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class WebhookServiceImplTest {
+     @Mock
++    private CompletableFuture<org.apache.cloudstack.mom.webhook.WebhookDeliveryThread.WebhookDeliveryResult> future;
++    @Mock
+     EventJoinDao eventJoinDao;
+     @Mock
+     WebhookDao webhookDao;
+@@ -411,7 +413,6 @@
+     @Test
+     public void getManualDeliveryJobCreatesJobWithDefaultPayloadWhenPayloadIsBlank() {
+         Webhook webhook = Mockito.mock(Webhook.class);
+-        CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = Mockito.mock(CompletableFuture.class);
+         Account account = Mockito.mock(Account.class);
+ 
+         Mockito.when(webhook.getAccountId()).thenReturn(2L);
+@@ -432,7 +433,6 @@
+         WebhookDelivery existingDelivery = Mockito.mock(WebhookDelivery.class);
+         Webhook webhook = Mockito.mock(Webhook.class);
+         EventJoinVO eventJoinVO = Mockito.mock(EventJoinVO.class);
+-        CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = Mockito.mock(CompletableFuture.class);
+ 
+         Mockito.when(existingDelivery.getEventId()).thenReturn(123L);
+         Mockito.when(eventJoinDao.findById(123L)).thenReturn(eventJoinVO);
+@@ -452,8 +452,8 @@
+     public void getManualDeliveryJobCreatesJobWithWebhookAccountDetailsWhenNoExistingDelivery() {
+         Webhook webhook = Mockito.mock(Webhook.class);
+         Account account = Mockito.mock(Account.class);
+-        CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = Mockito.mock(CompletableFuture.class);
+-
++
++        // removed local mock; replaced with global field `future`
+         Mockito.when(webhook.getAccountId()).thenReturn(1L);
+         Mockito.when(accountManager.getAccount(1L)).thenReturn(account);
+         Mockito.when(account.getUuid()).thenReturn("account-uuid");
+@@ -467,7 +467,6 @@
+     @Test
+     public void getManualDeliveryJobSetsDeliveryTriesAndTimeoutFromWebhookDomain() {
+         Webhook webhook = Mockito.mock(Webhook.class);
+-        CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = Mockito.mock(CompletableFuture.class);
+         Account account = Mockito.mock(Account.class);
+ 
+         Mockito.when(webhook.getDomainId()).thenReturn(2L);
+@@ -504,7 +503,6 @@
+     public void manualDeliveryCompleteCallbackCompletesFuture() {
+         WebhookDeliveryThread.WebhookDeliveryResult result = Mockito.mock(WebhookDeliveryThread.WebhookDeliveryResult.class);
+         WebhookServiceImpl.ManualDeliveryContext<WebhookDeliveryThread.WebhookDeliveryResult> context = Mockito.mock(WebhookServiceImpl.ManualDeliveryContext.class);
+-        CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = Mockito.mock(CompletableFuture.class);
+ 
+         Mockito.when(context.getFuture()).thenReturn(future);
+         AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback = Mockito.mock(AsyncCallbackDispatcher.class);
