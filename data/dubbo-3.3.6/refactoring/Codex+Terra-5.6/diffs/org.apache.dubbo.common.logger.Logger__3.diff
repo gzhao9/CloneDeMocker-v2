@@ -1,0 +1,91 @@
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeErrorTypeAwareLoggerTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeErrorTypeAwareLoggerTest.java
+@@ -30,7 +30,6 @@
+ import static org.mockito.Mockito.doThrow;
+ import static org.mockito.Mockito.mock;
+ import static org.mockito.Mockito.verify;
+-import static org.mockito.Mockito.when;
+ 
+ /**
+  * Tests for FailsafeErrorTypeAwareLogger to test whether it 'ignores' exceptions thrown by logger or not.
+@@ -64,9 +63,7 @@
+ 
+     @Test
+     void testSuccessLogger() {
+-        Logger successLogger = mock(Logger.class);
+-        when(successLogger.isErrorEnabled()).thenReturn(true);
+-        when(successLogger.isWarnEnabled()).thenReturn(true);
++        Logger successLogger = LoggerTestUtils.mockErrorAndWarnEnabledLogger();
+         FailsafeErrorTypeAwareLogger failsafeLogger = new FailsafeErrorTypeAwareLogger(successLogger);
+ 
+         failsafeLogger.error(REGISTRY_ADDRESS_INVALID, "Registry center", "May be it's offline.", "error");
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeLoggerTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeLoggerTest.java
+@@ -20,13 +20,13 @@
+ 
+ import org.junit.jupiter.api.Assertions;
+ import org.junit.jupiter.api.Test;
+-import org.mockito.Mockito;
+ 
+ import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.ArgumentMatchers.anyString;
+ import static org.mockito.Mockito.doThrow;
+ import static org.mockito.Mockito.mock;
+ import static org.mockito.Mockito.verify;
++import static org.mockito.Mockito.when;
+ 
+ class FailsafeLoggerTest {
+     @Test
+@@ -67,12 +67,10 @@
+ 
+     @Test
+     void testSuccessLogger() {
+-        Logger successLogger = mock(Logger.class);
+-        Mockito.when(successLogger.isErrorEnabled()).thenReturn(true);
+-        Mockito.when(successLogger.isWarnEnabled()).thenReturn(true);
+-        Mockito.when(successLogger.isInfoEnabled()).thenReturn(true);
+-        Mockito.when(successLogger.isDebugEnabled()).thenReturn(true);
+-        Mockito.when(successLogger.isTraceEnabled()).thenReturn(true);
++        Logger successLogger = LoggerTestUtils.mockErrorAndWarnEnabledLogger();
++        when(successLogger.isInfoEnabled()).thenReturn(true);
++        when(successLogger.isDebugEnabled()).thenReturn(true);
++        when(successLogger.isTraceEnabled()).thenReturn(true);
+ 
+         FailsafeLogger failsafeLogger = new FailsafeLogger(successLogger);
+         failsafeLogger.error("error");
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/LoggerTestUtils.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/LoggerTestUtils.java
+@@ -0,0 +1,33 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.dubbo.common.logger.support;
++
++import org.apache.dubbo.common.logger.Logger;
++
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++final class LoggerTestUtils {
++    private LoggerTestUtils() {}
++
++    static Logger mockErrorAndWarnEnabledLogger() {
++        Logger logger = mock(Logger.class);
++        when(logger.isErrorEnabled()).thenReturn(true);
++        when(logger.isWarnEnabled()).thenReturn(true);
++        return logger;
++    }
++}
