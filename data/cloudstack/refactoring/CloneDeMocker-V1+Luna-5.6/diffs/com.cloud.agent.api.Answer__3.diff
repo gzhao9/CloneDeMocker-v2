@@ -1,0 +1,51 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -646,8 +646,8 @@
+         HostVO hostVO = mock(HostVO.class);
+         TungstenAnswer getTungstenLoadBalancerAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer updateLoadBalancerServiceInstanceAnswer = MockTungstenAnswerFactory.get(true);
+-        Answer updateTungstenLoadbalancerStatsAnswer = mock(Answer.class);
+-        Answer updateTungstenLoadbalancerSslAnswer = mock(Answer.class);
++        Answer updateTungstenLoadbalancerStatsAnswer = createMockAnswer();
++        Answer updateTungstenLoadbalancerSslAnswer = createMockAnswer();
+         FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
+         LoadBalancerCertMapVO loadBalancerCertMapVO = mock(LoadBalancerCertMapVO.class);
+         SslCertVO sslCertVO = mock(SslCertVO.class);
+@@ -663,8 +663,6 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateLoadBalancerServiceInstanceCommand.class), anyLong())).thenReturn(updateLoadBalancerServiceInstanceAnswer);
+         when(agentMgr.easySend(anyLong(), any(UpdateTungstenLoadbalancerStatsCommand.class))).thenReturn(updateTungstenLoadbalancerStatsAnswer);
+         when(agentMgr.easySend(anyLong(), any(UpdateTungstenLoadbalancerSslCommand.class))).thenReturn(updateTungstenLoadbalancerSslAnswer);
+-        when(updateTungstenLoadbalancerStatsAnswer.getResult()).thenReturn(true);
+-        when(updateTungstenLoadbalancerSslAnswer.getResult()).thenReturn(true);
+         when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("enabled");
+         when(fwRulesDao.listByIpAndPurposeAndNotRevoked(anyLong(), eq(FirewallRule.Purpose.LoadBalancing))).thenReturn(List.of(firewallRuleVO));
+         when(lbCertMapDao.findByLbRuleId(anyLong())).thenReturn(loadBalancerCertMapVO);
+@@ -1505,7 +1503,6 @@
+         NetworkDetailVO networkDetailVO = mock(NetworkDetailVO.class);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         HostVO hostVO = mock(HostVO.class);
+-        Answer answer = mock(Answer.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         ApiObjectBase apiObjectBase = mock(ApiObjectBase.class);
+ 
+@@ -1521,8 +1518,8 @@
+         when(networkDetailsDao.persist(any(NetworkDetailVO.class))).thenReturn(networkDetailVO);
+         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
+         when(hostDao.findByPublicIp(anyString())).thenReturn(hostVO);
++         Answer answer = createMockAnswer();
+         when(agentMgr.easySend(anyLong(), any(SetupTungstenVRouterCommand.class))).thenReturn(answer);
+-        when(answer.getResult()).thenReturn(true);
+         when(vlan.getIp6Cidr()).thenReturn("fd00::1/64");
+         when(vlan.getIp6Range()).thenReturn("fd00::100-fd00::200");
+         when(getTungstenNetworkDnsAnswer.getDetails()).thenReturn("192.168.1.150");
+@@ -1668,4 +1665,10 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    private static Answer createMockAnswer() {
++        Answer answer = mock(Answer.class);
++        when(answer.getResult()).thenReturn(true);
++        return answer;
++    }
+ }

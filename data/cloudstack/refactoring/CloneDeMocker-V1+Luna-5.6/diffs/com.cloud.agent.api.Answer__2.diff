@@ -1,0 +1,71 @@
+--- a/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/CiscoVnmcElementTest.java
++++ b/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/CiscoVnmcElementTest.java
+@@ -221,9 +221,8 @@
+         List<VlanVO> vlanVOList = new ArrayList<VlanVO>();
+         when(_vlanDao.listVlansByPhysicalNetworkId(network.getPhysicalNetworkId())).thenReturn(vlanVOList);
+ 
+-        Answer answer = mock(Answer.class);
+-        when(answer.getResult()).thenReturn(true);
+-
++
++        Answer answer = createMockAnswer();
+         when(_agentMgr.easySend(anyLong(), any(CreateLogicalEdgeFirewallCommand.class))).thenReturn(answer);
+         when(_agentMgr.easySend(anyLong(), any(ConfigureNexusVsmForAsaCommand.class))).thenReturn(answer);
+         when(_agentMgr.easySend(anyLong(), any(SetSourceNatCommand.class))).thenReturn(answer);
+@@ -254,9 +253,8 @@
+         when(hostVO.getId()).thenReturn(1L);
+         when(_hostDao.findById(anyLong())).thenReturn(hostVO);
+ 
+-        Answer answer = mock(Answer.class);
+-        when(answer.getResult()).thenReturn(true);
+-
++
++        Answer answer = createMockAnswer();
+         when(_agentMgr.easySend(anyLong(), any(CleanupLogicalEdgeFirewallCommand.class))).thenReturn(answer);
+ 
+         assertTrue(_element.shutdown(network, context, true));
+@@ -298,9 +296,8 @@
+         List<FirewallRule> rules = new ArrayList<FirewallRule>();
+         rules.add(rule);
+ 
+-        Answer answer = mock(Answer.class);
+-        when(answer.getResult()).thenReturn(true);
+-
++
++        Answer answer = createMockAnswer();
+         when(_agentMgr.easySend(anyLong(), any(SetFirewallRulesCommand.class))).thenReturn(answer);
+ 
+         assertTrue(_element.applyFWRules(network, rules));
+@@ -348,9 +345,8 @@
+         List<PortForwardingRule> rules = new ArrayList<PortForwardingRule>();
+         rules.add(rule);
+ 
+-        Answer answer = mock(Answer.class);
+-        when(answer.getResult()).thenReturn(true);
+-
++
++        Answer answer = createMockAnswer();
+         when(_agentMgr.easySend(anyLong(), any(SetPortForwardingRulesCommand.class))).thenReturn(answer);
+ 
+         assertTrue(_element.applyPFRules(network, rules));
+@@ -399,11 +395,16 @@
+         List<StaticNat> rules = new ArrayList<StaticNat>();
+         rules.add(rule);
+ 
++
++        Answer answer = createMockAnswer();
++        when(_agentMgr.easySend(anyLong(), any(SetStaticNatRulesCommand.class))).thenReturn(answer);
++
++        assertTrue(_element.applyStaticNats(network, rules));
++    }
++
++    private static Answer createMockAnswer() {
+         Answer answer = mock(Answer.class);
+         when(answer.getResult()).thenReturn(true);
+-
+-        when(_agentMgr.easySend(anyLong(), any(SetStaticNatRulesCommand.class))).thenReturn(answer);
+-
+-        assertTrue(_element.applyStaticNats(network, rules));
++        return answer;
+     }
+ }

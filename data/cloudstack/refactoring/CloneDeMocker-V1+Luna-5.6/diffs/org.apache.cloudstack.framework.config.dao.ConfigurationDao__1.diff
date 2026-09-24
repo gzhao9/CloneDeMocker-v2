@@ -1,0 +1,69 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -383,7 +383,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkLoadbalancerCommand.class), anyLong())).thenReturn(createTungstenNetworkLoadbalancerAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerPoolCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerPoolAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerMemberCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerMemberAnswer);
+-        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("enabled");
++        configDao = MockConfigurationDao.createMockConfigurationDao(Config.NetworkLBHaproxyStatsVisbility.key(), "enabled");
+         when(tungstenService.updateLoadBalancer(any(), any())).thenReturn(true);
+         when(EncryptionUtil.generateSignature(anyString(), anyString())).thenReturn("generatedString");
+         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
+@@ -432,7 +432,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkLoadbalancerCommand.class), anyLong())).thenReturn(createTungstenNetworkLoadbalancerAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerPoolCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerPoolAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerMemberCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerMemberAnswer);
+-        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("disabled");
++        configDao = MockConfigurationDao.createMockConfigurationDao(Config.NetworkLBHaproxyStatsVisbility.key(), "disabled");
+         when(tungstenFabricLBHealthMonitorDao.findByLbId(anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerHealthMonitorCommand.class), anyLong())).thenReturn(updateTungstenHealthMonitorAnswer);
+ 
+@@ -962,4 +962,18 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    public final class MockConfigurationDao {
++        private MockConfigurationDao() {
++        }
++
++        public static org.apache.cloudstack.framework.config.dao.ConfigurationDao createMockConfigurationDao(
++                String configurationKey,
++                String value) {
++            org.apache.cloudstack.framework.config.dao.ConfigurationDao configDao =
++                    Mockito.mock(org.apache.cloudstack.framework.config.dao.ConfigurationDao.class);
++            when(configDao.getValue(configurationKey)).thenReturn(value);
++            return configDao;
++        }
++    }
+ }
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -665,7 +665,7 @@
+         when(agentMgr.easySend(anyLong(), any(UpdateTungstenLoadbalancerSslCommand.class))).thenReturn(updateTungstenLoadbalancerSslAnswer);
+         when(updateTungstenLoadbalancerStatsAnswer.getResult()).thenReturn(true);
+         when(updateTungstenLoadbalancerSslAnswer.getResult()).thenReturn(true);
+-        when(configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key())).thenReturn("enabled");
++        configDao = createMockConfigurationDao(Config.NetworkLBHaproxyStatsVisbility.key(), "enabled");
+         when(fwRulesDao.listByIpAndPurposeAndNotRevoked(anyLong(), eq(FirewallRule.Purpose.LoadBalancing))).thenReturn(List.of(firewallRuleVO));
+         when(lbCertMapDao.findByLbRuleId(anyLong())).thenReturn(loadBalancerCertMapVO);
+         when(entityMgr.findById(eq(SslCertVO.class), anyLong())).thenReturn(sslCertVO);
+@@ -1668,4 +1668,18 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    public final class MockConfigurationDao {
++        private MockConfigurationDao() {
++        }
++
++        public static org.apache.cloudstack.framework.config.dao.ConfigurationDao createMockConfigurationDao(
++                String configurationKey,
++                String value) {
++            org.apache.cloudstack.framework.config.dao.ConfigurationDao configDao =
++                    Mockito.mock(org.apache.cloudstack.framework.config.dao.ConfigurationDao.class);
++            when(configDao.getValue(configurationKey)).thenReturn(value);
++            return configDao;
++        }
++    }
+ }

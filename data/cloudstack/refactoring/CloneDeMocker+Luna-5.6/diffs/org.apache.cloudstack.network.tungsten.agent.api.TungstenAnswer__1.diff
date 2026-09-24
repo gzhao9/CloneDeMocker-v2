@@ -1,0 +1,67 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -718,7 +718,6 @@
+     public void addTungstenSecurityGroupEgressRuleTest() {
+         SecurityRule securityRule = mock(SecurityRule.class);
+         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
+-        TungstenAnswer getTungstenSecurityGroupAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer removeTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+@@ -731,7 +730,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenSecurityGroupCommand.class), anyLong())).thenReturn(getTungstenSecurityGroupAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(removeTungstenSecurityGroupRuleAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(addTungstenSecurityGroupRuleAnswer);
+-        when(getTungstenSecurityGroupAnswer.getApiObjectBase()).thenReturn(securityGroup);
++        getTungstenSecurityGroupAnswer = createMockTungstenAnswer(securityGroup);
+         when(securityRule.getRuleType()).thenReturn(SecurityRule.SecurityRuleType.EgressRule);
+         when(tungstenSecurityGroupRuleDao.findDefaultSecurityRule(anyLong(), anyString(), anyString())).thenReturn(tungstenSecurityGroupRuleVO);
+         when(securityRule.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
+@@ -752,16 +751,15 @@
+     public void addTungstenSecurityGroupIngressRuleTest() {
+         SecurityRule securityRule = mock(SecurityRule.class);
+         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
+-        TungstenAnswer getTungstenSecurityGroupAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         net.juniper.tungsten.api.types.SecurityGroup securityGroup = mock(net.juniper.tungsten.api.types.SecurityGroup.class);
++        TungstenAnswer getTungstenSecurityGroupAnswer = createMockTungstenAnswer(securityGroup);
+ 
+         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
+         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenSecurityGroupCommand.class), anyLong())).thenReturn(getTungstenSecurityGroupAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(addTungstenSecurityGroupRuleAnswer);
+-        when(getTungstenSecurityGroupAnswer.getApiObjectBase()).thenReturn(securityGroup);
+         when(securityRule.getRuleType()).thenReturn(SecurityRule.SecurityRuleType.IngressRule);
+         when(securityRule.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
+         when(securityRule.getEndPort()).thenReturn(NetUtils.PORT_RANGE_MIN);
+@@ -1539,9 +1537,9 @@
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+-        TungstenAnswer getTungstenSecurityGroupAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer addTungstenVmToSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
+         net.juniper.tungsten.api.types.SecurityGroup securityGroup = mock(net.juniper.tungsten.api.types.SecurityGroup.class);
++        TungstenAnswer getTungstenSecurityGroupAnswer = createMockTungstenAnswer(securityGroup);
+         NicVO nicVO = mock(NicVO.class);
+         SecurityGroupRuleVO securityGroupRuleVO = mock(SecurityGroupRuleVO.class);
+         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
+@@ -1554,7 +1552,6 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenSecurityGroupCommand.class), anyLong())).thenReturn(getTungstenSecurityGroupAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenVmToSecurityGroupCommand.class), anyLong())).thenReturn(addTungstenVmToSecurityGroupAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(addTungstenSecurityGroupRuleAnswer);
+-        when(getTungstenSecurityGroupAnswer.getApiObjectBase()).thenReturn(securityGroup);
+         when(nicDao.findDefaultNicForVM(anyLong())).thenReturn(nicVO);
+         when(nicVO.getBroadcastUri()).thenReturn(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"));
+         when(securityGroupRuleDao.listByAllowedSecurityGroupId(anyLong())).thenReturn(List.of(securityGroupRuleVO));
+@@ -1668,4 +1665,10 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    private static TungstenAnswer createMockTungstenAnswer(net.juniper.tungsten.api.types.SecurityGroup securityGroup) {
++        TungstenAnswer getTungstenSecurityGroupAnswer = mock(TungstenAnswer.class);
++        when(getTungstenSecurityGroupAnswer.getApiObjectBase()).thenReturn(securityGroup);
++        return getTungstenSecurityGroupAnswer;
++    }
+ }
