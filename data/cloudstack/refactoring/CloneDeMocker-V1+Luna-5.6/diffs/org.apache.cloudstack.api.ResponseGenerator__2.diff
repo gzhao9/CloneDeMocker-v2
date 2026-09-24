@@ -1,0 +1,88 @@
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/ListCfgCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/ListCfgCmdTest.java
+@@ -44,7 +44,6 @@
+     @Override
+     @Before
+     public void setUp() {
+-        responseGenerator = Mockito.mock(ResponseGenerator.class);
+         mgr = Mockito.mock(ManagementService.class);
+         listCfgsByCmd = new ListCfgsByCmd();
+     }
+@@ -68,8 +67,9 @@
+         }
+         ConfigurationResponse cfgResponse = new ConfigurationResponse();
+         cfgResponse.setName("Test case");
+-        Mockito.when(responseGenerator.createConfigurationResponse(cfg)).thenReturn(cfgResponse);
+ 
++        responseGenerator = MockResponseGenerator.createMockResponseGenerator(cfg, cfgResponse);
++        listCfgsByCmd._responseGenerator = responseGenerator;
+         listCfgsByCmd.execute();
+         Mockito.verify(responseGenerator).createConfigurationResponse(cfg);
+ 
+@@ -77,4 +77,19 @@
+         Assert.assertEquals(cfgResponse, actualResponse.getResponses().get(0));
+     }
+ 
++
++    public final class MockResponseGenerator {
++        private MockResponseGenerator() {
++        }
++
++        public static org.apache.cloudstack.api.ResponseGenerator createMockResponseGenerator(
++                org.apache.cloudstack.config.Configuration configuration,
++                org.apache.cloudstack.api.response.ConfigurationResponse response) {
++            org.apache.cloudstack.api.ResponseGenerator responseGenerator =
++                    org.mockito.Mockito.mock(org.apache.cloudstack.api.ResponseGenerator.class);
++            org.mockito.Mockito.when(responseGenerator.createConfigurationResponse(configuration))
++                    .thenReturn(response);
++            return responseGenerator;
++        }
++    }
+ }
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/UpdateCfgCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/UpdateCfgCmdTest.java
+@@ -42,7 +42,6 @@
+     @Override
+     @Before
+     public void setUp() {
+-        responseGenerator = Mockito.mock(ResponseGenerator.class);
+         configService = Mockito.mock(ConfigurationService.class);
+         updateCfgCmd = new UpdateCfgCmd();
+     }
+@@ -110,7 +109,7 @@
+ 
+         Configuration cfg = Mockito.mock(Configuration.class);
+         updateCfgCmd._configService = configService;
+-        updateCfgCmd._responseGenerator = responseGenerator;
++        updateCfgCmd._responseGenerator = responseGenerator = MockResponseGenerator.createMockResponseGenerator(cfg, response);
+         updateCfgCmd.setCfgName("some.cfg");
+ 
+         try {
+@@ -121,7 +120,6 @@
+ 
+         ConfigurationResponse response = new ConfigurationResponse();
+         response.setName("Test case");
+-        Mockito.when(responseGenerator.createConfigurationResponse(cfg)).thenReturn(response);
+ 
+         updateCfgCmd.execute();
+         Mockito.verify(responseGenerator).createConfigurationResponse(cfg);
+@@ -130,4 +128,19 @@
+         Assert.assertEquals("updateconfigurationresponse", response.getResponseName());
+     }
+ 
++
++    public final class MockResponseGenerator {
++        private MockResponseGenerator() {
++        }
++
++        public static org.apache.cloudstack.api.ResponseGenerator createMockResponseGenerator(
++                org.apache.cloudstack.config.Configuration configuration,
++                org.apache.cloudstack.api.response.ConfigurationResponse response) {
++            org.apache.cloudstack.api.ResponseGenerator responseGenerator =
++                    org.mockito.Mockito.mock(org.apache.cloudstack.api.ResponseGenerator.class);
++            org.mockito.Mockito.when(responseGenerator.createConfigurationResponse(configuration))
++                    .thenReturn(response);
++            return responseGenerator;
++        }
++    }
+ }

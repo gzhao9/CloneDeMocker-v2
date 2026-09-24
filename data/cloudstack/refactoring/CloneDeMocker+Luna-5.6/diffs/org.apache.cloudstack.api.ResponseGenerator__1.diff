@@ -1,0 +1,46 @@
+--- a/api/src/test/java/org/apache/cloudstack/api/command/user/network/CreateNetworkCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/user/network/CreateNetworkCmdTest.java
+@@ -337,9 +337,8 @@
+         ReflectionTestUtils.setField(cmd, "zoneId", 1L);
+         Network createdNetwork = Mockito.mock(Network.class);
+         NetworkResponse response = Mockito.mock(NetworkResponse.class);
+-        responseGenerator = Mockito.mock(ResponseGenerator.class);
+         Mockito.when(networkService.createGuestNetwork(cmd)).thenReturn(createdNetwork);
+-        Mockito.when(responseGenerator.createNetworkResponse(ResponseObject.ResponseView.Restricted, createdNetwork)).thenReturn(response);
++        responseGenerator = MockResponseGenerator.createMockResponseGenerator(createdNetwork, response);
+         cmd._responseGenerator = responseGenerator;
+ 
+         try {
+--- a/api/src/test/java/org/apache/cloudstack/api/command/user/network/UpdateNetworkCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/user/network/UpdateNetworkCmdTest.java
+@@ -183,7 +183,7 @@
+         response.setPublicMtu(publicmtu);
+         Mockito.when(networkService.getNetwork(networkId)).thenReturn(network);
+         Mockito.when(networkService.updateGuestNetwork(cmd)).thenReturn(network);
+-        Mockito.when(_responseGenerator.createNetworkResponse(ResponseObject.ResponseView.Restricted, network)).thenReturn(response);
++        _responseGenerator = MockResponseGenerator.createMockResponseGenerator(network, response);
+         cmd.execute();
+         Mockito.verify(_responseGenerator).createNetworkResponse(Mockito.any(ResponseObject.ResponseView.class), Mockito.any(Network.class));
+         NetworkResponse actualResponse = (NetworkResponse) cmd.getResponseObject();
+--- a/api/src/test/java/org/apache/cloudstack/api/command/user/network/MockResponseGenerator.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/user/network/MockResponseGenerator.java
+@@ -0,0 +1,19 @@
++package org.apache.cloudstack.api.command.user.network;
++
++import com.cloud.network.Network;
++import org.apache.cloudstack.api.ResponseGenerator;
++import org.apache.cloudstack.api.ResponseObject;
++import org.apache.cloudstack.api.response.NetworkResponse;
++import org.mockito.Mockito;
++
++public final class MockResponseGenerator {
++
++    private MockResponseGenerator() {
++    }
++
++    public static ResponseGenerator createMockResponseGenerator(Network network, NetworkResponse response) {
++        ResponseGenerator responseGenerator = Mockito.mock(ResponseGenerator.class);
++        Mockito.when(responseGenerator.createNetworkResponse(ResponseObject.ResponseView.Restricted, network)).thenReturn(response);
++        return responseGenerator;
++    }
++}

@@ -1,0 +1,61 @@
+--- a/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/CitrixResourceBaseTest.java
++++ b/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/CitrixResourceBaseTest.java
+@@ -496,13 +496,9 @@
+             fileListMock.add(directoryEntryMock);
+         }
+ 
+-        ListDataStoreObjectsCommand command = Mockito.mock(ListDataStoreObjectsCommand.class);
+         DataStoreTO store = Mockito.mock(DataStoreTO.class);
+-        Mockito.when(command.getStore()).thenReturn(store);
++        ListDataStoreObjectsCommand command = createMockListDataStoreObjectsCommand(store, "/path/to/files");
+         Mockito.when(store.getUuid()).thenReturn("storeUuid");
+-        Mockito.when(command.getStartIndex()).thenReturn(0);
+-        Mockito.when(command.getPageSize()).thenReturn(10);
+-        Mockito.when(command.getPath()).thenReturn("/path/to/files");
+ 
+         Mockito.doReturn(connectionMock).when(citrixResourceBase).getConnection();
+         Mockito.doReturn(srMock).when(citrixResourceBase).getStorageRepository(connectionMock, "storeUuid");
+@@ -540,13 +536,9 @@
+         Connection connectionMock = Mockito.mock(Connection.class);
+         SR srMock = Mockito.mock(SR.class);
+ 
+-        ListDataStoreObjectsCommand command = Mockito.mock(ListDataStoreObjectsCommand.class);
++        ListDataStoreObjectsCommand command = createMockListDataStoreObjectsCommand(store, "/path/to/non/existent/files");
+         DataStoreTO store = Mockito.mock(DataStoreTO.class);
+-        Mockito.when(command.getStore()).thenReturn(store);
+         Mockito.when(store.getUuid()).thenReturn("storeUuid");
+-        Mockito.when(command.getStartIndex()).thenReturn(0);
+-        Mockito.when(command.getPageSize()).thenReturn(10);
+-        Mockito.when(command.getPath()).thenReturn("/path/to/non/existent/files");
+ 
+         Mockito.doReturn(connectionMock).when(citrixResourceBase).getConnection();
+         Mockito.doReturn(srMock).when(citrixResourceBase).getStorageRepository(connectionMock, "storeUuid");
+@@ -581,13 +573,9 @@
+         Vector fileListMock = new Vector();
+         fileListMock.add(fileAttributesMock);
+ 
+-        ListDataStoreObjectsCommand command = Mockito.mock(ListDataStoreObjectsCommand.class);
+         DataStoreTO store = Mockito.mock(DataStoreTO.class);
+-        Mockito.when(command.getStore()).thenReturn(store);
++        ListDataStoreObjectsCommand command = createMockListDataStoreObjectsCommand(store, "/path/to/file");
+         Mockito.when(store.getUuid()).thenReturn("storeUuid");
+-        Mockito.when(command.getStartIndex()).thenReturn(0);
+-        Mockito.when(command.getPageSize()).thenReturn(10);
+-        Mockito.when(command.getPath()).thenReturn("/path/to/file");
+ 
+         Mockito.doReturn(connectionMock).when(citrixResourceBase).getConnection();
+         Mockito.doReturn(srMock).when(citrixResourceBase).getStorageRepository(connectionMock, "storeUuid");
+@@ -616,4 +604,13 @@
+         Assert.assertEquals(1024L, listAnswer.getSizes().get(0).longValue());
+         Assert.assertEquals(123456789000L, listAnswer.getLastModified().get(0).longValue());
+     }
++
++    private static ListDataStoreObjectsCommand createMockListDataStoreObjectsCommand(DataStoreTO store, String path) {
++        ListDataStoreObjectsCommand command = Mockito.mock(ListDataStoreObjectsCommand.class);
++        Mockito.when(command.getStore()).thenReturn(store);
++        Mockito.when(command.getStartIndex()).thenReturn(0);
++        Mockito.when(command.getPageSize()).thenReturn(10);
++        Mockito.when(command.getPath()).thenReturn(path);
++        return command;
++    }
+ }

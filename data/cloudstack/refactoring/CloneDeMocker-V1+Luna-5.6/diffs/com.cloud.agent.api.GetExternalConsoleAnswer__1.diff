@@ -1,0 +1,49 @@
+--- a/server/src/test/java/org/apache/cloudstack/consoleproxy/ConsoleAccessManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/consoleproxy/ConsoleAccessManagerImplTest.java
+@@ -380,16 +380,12 @@
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+         HostVO host = Mockito.mock(HostVO.class);
+         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
+-        GetExternalConsoleAnswer answer = Mockito.mock(GetExternalConsoleAnswer.class);
+ 
+         String expectedHost = "10.0.0.1";
+         int expectedPort = 5900;
+         String expectedPassword = "password";
+ 
+-        Mockito.when(answer.getResult()).thenReturn(true);
+-        Mockito.when(answer.getHost()).thenReturn(expectedHost);
+-        Mockito.when(answer.getPort()).thenReturn(expectedPort);
+-        Mockito.when(answer.getPassword()).thenReturn(expectedPassword);
++        GetExternalConsoleAnswer answer = createMockGetExternalConsoleAnswer(expectedHost, expectedPort, expectedPassword);
+         Mockito.when(managementServer.getExternalVmConsole(vm, host)).thenReturn(answer);
+ 
+         ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsForExternalVm(details, vm, host);
+@@ -428,12 +424,8 @@
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+         HostVO host = Mockito.mock(HostVO.class);
+         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
+-        GetExternalConsoleAnswer answer = Mockito.mock(GetExternalConsoleAnswer.class);
+-
+-        Mockito.when(answer.getResult()).thenReturn(true);
+-        Mockito.when(answer.getHost()).thenReturn("10.0.0.1");
+-        Mockito.when(answer.getPort()).thenReturn(5900);
+-        Mockito.when(answer.getPassword()).thenReturn("");
++
++        GetExternalConsoleAnswer answer = createMockGetExternalConsoleAnswer("10.0.0.1", 5900, "");
+         Mockito.when(managementServer.getExternalVmConsole(vm, host)).thenReturn(answer);
+ 
+         ConsoleConnectionDetails result = consoleAccessManager.getConsoleConnectionDetailsForExternalVm(details, vm, host);
+@@ -787,4 +779,13 @@
+         Assert.assertNull(endpoint.getWebsocketExtra());
+         Assert.assertNull(endpoint.getWebsocketHost());
+     }
++
++    private static GetExternalConsoleAnswer createMockGetExternalConsoleAnswer(String host, int port, String password) {
++        GetExternalConsoleAnswer answer = Mockito.mock(GetExternalConsoleAnswer.class);
++        Mockito.when(answer.getResult()).thenReturn(true);
++        Mockito.when(answer.getHost()).thenReturn(host);
++        Mockito.when(answer.getPort()).thenReturn(port);
++        Mockito.when(answer.getPassword()).thenReturn(password);
++        return answer;
++    }
+ }
