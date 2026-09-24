@@ -1,0 +1,44 @@
+--- a/server/src/test/java/com/cloud/network/vpc/NetworkACLServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/vpc/NetworkACLServiceImplTest.java
+@@ -127,8 +127,7 @@
+     private NetworkACLItemVO previousAclRuleMock;
+     private String previousAclRuleUuid = "uuidPreviousAclRule";
+ 
+-    @Mock
+-    private NetworkACLItemVO nextAclRuleMock;
++    private NetworkACLItemVO nextAclRuleMock = createMockNetworkACLItemVO();
+     private String nextAclRuleUuid = "uuidNextAclRule";
+ 
+     @Mock
+@@ -1109,6 +1108,12 @@
+                 Mockito.eq(previousAclRuleMock), Mockito.eq(nextAclRuleMock));
+     }
+ 
++    private static NetworkACLItemVO createMockNetworkACLItemVO() {
++        NetworkACLItemVO nextAclRuleMock = Mockito.mock(NetworkACLItemVO.class);
++        Mockito.when(nextAclRuleMock.getAclId()).thenReturn(99L);
++        return nextAclRuleMock;
++    }
++
+     @Test
+     public void retrieveAndValidateAclRuleTestUuidNull() {
+         NetworkACLItemVO networkACLItemVOReceived = networkAclServiceImpl.retrieveAndValidateAclRule(null);
+@@ -1153,14 +1158,16 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void validateMoveAclRulesDataTestPreviousRuleWithDifferentAclId() {
+-        Mockito.when(previousAclRuleMock.getAclId()).thenReturn(99L);
++        previousAclRuleMock = createMockNetworkACLItemVO();
++        Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclServiceImpl).moveRuleBetweenAclRules(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyList(),
++                Mockito.eq(previousAclRuleMock), Mockito.eq(nextAclRuleMock));
+ 
+         networkAclServiceImpl.validateMoveAclRulesData(aclRuleBeingMovedMock, previousAclRuleMock, null);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void validateMoveAclRulesDataTestNextRuleWithDifferentAclId() {
+-        Mockito.when(nextAclRuleMock.getAclId()).thenReturn(99L);
++        nextAclRuleMock = createMockNetworkACLItemVO();
+ 
+         networkAclServiceImpl.validateMoveAclRulesData(aclRuleBeingMovedMock, null, nextAclRuleMock);
+     }

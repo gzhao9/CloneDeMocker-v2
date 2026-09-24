@@ -1,0 +1,114 @@
+--- a/server/src/test/java/com/cloud/network/vpc/NetworkACLManagerTest.java
++++ b/server/src/test/java/com/cloud/network/vpc/NetworkACLManagerTest.java
+@@ -191,8 +191,8 @@
+         final List<NetworkACLItemVO> rules = new ArrayList<>();
+         final NetworkACLItemVO ruleActive = Mockito.mock(NetworkACLItemVO.class);
+         final NetworkACLItemVO ruleStaged = Mockito.mock(NetworkACLItemVO.class);
+-        final NetworkACLItemVO rule2Revoke = Mockito.mock(NetworkACLItemVO.class);
+-        final NetworkACLItemVO rule2Add = Mockito.mock(NetworkACLItemVO.class);
++        final NetworkACLItemVO rule2Revoke = MockNetworkACLItemVO.createMockNetworkACLItemVO(8L);
++        final NetworkACLItemVO rule2Add = MockNetworkACLItemVO.createMockNetworkACLItemVO(9L);
+         Mockito.when(ruleActive.getState()).thenReturn(NetworkACLItem.State.Active);
+         Mockito.when(ruleStaged.getState()).thenReturn(NetworkACLItem.State.Staged);
+         Mockito.when(rule2Add.getState()).thenReturn(NetworkACLItem.State.Add);
+@@ -203,10 +203,8 @@
+         rules.add(rule2Revoke);
+ 
+         final long revokeId = 8;
+-        Mockito.when(rule2Revoke.getId()).thenReturn(revokeId);
+ 
+         final long addId = 9;
+-        Mockito.when(rule2Add.getId()).thenReturn(addId);
+         Mockito.when(_networkACLItemDao.findById(addId)).thenReturn(rule2Add);
+ 
+         Mockito.when(_networkACLItemDao.listByACL(aclId)).thenReturn(rules);
+@@ -241,13 +239,13 @@
+     @Test
+     public void deleteNonEmptyACL() throws Exception {
+         Mockito.reset(_networkDao);
++        aclItem = MockNetworkACLItemVO.createMockNetworkACLItemVO(3l);
+         final List<NetworkACLItemVO> aclItems = new ArrayList<>();
+         aclItems.add(aclItem);
+         Mockito.when(_networkACLItemDao.listByACL(anyLong())).thenReturn(aclItems);
+         Mockito.when(acl.getId()).thenReturn(3l);
+         Mockito.when(_networkACLItemDao.findById(anyLong())).thenReturn(aclItem);
+         Mockito.when(aclItem.getState()).thenReturn(State.Add);
+-        Mockito.when(aclItem.getId()).thenReturn(3l);
+         Mockito.when(_networkACLDao.remove(anyLong())).thenReturn(true);
+ 
+         final boolean result = _aclMgr.deleteNetworkACL(acl);
+--- a/server/src/test/java/com/cloud/network/vpc/NetworkACLServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/vpc/NetworkACLServiceImplTest.java
+@@ -770,9 +770,8 @@
+         int aclNumberToUpdate = 1;
+         Mockito.when(updateNetworkACLItemCmdMock.getNumber()).thenReturn(aclNumberToUpdate);
+         Mockito.when(networkAclMock.getId()).thenReturn(networkAclMockId);
+-        Mockito.when(networkAclItemVoMock.getId()).thenReturn(100L);
+-        NetworkACLItemVO otherNetworkAclItemVoMock = Mockito.mock(NetworkACLItemVO.class);
+-        Mockito.when(otherNetworkAclItemVoMock.getId()).thenReturn(101L);
++        networkAclItemVoMock = MockNetworkACLItemVO.createMockNetworkACLItemVO(100L);
++        NetworkACLItemVO otherNetworkAclItemVoMock = MockNetworkACLItemVO.createMockNetworkACLItemVO(101L);
+         Mockito.doReturn(otherNetworkAclItemVoMock).when(networkAclItemDaoMock).findByAclAndNumber(networkAclMockId, aclNumberToUpdate);
+ 
+         networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock);
+@@ -1267,7 +1266,7 @@
+         networkACLItemVO1.setNumber(100);
+ 
+         allAclRules.add(networkACLItemVO1);
+-        Mockito.when(aclRuleBeingMovedMock.getId()).thenReturn(99l);
++        aclRuleBeingMovedMock = MockNetworkACLItemVO.createMockNetworkACLItemVO(99l);
+ 
+         Mockito.doNothing().when(networkAclItemDaoMock).updateNumberFieldNetworkItem(Mockito.anyLong(), Mockito.anyInt());
+         Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclItemDaoMock).findById(99l);
+@@ -1299,7 +1298,7 @@
+     public void moveRuleBetweenAclRulesTestThereIsSpaceBetweenPreviousRuleAndNextRuleToAccommodateTheNewRule() {
+         Mockito.when(previousAclRuleMock.getNumber()).thenReturn(10);
+         Mockito.when(nextAclRuleMock.getNumber()).thenReturn(11);
+-        Mockito.when(aclRuleBeingMovedMock.getId()).thenReturn(1l);
++        aclRuleBeingMovedMock = MockNetworkACLItemVO.createMockNetworkACLItemVO(1l);
+ 
+         ArrayList<NetworkACLItemVO> allAclRules = new ArrayList<>();
+         NetworkACLItemVO networkACLItemVO12 = new NetworkACLItemVO();
+@@ -1331,8 +1330,8 @@
+     public void moveRuleBetweenAclRulesTestThereIsNoSpaceBetweenPreviousRuleAndNextRuleToAccommodateTheNewRule() {
+         Mockito.when(previousAclRuleMock.getNumber()).thenReturn(10);
+         Mockito.when(nextAclRuleMock.getNumber()).thenReturn(15);
++        aclRuleBeingMovedMock = MockNetworkACLItemVO.createMockNetworkACLItemVO(1l);
+         Mockito.when(aclRuleBeingMovedMock.getNumber()).thenReturn(50);
+-        Mockito.when(aclRuleBeingMovedMock.getId()).thenReturn(1l);
+ 
+         ArrayList<NetworkACLItemVO> allAclRules = new ArrayList<>();
+ 
+@@ -1354,11 +1353,11 @@
+     @Test
+     public void updateAclRuleToNewPositionAndExecuteShiftIfNecessaryTest() {
+ 
++        nextAclRuleMock = MockNetworkACLItemVO.createMockNetworkACLItemVO(50l);
+         Mockito.when(nextAclRuleMock.getNumber()).thenReturn(11);
+-        Mockito.when(nextAclRuleMock.getId()).thenReturn(50l);
+-
++
++        aclRuleBeingMovedMock = MockNetworkACLItemVO.createMockNetworkACLItemVO(1l);
+         Mockito.when(aclRuleBeingMovedMock.getNumber()).thenReturn(50);
+-        Mockito.when(aclRuleBeingMovedMock.getId()).thenReturn(1l);
+ 
+         ArrayList<NetworkACLItemVO> allAclRules = new ArrayList<>();
+         NetworkACLItemVO networkACLItemVO12 = new NetworkACLItemVO();
+--- a/server/src/test/java/com/cloud/network/vpc/MockNetworkACLItemVO.java
++++ b/server/src/test/java/com/cloud/network/vpc/MockNetworkACLItemVO.java
+@@ -0,0 +1,15 @@
++package com.cloud.network.vpc;
++
++import org.mockito.Mockito;
++
++public final class MockNetworkACLItemVO {
++
++    private MockNetworkACLItemVO() {
++    }
++
++    public static NetworkACLItemVO createMockNetworkACLItemVO(long id) {
++        NetworkACLItemVO mock = Mockito.mock(NetworkACLItemVO.class);
++        Mockito.when(mock.getId()).thenReturn(id);
++        return mock;
++    }
++}
