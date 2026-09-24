@@ -1,0 +1,95 @@
+--- a/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/HelpTelnetHandlerTest.java
++++ b/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/HelpTelnetHandlerTest.java
+@@ -28,9 +28,8 @@
+ class HelpTelnetHandlerTest {
+     @Test
+     void test() {
+-        Channel channel = Mockito.mock(Channel.class);
+-        Mockito.when(channel.getUrl()).thenReturn(URL.valueOf("dubbo://127.0.0.1:12345"));
+ 
++        Channel channel = MockChannel.createMockChannel(URL.valueOf("dubbo://127.0.0.1:12345"));
+         HelpTelnetHandler helpTelnetHandler = new HelpTelnetHandler(FrameworkModel.defaultModel());
+         // default output
+         String prompt = "Please input \"help [command]\" show detail.\r\n";
+@@ -44,4 +43,17 @@
+                 + "    Show help.";
+         Assertions.assertEquals(helpTelnetHandler.telnet(channel, "help"), demoOutput);
+     }
++
++    public final class MockChannel {
++        private MockChannel() {
++        }
++
++        public static org.apache.dubbo.remoting.Channel createMockChannel(
++                org.apache.dubbo.common.URL url) {
++            org.apache.dubbo.remoting.Channel channel =
++                    org.mockito.Mockito.mock(org.apache.dubbo.remoting.Channel.class);
++            org.mockito.Mockito.when(channel.getUrl()).thenReturn(url);
++            return channel;
++        }
++    }
+ }
+--- a/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/StatusTelnetHandlerTest.java
++++ b/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/StatusTelnetHandlerTest.java
+@@ -27,9 +27,8 @@
+ class StatusTelnetHandlerTest {
+     @Test
+     void test() {
+-        Channel channel = Mockito.mock(Channel.class);
+-        Mockito.when(channel.getUrl()).thenReturn(URL.valueOf("dubbo://127.0.0.1:12345"));
+ 
++        Channel channel = MockChannel.createMockChannel(URL.valueOf("dubbo://127.0.0.1:12345"));
+         StatusTelnetHandler statusTelnetHandler = new StatusTelnetHandler();
+         Assertions.assertNotNull(statusTelnetHandler.telnet(channel, ""));
+         Assertions.assertNotNull(statusTelnetHandler.telnet(channel, "-l"));
+@@ -41,4 +40,17 @@
+         Assertions.assertNotNull(statusTelnetHandler.telnet(channel, ""));
+         Assertions.assertNotNull(statusTelnetHandler.telnet(channel, "-l"));
+     }
++
++    public final class MockChannel {
++        private MockChannel() {
++        }
++
++        public static org.apache.dubbo.remoting.Channel createMockChannel(
++                org.apache.dubbo.common.URL url) {
++            org.apache.dubbo.remoting.Channel channel =
++                    org.mockito.Mockito.mock(org.apache.dubbo.remoting.Channel.class);
++            org.mockito.Mockito.when(channel.getUrl()).thenReturn(url);
++            return channel;
++        }
++    }
+ }
+--- a/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/TelnetHandlerAdapterTest.java
++++ b/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/TelnetHandlerAdapterTest.java
+@@ -34,11 +34,10 @@
+     @Test
+     void testTelnet() throws RemotingException {
+ 
+-        Channel channel = Mockito.mock(Channel.class);
+         Map<String, String> param = new HashMap<>();
+         param.put("telnet", "status");
+         URL url = new URL("p1", "127.0.0.1", 12345, "path1", param);
+-        Mockito.when(channel.getUrl()).thenReturn(url);
++        Channel channel = MockChannel.createMockChannel(url);
+         TelnetHandlerAdapter telnetHandlerAdapter = new TelnetHandlerAdapter(FrameworkModel.defaultModel());
+ 
+         String message = "--no-prompt status ";
+@@ -67,4 +66,17 @@
+                 "Command: help disabled for security reasons, please enable support by listing the commands through 'telnet'\r\ndubbo>";
+         Assertions.assertEquals(expectedResult, telnetHandlerAdapter.telnet(channel, message));
+     }
++
++    public final class MockChannel {
++        private MockChannel() {
++        }
++
++        public static org.apache.dubbo.remoting.Channel createMockChannel(
++                org.apache.dubbo.common.URL url) {
++            org.apache.dubbo.remoting.Channel channel =
++                    org.mockito.Mockito.mock(org.apache.dubbo.remoting.Channel.class);
++            org.mockito.Mockito.when(channel.getUrl()).thenReturn(url);
++            return channel;
++        }
++    }
+ }

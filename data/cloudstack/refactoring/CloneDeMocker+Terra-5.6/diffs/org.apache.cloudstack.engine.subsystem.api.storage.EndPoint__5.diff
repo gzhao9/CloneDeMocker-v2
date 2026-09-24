@@ -1,0 +1,43 @@
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
+@@ -136,6 +136,12 @@
+         field.set(strategy, mockedField);
+     }
+ 
++    private static EndPoint createMockEndPoint(Answer answer) {
++        EndPoint endpoint = mock(EndPoint.class);
++        when(endpoint.sendMessage(any())).thenReturn(answer);
++        return endpoint;
++    }
++
+     private class TestableUnifiedNASStrategy extends UnifiedNASStrategy {
+         public TestableUnifiedNASStrategy(OntapStorage ontapStorage,
+                                           NASFeignClient nasFeignClient,
+@@ -518,12 +524,11 @@
+     public void testDeleteCloudStackVolume_Success() throws Exception {
+         CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+         VolumeInfo volumeInfo = mock(VolumeInfo.class);
+-        EndPoint endpoint = mock(EndPoint.class);
+         Answer answer = mock(Answer.class);
+ 
+         when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
++        EndPoint endpoint = createMockEndPoint(answer);
+         when(epSelector.select(volumeInfo)).thenReturn(endpoint);
+-        when(endpoint.sendMessage(any())).thenReturn(answer);
+         when(answer.getResult()).thenReturn(true);
+ 
+         // Execute - should not throw exception
+@@ -553,12 +558,11 @@
+     public void testDeleteCloudStackVolume_AnswerResultFalse() throws Exception {
+         CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+         VolumeInfo volumeInfo = mock(VolumeInfo.class);
+-        EndPoint endpoint = mock(EndPoint.class);
+         Answer answer = mock(Answer.class);
++        EndPoint endpoint = createMockEndPoint(answer);
+ 
+         when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
+         when(epSelector.select(volumeInfo)).thenReturn(endpoint);
+-        when(endpoint.sendMessage(any())).thenReturn(answer);
+         when(answer.getResult()).thenReturn(false);
+         when(answer.getDetails()).thenReturn("Failed to delete volume file");
+ 

@@ -1,0 +1,38 @@
+--- a/ldap/src/test/java/org/springframework/security/ldap/authentication/LdapAuthenticationProviderTests.java
++++ b/ldap/src/test/java/org/springframework/security/ldap/authentication/LdapAuthenticationProviderTests.java
+@@ -78,20 +78,18 @@
+ 
+ 	@Test
+ 	public void usernameNotFoundExceptionIsHiddenByDefault() {
+-		final LdapAuthenticator authenticator = mock(LdapAuthenticator.class);
+ 		final UsernamePasswordAuthenticationToken joe = UsernamePasswordAuthenticationToken.unauthenticated("joe",
+ 				"password");
+-		given(authenticator.authenticate(joe)).willThrow(new UsernameNotFoundException("nobody"));
++		final LdapAuthenticator authenticator = createMockLdapAuthenticator(joe);
+ 		LdapAuthenticationProvider provider = new LdapAuthenticationProvider(authenticator);
+ 		assertThatExceptionOfType(BadCredentialsException.class).isThrownBy(() -> provider.authenticate(joe));
+ 	}
+ 
+ 	@Test
+ 	public void usernameNotFoundExceptionIsNotHiddenIfConfigured() {
+-		final LdapAuthenticator authenticator = mock(LdapAuthenticator.class);
+ 		final UsernamePasswordAuthenticationToken joe = UsernamePasswordAuthenticationToken.unauthenticated("joe",
+ 				"password");
+-		given(authenticator.authenticate(joe)).willThrow(new UsernameNotFoundException("nobody"));
++		final LdapAuthenticator authenticator = createMockLdapAuthenticator(joe);
+ 		LdapAuthenticationProvider provider = new LdapAuthenticationProvider(authenticator);
+ 		provider.setHideUserNotFoundExceptions(false);
+ 		assertThatExceptionOfType(UsernameNotFoundException.class).isThrownBy(() -> provider.authenticate(joe));
+@@ -167,6 +165,12 @@
+ 		UsernamePasswordAuthenticationToken request = new UsernamePasswordAuthenticationToken("ben", "benspassword");
+ 		Authentication result = ldapProvider.authenticate(request);
+ 		SecurityAssertions.assertThat(result).hasAuthority(FactorGrantedAuthority.PASSWORD_AUTHORITY);
++	}
++
++	private static LdapAuthenticator createMockLdapAuthenticator(UsernamePasswordAuthenticationToken authentication) {
++		LdapAuthenticator authenticator = mock(LdapAuthenticator.class);
++		given(authenticator.authenticate(authentication)).willThrow(new UsernameNotFoundException("nobody"));
++		return authenticator;
+ 	}
+ 
+ 	@NullMarked

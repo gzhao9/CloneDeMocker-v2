@@ -1,0 +1,102 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
+@@ -783,11 +783,10 @@
+     public void testGetGuestIpForNicImportAdvancedZone() {
+         Network network = Mockito.mock(Network.class);
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+-        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+         Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
+         Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+         String ipAddress = "10.1.10.10";
+-        Mockito.when(ipAddresses.getIp4Address()).thenReturn(ipAddress);
++        Network.IpAddresses ipAddresses = createMockIpAddresses(ipAddress);
+         Mockito.when(testOrchestrator._ipAddrMgr.acquireGuestIpAddress(network, ipAddress)).thenReturn(ipAddress);
+         String guestIp = testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+         Assert.assertEquals(ipAddress, guestIp);
+@@ -819,12 +818,12 @@
+     public void testGetGuestIpForNicImportBasicZoneManualIP() {
+         Network network = Mockito.mock(Network.class);
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+-        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+         Mockito.when(network.getGuestType()).thenReturn(GuestType.Shared);
+         Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+         long networkId = 1L;
+         long dataCenterId = 1L;
+         String requestedIp = "172.10.10.10";
++        Network.IpAddresses ipAddresses = createMockIpAddresses(requestedIp);
+         IPAddressVO ipAddressVO = Mockito.mock(IPAddressVO.class);
+         Ip ip = mock(Ip.class);
+         Mockito.when(ip.addr()).thenReturn(requestedIp);
+@@ -832,7 +831,6 @@
+         Mockito.when(ipAddressVO.getState()).thenReturn(State.Free);
+         Mockito.when(network.getId()).thenReturn(networkId);
+         Mockito.when(dataCenter.getId()).thenReturn(dataCenterId);
+-        Mockito.when(ipAddresses.getIp4Address()).thenReturn(requestedIp);
+         Mockito.when(testOrchestrator._ipAddressDao.findByIpAndSourceNetworkId(networkId, requestedIp)).thenReturn(ipAddressVO);
+         String ipAddress = testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+         Assert.assertEquals(requestedIp, ipAddress);
+@@ -842,12 +840,12 @@
+     public void testGetGuestIpForNicImportBasicUsedIP() {
+         Network network = Mockito.mock(Network.class);
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+-        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+         Mockito.when(network.getGuestType()).thenReturn(GuestType.Shared);
+         Mockito.when(dataCenter.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
+         long networkId = 1L;
+         long dataCenterId = 1L;
+         String requestedIp = "172.10.10.10";
++        Network.IpAddresses ipAddresses = createMockIpAddresses(requestedIp);
+         IPAddressVO ipAddressVO = Mockito.mock(IPAddressVO.class);
+         Ip ip = mock(Ip.class);
+         Mockito.when(ip.addr()).thenReturn(requestedIp);
+@@ -855,7 +853,6 @@
+         Mockito.when(ipAddressVO.getState()).thenReturn(State.Allocated);
+         Mockito.when(network.getId()).thenReturn(networkId);
+         Mockito.when(dataCenter.getId()).thenReturn(dataCenterId);
+-        Mockito.when(ipAddresses.getIp4Address()).thenReturn(requestedIp);
+         Mockito.when(testOrchestrator._ipAddressDao.findByIp(requestedIp)).thenReturn(ipAddressVO);
+         testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses);
+     }
+@@ -916,9 +913,8 @@
+         Mockito.when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+         long dataCenterId = 1L;
+         Mockito.when(network.getDataCenterId()).thenReturn(dataCenterId);
+-        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+         String ipAddress = "10.1.10.10";
+-        Mockito.when(ipAddresses.getIp4Address()).thenReturn(ipAddress);
++        Network.IpAddresses ipAddresses = createMockIpAddresses(ipAddress);
+         Mockito.when(testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses)).thenReturn(null);
+         Mockito.when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
+         String macAddress = "02:01:01:82:00:01";
+@@ -935,9 +931,8 @@
+         Mockito.when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+         long dataCenterId = 1L;
+         Mockito.when(network.getDataCenterId()).thenReturn(dataCenterId);
+-        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+         String ipAddress = "auto";
+-        Mockito.when(ipAddresses.getIp4Address()).thenReturn(ipAddress);
++        Network.IpAddresses ipAddresses = createMockIpAddresses(ipAddress);
+         Mockito.when(testOrchestrator.getSelectedIpForNicImport(network, dataCenter, ipAddresses)).thenReturn(null);
+         Mockito.when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
+         String macAddress = "02:01:01:82:00:01";
+@@ -994,8 +989,7 @@
+         Network network = Mockito.mock(Network.class);
+         Mockito.when(network.getId()).thenReturn(networkId);
+         String ipAddress = "10.1.10.10";
+-        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
+-        Mockito.when(ipAddresses.getIp4Address()).thenReturn(ipAddress);
++        Network.IpAddresses ipAddresses = createMockIpAddresses(ipAddress);
+         URI broadcastUri = URI.create("vlan://123");
+         NicVO nic = mock(NicVO.class);
+         Mockito.when(nic.getBroadcastUri()).thenReturn(broadcastUri);
+@@ -1073,4 +1067,10 @@
+         assertNotNull(result);
+         assertEquals(1, result.size());
+     }
++
++    private static Network.IpAddresses createMockIpAddresses(String ip4Address) {
++        Network.IpAddresses ipAddresses = Mockito.mock(Network.IpAddresses.class);
++        Mockito.when(ipAddresses.getIp4Address()).thenReturn(ip4Address);
++        return ipAddresses;
++    }
+ }

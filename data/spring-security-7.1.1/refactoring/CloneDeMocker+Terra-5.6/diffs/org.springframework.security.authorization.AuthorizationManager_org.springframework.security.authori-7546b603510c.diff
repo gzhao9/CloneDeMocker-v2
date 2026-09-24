@@ -1,0 +1,45 @@
+--- a/core/src/test/java/org/springframework/security/authorization/method/AuthorizationManagerAfterMethodInterceptorTests.java
++++ b/core/src/test/java/org/springframework/security/authorization/method/AuthorizationManagerAfterMethodInterceptorTests.java
+@@ -19,6 +19,7 @@
+ import java.util.function.Supplier;
+ 
+ import org.aopalliance.intercept.MethodInvocation;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.aop.Pointcut;
+@@ -53,11 +54,17 @@
+  */
+ public class AuthorizationManagerAfterMethodInterceptorTests {
+ 
++	private AuthorizationManager<MethodInvocationResult> authorizationManagerAfterMethod;
++
++	@BeforeEach
++	public void setup() {
++		this.authorizationManagerAfterMethod = mock(AuthorizationManager.class);
++	}
++
+ 	@Test
+ 	public void instantiateWhenMethodMatcherNullThenException() {
+-		AuthorizationManager<MethodInvocationResult> mockAuthorizationManager = mock(AuthorizationManager.class);
+ 		assertThatIllegalArgumentException()
+-			.isThrownBy(() -> new AuthorizationManagerAfterMethodInterceptor(null, mockAuthorizationManager))
++			.isThrownBy(() -> new AuthorizationManagerAfterMethodInterceptor(null, authorizationManagerAfterMethod))
+ 			.withMessage("pointcut cannot be null");
+ 	}
+ 
+@@ -73,12 +80,11 @@
+ 		MethodInvocation mockMethodInvocation = mock(MethodInvocation.class);
+ 		MethodInvocationResult result = new MethodInvocationResult(mockMethodInvocation, new Object());
+ 		given(mockMethodInvocation.proceed()).willReturn(result.getResult());
+-		AuthorizationManager<MethodInvocationResult> mockAuthorizationManager = mock(AuthorizationManager.class);
+ 		AuthorizationManagerAfterMethodInterceptor advice = new AuthorizationManagerAfterMethodInterceptor(
+-				Pointcut.TRUE, mockAuthorizationManager);
++				Pointcut.TRUE, authorizationManagerAfterMethod);
+ 		Object returnedObject = advice.invoke(mockMethodInvocation);
+ 		assertThat(returnedObject).isEqualTo(result.getResult());
+-		verify(mockAuthorizationManager).authorize(any(Supplier.class), any(MethodInvocationResult.class));
++		verify(authorizationManagerAfterMethod).authorize(any(Supplier.class), any(MethodInvocationResult.class));
+ 	}
+ 
+ 	@Test

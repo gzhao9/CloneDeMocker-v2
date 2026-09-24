@@ -1,0 +1,86 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -1342,9 +1342,8 @@
+         Long offeringId = 4L;
+         Long poolId = 5L;
+ 
+-        BackupVO backup = mock(BackupVO.class);
++        BackupVO backup = MockBackupVO.createMockBackupVO(Backup.Status.BackedUp);
+         when(backup.getBackupOfferingId()).thenReturn(offeringId);
+-        when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
+ 
+         VMInstanceVO vm = mock(VMInstanceVO.class);
+         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+@@ -1398,9 +1397,8 @@
+         Long offeringId = 4L;
+         Long poolId = 5L;
+ 
+-        BackupVO backup = mock(BackupVO.class);
++        BackupVO backup = MockBackupVO.createMockBackupVO(Backup.Status.BackedUp);
+         when(backup.getBackupOfferingId()).thenReturn(offeringId);
+-        when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
+ 
+         VMInstanceVO vm = mock(VMInstanceVO.class);
+         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+@@ -2171,9 +2169,8 @@
+     public void testRestoreBackupBackupNotBackedUp() {
+         Long backupId = 1L;
+ 
+-        BackupVO backup = mock(BackupVO.class);
+-        when(backup.getStatus()).thenReturn(Backup.Status.BackingUp);
+-
++
++        BackupVO backup = MockBackupVO.createMockBackupVO(Backup.Status.BackingUp);
+         when(backupDao.findById(backupId)).thenReturn(backup);
+ 
+         CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+@@ -2874,4 +2871,13 @@
+         verify(backupOfferingDao).persist(any());
+         verify(backupOfferingDetailsDao, never()).saveDetails(any());
+     }
++
++    public class MockBackupVO {
++        public static org.apache.cloudstack.backup.BackupVO createMockBackupVO(
++                org.apache.cloudstack.backup.Backup.Status status) {
++            org.apache.cloudstack.backup.BackupVO backup = mock(org.apache.cloudstack.backup.BackupVO.class);
++            when(backup.getStatus()).thenReturn(status);
++            return backup;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
+@@ -216,8 +216,7 @@
+         when(vmInstanceDao.findById(1L)).thenReturn(vm);
+         when(vm.getState()).thenReturn(State.Running);
+         when(vm.getDataCenterId()).thenReturn(10L);
+-        BackupVO existing = mock(BackupVO.class);
+-        when(existing.getStatus()).thenReturn(Backup.Status.BackingUp);
++        BackupVO existing = MockBackupVO.createMockBackupVO(Backup.Status.BackingUp);
+         when(backupDao.findByVmId(1L)).thenReturn(existing);
+ 
+         assertThrows(CloudRuntimeException.class,
+@@ -270,8 +269,7 @@
+         when(vm.getDataCenterId()).thenReturn(10L);
+         when(vm.getAccountId()).thenReturn(100L);
+         when(vm.getDomainId()).thenReturn(200L);
+-        BackupVO existing = mock(BackupVO.class);
+-        when(existing.getStatus()).thenReturn(Backup.Status.BackedUp);
++        BackupVO existing = MockBackupVO.createMockBackupVO(Backup.Status.BackedUp);
+         when(backupDao.findByVmId(1L)).thenReturn(existing);
+         when(volumeDao.findByInstanceAndNotStates(1L, Volume.State.Ready)).thenReturn(Collections.emptyList());
+         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(5L, 42L));
+@@ -464,4 +462,13 @@
+             verify(agentManager, times(2)).send(eq(802L), any(Command.class));
+         }
+     }
++
++    public class MockBackupVO {
++        public static org.apache.cloudstack.backup.BackupVO createMockBackupVO(
++                org.apache.cloudstack.backup.Backup.Status status) {
++            org.apache.cloudstack.backup.BackupVO backup = mock(org.apache.cloudstack.backup.BackupVO.class);
++            when(backup.getStatus()).thenReturn(status);
++            return backup;
++        }
++    }
+ }

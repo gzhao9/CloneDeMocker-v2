@@ -1,0 +1,36 @@
+--- a/server/src/test/java/com/cloud/template/HypervisorTemplateAdapterTest.java
++++ b/server/src/test/java/com/cloud/template/HypervisorTemplateAdapterTest.java
+@@ -535,24 +535,27 @@
+ 
+     @Test
+     public void testCheckZoneImageStoresDirectDownloadTemplate() {
+-        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+-        Mockito.when(templateVO.isDirectDownload()).thenReturn(true);
++        VMTemplateVO templateVO = createMockVmTemplateVO(true);
+         _adapter.checkZoneImageStores(templateVO, List.of(1L));
+     }
+ 
+     @Test
+     public void testCheckZoneImageStoresRegularTemplateWithStore() {
+-        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+-        Mockito.when(templateVO.isDirectDownload()).thenReturn(false);
++        VMTemplateVO templateVO = createMockVmTemplateVO(false);
+         Mockito.when(dataStoreManagerMock.getImageStoresByScope(Mockito.any())).thenReturn(List.of(Mockito.mock(DataStore.class)));
+         _adapter.checkZoneImageStores(templateVO, List.of(1L));
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCheckZoneImageStoresRegularTemplateNoStore() {
+-        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+-        Mockito.when(templateVO.isDirectDownload()).thenReturn(false);
++        VMTemplateVO templateVO = createMockVmTemplateVO(false);
+         Mockito.when(dataStoreManagerMock.getImageStoresByScope(Mockito.any())).thenReturn(new ArrayList<>());
+         _adapter.checkZoneImageStores(templateVO, List.of(1L));
+     }
++
++    private static VMTemplateVO createMockVmTemplateVO(boolean directDownload) {
++        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
++        Mockito.when(templateVO.isDirectDownload()).thenReturn(directDownload);
++        return templateVO;
++    }
+ }

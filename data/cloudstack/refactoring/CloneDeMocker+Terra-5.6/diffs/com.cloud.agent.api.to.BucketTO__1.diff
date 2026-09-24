@@ -1,0 +1,111 @@
+--- a/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/CloudianHyperStoreObjectStoreDriverImplTest.java
++++ b/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/CloudianHyperStoreObjectStoreDriverImplTest.java
+@@ -527,8 +527,7 @@
+     @Test
+     public void testDeleteBucket() throws Exception {
+         doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3ClientByBucketAndStore(any(), anyLong());
+-        BucketTO bucket = mock(BucketTO.class);
+-        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
++        BucketTO bucket = createMockBucket();
+         boolean deleted = cloudianHyperStoreObjectStoreDriverImpl.deleteBucket(bucket, TEST_STORE_ID);
+         assertTrue(deleted);
+         verify(s3Client, times(1)).deleteBucket(TEST_BUCKET_NAME);
+@@ -537,8 +536,7 @@
+     @Test
+     public void testSetBucketPolicyPrivate() throws Exception {
+         doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3ClientByBucketAndStore(any(), anyLong());
+-        BucketTO bucket = mock(BucketTO.class);
+-        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
++        BucketTO bucket = createMockBucket();
+         cloudianHyperStoreObjectStoreDriverImpl.setBucketPolicy(bucket, "private", TEST_STORE_ID);
+         // private policy is equivalent to deleting any bucket policy
+         verify(s3Client, times(1)).deleteBucketPolicy(TEST_BUCKET_NAME);
+@@ -548,8 +546,7 @@
+     @Test
+     public void testSetBucketPolicyPublic() throws Exception {
+         doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3ClientByBucketAndStore(any(), anyLong());
+-        BucketTO bucket = mock(BucketTO.class);
+-        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
++        BucketTO bucket = createMockBucket();
+         cloudianHyperStoreObjectStoreDriverImpl.setBucketPolicy(bucket, "public", TEST_STORE_ID);
+         verify(s3Client, times(1)).setBucketPolicy(anyString(), anyString());
+         verify(s3Client, never()).deleteBucketPolicy(TEST_BUCKET_NAME);
+@@ -564,8 +561,7 @@
+     }
+ 
+     public void testSetBucketQuotaToZero() {
+-        BucketTO bucket = mock(BucketTO.class);
+-        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
++        BucketTO bucket = createMockBucket();
+         // A zero quota indicates no quota and should be an accepted value.
+         cloudianHyperStoreObjectStoreDriverImpl.setBucketQuota(bucket, TEST_STORE_ID, 0);
+     }
+@@ -573,8 +569,7 @@
+     @Test
+     public void testSetBucketEncryption() {
+         doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3ClientByBucketAndStore(any(), anyLong());
+-        BucketTO bucket = mock(BucketTO.class);
+-        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
++        BucketTO bucket = createMockBucket();
+         cloudianHyperStoreObjectStoreDriverImpl.setBucketEncryption(bucket, TEST_STORE_ID);
+ 
+         // setBucketEncryption should be called once with SSE set.
+@@ -589,8 +584,7 @@
+     @Test
+     public void testDeleteBucketEncryption() throws Exception {
+         doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3ClientByBucketAndStore(any(), anyLong());
+-        BucketTO bucket = mock(BucketTO.class);
+-        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
++        BucketTO bucket = createMockBucket();
+         boolean deleted = cloudianHyperStoreObjectStoreDriverImpl.deleteBucketEncryption(bucket, TEST_STORE_ID);
+         assertTrue(deleted);
+         verify(s3Client, times(1)).deleteBucketEncryption(TEST_BUCKET_NAME);
+@@ -599,8 +593,7 @@
+     @Test
+     public void testSetBucketVersioning() throws Exception {
+         doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3ClientByBucketAndStore(any(), anyLong());
+-        BucketTO bucket = mock(BucketTO.class);
+-        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
++        BucketTO bucket = createMockBucket();
+         ArgumentCaptor<SetBucketVersioningConfigurationRequest> arg = ArgumentCaptor.forClass(SetBucketVersioningConfigurationRequest.class);
+ 
+         boolean set = cloudianHyperStoreObjectStoreDriverImpl.setBucketVersioning(bucket, TEST_STORE_ID);
+@@ -614,8 +607,7 @@
+     @Test
+     public void testDeleteBucketVersioning() throws Exception {
+         doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3ClientByBucketAndStore(any(), anyLong());
+-        BucketTO bucket = mock(BucketTO.class);
+-        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
++        BucketTO bucket = createMockBucket();
+         ArgumentCaptor<SetBucketVersioningConfigurationRequest> arg = ArgumentCaptor.forClass(SetBucketVersioningConfigurationRequest.class);
+ 
+         boolean unSet = cloudianHyperStoreObjectStoreDriverImpl.deleteBucketVersioning(bucket, TEST_STORE_ID);
+@@ -657,8 +649,7 @@
+         when(secretKeyDetail.getValue()).thenReturn(TEST_ROOT_SK);
+         when(accountDetailsDao.findDetail(TEST_ACCOUNT_ID, CloudianHyperStoreUtil.KEY_ROOT_SECRET_KEY)).thenReturn(secretKeyDetail);
+ 
+-        BucketTO bucket = mock(BucketTO.class);
+-        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
++        BucketTO bucket = createMockBucket();
+ 
+         try (MockedStatic<CloudianHyperStoreUtil> mockStatic = Mockito.mockStatic(CloudianHyperStoreUtil.class)) {
+             mockStatic.when(() -> CloudianHyperStoreUtil.getS3Client(TEST_S3_URL, TEST_ROOT_AK, TEST_ROOT_SK)).thenReturn(s3Client);
+@@ -677,10 +668,15 @@
+         when(bucketDao.listByObjectStoreId(TEST_STORE_ID)).thenReturn(BucketList);
+ 
+         // The test bucket name won't match anything prepared above
++        BucketTO bucket = createMockBucket();
++
++        CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> cloudianHyperStoreObjectStoreDriverImpl.getS3ClientByBucketAndStore(bucket, TEST_STORE_ID));
++        assertTrue(thrown.getMessage().contains("not found"));
++    }
++
++    private static BucketTO createMockBucket() {
+         BucketTO bucket = mock(BucketTO.class);
+         when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
+-
+-        CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> cloudianHyperStoreObjectStoreDriverImpl.getS3ClientByBucketAndStore(bucket, TEST_STORE_ID));
+-        assertTrue(thrown.getMessage().contains("not found"));
++        return bucket;
+     }
+ }

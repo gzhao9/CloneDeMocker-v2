@@ -1,0 +1,66 @@
+--- a/cas/src/test/java/org/springframework/security/cas/web/CasAuthenticationFilterTests.java
++++ b/cas/src/test/java/org/springframework/security/cas/web/CasAuthenticationFilterTests.java
+@@ -23,6 +23,7 @@
+ import jakarta.servlet.http.HttpSession;
+ import org.apereo.cas.client.proxy.ProxyGrantingTicketStorage;
+ import org.junit.jupiter.api.AfterEach;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.mock.web.MockFilterChain;
+@@ -66,6 +67,13 @@
+  */
+ public class CasAuthenticationFilterTests {
+ 
++	private FilterChain filterChain;
++
++	@BeforeEach
++	public void setUp() {
++		this.filterChain = mock(FilterChain.class);
++	}
++
+ 	@AfterEach
+ 	public void tearDown() {
+ 		SecurityContextHolder.clearContext();
+@@ -169,23 +177,22 @@
+ 		serviceProperties.setAuthenticateAllArtifacts(true);
+ 		MockHttpServletRequest request = post("/authenticate").param("ticket", "ST-1-123").build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain chain = mock(FilterChain.class);
+ 		CasAuthenticationFilter filter = new CasAuthenticationFilter();
+ 		filter.setServiceProperties(serviceProperties);
+ 		filter.setAuthenticationSuccessHandler(successHandler);
+ 		filter.setProxyGrantingTicketStorage(mock(ProxyGrantingTicketStorage.class));
+ 		filter.setAuthenticationManager(manager);
+ 		filter.afterPropertiesSet();
+-		filter.doFilter(request, response, chain);
++		filter.doFilter(request, response, filterChain);
+ 		assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull()
+ 			.withFailMessage("Authentication should not be null");
+-		verify(chain).doFilter(request, response);
++		verify(filterChain).doFilter(request, response);
+ 		verifyNoInteractions(successHandler);
+ 		// validate for when the filterProcessUrl matches
+ 		filter.setFilterProcessesUrl(request.getServletPath());
+ 		SecurityContextHolder.clearContext();
+-		filter.doFilter(request, response, chain);
+-		verifyNoMoreInteractions(chain);
++		filter.doFilter(request, response, filterChain);
++		verifyNoMoreInteractions(filterChain);
+ 		verify(successHandler).onAuthenticationSuccess(request, response, authentication);
+ 	}
+ 
+@@ -195,11 +202,10 @@
+ 		CasAuthenticationFilter filter = new CasAuthenticationFilter();
+ 		MockHttpServletRequest request = get("/pgtCallback").build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain chain = mock(FilterChain.class);
+ 		filter.setProxyGrantingTicketStorage(mock(ProxyGrantingTicketStorage.class));
+ 		filter.setProxyReceptorUrl(request.getServletPath());
+-		filter.doFilter(request, response, chain);
+-		verifyNoInteractions(chain);
++		filter.doFilter(request, response, filterChain);
++		verifyNoInteractions(filterChain);
+ 	}
+ 
+ 	@Test

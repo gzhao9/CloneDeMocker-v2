@@ -1,0 +1,83 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/SeekableStreamIndexTaskRunnerTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/SeekableStreamIndexTaskRunnerTest.java
+@@ -124,7 +124,7 @@
+     SeekableStreamIndexTaskTuningConfig tuningConfig = Mockito.mock(SeekableStreamIndexTaskTuningConfig.class);
+     SeekableStreamIndexTaskIOConfig<String, String> ioConfig = Mockito.mock(SeekableStreamIndexTaskIOConfig.class);
+     SeekableStreamStartSequenceNumbers<String, String> sequenceNumbers = Mockito.mock(SeekableStreamStartSequenceNumbers.class);
+-    SeekableStreamEndSequenceNumbers<String, String> endSequenceNumbers = Mockito.mock(SeekableStreamEndSequenceNumbers.class);
++    SeekableStreamEndSequenceNumbers<String, String> endSequenceNumbers = createMockEndSequenceNumbers();
+ 
+     DateTime now = DateTimes.nowUtc();
+ 
+@@ -135,7 +135,6 @@
+     Mockito.when(ioConfig.getStartSequenceNumbers()).thenReturn(sequenceNumbers);
+     Mockito.when(ioConfig.getEndSequenceNumbers()).thenReturn(endSequenceNumbers);
+ 
+-    Mockito.when(endSequenceNumbers.getPartitionSequenceNumberMap()).thenReturn(ImmutableMap.of());
+     Mockito.when(sequenceNumbers.getStream()).thenReturn("test");
+ 
+     Mockito.when(task.getDataSchema()).thenReturn(schema);
+@@ -179,7 +178,7 @@
+     SeekableStreamIndexTaskTuningConfig tuningConfig = Mockito.mock(SeekableStreamIndexTaskTuningConfig.class);
+     SeekableStreamIndexTaskIOConfig<String, String> ioConfig = Mockito.mock(SeekableStreamIndexTaskIOConfig.class);
+     SeekableStreamStartSequenceNumbers<String, String> sequenceNumbers = Mockito.mock(SeekableStreamStartSequenceNumbers.class);
+-    SeekableStreamEndSequenceNumbers<String, String> endSequenceNumbers = Mockito.mock(SeekableStreamEndSequenceNumbers.class);
++    SeekableStreamEndSequenceNumbers<String, String> endSequenceNumbers = createMockEndSequenceNumbers();
+ 
+     DateTime now = DateTimes.nowUtc();
+ 
+@@ -191,7 +190,6 @@
+     Mockito.when(ioConfig.getStartSequenceNumbers()).thenReturn(sequenceNumbers);
+     Mockito.when(ioConfig.getEndSequenceNumbers()).thenReturn(endSequenceNumbers);
+ 
+-    Mockito.when(endSequenceNumbers.getPartitionSequenceNumberMap()).thenReturn(ImmutableMap.of());
+     Mockito.when(sequenceNumbers.getStream()).thenReturn("test");
+ 
+     Mockito.when(task.getDataSchema()).thenReturn(schema);
+@@ -234,7 +232,7 @@
+     SeekableStreamIndexTaskTuningConfig tuningConfig = Mockito.mock(SeekableStreamIndexTaskTuningConfig.class);
+     SeekableStreamIndexTaskIOConfig<String, String> ioConfig = Mockito.mock(SeekableStreamIndexTaskIOConfig.class);
+     SeekableStreamStartSequenceNumbers<String, String> sequenceNumbers = Mockito.mock(SeekableStreamStartSequenceNumbers.class);
+-    SeekableStreamEndSequenceNumbers<String, String> endSequenceNumbers = Mockito.mock(SeekableStreamEndSequenceNumbers.class);
++    SeekableStreamEndSequenceNumbers<String, String> endSequenceNumbers = createMockEndSequenceNumbers();
+ 
+     Mockito.when(ioConfig.getRefreshRejectionPeriodsInMinutes()).thenReturn(null);
+     Mockito.when(ioConfig.getMaximumMessageTime()).thenReturn(null);
+@@ -243,7 +241,6 @@
+     Mockito.when(ioConfig.getStartSequenceNumbers()).thenReturn(sequenceNumbers);
+     Mockito.when(ioConfig.getEndSequenceNumbers()).thenReturn(endSequenceNumbers);
+ 
+-    Mockito.when(endSequenceNumbers.getPartitionSequenceNumberMap()).thenReturn(ImmutableMap.of());
+     Mockito.when(sequenceNumbers.getStream()).thenReturn("test");
+ 
+     Mockito.when(task.getDataSchema()).thenReturn(schema);
+@@ -280,14 +277,13 @@
+     SeekableStreamIndexTaskTuningConfig tuningConfig = Mockito.mock(SeekableStreamIndexTaskTuningConfig.class);
+     SeekableStreamIndexTaskIOConfig<String, String> ioConfig = Mockito.mock(SeekableStreamIndexTaskIOConfig.class);
+     SeekableStreamStartSequenceNumbers<String, String> sequenceNumbers = Mockito.mock(SeekableStreamStartSequenceNumbers.class);
+-    SeekableStreamEndSequenceNumbers<String, String> endSequenceNumbers = Mockito.mock(SeekableStreamEndSequenceNumbers.class);
++    SeekableStreamEndSequenceNumbers<String, String> endSequenceNumbers = createMockEndSequenceNumbers();
+ 
+     Mockito.when(ioConfig.getRefreshRejectionPeriodsInMinutes()).thenReturn(null);
+     Mockito.when(ioConfig.getInputFormat()).thenReturn(new JsonInputFormat(null, null, null, null, null));
+     Mockito.when(ioConfig.getStartSequenceNumbers()).thenReturn(sequenceNumbers);
+     Mockito.when(ioConfig.getEndSequenceNumbers()).thenReturn(endSequenceNumbers);
+ 
+-    Mockito.when(endSequenceNumbers.getPartitionSequenceNumberMap()).thenReturn(ImmutableMap.of());
+     Mockito.when(sequenceNumbers.getStream()).thenReturn("test");
+ 
+     Mockito.when(task.getDataSchema()).thenReturn(schema);
+@@ -335,6 +331,13 @@
+     runner.run(createTaskToolbox());
+     emitter.verifyValue("ingest/segments/count", 10);
+     emitter.verifyValue("ingest/rows/published", 10_000L);
++  }
++
++  private static SeekableStreamEndSequenceNumbers<String, String> createMockEndSequenceNumbers()
++  {
++    SeekableStreamEndSequenceNumbers<String, String> endSequenceNumbers = Mockito.mock(SeekableStreamEndSequenceNumbers.class);
++    Mockito.when(endSequenceNumbers.getPartitionSequenceNumberMap()).thenReturn(ImmutableMap.of());
++    return endSequenceNumbers;
+   }
+ 
+   private TaskToolbox createTaskToolbox()

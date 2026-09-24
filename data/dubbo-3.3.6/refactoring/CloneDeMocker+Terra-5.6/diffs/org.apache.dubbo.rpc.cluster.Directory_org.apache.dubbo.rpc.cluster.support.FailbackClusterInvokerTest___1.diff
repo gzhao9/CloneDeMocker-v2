@@ -1,0 +1,88 @@
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailbackClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailbackClusterInvokerTest.java
+@@ -71,11 +71,7 @@
+     public void setUp() throws Exception {
+         RpcContext.removeServiceContext();
+ 
+-        dic = mock(Directory.class);
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+-        given(dic.list(invocation)).willReturn(invokers);
+-        given(dic.getInterface()).willReturn(FailbackClusterInvokerTest.class);
++        dic = createMockDirectory(url, invocation, invokers);
+ 
+         invocation.setMethodName("method1");
+ 
+@@ -88,6 +84,16 @@
+         dic = null;
+         invocation = new RpcInvocation();
+         invokers.clear();
++    }
++
++    private static Directory<FailbackClusterInvokerTest> createMockDirectory(
++            URL url, RpcInvocation invocation, List<Invoker<FailbackClusterInvokerTest>> invokers) {
++        Directory<FailbackClusterInvokerTest> dic = createMockDirectory(url, invocation, invokers);
++        
++        
++        
++        
++        return dic;
+     }
+ 
+     private void resetInvokerToException() {
+@@ -105,11 +111,7 @@
+     @Test
+     void testInvokeWithIllegalRetriesParam() {
+         URL url = URL.valueOf("test://test:11/test?retries=-1&failbacktasks=2");
+-        Directory<FailbackClusterInvokerTest> dic = mock(Directory.class);
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+-        given(dic.getInterface()).willReturn(FailbackClusterInvokerTest.class);
+-        given(dic.list(invocation)).willReturn(invokers);
++        Directory<FailbackClusterInvokerTest> dic = createMockDirectory(url, invocation, invokers);
+         given(invoker.getUrl()).willReturn(url);
+ 
+         FailbackClusterInvoker<FailbackClusterInvokerTest> invoker = new FailbackClusterInvoker<>(dic);
+@@ -121,11 +123,7 @@
+     @Test
+     void testInvokeWithIllegalFailbacktasksParam() {
+         URL url = URL.valueOf("test://test:11/test?retries=2&failbacktasks=-1");
+-        Directory<FailbackClusterInvokerTest> dic = mock(Directory.class);
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+-        given(dic.getInterface()).willReturn(FailbackClusterInvokerTest.class);
+-        given(dic.list(invocation)).willReturn(invokers);
++        Directory<FailbackClusterInvokerTest> dic = createMockDirectory(url, invocation, invokers);
+         given(invoker.getUrl()).willReturn(url);
+ 
+         FailbackClusterInvoker<FailbackClusterInvokerTest> invoker = new FailbackClusterInvoker<>(dic);
+@@ -158,12 +156,7 @@
+     @Test
+     @Order(3)
+     public void testNoInvoke() {
+-        dic = mock(Directory.class);
+-
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+-        given(dic.list(invocation)).willReturn(null);
+-        given(dic.getInterface()).willReturn(FailbackClusterInvokerTest.class);
++        dic = createMockDirectory(url, invocation, null);
+ 
+         invocation.setMethodName("method1");
+         invokers.add(invoker);
+@@ -270,6 +263,7 @@
+     public void testInvokeRetryTimesWithDefaultValue()
+             throws InterruptedException, NoSuchFieldException, IllegalAccessException {
+         resetInvokerToException();
++        dic = createMockDirectory(url, invocation, invokers);
+         given(dic.getConsumerUrl()).willReturn(URL.valueOf("test://test:11/test"));
+ 
+         FailbackClusterInvoker<FailbackClusterInvokerTest> invoker = new FailbackClusterInvoker<>(dic);
+@@ -294,6 +288,7 @@
+     public void testInvokeRetryTimesWithIllegalValue()
+             throws InterruptedException, NoSuchFieldException, IllegalAccessException {
+         resetInvokerToException();
++        dic = createMockDirectory(url, invocation, invokers);
+         given(dic.getConsumerUrl()).willReturn(url.addParameter(RETRIES_KEY, -100));
+ 
+         FailbackClusterInvoker<FailbackClusterInvokerTest> invoker = new FailbackClusterInvoker<>(dic);

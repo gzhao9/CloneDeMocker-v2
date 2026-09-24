@@ -1,0 +1,68 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
+@@ -267,6 +267,12 @@
+         return webhook;
+     }
+ 
++    private static CreateWebhookCmd createMockCreateWebhookCmd(String payloadUrl) {
++        CreateWebhookCmd cmd = Mockito.mock(CreateWebhookCmd.class);
++        Mockito.when(cmd.getPayloadUrl()).thenReturn(payloadUrl);
++        return cmd;
++    }
++
+     @Test
+     public void testValidateWebhookOwnerPayloadUrlUpdateSameExist() {
+         WebhookVO webhookVO = mockWebhookVO(1L);
+@@ -847,7 +853,7 @@
+ 
+     @Test
+     public void createWebhookCreatesWebhookSuccessfully() {
+-        CreateWebhookCmd cmd = Mockito.mock(CreateWebhookCmd.class);
++        CreateWebhookCmd cmd = createMockCreateWebhookCmd("https://example.com");
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+         WebhookJoinVO webhookJoinVO = Mockito.mock(WebhookJoinVO.class);
+         Mockito.when(webhookJoinVO.getState()).thenReturn(Webhook.State.Enabled);
+@@ -855,7 +861,6 @@
+ 
+         Mockito.when(cmd.getName()).thenReturn("webhookName");
+         Mockito.when(cmd.getDescription()).thenReturn("webhookDescription");
+-        Mockito.when(cmd.getPayloadUrl()).thenReturn("https://example.com");
+         Mockito.when(cmd.getSecretKey()).thenReturn("secretKey");
+         Mockito.when(cmd.isSslVerification()).thenReturn(true);
+         Mockito.when(cmd.getScope()).thenReturn("Local");
+@@ -894,9 +899,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void createWebhookThrowsExceptionForInvalidUrl() {
+-        CreateWebhookCmd cmd = Mockito.mock(CreateWebhookCmd.class);
+-
+-        Mockito.when(cmd.getPayloadUrl()).thenReturn("invalid-url");
++        CreateWebhookCmd cmd = createMockCreateWebhookCmd("invalid-url");
++
+         Mockito.doReturn(caller).when(webhookApiServiceImpl).getOwner(cmd);
+ 
+         webhookApiServiceImpl.createWebhook(cmd);
+@@ -904,9 +908,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void createWebhookThrowsExceptionForNonHttpsWithSslVerification() {
+-        CreateWebhookCmd cmd = Mockito.mock(CreateWebhookCmd.class);
+-
+-        Mockito.when(cmd.getPayloadUrl()).thenReturn("http://example.com");
++        CreateWebhookCmd cmd = createMockCreateWebhookCmd("http://example.com");
++
+         Mockito.when(cmd.isSslVerification()).thenReturn(true);
+         Mockito.doReturn(caller).when(webhookApiServiceImpl).getOwner(cmd);
+ 
+@@ -915,10 +918,9 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void createWebhookThrowsExceptionForDuplicatePayloadUrl() {
+-        CreateWebhookCmd cmd = Mockito.mock(CreateWebhookCmd.class);
++        CreateWebhookCmd cmd = createMockCreateWebhookCmd("https://example.com");
+         WebhookVO existingWebhook = Mockito.mock(WebhookVO.class);
+ 
+-        Mockito.when(cmd.getPayloadUrl()).thenReturn("https://example.com");
+         Mockito.when(caller.getId()).thenReturn(1L);
+         Mockito.doReturn(caller).when(webhookApiServiceImpl).getOwner(cmd);
+         Mockito.when(webhookDao.findByAccountAndPayloadUrl(1L, "https://example.com")).thenReturn(existingWebhook);

@@ -1,0 +1,122 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -261,6 +261,8 @@
+     @Mock
+     private Map<String, String> details;
+ 
++    private final PhysicalNetworkSetupInfo checkNetworkSetupInfo = Mockito.mock(PhysicalNetworkSetupInfo.class);
++
+     private static final String PHYSICAL_DISK_PATH = "/path/to/disk";
+     private static final int DEV_ID = 1;
+     private static final DiskDef.DiskBus DISK_BUS_TYPE = DiskDef.DiskBus.VIRTIO;
+@@ -3040,14 +3042,13 @@
+     public void testCheckNetworkCommand() {
+         final List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
+ 
+-        final PhysicalNetworkSetupInfo nic = Mockito.mock(PhysicalNetworkSetupInfo.class);
+-        networkInfoList.add(nic);
++        networkInfoList.add(checkNetworkSetupInfo);
+ 
+         final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
+ 
+-        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Guest, nic.getGuestNetworkName())).thenReturn(true);
+-        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Management, nic.getPrivateNetworkName())).thenReturn(true);
+-        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Public, nic.getPublicNetworkName())).thenReturn(true);
++        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Guest, checkNetworkSetupInfo.getGuestNetworkName())).thenReturn(true);
++        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Management, checkNetworkSetupInfo.getPrivateNetworkName())).thenReturn(true);
++        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Public, checkNetworkSetupInfo.getPublicNetworkName())).thenReturn(true);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -3055,21 +3056,20 @@
+         final Answer answer = wrapper.execute(command, libvirtComputingResourceMock);
+         assertTrue(answer.getResult());
+ 
+-        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Guest, nic.getGuestNetworkName());
+-        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Management, nic.getPrivateNetworkName());
+-        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Public, nic.getPublicNetworkName());
++        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Guest, checkNetworkSetupInfo.getGuestNetworkName());
++        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Management, checkNetworkSetupInfo.getPrivateNetworkName());
++        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Public, checkNetworkSetupInfo.getPublicNetworkName());
+     }
+ 
+     @Test
+     public void testCheckNetworkCommandFail1() {
+         final List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
+ 
+-        final PhysicalNetworkSetupInfo networkSetupInfo = Mockito.mock(PhysicalNetworkSetupInfo.class);
+-        networkInfoList.add(networkSetupInfo);
++        networkInfoList.add(checkNetworkSetupInfo);
+ 
+         final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
+ 
+-        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName())).thenReturn(false);
++        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Guest, checkNetworkSetupInfo.getGuestNetworkName())).thenReturn(false);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -3077,20 +3077,19 @@
+         final Answer answer = wrapper.execute(command, libvirtComputingResourceMock);
+         assertFalse(answer.getResult());
+ 
+-        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName());
++        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Guest, checkNetworkSetupInfo.getGuestNetworkName());
+     }
+ 
+     @Test
+     public void testCheckNetworkCommandFail2() {
+         final List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
+ 
+-        final PhysicalNetworkSetupInfo networkSetupInfo = Mockito.mock(PhysicalNetworkSetupInfo.class);
+-        networkInfoList.add(networkSetupInfo);
++        networkInfoList.add(checkNetworkSetupInfo);
+ 
+         final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
+ 
+-        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName())).thenReturn(true);
+-        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Management, networkSetupInfo.getPrivateNetworkName())).thenReturn(false);
++        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Guest, checkNetworkSetupInfo.getGuestNetworkName())).thenReturn(true);
++        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Management, checkNetworkSetupInfo.getPrivateNetworkName())).thenReturn(false);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -3098,22 +3097,21 @@
+         final Answer answer = wrapper.execute(command, libvirtComputingResourceMock);
+         assertFalse(answer.getResult());
+ 
+-        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName());
+-        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Management, networkSetupInfo.getPrivateNetworkName());
++        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Guest, checkNetworkSetupInfo.getGuestNetworkName());
++        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Management, checkNetworkSetupInfo.getPrivateNetworkName());
+     }
+ 
+     @Test
+     public void testCheckNetworkCommandFail3() {
+         final List<PhysicalNetworkSetupInfo> networkInfoList = new ArrayList<PhysicalNetworkSetupInfo>();
+ 
+-        final PhysicalNetworkSetupInfo networkSetupInfo = Mockito.mock(PhysicalNetworkSetupInfo.class);
+-        networkInfoList.add(networkSetupInfo);
++        networkInfoList.add(checkNetworkSetupInfo);
+ 
+         final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
+ 
+-        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName())).thenReturn(true);
+-        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Management, networkSetupInfo.getPrivateNetworkName())).thenReturn(true);
+-        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Public, networkSetupInfo.getPublicNetworkName())).thenReturn(false);
++        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Guest, checkNetworkSetupInfo.getGuestNetworkName())).thenReturn(true);
++        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Management, checkNetworkSetupInfo.getPrivateNetworkName())).thenReturn(true);
++        when(libvirtComputingResourceMock.checkNetwork(TrafficType.Public, checkNetworkSetupInfo.getPublicNetworkName())).thenReturn(false);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -3121,8 +3119,8 @@
+         final Answer answer = wrapper.execute(command, libvirtComputingResourceMock);
+         assertFalse(answer.getResult());
+ 
+-        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName());
+-        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Management, networkSetupInfo.getPrivateNetworkName());
++        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Guest, checkNetworkSetupInfo.getGuestNetworkName());
++        verify(libvirtComputingResourceMock, times(1)).checkNetwork(TrafficType.Management, checkNetworkSetupInfo.getPrivateNetworkName());
+     }
+ 
+     @Test

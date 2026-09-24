@@ -1,0 +1,43 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
+@@ -183,6 +183,9 @@
+     @Mock
+     TungstenApi tungstenApi;
+ 
++    @Mock
++    private AddressGroup sharedAddressGroup;
++
+     TungstenResource tungstenResource;
+ 
+     MockedStatic<TungstenVRouterApi> tungstenVRouterApiMocked;
+@@ -1231,8 +1234,7 @@
+     @Test
+     public void executeRequestCreateTungstenAddressGroupCommandTest() {
+         TungstenCommand command = new CreateTungstenAddressGroupCommand("addressName", "10.0.0.0", 24);
+-        AddressGroup addressGroup = mock(AddressGroup.class);
+-        when(tungstenApi.createTungstenAddressGroup(anyString(), anyString(), anyString(), anyInt())).thenReturn(addressGroup);
++        when(tungstenApi.createTungstenAddressGroup(anyString(), anyString(), anyString(), anyInt())).thenReturn(sharedAddressGroup);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+         assertNotNull(answer.getApiObjectBase());
+@@ -1291,9 +1293,8 @@
+     @Test
+     public void executeRequestListTungstenAddressGroupCommandTest() {
+         TungstenCommand command = new ListTungstenAddressGroupCommand("d64e6082-10b3-11ec-82a8-0242ac130003");
+-        AddressGroup addressGroup1 = mock(AddressGroup.class);
+         AddressGroup addressGroup2 = mock(AddressGroup.class);
+-        Answer<List<ApiObjectBase>> addressGroupsAnswer = setupApiObjectBaseListAnswer(addressGroup1, addressGroup2);
++        Answer<List<ApiObjectBase>> addressGroupsAnswer = setupApiObjectBaseListAnswer(sharedAddressGroup, addressGroup2);
+         when(tungstenApi.listTungstenAddressGroup(anyString())).thenAnswer(addressGroupsAnswer);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+@@ -1343,8 +1344,7 @@
+     @Test
+     public void executeRequestDeleteTungstenAddressGroupCommandTest() {
+         TungstenCommand command = new DeleteTungstenAddressGroupCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003");
+-        AddressGroup addressGroup = mock(AddressGroup.class);
+-        when(tungstenApi.getTungstenObject(eq(AddressGroup.class), anyString())).thenReturn(addressGroup);
++        when(tungstenApi.getTungstenObject(eq(AddressGroup.class), anyString())).thenReturn(sharedAddressGroup);
+         when(tungstenApi.deleteTungstenObject(any(AddressGroup.class))).thenReturn(true);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());

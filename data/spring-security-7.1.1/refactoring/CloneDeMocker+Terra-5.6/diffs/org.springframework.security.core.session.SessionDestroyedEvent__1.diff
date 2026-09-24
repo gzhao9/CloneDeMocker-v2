@@ -1,0 +1,103 @@
+--- a/core/src/test/java/org/springframework/security/authentication/jaas/DefaultJaasAuthenticationProviderTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/jaas/DefaultJaasAuthenticationProviderTests.java
+@@ -125,11 +125,10 @@
+ 
+ 	@Test
+ 	public void logout() throws Exception {
+-		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
+ 		SecurityContext securityContext = mock(SecurityContext.class);
+ 		JaasAuthenticationToken token = mock(JaasAuthenticationToken.class);
+ 		LoginContext context = mock(LoginContext.class);
+-		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
++		SessionDestroyedEvent event = MockSessionDestroyedEvent.createMockSessionDestroyedEvent(securityContext);
+ 		given(securityContext.getAuthentication()).willReturn(token);
+ 		given(token.getLoginContext()).willReturn(context);
+ 		this.provider.onApplicationEvent(event);
+@@ -151,9 +150,8 @@
+ 
+ 	@Test
+ 	public void logoutNullAuthentication() {
+-		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
+-		SecurityContext securityContext = mock(SecurityContext.class);
+-		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
++		SecurityContext securityContext = mock(SecurityContext.class);
++		SessionDestroyedEvent event = MockSessionDestroyedEvent.createMockSessionDestroyedEvent(securityContext);
+ 		this.provider.handleLogout(event);
+ 		verify(event).getSecurityContexts();
+ 		verify(event).getSecurityContexts();
+@@ -163,9 +161,8 @@
+ 
+ 	@Test
+ 	public void logoutNonJaasAuthentication() {
+-		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
+-		SecurityContext securityContext = mock(SecurityContext.class);
+-		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
++		SecurityContext securityContext = mock(SecurityContext.class);
++		SessionDestroyedEvent event = MockSessionDestroyedEvent.createMockSessionDestroyedEvent(securityContext);
+ 		given(securityContext.getAuthentication()).willReturn(this.token);
+ 		this.provider.handleLogout(event);
+ 		verify(event).getSecurityContexts();
+@@ -176,10 +173,9 @@
+ 
+ 	@Test
+ 	public void logoutNullLoginContext() {
+-		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
+ 		SecurityContext securityContext = mock(SecurityContext.class);
+ 		JaasAuthenticationToken token = mock(JaasAuthenticationToken.class);
+-		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
++		SessionDestroyedEvent event = MockSessionDestroyedEvent.createMockSessionDestroyedEvent(securityContext);
+ 		given(securityContext.getAuthentication()).willReturn(token);
+ 		this.provider.onApplicationEvent(event);
+ 		verify(event).getSecurityContexts();
+@@ -190,12 +186,11 @@
+ 
+ 	@Test
+ 	public void logoutLoginException() throws Exception {
+-		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
+-		SecurityContext securityContext = mock(SecurityContext.class);
++		SecurityContext securityContext = mock(SecurityContext.class);
++		SessionDestroyedEvent event = MockSessionDestroyedEvent.createMockSessionDestroyedEvent(securityContext);
+ 		JaasAuthenticationToken token = mock(JaasAuthenticationToken.class);
+ 		LoginContext context = mock(LoginContext.class);
+ 		LoginException loginException = new LoginException("Failed Login");
+-		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
+ 		given(securityContext.getAuthentication()).willReturn(token);
+ 		given(token.getLoginContext()).willReturn(context);
+ 		willThrow(loginException).given(context).logout();
+--- a/core/src/test/java/org/springframework/security/authentication/jaas/JaasAuthenticationProviderTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/jaas/JaasAuthenticationProviderTests.java
+@@ -214,8 +214,7 @@
+ 		JaasAuthenticationToken token = new JaasAuthenticationToken(null, null, loginContext);
+ 		SecurityContext context = SecurityContextHolder.createEmptyContext();
+ 		context.setAuthentication(token);
+-		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
+-		given(event.getSecurityContexts()).willReturn(Arrays.asList(context));
++		SessionDestroyedEvent event = MockSessionDestroyedEvent.createMockSessionDestroyedEvent(context);
+ 		this.jaasProvider.handleLogout(event);
+ 		assertThat(loginContext.loggedOut).isTrue();
+ 	}
+--- a/core/src/test/java/org/springframework/security/authentication/jaas/MockSessionDestroyedEvent.java
++++ b/core/src/test/java/org/springframework/security/authentication/jaas/MockSessionDestroyedEvent.java
+@@ -0,0 +1,22 @@
++package org.springframework.security.authentication.jaas;
++
++import java.util.Arrays;
++
++import org.springframework.security.core.context.SecurityContext;
++import org.springframework.security.core.session.SessionDestroyedEvent;
++
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.mock;
++
++public final class MockSessionDestroyedEvent {
++
++	private MockSessionDestroyedEvent() {
++	}
++
++	public static SessionDestroyedEvent createMockSessionDestroyedEvent(SecurityContext securityContext) {
++		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
++		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
++		return event;
++	}
++
++}

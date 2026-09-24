@@ -1,0 +1,76 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -611,7 +611,7 @@
+ 
+         ServiceOffering offering = getSvcoffering(512);
+         Mockito.lenient().when(_serviceOfferingDao.findById(Mockito.anyLong(), Mockito.anyLong())).thenReturn((ServiceOfferingVO) offering);
+-        Mockito.lenient().doNothing().when(accountManager).checkAccess(accountMock, null, true, userVmVoMock);
++        MockAccountManagerForCheckAccess.stubCheckAccess(accountManager, accountMock, userVmVoMock);
+         userVmManagerImpl.validateInputsAndPermissionForUpdateVirtualMachineCommand(updateVmCommand);
+ 
+         Mockito.verify(userVmManagerImpl).validateGuestOsIdForUpdateVirtualMachineCommand(updateVmCommand);
+@@ -1616,7 +1616,7 @@
+     public void testRestoreVMWithVolumeSnapshots() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+         CallContext callContextMock = Mockito.mock(CallContext.class);
+         Mockito.lenient().doReturn(accountMock).when(callContextMock).getCallingAccount();
+-        Mockito.lenient().doNothing().when(accountManager).checkAccess(accountMock, null, true, userVmVoMock);
++        MockAccountManagerForCheckAccess.stubCheckAccess(accountManager, accountMock, userVmVoMock);
+ 
+         RestoreVMCmd cmd = Mockito.mock(RestoreVMCmd.class);
+         when(cmd.getVmId()).thenReturn(vmId);
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerTest.java
+@@ -561,7 +561,7 @@
+         services.add(Service.Dhcp);
+         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
+         when(_vmMock.getState()).thenReturn(State.Stopped);
+-        lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
++        MockAccountManagerForCheckAccess.stubCheckAccess(_accountMgr, _account, _vmMock);
+         when(_accountDao.findByIdIncludingRemoved(anyLong())).thenReturn(_accountMock);
+ 
+         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
+@@ -608,7 +608,7 @@
+         List<Service> services = new ArrayList<Service>();
+         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
+         lenient().when(_vmMock.getState()).thenReturn(State.Running);
+-        lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
++        MockAccountManagerForCheckAccess.stubCheckAccess(_accountMgr, _account, _vmMock);
+         when(_accountDao.findByIdIncludingRemoved(anyLong())).thenReturn(_accountMock);
+ 
+         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
+@@ -704,7 +704,7 @@
+         services.add(Service.Dhcp);
+         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
+         when(_vmMock.getState()).thenReturn(State.Stopped);
+-        lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
++        MockAccountManagerForCheckAccess.stubCheckAccess(_accountMgr, _account, _vmMock);
+         when(_accountDao.findByIdIncludingRemoved(anyLong())).thenReturn(_accountMock);
+ 
+         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
+@@ -751,7 +751,7 @@
+         services.add(Service.Dhcp);
+         when(_networkModel.listNetworkOfferingServices(anyLong())).thenReturn(services);
+         when(_vmMock.getState()).thenReturn(State.Stopped);
+-        lenient().doNothing().when(_accountMgr).checkAccess(_account, null, true, _vmMock);
++        MockAccountManagerForCheckAccess.stubCheckAccess(_accountMgr, _account, _vmMock);
+         when(_accountDao.findByIdIncludingRemoved(anyLong())).thenReturn(_accountMock);
+ 
+         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
+--- a/server/src/test/java/com/cloud/vm/MockAccountManagerForCheckAccess.java
++++ b/server/src/test/java/com/cloud/vm/MockAccountManagerForCheckAccess.java
+@@ -0,0 +1,15 @@
++package com.cloud.vm;
++
++import com.cloud.user.Account;
++import com.cloud.user.AccountManager;
++
++import org.mockito.Mockito;
++
++public final class MockAccountManagerForCheckAccess {
++    private MockAccountManagerForCheckAccess() {
++    }
++
++    public static void stubCheckAccess(AccountManager accountManager, Account account, UserVmVO userVm) {
++        Mockito.lenient().doNothing().when(accountManager).checkAccess(account, null, true, userVm);
++    }
++}

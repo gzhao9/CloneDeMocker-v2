@@ -1,0 +1,42 @@
+--- a/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpNioConnectionTests.java
++++ b/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpNioConnectionTests.java
+@@ -301,14 +301,13 @@
+ 	public void testInsufficientThreads() throws Exception {
+ 		final ExecutorService exec = Executors.newFixedThreadPool(2);
+ 		SocketChannel channel = mock();
+-		Socket socket = mock();
++		Socket socket = createMockSocket();
+ 		Mockito.when(channel.socket()).thenReturn(socket);
+ 		doAnswer(invocation -> {
+ 			ByteBuffer buffer = invocation.getArgument(0);
+ 			buffer.position(1);
+ 			return 1;
+ 		}).when(channel).read(Mockito.any(ByteBuffer.class));
+-		when(socket.getReceiveBufferSize()).thenReturn(1024);
+ 		final TcpNioConnection connection = new TcpNioConnection(channel, false, false, nullPublisher, null);
+ 		connection.setTaskExecutor(exec);
+ 		connection.setPipeTimeout(200);
+@@ -581,6 +580,12 @@
+ 		return tcpNioServerConnectionFactory;
+ 	}
+ 
++	private static Socket createMockSocket() throws Exception {
++		Socket socket = mock();
++		when(socket.getReceiveBufferSize()).thenReturn(1024);
++		return socket;
++	}
++
+ 	private static void cleanupCompositeExecutor(CompositeExecutor compositeExec) throws Exception {
+ 		TestUtils.<DisposableBean>getPropertyValue(compositeExec, "primaryTaskExecutor").destroy();
+ 		TestUtils.<DisposableBean>getPropertyValue(compositeExec, "secondaryTaskExecutor").destroy();
+@@ -797,9 +802,8 @@
+ 	@Test
+ 	public void testWritingLatchClearedAfterRead() throws Exception {
+ 		SocketChannel channel = mock();
+-		Socket socket = mock();
++		Socket socket = createMockSocket();
+ 		when(channel.socket()).thenReturn(socket);
+-		when(socket.getReceiveBufferSize()).thenReturn(1024);
+ 
+ 		doAnswer(invocation -> {
+ 			ByteBuffer buffer = invocation.getArgument(0);

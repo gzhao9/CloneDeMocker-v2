@@ -1,0 +1,66 @@
+--- a/server/src/test/java/org/apache/cloudstack/user/UserPasswordResetManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/user/UserPasswordResetManagerImplTest.java
+@@ -83,8 +83,7 @@
+ 
+     @Test
+     public void testValidateAndResetPassword() {
+-        UserAccount userAccount = Mockito.mock(UserAccount.class);
+-        Mockito.when(userAccount.getId()).thenReturn(1L);
++        UserAccount userAccount = createMockUserAccount();
+         Mockito.when(userAccount.getUsername()).thenReturn("test_user");
+ 
+         Mockito.doNothing().when(passwordReset).resetPassword(userAccount, "new_password");
+@@ -128,8 +127,7 @@
+ 
+     @Test
+     public void testValidateExistingTokenFirstRequest() {
+-        UserAccount userAccount = Mockito.mock(UserAccount.class);
+-        Mockito.when(userAccount.getId()).thenReturn(1L);
++        UserAccount userAccount = createMockUserAccount();
+         Mockito.when(userDetailsDao.listDetailsKeyPairs(1L)).thenReturn(Collections.emptyMap());
+ 
+         Assert.assertTrue(passwordReset.validateExistingToken(userAccount));
+@@ -137,8 +135,7 @@
+ 
+     @Test
+     public void testValidateExistingTokenSecondRequestExpired() {
+-        UserAccount userAccount = Mockito.mock(UserAccount.class);
+-        Mockito.when(userAccount.getId()).thenReturn(1L);
++        UserAccount userAccount = createMockUserAccount();
+         Mockito.when(userDetailsDao.listDetailsKeyPairs(1L)).thenReturn(Map.of(
+                 PasswordResetToken, "reset_token",
+                 PasswordResetTokenExpiryDate, String.valueOf(System.currentTimeMillis() - 5 * 60 * 1000)));
+@@ -149,8 +146,7 @@
+ 
+     @Test
+     public void testValidateExistingTokenSecondRequestUnexpired() {
+-        UserAccount userAccount = Mockito.mock(UserAccount.class);
+-        Mockito.when(userAccount.getId()).thenReturn(1L);
++        UserAccount userAccount = createMockUserAccount();
+         Mockito.when(userDetailsDao.listDetailsKeyPairs(1L)).thenReturn(Map.of(
+                 PasswordResetToken, "reset_token",
+                 PasswordResetTokenExpiryDate, String.valueOf(System.currentTimeMillis() + 5 * 60 * 1000)));
+@@ -160,11 +156,10 @@
+ 
+     @Test
+     public void testResetPassword() {
+-        UserAccount userAccount = Mockito.mock(UserAccount.class);
+         UserVO userVO = Mockito.mock(UserVO.class);
+         long userId = 1L;
+         String newPassword = "newPassword";
+-        Mockito.when(userAccount.getId()).thenReturn(userId);
++        UserAccount userAccount = createMockUserAccount();
+         Mockito.when(userDao.getUser(userId)).thenReturn(userVO);
+         passwordReset.resetPassword(userAccount, newPassword);
+         Mockito.verify(userDao).getUser(userId);
+@@ -174,4 +169,10 @@
+         Mockito.verify(userDetailsDao).removeDetail(userId, UserDetailVO.PasswordChangeRequired);
+         Mockito.verify(userDao).persist(userVO);
+     }
++
++    private static UserAccount createMockUserAccount() {
++        UserAccount userAccount = Mockito.mock(UserAccount.class);
++        Mockito.when(userAccount.getId()).thenReturn(1L);
++        return userAccount;
++    }
+ }

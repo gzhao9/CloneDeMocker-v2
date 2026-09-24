@@ -1,0 +1,34 @@
+--- a/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/CloudianHyperStoreObjectStoreDriverImplTest.java
++++ b/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/CloudianHyperStoreObjectStoreDriverImplTest.java
+@@ -415,9 +415,8 @@
+ 
+         // Setup the user/group as existing and active
+         CloudianUser user = mock(CloudianUser.class);
+-        CloudianGroup group = mock(CloudianGroup.class);
++        CloudianGroup group = createMockCloudianGroup(true);
+         when(user.getActive()).thenReturn(true);
+-        when(group.getActive()).thenReturn(true);
+         when(cloudianClient.listUser(hsUserId, hsGroupId)).thenReturn(user);
+         when(cloudianClient.listGroup(hsGroupId)).thenReturn(group);
+ 
+@@ -503,8 +502,7 @@
+ 
+         // Setup the user to not be found so that we check for a group
+         when(cloudianClient.listUser(hsUserId, hsGroupId)).thenReturn(null);
+-        CloudianGroup group = mock(CloudianGroup.class);
+-        when(group.getActive()).thenReturn(false);
++        CloudianGroup group = createMockCloudianGroup(false);
+         when(cloudianClient.listGroup(hsGroupId)).thenReturn(group);
+ 
+         // Test: user does not exist, check if group exists, it does but is marked disabled.
+@@ -683,4 +681,10 @@
+         CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> cloudianHyperStoreObjectStoreDriverImpl.getS3ClientByBucketAndStore(bucket, TEST_STORE_ID));
+         assertTrue(thrown.getMessage().contains("not found"));
+     }
++
++    private static CloudianGroup createMockCloudianGroup(boolean active) {
++        CloudianGroup group = mock(CloudianGroup.class);
++        when(group.getActive()).thenReturn(active);
++        return group;
++    }
+ }

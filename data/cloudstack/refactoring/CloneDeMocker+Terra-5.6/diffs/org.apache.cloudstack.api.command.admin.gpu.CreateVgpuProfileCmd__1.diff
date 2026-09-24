@@ -1,0 +1,50 @@
+--- a/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
+@@ -376,10 +376,8 @@
+     // vGPU Profile Tests
+     @Test
+     public void testCreateVgpuProfile_Success() {
+-        CreateVgpuProfileCmd cmd = mock(CreateVgpuProfileCmd.class);
+-        when(cmd.getName()).thenReturn(VGPU_PROFILE_NAME);
++        CreateVgpuProfileCmd cmd = createMockCreateVgpuProfileCmd(VGPU_PROFILE_NAME, GPU_CARD_ID);
+         when(cmd.getDescription()).thenReturn(VGPU_PROFILE_DESCRIPTION);
+-        when(cmd.getCardId()).thenReturn(GPU_CARD_ID);
+         when(cmd.getMaxVgpuPerPgpu()).thenReturn(MAX_VGPU_PER_PGPU);
+         when(cmd.getCommandName()).thenReturn(COMMAND_CREATE_VGPU_PROFILE);
+ 
+@@ -406,9 +404,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateVgpuProfile_InvalidCardId() {
+-        CreateVgpuProfileCmd cmd = mock(CreateVgpuProfileCmd.class);
+-        when(cmd.getName()).thenReturn(TEST_PROFILE_NAME);
+-        when(cmd.getCardId()).thenReturn(INVALID_ID);
++        CreateVgpuProfileCmd cmd = createMockCreateVgpuProfileCmd(TEST_PROFILE_NAME, INVALID_ID);
+ 
+         when(gpuCardDao.findById(INVALID_ID)).thenReturn(null);
+ 
+@@ -417,9 +413,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateVgpuProfile_DuplicateName() {
+-        CreateVgpuProfileCmd cmd = mock(CreateVgpuProfileCmd.class);
+-        when(cmd.getName()).thenReturn(TEST_PROFILE_NAME);
+-        when(cmd.getCardId()).thenReturn(GPU_CARD_ID);
++        CreateVgpuProfileCmd cmd = createMockCreateVgpuProfileCmd(TEST_PROFILE_NAME, GPU_CARD_ID);
+ 
+         when(gpuCardDao.findById(GPU_CARD_ID)).thenReturn(mockGpuCard);
+         when(vgpuProfileDao.findByNameAndCardId(TEST_PROFILE_NAME, GPU_CARD_ID)).thenReturn(mockVgpuProfile);
+@@ -1146,6 +1140,13 @@
+         assertEquals(GPU_DEVICE_ID_2.longValue(), result.get(1).getId());
+     }
+ 
++    private static CreateVgpuProfileCmd createMockCreateVgpuProfileCmd(String name, Long cardId) {
++        CreateVgpuProfileCmd cmd = mock(CreateVgpuProfileCmd.class);
++        when(cmd.getName()).thenReturn(name);
++        when(cmd.getCardId()).thenReturn(cardId);
++        return cmd;
++    }
++
+     // Helper methods for creating mock GPU devices
+     private List<GpuDeviceVO> createMockGpuDevices(int count, String numaNode, String pciRoot) {
+         return createMockGpuDevices(count, numaNode, pciRoot, GPU_DEVICE_ID_LONG);

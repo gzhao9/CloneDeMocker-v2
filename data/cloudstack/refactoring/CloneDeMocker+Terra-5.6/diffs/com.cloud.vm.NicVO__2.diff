@@ -1,0 +1,37 @@
+--- a/server/src/test/java/com/cloud/network/Ipv6ServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/Ipv6ServiceImplTest.java
+@@ -189,6 +189,13 @@
+         closeable.close();
+     }
+ 
++    private static NicVO createMockNic(String ipv6Address, String publicReserver) {
++        NicVO nic = Mockito.mock(NicVO.class);
++        Mockito.when(nic.getIPv6Address()).thenReturn(ipv6Address);
++        Mockito.when(nic.getReserver()).thenReturn(publicReserver);
++        return nic;
++    }
++
+     private DataCenterGuestIpv6PrefixVO prepareMocksForIpv6Subnet() {
+         final long prefixId = 1L;
+         DataCenterGuestIpv6PrefixVO prefix = Mockito.mock(DataCenterGuestIpv6PrefixVO.class);
+@@ -549,8 +556,7 @@
+         Mockito.when(nicDao.listByVmId(Mockito.anyLong())).thenReturn(new ArrayList<>());
+         addresses = ipv6Service.getPublicIpv6AddressesForNetwork(Mockito.mock(Network.class));
+         Assert.assertTrue(CollectionUtils.isEmpty(addresses));
+-        NicVO nic = Mockito.mock(NicVO.class);
+-        Mockito.when(nic.getIPv6Address()).thenReturn(null);
++        NicVO nic = createMockNic(null, null);
+         List<NicVO> nics = List.of(nic);
+         Mockito.when(nicDao.listByVmId(Mockito.anyLong())).thenReturn(nics);
+         addresses = ipv6Service.getPublicIpv6AddressesForNetwork(Mockito.mock(Network.class));
+@@ -591,9 +597,7 @@
+         networks.add(network);
+         List<DomainRouterVO> routers = List.of(Mockito.mock(DomainRouterVO.class));
+         Mockito.when(domainRouterDao.findByNetwork(Mockito.anyLong())).thenReturn(routers);
+-        NicVO nic = Mockito.mock(NicVO.class);
+-        Mockito.when(nic.getIPv6Address()).thenReturn(ipv6Address);
+-        Mockito.when(nic.getReserver()).thenReturn(publicReserver);
++        NicVO nic = createMockNic(ipv6Address, publicReserver);
+         Mockito.when(nicDao.listByVmId(Mockito.anyLong())).thenReturn(List.of(nic));
+         Mockito.doReturn(networks).when(networkModel).listNetworksByVpc(Mockito.anyLong());
+         Mockito.when(networkOfferingDao.isIpv6Supported(Mockito.anyLong())).thenReturn(true);

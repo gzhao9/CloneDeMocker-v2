@@ -1,0 +1,69 @@
+--- a/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/inbound/MessageSourceTests.java
++++ b/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/inbound/MessageSourceTests.java
+@@ -111,14 +111,10 @@
+ 	@SuppressWarnings({"unchecked", "rawtypes"})
+ 	@Test
+ 	void testConsumerAwareRebalanceListener() {
+-		Consumer consumer = mock(Consumer.class);
+ 		TopicPartition topicPartition = new TopicPartition("foo", 0);
+ 		List<TopicPartition> assigned = Collections.singletonList(topicPartition);
+ 		AtomicReference<ConsumerRebalanceListener> listener = new AtomicReference<>();
+-		willAnswer(i -> {
+-			listener.set(i.getArgument(1));
+-			return null;
+-		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
++		Consumer consumer = createMockConsumer(listener);
+ 
+ 		ConsumerFactory consumerFactory = mock(ConsumerFactory.class);
+ 		willReturn(Collections.singletonMap(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1)).given(consumerFactory)
+@@ -161,16 +157,12 @@
+ 	@SuppressWarnings({"unchecked", "rawtypes"})
+ 	@Test
+ 	void testRebalanceListener() {
+-		Consumer consumer = mock(Consumer.class);
+ 		TopicPartition topicPartition1 = new TopicPartition("foo", 0);
+ 		List<TopicPartition> assigned1 = new ArrayList<>(Collections.singletonList(topicPartition1));
+ 		TopicPartition topicPartition2 = new TopicPartition("foo", 1);
+ 		List<TopicPartition> assigned2 = new ArrayList<>(Collections.singletonList(topicPartition2));
+ 		AtomicReference<ConsumerRebalanceListener> listener = new AtomicReference<>();
+-		willAnswer(i -> {
+-			listener.set(i.getArgument(1));
+-			return null;
+-		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
++		Consumer consumer = createMockConsumer(listener);
+ 
+ 		ConsumerFactory consumerFactory = mock(ConsumerFactory.class);
+ 		willReturn(Collections.singletonMap(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1)).given(consumerFactory)
+@@ -367,6 +359,16 @@
+ 	}
+ 
+ 	@SuppressWarnings({"rawtypes", "unchecked"})
++	private static Consumer createMockConsumer(AtomicReference<ConsumerRebalanceListener> listener) {
++		Consumer consumer = mock(Consumer.class);
++		willAnswer(i -> {
++			listener.set(i.getArgument(1));
++			return null;
++		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
++		return consumer;
++	}
++
++	@SuppressWarnings({"rawtypes", "unchecked"})
+ 	@Test
+ 	void testAckOutOfOrder() {
+ 		Consumer consumer = mock(Consumer.class);
+@@ -645,14 +647,10 @@
+ 	@SuppressWarnings({"rawtypes", "unchecked"})
+ 	@Test
+ 	void testPollTimeouts() {
+-		Consumer consumer = mock(Consumer.class);
+ 		TopicPartition topicPartition = new TopicPartition("foo", 0);
+ 		List<TopicPartition> assigned = Collections.singletonList(topicPartition);
+ 		AtomicReference<ConsumerRebalanceListener> listener = new AtomicReference<>();
+-		willAnswer(i -> {
+-			listener.set(i.getArgument(1));
+-			return null;
+-		}).given(consumer).subscribe(anyCollection(), any(ConsumerRebalanceListener.class));
++		Consumer consumer = createMockConsumer(listener);
+ 
+ 		Map<TopicPartition, List<ConsumerRecord>> records1 = new LinkedHashMap<>();
+ 		records1.put(topicPartition, Collections.singletonList(

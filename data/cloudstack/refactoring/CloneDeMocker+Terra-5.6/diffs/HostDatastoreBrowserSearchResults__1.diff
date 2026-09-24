@@ -1,0 +1,67 @@
+--- a/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/vmware/resource/VmwareResourceTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/vmware/resource/VmwareResourceTest.java
+@@ -674,7 +674,6 @@
+         // Setup
+         ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "valid/path", 0, 10);
+         HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+-        HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+         FileInfo fileInfo = mock(FileInfo.class);
+         List<FileInfo> fileInfoList = new ArrayList<>();
+         fileInfoList.add(fileInfo);
+@@ -682,8 +681,8 @@
+ 
+         doReturn(context).when(vmwareResource).getServiceContext(any());
+         doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
++        HostDatastoreBrowserSearchResults results = createMockHostDatastoreBrowserSearchResults(fileInfoList);
+         when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
+-        when(results.getFile()).thenReturn(fileInfoList);
+         when(fileInfo.getPath()).thenReturn("file.txt");
+         when(fileInfo.getFileSize()).thenReturn(1L);
+         when(fileInfo.getModification()).thenReturn(VmwareHelper.getXMLGregorianCalendar(date, 0));
+@@ -753,16 +752,15 @@
+         // Setup
+         ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "/", 0, 10);
+         HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+-        HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+         FileInfo fileInfo = mock(FileInfo.class);
+         List<FileInfo> fileInfoList = new ArrayList<>();
+         fileInfoList.add(fileInfo);
++        HostDatastoreBrowserSearchResults results = createMockHostDatastoreBrowserSearchResults(fileInfoList);
+         Date date = new Date();
+ 
+         doReturn(context).when(vmwareResource).getServiceContext();
+         doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+         when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
+-        when(results.getFile()).thenReturn(fileInfoList);
+         when(fileInfo.getPath()).thenReturn("file.txt");
+         when(fileInfo.getFileSize()).thenReturn(1L);
+         when(fileInfo.getModification()).thenReturn(VmwareHelper.getXMLGregorianCalendar(date, 0));
+@@ -798,16 +796,15 @@
+         // Setup
+         ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "", 0, 10);
+         HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+-        HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+         FileInfo fileInfo = mock(FileInfo.class);
+         List<FileInfo> fileInfoList = new ArrayList<>();
+         fileInfoList.add(fileInfo);
++        HostDatastoreBrowserSearchResults results = createMockHostDatastoreBrowserSearchResults(fileInfoList);
+         Date date = new Date();
+ 
+         doReturn(context).when(vmwareResource).getServiceContext();
+         doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+         when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
+-        when(results.getFile()).thenReturn(fileInfoList);
+         when(fileInfo.getPath()).thenReturn("file.txt");
+         when(fileInfo.getFileSize()).thenReturn(1L);
+         when(fileInfo.getModification()).thenReturn(VmwareHelper.getXMLGregorianCalendar(date, 0));
+@@ -874,4 +871,10 @@
+         Mockito.verify(vmwareResource, Mockito.times(1)).removeVirtualTPMDevice(vmConfigSpec, tpm);
+         Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
+     }
++
++    private static HostDatastoreBrowserSearchResults createMockHostDatastoreBrowserSearchResults(List<FileInfo> fileInfoList) {
++        HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
++        when(results.getFile()).thenReturn(new ArrayList<>(fileInfoList));
++        return results;
++    }
+ }

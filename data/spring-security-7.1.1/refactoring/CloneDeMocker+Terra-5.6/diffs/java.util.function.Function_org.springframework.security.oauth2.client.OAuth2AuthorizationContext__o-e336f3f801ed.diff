@@ -1,0 +1,33 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/TokenExchangeOAuth2AuthorizedClientProviderTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/TokenExchangeOAuth2AuthorizedClientProviderTests.java
+@@ -318,8 +318,7 @@
+ 
+ 	@Test
+ 	public void authorizeWhenCustomSubjectTokenResolverSetThenCalled() {
+-		Function<OAuth2AuthorizationContext, OAuth2Token> subjectTokenResolver = mock(Function.class);
+-		given(subjectTokenResolver.apply(any(OAuth2AuthorizationContext.class))).willReturn(this.subjectToken);
++		Function<OAuth2AuthorizationContext, OAuth2Token> subjectTokenResolver = createMockTokenResolver(this.subjectToken);
+ 		this.authorizedClientProvider.setSubjectTokenResolver(subjectTokenResolver);
+ 		OAuth2AccessTokenResponse accessTokenResponse = TestOAuth2AccessTokenResponses.accessTokenResponse()
+ 			.refreshToken("refresh")
+@@ -350,8 +349,7 @@
+ 
+ 	@Test
+ 	public void authorizeWhenCustomActorTokenResolverSetThenCalled() {
+-		Function<OAuth2AuthorizationContext, OAuth2Token> actorTokenResolver = mock(Function.class);
+-		given(actorTokenResolver.apply(any(OAuth2AuthorizationContext.class))).willReturn(this.actorToken);
++		Function<OAuth2AuthorizationContext, OAuth2Token> actorTokenResolver = createMockTokenResolver(this.actorToken);
+ 		this.authorizedClientProvider.setActorTokenResolver(actorTokenResolver);
+ 		OAuth2AccessTokenResponse accessTokenResponse = TestOAuth2AccessTokenResponses.accessTokenResponse()
+ 			.refreshToken("refresh")
+@@ -396,4 +394,10 @@
+ 		verify(clock).instant();
+ 	}
+ 
++	private static Function<OAuth2AuthorizationContext, OAuth2Token> createMockTokenResolver(OAuth2Token token) {
++		Function<OAuth2AuthorizationContext, OAuth2Token> tokenResolver = mock(Function.class);
++		given(tokenResolver.apply(any(OAuth2AuthorizationContext.class))).willReturn(token);
++		return tokenResolver;
++	}
++
+ }

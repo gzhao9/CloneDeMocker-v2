@@ -1,0 +1,51 @@
+--- a/spring-integration-jpa/src/test/java/org/springframework/integration/jpa/core/JpaExecutorTests.java
++++ b/spring-integration-jpa/src/test/java/org/springframework/integration/jpa/core/JpaExecutorTests.java
+@@ -21,6 +21,7 @@
+ import java.util.Map;
+ 
+ import jakarta.persistence.EntityManager;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.beans.factory.BeanFactory;
+@@ -61,6 +62,13 @@
+ 
+ 	private BeanFactory beanFactory = TEST_INTEGRATION_CONTEXT;
+ 
++	private EntityManager mockEntityManager;
++
++	@BeforeEach
++	void setUp() {
++		mockEntityManager = mock(EntityManager.class);
++	}
++
+ 	/**
+ 	 * In this test, the {@link JpaExecutor}'s poll method will be called without
+ 	 * specifying a 'query', 'namedQuery' or 'entityClass' property. This should
+@@ -88,7 +96,7 @@
+ 
+ 	@Test
+ 	public void testSetMultipleQueryTypes() {
+-		final JpaExecutor executor = new JpaExecutor(mock(EntityManager.class));
++		final JpaExecutor executor = new JpaExecutor(mockEntityManager);
+ 		executor.setJpaQuery("select s from Student s");
+ 		assertThat(TestUtils.<String>getPropertyValue(executor, "jpaQuery")).isNotNull();
+ 
+@@ -104,7 +112,7 @@
+ 
+ 		assertThat(TestUtils.<Object>getPropertyValue(executor, "nativeQuery")).isNull();
+ 
+-		final JpaExecutor executor2 = new JpaExecutor(mock(EntityManager.class));
++		final JpaExecutor executor2 = new JpaExecutor(mockEntityManager);
+ 		executor2.setNamedQuery("NamedQuery");
+ 		assertThat(TestUtils.<String>getPropertyValue(executor2, "namedQuery")).isNotNull();
+ 
+@@ -243,7 +251,7 @@
+ 
+ 	@Test
+ 	public void withNullMaxResultsExpression() {
+-		final JpaExecutor jpaExecutor = new JpaExecutor(mock(EntityManager.class));
++		final JpaExecutor jpaExecutor = new JpaExecutor(mockEntityManager);
+ 		assertThatIllegalArgumentException()
+ 				.isThrownBy(() -> jpaExecutor.setMaxResultsExpression(null))
+ 				.withMessage("maxResultsExpression cannot be null");

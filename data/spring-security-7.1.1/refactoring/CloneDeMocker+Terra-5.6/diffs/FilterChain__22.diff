@@ -1,0 +1,141 @@
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/oidc/web/OidcLogoutEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/oidc/web/OidcLogoutEndpointFilterTests.java
+@@ -69,11 +69,14 @@
+ 
+ 	private OidcLogoutEndpointFilter filter;
+ 
++	private FilterChain mockFilterChain;
++
+ 	private TestingAuthenticationToken principal;
+ 
+ 	@BeforeEach
+ 	public void setUp() {
+ 		this.authenticationManager = mock(AuthenticationManager.class);
++		this.mockFilterChain = mock(FilterChain.class);
+ 		this.filter = new OidcLogoutEndpointFilter(this.authenticationManager);
+ 		this.principal = new TestingAuthenticationToken("principal", "credentials");
+ 		this.principal.setAuthenticated(true);
+@@ -127,11 +130,10 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest("GET", requestUri);
+ 		request.setServletPath(requestUri);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
++
++		this.filter.doFilter(request, response, mockFilterChain);
++
++		verify(mockFilterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+ 
+ 	@Test
+@@ -195,12 +197,11 @@
+ 
+ 		MockHttpServletRequest request = createLogoutRequest(TestRegisteredClients.registeredClient().build());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, mockFilterChain);
++
++		verify(this.authenticationManager).authenticate(any());
++		verifyNoInteractions(mockFilterChain);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
+ 		assertThat(response.getErrorMessage()).isEqualTo(error.toString());
+@@ -220,13 +221,12 @@
+ 
+ 		MockHttpServletRequest request = createLogoutRequest(TestRegisteredClients.registeredClient().build());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, mockFilterChain);
+ 
+ 		verify(authenticationConverter).convert(any());
+ 		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 	}
+ 
+ 	@Test
+@@ -241,13 +241,12 @@
+ 
+ 		MockHttpServletRequest request = createLogoutRequest(TestRegisteredClients.registeredClient().build());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, mockFilterChain);
+ 
+ 		verify(this.authenticationManager).authenticate(any());
+ 		verify(authenticationSuccessHandler).onAuthenticationSuccess(any(), any(), same(authentication));
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 	}
+ 
+ 	@Test
+@@ -260,16 +259,15 @@
+ 
+ 		MockHttpServletRequest request = createLogoutRequest(TestRegisteredClients.registeredClient().build());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, mockFilterChain);
+ 
+ 		ArgumentCaptor<AuthenticationException> authenticationExceptionCaptor = ArgumentCaptor
+ 			.forClass(AuthenticationException.class);
+ 		verify(this.authenticationManager).authenticate(any());
+ 		verify(authenticationFailureHandler).onAuthenticationFailure(any(), any(),
+ 				authenticationExceptionCaptor.capture());
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 
+ 		assertThat(authenticationExceptionCaptor.getValue()).isInstanceOf(OAuth2AuthenticationException.class)
+ 			.extracting((ex) -> ((OAuth2AuthenticationException) ex).getError())
+@@ -290,12 +288,11 @@
+ 		given(this.authenticationManager.authenticate(any())).willReturn((authentication));
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, mockFilterChain);
++
++		verify(this.authenticationManager).authenticate(any());
++		verifyNoInteractions(mockFilterChain);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.FOUND.value());
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/");
+@@ -319,12 +316,11 @@
+ 		given(this.authenticationManager.authenticate(any())).willReturn((authentication));
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(this.authenticationManager).authenticate(any());
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, mockFilterChain);
++
++		verify(this.authenticationManager).authenticate(any());
++		verifyNoInteractions(mockFilterChain);
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.FOUND.value());
+ 		assertThat(response.getRedirectedUrl()).isEqualTo(postLogoutRedirectUri + "?state=" + state);

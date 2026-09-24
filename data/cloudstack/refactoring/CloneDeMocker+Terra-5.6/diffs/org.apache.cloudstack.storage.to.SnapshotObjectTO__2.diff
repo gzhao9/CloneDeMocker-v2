@@ -1,0 +1,109 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
+@@ -43,6 +43,7 @@
+ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+ import org.apache.cloudstack.storage.to.VolumeObjectTO;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.libvirt.Domain;
+ import org.libvirt.DomainInfo;
+@@ -62,6 +63,13 @@
+ 
+ public class LibvirtDiskOnlyVMSnapshotCommandWrapperTest {
+ 
++    private SnapshotObjectTO rootSnapshotMock;
++
++    @Before
++    public void setUp() {
++        rootSnapshotMock = mock(SnapshotObjectTO.class);
++    }
++
+     @Test
+     public void testBackupNvramIfNeededCopiesActiveNvram() throws Exception {
+         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper();
+@@ -151,7 +159,6 @@
+         KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+         RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
+-        SnapshotObjectTO rootSnapshot = mock(SnapshotObjectTO.class);
+ 
+         Path poolDirectory = Files.createTempDirectory("pool-");
+         Path snapshotNvram = poolDirectory.resolve("nvram/42.fd");
+@@ -164,10 +171,10 @@
+         when(command.getNvramSnapshotPath()).thenReturn("nvram/42.fd");
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(poolDirectory.resolve("missing").resolve("vm-uuid.fd").toString());
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(rootSnapshot, storagePoolManager)).thenReturn(storagePool);
++        when(libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(rootSnapshotMock, storagePoolManager)).thenReturn(storagePool);
+         when(storagePool.getLocalPathFor("nvram/42.fd")).thenReturn(snapshotNvram.toString());
+ 
+-        wrapper.validateNvramRevertState(command, resource, rootSnapshot, storagePoolManager);
++        wrapper.validateNvramRevertState(command, resource, rootSnapshotMock, storagePoolManager);
+     }
+ 
+     @Test
+@@ -178,7 +185,6 @@
+         KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+         RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
+-        SnapshotObjectTO rootSnapshot = mock(SnapshotObjectTO.class);
+ 
+         Path activeNvram = Files.createTempFile("active-", ".fd");
+         Files.writeString(activeNvram, "current");
+@@ -192,10 +198,10 @@
+         when(command.getNvramSnapshotPath()).thenReturn("nvram/42.fd");
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(activeNvram.toString());
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(rootSnapshot, storagePoolManager)).thenReturn(storagePool);
++        when(libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(rootSnapshotMock, storagePoolManager)).thenReturn(storagePool);
+         when(storagePool.getLocalPathFor("nvram/42.fd")).thenReturn(snapshotNvram.toString());
+ 
+-        wrapper.restoreNvramIfNeeded(command, resource, rootSnapshot, storagePoolManager);
++        wrapper.restoreNvramIfNeeded(command, resource, rootSnapshotMock, storagePoolManager);
+ 
+         assertEquals("snapshot", Files.readString(activeNvram));
+     }
+@@ -208,7 +214,6 @@
+         KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+         RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
+-        SnapshotObjectTO rootSnapshot = mock(SnapshotObjectTO.class);
+ 
+         Path poolDirectory = Files.createTempDirectory("pool-");
+         Path snapshotNvram = poolDirectory.resolve("nvram/42.fd");
+@@ -221,10 +226,10 @@
+         when(command.getNvramSnapshotPath()).thenReturn("nvram/42.fd");
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(activeNvram.toString());
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(rootSnapshot, storagePoolManager)).thenReturn(storagePool);
++        when(libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(rootSnapshotMock, storagePoolManager)).thenReturn(storagePool);
+         when(storagePool.getLocalPathFor("nvram/42.fd")).thenReturn(snapshotNvram.toString());
+ 
+-        wrapper.restoreNvramIfNeeded(command, resource, rootSnapshot, storagePoolManager);
++        wrapper.restoreNvramIfNeeded(command, resource, rootSnapshotMock, storagePoolManager);
+ 
+         assertEquals("snapshot", Files.readString(activeNvram));
+     }
+@@ -243,7 +248,6 @@
+         KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+         RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
+-        SnapshotObjectTO rootSnapshot = mock(SnapshotObjectTO.class);
+ 
+         Path activeNvram = Files.createTempFile("active-", ".fd");
+         Files.writeString(activeNvram, "current");
+@@ -257,11 +261,11 @@
+         when(command.getNvramSnapshotPath()).thenReturn("nvram/42.fd");
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(activeNvram.toString());
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(rootSnapshot, storagePoolManager)).thenReturn(storagePool);
++        when(libvirtUtilitiesHelper.getPrimaryPoolFromDataTo(rootSnapshotMock, storagePoolManager)).thenReturn(storagePool);
+         when(storagePool.getLocalPathFor("nvram/42.fd")).thenReturn(snapshotNvram.toString());
+ 
+         try {
+-            wrapper.restoreNvramIfNeeded(command, resource, rootSnapshot, storagePoolManager);
++            wrapper.restoreNvramIfNeeded(command, resource, rootSnapshotMock, storagePoolManager);
+             fail("Expected restore to fail when the snapshot copy fails.");
+         } catch (IOException expected) {
+             assertEquals("current", Files.readString(activeNvram));

@@ -1,0 +1,107 @@
+--- a/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/MutinyClientCallsTest.java
++++ b/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/MutinyClientCallsTest.java
+@@ -34,6 +34,7 @@
+ import io.smallrye.mutiny.Uni;
+ import io.smallrye.mutiny.helpers.test.AssertSubscriber;
+ import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.MockedStatic;
+ import org.mockito.Mockito;
+@@ -43,14 +44,20 @@
+  */
+ public class MutinyClientCallsTest {
+ 
++    private StubMethodDescriptor methodMock;
++
++    @BeforeEach
++    void setUp() {
++        methodMock = Mockito.mock(StubMethodDescriptor.class);
++    }
++
+     @Test
+     void testOneToOneSuccess() {
+         Invoker<Object> invoker = Mockito.mock(Invoker.class);
+-        StubMethodDescriptor method = Mockito.mock(StubMethodDescriptor.class);
+ 
+         try (MockedStatic<StubInvocationUtil> mocked = Mockito.mockStatic(StubInvocationUtil.class)) {
+             mocked.when(() -> StubInvocationUtil.unaryCall(
+-                            Mockito.eq(invoker), Mockito.eq(method), Mockito.eq("req"), Mockito.any()))
++                            Mockito.eq(invoker), Mockito.eq(methodMock), Mockito.eq("req"), Mockito.any()))
+                     .thenAnswer(invocation -> {
+                         StreamObserver<String> observer = invocation.getArgument(3);
+                         observer.onNext("resp");
+@@ -59,7 +66,7 @@
+                     });
+ 
+             Uni<String> request = Uni.createFrom().item("req");
+-            Uni<String> response = MutinyClientCalls.oneToOne(invoker, request, method);
++            Uni<String> response = MutinyClientCalls.oneToOne(invoker, request, methodMock);
+ 
+             String result = response.await().indefinitely();
+ 
+@@ -70,14 +77,13 @@
+     @Test
+     void testOneToOneThrowsErrorWithMutinyAwait() {
+         Invoker<Object> invoker = Mockito.mock(Invoker.class);
+-        StubMethodDescriptor method = Mockito.mock(StubMethodDescriptor.class);
+ 
+         try (MockedStatic<StubInvocationUtil> mocked = Mockito.mockStatic(StubInvocationUtil.class)) {
+             mocked.when(() -> StubInvocationUtil.unaryCall(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                     .thenThrow(new RuntimeException("boom"));
+ 
+             Uni<String> request = Uni.createFrom().item("req");
+-            Uni<String> response = MutinyClientCalls.oneToOne(invoker, request, method);
++            Uni<String> response = MutinyClientCalls.oneToOne(invoker, request, methodMock);
+ 
+             RuntimeException ex = Assertions.assertThrows(RuntimeException.class, () -> {
+                 response.await().indefinitely();
+@@ -89,14 +95,13 @@
+     @Test
+     void testOneToManyReturnsMultiAndEmitsItems() {
+         Invoker<Object> invoker = Mockito.mock(Invoker.class);
+-        StubMethodDescriptor method = Mockito.mock(StubMethodDescriptor.class);
+ 
+         try (MockedStatic<StubInvocationUtil> mocked = Mockito.mockStatic(StubInvocationUtil.class)) {
+             AtomicBoolean stubCalled = new AtomicBoolean(false);
+             CountDownLatch subscribed = new CountDownLatch(1);
+ 
+             mocked.when(() -> StubInvocationUtil.serverStreamCall(
+-                            Mockito.eq(invoker), Mockito.eq(method), Mockito.eq("testRequest"), Mockito.any()))
++                            Mockito.eq(invoker), Mockito.eq(methodMock), Mockito.eq("testRequest"), Mockito.any()))
+                     .thenAnswer(invocation -> {
+                         stubCalled.set(true);
+                         ClientTripleMutinyPublisher<String> publisher = invocation.getArgument(3);
+@@ -152,7 +157,7 @@
+                     });
+ 
+             Uni<String> uniRequest = Uni.createFrom().item("testRequest");
+-            Multi<String> multiResponse = MutinyClientCalls.oneToMany(invoker, uniRequest, method);
++            Multi<String> multiResponse = MutinyClientCalls.oneToMany(invoker, uniRequest, methodMock);
+ 
+             // Use AssertSubscriber to ensure proper subscription timing
+             AssertSubscriber<String> subscriber = AssertSubscriber.create(Long.MAX_VALUE);
+@@ -175,7 +180,6 @@
+     @Test
+     void testManyToOneSuccess() {
+         Invoker<Object> invoker = Mockito.mock(Invoker.class);
+-        StubMethodDescriptor method = Mockito.mock(StubMethodDescriptor.class);
+ 
+         Multi<String> multiRequest = Multi.createFrom().items("a", "b", "c");
+ 
+@@ -183,13 +187,13 @@
+             AtomicBoolean stubCalled = new AtomicBoolean(false);
+ 
+             mocked.when(() -> StubInvocationUtil.biOrClientStreamCall(
+-                            Mockito.eq(invoker), Mockito.eq(method), Mockito.any()))
++                            Mockito.eq(invoker), Mockito.eq(methodMock), Mockito.any()))
+                     .thenAnswer(invocation -> {
+                         stubCalled.set(true);
+                         return null;
+                     });
+ 
+-            Uni<String> uniResponse = MutinyClientCalls.manyToOne(invoker, multiRequest, method);
++            Uni<String> uniResponse = MutinyClientCalls.manyToOne(invoker, multiRequest, methodMock);
+ 
+             AtomicReference<String> resultHolder = new AtomicReference<>();
+             AtomicReference<Throwable> errorHolder = new AtomicReference<>();

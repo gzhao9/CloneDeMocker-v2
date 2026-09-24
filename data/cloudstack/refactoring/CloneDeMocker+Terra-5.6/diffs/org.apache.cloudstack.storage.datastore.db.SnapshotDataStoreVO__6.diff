@@ -1,0 +1,53 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
+@@ -157,7 +157,6 @@
+         UserVmVO userVm = mock(UserVmVO.class);
+         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+         VMSnapshotVO currentVmSnapshot = mock(VMSnapshotVO.class);
+-        SnapshotDataStoreVO snapshotDataStoreVO = mock(SnapshotDataStoreVO.class);
+         SnapshotInfo snapshotInfo = mock(SnapshotInfo.class);
+         SnapshotObjectTO snapshotObjectTO = mock(SnapshotObjectTO.class);
+         VMSnapshotDetailsVO volumeSnapshotDetail = new VMSnapshotDetailsVO(snapshotId, "kvmFileBasedStorageSnapshot", String.valueOf(snapshotId), true);
+@@ -181,9 +180,8 @@
+                 .thenReturn(new DetailVO(hostId, Host.HOST_KVM_DISK_ONLY_VM_SNAPSHOT_NVRAM, Boolean.TRUE.toString()));
+         when(vmSnapshotDetailsDao.findDetails(snapshotId, "kvmFileBasedStorageSnapshot")).thenReturn(List.of(volumeSnapshotDetail));
+         when(vmSnapshotDetailsDao.findDetail(snapshotId, "kvmFileBasedStorageSnapshotNvram")).thenReturn(nvramDetail);
++        SnapshotDataStoreVO snapshotDataStoreVO = createMockSnapshotDataStore(snapshotId, dataStoreId);
+         when(snapshotDataStoreDao.findOneBySnapshotAndDatastoreRole(snapshotId, DataStoreRole.Primary)).thenReturn(snapshotDataStoreVO);
+-        when(snapshotDataStoreVO.getSnapshotId()).thenReturn(snapshotId);
+-        when(snapshotDataStoreVO.getDataStoreId()).thenReturn(dataStoreId);
+         when(strategy.snapshotDataFactory.getSnapshot(snapshotId, dataStoreId, DataStoreRole.Primary)).thenReturn(snapshotInfo);
+         when(snapshotInfo.getTO()).thenReturn(snapshotObjectTO);
+         when(vmSnapshotDao.findCurrentSnapshotByVmId(vmId)).thenReturn(currentVmSnapshot);
+@@ -341,7 +339,7 @@
+         VolumeObjectTO rootVolume = mock(VolumeObjectTO.class);
+         PrimaryDataStoreTO liveRootVolumePrimaryDataStore = mock(PrimaryDataStoreTO.class);
+         PrimaryDataStoreTO rootSnapshotPrimaryDataStore = mock(PrimaryDataStoreTO.class);
+-        SnapshotDataStoreVO rootSnapshotDataStore = mock(SnapshotDataStoreVO.class);
++        SnapshotDataStoreVO rootSnapshotDataStore = createMockSnapshotDataStore(rootSnapshotId, dataStoreId);
+         SnapshotInfo rootSnapshotInfo = mock(SnapshotInfo.class);
+         SnapshotObjectTO rootSnapshotObjectTo = mock(SnapshotObjectTO.class);
+         VolumeObjectTO rootSnapshotVolume = mock(VolumeObjectTO.class);
+@@ -349,8 +347,6 @@
+         when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
+         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+         when(vmSnapshotHelper.getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(vmSnapshotId)).thenReturn(List.of(rootSnapshotDataStore));
+-        when(rootSnapshotDataStore.getSnapshotId()).thenReturn(rootSnapshotId);
+-        when(rootSnapshotDataStore.getDataStoreId()).thenReturn(dataStoreId);
+         when(strategy.snapshotDataFactory.getSnapshot(rootSnapshotId, dataStoreId, DataStoreRole.Primary)).thenReturn(rootSnapshotInfo);
+         when(rootSnapshotInfo.getTO()).thenReturn(rootSnapshotObjectTo);
+         when(rootSnapshotObjectTo.getVolume()).thenReturn(rootSnapshotVolume);
+@@ -525,6 +521,13 @@
+         strategy.notifyGuestRecoveryIssueIfNeeded(answer, userVm, vmSnapshot);
+ 
+         verify(strategy.alertManager).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_VM_SNAPSHOT), eq(1L), eq(2L), anyString(), anyString());
++    }
++
++    private static SnapshotDataStoreVO createMockSnapshotDataStore(long snapshotId, long dataStoreId) {
++        SnapshotDataStoreVO rootSnapshotDataStore = mock(SnapshotDataStoreVO.class);
++        when(rootSnapshotDataStore.getSnapshotId()).thenReturn(snapshotId);
++        when(rootSnapshotDataStore.getDataStoreId()).thenReturn(dataStoreId);
++        return rootSnapshotDataStore;
+     }
+ 
+     private void mockCandidateHostScope(long vmId, long hostId) {

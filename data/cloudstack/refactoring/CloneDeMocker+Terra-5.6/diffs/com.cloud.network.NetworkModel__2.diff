@@ -1,0 +1,197 @@
+--- a/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/CiscoVnmcElementTest.java
++++ b/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/CiscoVnmcElementTest.java
+@@ -186,7 +186,8 @@
+         when(_networkAsa1000vMapDao.findByAsa1000vId(anyLong())).thenReturn(null);
+         when(_networkAsa1000vMapDao.persist(any(NetworkAsa1000vMapVO.class))).thenReturn(mock(NetworkAsa1000vMapVO.class));
+ 
+-        when(_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.CiscoVnmc)).thenReturn(true);
++        _networkModel = MockNetworkModel.createMockNetworkModel(Provider.CiscoVnmc, network.getId(), Service.SourceNat);
++        _element._networkModel = _networkModel;
+ 
+         ClusterVSMMapVO clusterVsmMap = mock(ClusterVSMMapVO.class);
+         when(_clusterVsmMapDao.findByClusterId(anyLong())).thenReturn(clusterVsmMap);
+@@ -280,8 +281,9 @@
+         IpAddress ipAddress = mock(IpAddress.class);
+         when(ipAddress.getAddress()).thenReturn(ip);
+ 
++        _networkModel = MockNetworkModel.createMockNetworkModel(Provider.CiscoVnmc, network.getId(), Service.Firewall);
++        _element._networkModel = _networkModel;
+         when(_networkModel.getIp(anyLong())).thenReturn(ipAddress);
+-        when(_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, Provider.CiscoVnmc)).thenReturn(true);
+ 
+         List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
+         devices.add(mock(CiscoVnmcControllerVO.class));
+@@ -325,8 +327,9 @@
+         when(ipAddress.getAddress()).thenReturn(ip);
+         when(ipAddress.getVlanId()).thenReturn(1L);
+ 
++        _networkModel = MockNetworkModel.createMockNetworkModel(Provider.CiscoVnmc, network.getId(), Service.PortForwarding);
++        _element._networkModel = _networkModel;
+         when(_networkModel.getIp(anyLong())).thenReturn(ipAddress);
+-        when(_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.PortForwarding, Provider.CiscoVnmc)).thenReturn(true);
+ 
+         List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
+         devices.add(mock(CiscoVnmcControllerVO.class));
+@@ -375,8 +378,9 @@
+         when(ipAddress.getAddress()).thenReturn(ip);
+         when(ipAddress.getVlanId()).thenReturn(1L);
+ 
++        _networkModel = MockNetworkModel.createMockNetworkModel(Provider.CiscoVnmc, network.getId(), Service.StaticNat);
++        _element._networkModel = _networkModel;
+         when(_networkModel.getIp(anyLong())).thenReturn(ipAddress);
+-        when(_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.StaticNat, Provider.CiscoVnmc)).thenReturn(true);
+ 
+         List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
+         devices.add(mock(CiscoVnmcControllerVO.class));
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/element/NiciraNvpElementTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/element/NiciraNvpElementTest.java
+@@ -159,7 +159,6 @@
+         when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+         when(network.getGuestType()).thenReturn(GuestType.Isolated);
+ 
+-        when(networkModel.isProviderForNetwork(Provider.NiciraNvp, NETWORK_ID)).thenReturn(true);
+         when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
+ 
+         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+@@ -187,7 +186,8 @@
+         when(context.getAccount()).thenReturn(acc);
+ 
+         //ISOLATED NETWORK
+-        when(networkModel.isProviderSupportServiceInNetwork(NETWORK_ID, Service.SourceNat, Provider.NiciraNvp)).thenReturn(true);
++        networkModel = MockNetworkModel.createMockNetworkModel(Provider.NiciraNvp, NETWORK_ID, Service.SourceNat);
++        element.networkModel = networkModel;
+ 
+         PublicIp sourceNatIp = mock(PublicIp.class);
+         Ip ip = mock(Ip.class);
+--- a/server/src/test/java/com/cloud/network/element/VirtualRouterElementTest.java
++++ b/server/src/test/java/com/cloud/network/element/VirtualRouterElementTest.java
+@@ -315,9 +315,8 @@
+         final Service service = Service.Connectivity;
+         testNetwork.setState(Network.State.Implementing);
+         testNetwork.setTrafficType(TrafficType.Guest);
++        _networkMdl = MockNetworkModel.createMockNetworkModel(Network.Provider.VirtualRouter, 0L, service);
+         when(_networkMdl.isProviderEnabledInPhysicalNetwork(0L, "VirtualRouter")).thenReturn(true);
+-        when(_networkMdl.isProviderSupportServiceInNetwork(testNetwork.getId(), service, Network.Provider.VirtualRouter)).thenReturn(true);
+-        when(_networkMdl.isProviderForNetwork(Network.Provider.VirtualRouter, 0L)).thenReturn(true);
+         when(testVMProfile.getType()).thenReturn(VirtualMachine.Type.User);
+         when(testVMProfile.getHypervisorType()).thenReturn(HypervisorType.XenServer);
+         final List<NetworkVO> networks = new ArrayList<NetworkVO>(1);
+@@ -506,9 +505,9 @@
+ 
+         lenient().when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+ 
++        virtualRouterElement._networkMdl = MockNetworkModel.createMockNetworkModel(Network.Provider.VirtualRouter, networkId, service);
+         when(virtualRouterElement._networkMdl.getPhysicalNetworkId(network)).thenReturn(physicalNetworkId);
+         when(virtualRouterElement._networkMdl.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName())).thenReturn(true);
+-        when(virtualRouterElement._networkMdl.isProviderSupportServiceInNetwork(networkId, service, Network.Provider.VirtualRouter)).thenReturn(true);
+ 
+         lenient().when(virtualRouterElement._dcDao.findById(dataCenterId)).thenReturn(Mockito.mock(DataCenterVO.class));
+ 
+--- a/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/MockNetworkModel.java
++++ b/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/MockNetworkModel.java
+@@ -0,0 +1,33 @@
++// Licensed to the Apache Software Foundation (ASF) under one
++// or more contributor license agreements.  See the NOTICE file
++// distributed with this work for additional information
++// regarding copyright ownership.  The ASF licenses this file
++// to you under the Apache License, Version 2.0 (the
++// "License"); you may not use this file except in compliance
++// with the License.  You may obtain a copy of the License at
++//
++//   http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing,
++// software distributed under the License is distributed on an
++// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++// KIND, either express or implied.  See the License for the
++// specific language governing permissions and limitations
++// under the License.
++package com.cloud.network.element;
++
++import static org.mockito.Mockito.lenient;
++import static org.mockito.Mockito.mock;
++
++import com.cloud.network.Network;
++import com.cloud.network.NetworkModel;
++
++public class MockNetworkModel {
++
++    public static NetworkModel createMockNetworkModel(Network.Provider provider, long networkId, Network.Service service) {
++        NetworkModel networkModel = mock(NetworkModel.class);
++        lenient().when(networkModel.isProviderForNetwork(provider, networkId)).thenReturn(true);
++        lenient().when(networkModel.isProviderSupportServiceInNetwork(networkId, service, provider)).thenReturn(true);
++        return networkModel;
++    }
++}
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/element/MockNetworkModel.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/element/MockNetworkModel.java
+@@ -0,0 +1,33 @@
++// Licensed to the Apache Software Foundation (ASF) under one
++// or more contributor license agreements.  See the NOTICE file
++// distributed with this work for additional information
++// regarding copyright ownership.  The ASF licenses this file
++// to you under the Apache License, Version 2.0 (the
++// "License"); you may not use this file except in compliance
++// with the License.  You may obtain a copy of the License at
++//
++//   http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing,
++// software distributed under the License is distributed on an
++// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++// KIND, either express or implied.  See the License for the
++// specific language governing permissions and limitations
++// under the License.
++package com.cloud.network.element;
++
++import static org.mockito.Mockito.lenient;
++import static org.mockito.Mockito.mock;
++
++import com.cloud.network.Network;
++import com.cloud.network.NetworkModel;
++
++public class MockNetworkModel {
++
++    public static NetworkModel createMockNetworkModel(Network.Provider provider, long networkId, Network.Service service) {
++        NetworkModel networkModel = mock(NetworkModel.class);
++        lenient().when(networkModel.isProviderForNetwork(provider, networkId)).thenReturn(true);
++        lenient().when(networkModel.isProviderSupportServiceInNetwork(networkId, service, provider)).thenReturn(true);
++        return networkModel;
++    }
++}
+--- a/server/src/test/java/com/cloud/network/element/MockNetworkModel.java
++++ b/server/src/test/java/com/cloud/network/element/MockNetworkModel.java
+@@ -0,0 +1,33 @@
++// Licensed to the Apache Software Foundation (ASF) under one
++// or more contributor license agreements.  See the NOTICE file
++// distributed with this work for additional information
++// regarding copyright ownership.  The ASF licenses this file
++// to you under the Apache License, Version 2.0 (the
++// "License"); you may not use this file except in compliance
++// with the License.  You may obtain a copy of the License at
++//
++//   http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing,
++// software distributed under the License is distributed on an
++// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++// KIND, either express or implied.  See the License for the
++// specific language governing permissions and limitations
++// under the License.
++package com.cloud.network.element;
++
++import static org.mockito.Mockito.lenient;
++import static org.mockito.Mockito.mock;
++
++import com.cloud.network.Network;
++import com.cloud.network.NetworkModel;
++
++public class MockNetworkModel {
++
++    public static NetworkModel createMockNetworkModel(Network.Provider provider, long networkId, Network.Service service) {
++        NetworkModel networkModel = mock(NetworkModel.class);
++        lenient().when(networkModel.isProviderForNetwork(provider, networkId)).thenReturn(true);
++        lenient().when(networkModel.isProviderSupportServiceInNetwork(networkId, service, provider)).thenReturn(true);
++        return networkModel;
++    }
++}

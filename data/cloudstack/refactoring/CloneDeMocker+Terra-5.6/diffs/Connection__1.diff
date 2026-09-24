@@ -1,0 +1,262 @@
+--- a/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/CitrixResourceBaseTest.java
++++ b/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/CitrixResourceBaseTest.java
+@@ -84,6 +84,8 @@
+     @Mock
+     private Connection connectionMock;
+     @Mock
++    private Connection sharedConnectionMock;
++    @Mock
+     private Host hostMock;
+     @Mock
+     private Record hostRecordMock;
+@@ -225,7 +227,6 @@
+         String mockHostUuid = "hostUuid";
+         citrixResourceBase._host.setUuid(mockHostUuid);
+ 
+-        Connection connectionMock = Mockito.mock(Connection.class);
+ 
+         SR srExtShared = Mockito.mock(SR.class);
+         SR srExtNonShared = Mockito.mock(SR.class);
+@@ -236,10 +237,10 @@
+         Set<PBD> pbds = new HashSet<>();
+         PBD pbdMock = Mockito.mock(PBD.class);
+         Host hostMock = Mockito.mock(Host.class);
+-        Mockito.when(hostMock.getUuid(connectionMock)).thenReturn(mockHostUuid);
++        Mockito.when(hostMock.getUuid(sharedConnectionMock)).thenReturn(mockHostUuid);
+         Mockito.when(hostMock.toWireString()).thenReturn(mockHostUuid);
+ 
+-        Mockito.when(pbdMock.getHost(connectionMock)).thenReturn(hostMock);
++        Mockito.when(pbdMock.getHost(sharedConnectionMock)).thenReturn(hostMock);
+         pbds.add(pbdMock);
+ 
+         SR.Record srExtSharedRecord = Mockito.mock(SR.Record.class);
+@@ -256,9 +257,9 @@
+         mapOfSrsRecords.put(srExtShared, srExtSharedRecord);
+         mapOfSrsRecords.put(srExtNonShared, srExtNonSharedRecord);
+         try (MockedStatic<SR> ignored = Mockito.mockStatic(SR.class)) {
+-            BDDMockito.given(SR.getAllRecords(connectionMock)).willReturn(mapOfSrsRecords);
+-
+-            List<SR> allLocalSrForType = citrixResourceBase.getAllLocalSrForType(connectionMock, SRType.EXT);
++            BDDMockito.given(SR.getAllRecords(sharedConnectionMock)).willReturn(mapOfSrsRecords);
++
++            List<SR> allLocalSrForType = citrixResourceBase.getAllLocalSrForType(sharedConnectionMock, SRType.EXT);
+ 
+             Assert.assertEquals(expectedListOfSrs.size(), allLocalSrForType.size());
+             Assert.assertEquals(expectedListOfSrs.get(0), allLocalSrForType.get(0));
+@@ -267,14 +268,12 @@
+ 
+     @Test
+     public void getAllLocalSrForTypeNoSrsFoundTest() throws XenAPIException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
+-        List<SR> allLocalSrForType = citrixResourceBase.getAllLocalSrForType(connectionMock, SRType.EXT);
++        List<SR> allLocalSrForType = citrixResourceBase.getAllLocalSrForType(sharedConnectionMock, SRType.EXT);
+         Assert.assertTrue(allLocalSrForType.isEmpty());
+     }
+ 
+     @Test
+     public void getAllLocalSrsTest() throws XenAPIException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
+         SR sr1 = Mockito.mock(SR.class);
+         List<SR> srsExt = new ArrayList<>();
+         srsExt.add(sr1);
+@@ -283,44 +282,43 @@
+         List<SR> srsLvm = new ArrayList<>();
+         srsLvm.add(sr2);
+ 
+-        Mockito.doReturn(srsExt).when(citrixResourceBase).getAllLocalSrForType(connectionMock, SRType.EXT);
+-        Mockito.doReturn(srsLvm).when(citrixResourceBase).getAllLocalSrForType(connectionMock, SRType.LVM);
+-
+-        List<SR> allLocalSrs = citrixResourceBase.getAllLocalSrs(connectionMock);
++        Mockito.doReturn(srsExt).when(citrixResourceBase).getAllLocalSrForType(sharedConnectionMock, SRType.EXT);
++        Mockito.doReturn(srsLvm).when(citrixResourceBase).getAllLocalSrForType(sharedConnectionMock, SRType.LVM);
++
++        List<SR> allLocalSrs = citrixResourceBase.getAllLocalSrs(sharedConnectionMock);
+ 
+         Assert.assertEquals(srsExt.size() + srsLvm.size(), allLocalSrs.size());
+         Assert.assertEquals(srsExt.get(0), allLocalSrs.get(1));
+         Assert.assertEquals(srsLvm.get(0), allLocalSrs.get(0));
+ 
+         InOrder inOrder = Mockito.inOrder(citrixResourceBase);
+-        inOrder.verify(citrixResourceBase).getAllLocalSrForType(connectionMock, SRType.LVM);
+-        inOrder.verify(citrixResourceBase).getAllLocalSrForType(connectionMock, SRType.EXT);
++        inOrder.verify(citrixResourceBase).getAllLocalSrForType(sharedConnectionMock, SRType.LVM);
++        inOrder.verify(citrixResourceBase).getAllLocalSrForType(sharedConnectionMock, SRType.EXT);
+     }
+ 
+     @Test
+     public void createStoragePoolInfoTest() throws XenAPIException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
+         Host hostMock = Mockito.mock(Host.class);
+         SR srMock = Mockito.mock(SR.class);
+ 
+         String hostAddress = "hostAddress";
+-        Mockito.when(hostMock.getAddress(connectionMock)).thenReturn(hostAddress);
++        Mockito.when(hostMock.getAddress(sharedConnectionMock)).thenReturn(hostAddress);
+ 
+         String hostUuid = "hostUuid";
+         citrixResourceBase._host.setUuid(hostUuid);
+ 
+-        Mockito.when(Host.getByUuid(connectionMock, hostUuid)).thenReturn(hostMock);
++        Mockito.when(Host.getByUuid(sharedConnectionMock, hostUuid)).thenReturn(hostMock);
+         String srType = "ext";
+         String srUuid = "srUuid";
+         long srPhysicalSize = 100l;
+         long physicalUtilization = 10l;
+ 
+-        Mockito.when(srMock.getPhysicalSize(connectionMock)).thenReturn(srPhysicalSize);
+-        Mockito.when(srMock.getUuid(connectionMock)).thenReturn(srUuid);
+-        Mockito.when(srMock.getPhysicalUtilisation(connectionMock)).thenReturn(physicalUtilization);
+-        Mockito.when(srMock.getType(connectionMock)).thenReturn(srType);
+-
+-        StoragePoolInfo storagePoolInfo = citrixResourceBase.createStoragePoolInfo(connectionMock, srMock);
++        Mockito.when(srMock.getPhysicalSize(sharedConnectionMock)).thenReturn(srPhysicalSize);
++        Mockito.when(srMock.getUuid(sharedConnectionMock)).thenReturn(srUuid);
++        Mockito.when(srMock.getPhysicalUtilisation(sharedConnectionMock)).thenReturn(physicalUtilization);
++        Mockito.when(srMock.getType(sharedConnectionMock)).thenReturn(srType);
++
++        StoragePoolInfo storagePoolInfo = citrixResourceBase.createStoragePoolInfo(sharedConnectionMock, srMock);
+ 
+         Assert.assertEquals(srUuid, storagePoolInfo.getUuid());
+         Assert.assertEquals(hostAddress, storagePoolInfo.getHost());
+@@ -338,23 +336,22 @@
+         String hostUuid = "hostUuid";
+         citrixResourceBase._host.setUuid(hostUuid);
+ 
+-        Connection connectionMock = Mockito.mock(Connection.class);
+         SR srMock = Mockito.mock(SR.class);
+ 
+         String srUuid = "srUuid";
+         String srType = "ext";
+         String expectedNameDescription = String.format(nameFormat, srType, hostUuid);
+ 
+-        Mockito.when(srMock.getUuid(connectionMock)).thenReturn(srUuid);
+-        Mockito.when(srMock.getType(connectionMock)).thenReturn(srType);
+-
+-        Mockito.doNothing().when(srMock).setNameLabel(connectionMock, srUuid);
+-        Mockito.doNothing().when(srMock).setNameDescription(connectionMock, expectedNameDescription);
+-
+-        citrixResourceBase.configureStorageNameAndDescription(connectionMock, srMock);
+-
+-        Mockito.verify(srMock).setNameLabel(connectionMock, srUuid);
+-        Mockito.verify(srMock).setNameDescription(connectionMock, expectedNameDescription);
++        Mockito.when(srMock.getUuid(sharedConnectionMock)).thenReturn(srUuid);
++        Mockito.when(srMock.getType(sharedConnectionMock)).thenReturn(srType);
++
++        Mockito.doNothing().when(srMock).setNameLabel(sharedConnectionMock, srUuid);
++        Mockito.doNothing().when(srMock).setNameDescription(sharedConnectionMock, expectedNameDescription);
++
++        citrixResourceBase.configureStorageNameAndDescription(sharedConnectionMock, srMock);
++
++        Mockito.verify(srMock).setNameLabel(sharedConnectionMock, srUuid);
++        Mockito.verify(srMock).setNameDescription(sharedConnectionMock, expectedNameDescription);
+     }
+ 
+     @Test
+@@ -363,15 +360,14 @@
+         citrixResourceBase._host.setUuid(hostUuid);
+         citrixResourceBase._dcId = 1;
+ 
+-        Connection connectionMock = Mockito.mock(Connection.class);
+         SR srMock = Mockito.mock(SR.class);
+ 
+         StoragePoolInfo storagePoolInfoMock = Mockito.mock(StoragePoolInfo.class);
+ 
+-        Mockito.doNothing().when(citrixResourceBase).configureStorageNameAndDescription(connectionMock, srMock);
+-        Mockito.doReturn(storagePoolInfoMock).when(citrixResourceBase).createStoragePoolInfo(connectionMock, srMock);
+-
+-        StartupStorageCommand startUpStorageCommand = citrixResourceBase.createStartUpStorageCommand(connectionMock, srMock);
++        Mockito.doNothing().when(citrixResourceBase).configureStorageNameAndDescription(sharedConnectionMock, srMock);
++        Mockito.doReturn(storagePoolInfoMock).when(citrixResourceBase).createStoragePoolInfo(sharedConnectionMock, srMock);
++
++        StartupStorageCommand startUpStorageCommand = citrixResourceBase.createStartUpStorageCommand(sharedConnectionMock, srMock);
+ 
+         Assert.assertEquals(hostUuid, startUpStorageCommand.getGuid());
+         Assert.assertEquals(storagePoolInfoMock, startUpStorageCommand.getPoolInfo());
+@@ -381,26 +377,25 @@
+ 
+     @Test
+     public void initializeLocalSrTest() throws XenAPIException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
+ 
+         List<SR> srsMocks = new ArrayList<>();
+         SR srMock1 = Mockito.mock(SR.class);
+         SR srMock2 = Mockito.mock(SR.class);
+ 
+-        Mockito.when(srMock1.getPhysicalSize(connectionMock)).thenReturn(0l);
+-        Mockito.when(srMock2.getPhysicalSize(connectionMock)).thenReturn(100l);
++        Mockito.when(srMock1.getPhysicalSize(sharedConnectionMock)).thenReturn(0l);
++        Mockito.when(srMock2.getPhysicalSize(sharedConnectionMock)).thenReturn(100l);
+         srsMocks.add(srMock1);
+         srsMocks.add(srMock2);
+ 
+-        Mockito.doReturn(srsMocks).when(citrixResourceBase).getAllLocalSrs(connectionMock);
++        Mockito.doReturn(srsMocks).when(citrixResourceBase).getAllLocalSrs(sharedConnectionMock);
+ 
+         StartupStorageCommand startupStorageCommandMock = Mockito.mock(StartupStorageCommand.class);
+-        Mockito.doReturn(startupStorageCommandMock).when(citrixResourceBase).createStartUpStorageCommand(Mockito.eq(connectionMock), Mockito.any(SR.class));
+-
+-        List<StartupStorageCommand> startUpCommandsForLocalStorage = citrixResourceBase.initializeLocalSrs(connectionMock);
+-
+-        Mockito.verify(citrixResourceBase, Mockito.times(0)).createStartUpStorageCommand(connectionMock, srMock1);
+-        Mockito.verify(citrixResourceBase, Mockito.times(1)).createStartUpStorageCommand(connectionMock, srMock2);
++        Mockito.doReturn(startupStorageCommandMock).when(citrixResourceBase).createStartUpStorageCommand(Mockito.eq(sharedConnectionMock), Mockito.any(SR.class));
++
++        List<StartupStorageCommand> startUpCommandsForLocalStorage = citrixResourceBase.initializeLocalSrs(sharedConnectionMock);
++
++        Mockito.verify(citrixResourceBase, Mockito.times(0)).createStartUpStorageCommand(sharedConnectionMock, srMock1);
++        Mockito.verify(citrixResourceBase, Mockito.times(1)).createStartUpStorageCommand(sharedConnectionMock, srMock2);
+ 
+         Assert.assertEquals(1, startUpCommandsForLocalStorage.size());
+     }
+@@ -450,12 +445,11 @@
+     @Test
+     public void testGetStatsForNetworkStats() {
+         CitrixResourceBase citrixResourceBaseSpy = Mockito.spy(CitrixResourceBase.class);
+-        Connection connection = Mockito.mock(Connection.class);
+ 
+         doReturn(networkStats[0] + ":" + networkStats[1]).when(citrixResourceBaseSpy).networkUsage(Mockito.any(Connection.class),
+                 Mockito.eq(privateIp), Mockito.eq("get"), Mockito.any(), Mockito.eq(publicIp));
+ 
+-        long[] stats = citrixResourceBaseSpy.getNetworkStats(connection, privateIp, publicIp);
++        long[] stats = citrixResourceBaseSpy.getNetworkStats(sharedConnectionMock, privateIp, publicIp);
+         assertEquals(2, stats.length);
+         assertEquals(networkStats[0], stats[0]);
+         assertEquals(networkStats[1], stats[1]);
+@@ -537,7 +531,6 @@
+ 
+     @Test
+     public void testListFilesAtPathWithNonExistentPath() throws IOException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
+         SR srMock = Mockito.mock(SR.class);
+ 
+         ListDataStoreObjectsCommand command = Mockito.mock(ListDataStoreObjectsCommand.class);
+@@ -548,8 +541,8 @@
+         Mockito.when(command.getPageSize()).thenReturn(10);
+         Mockito.when(command.getPath()).thenReturn("/path/to/non/existent/files");
+ 
+-        Mockito.doReturn(connectionMock).when(citrixResourceBase).getConnection();
+-        Mockito.doReturn(srMock).when(citrixResourceBase).getStorageRepository(connectionMock, "storeUuid");
++        Mockito.doReturn(sharedConnectionMock).when(citrixResourceBase).getConnection();
++        Mockito.doReturn(srMock).when(citrixResourceBase).getStorageRepository(sharedConnectionMock, "storeUuid");
+ 
+         Answer answer;
+         try (MockedConstruction<com.trilead.ssh2.Connection> ignored = Mockito.mockConstruction(com.trilead.ssh2.Connection.class, (mock, context) -> {
+@@ -575,7 +568,6 @@
+ 
+     @Test
+     public void testListFilesAtPathWithFile() throws IOException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
+         SR srMock = Mockito.mock(SR.class);
+         SFTPv3FileAttributes fileAttributesMock = Mockito.mock(SFTPv3FileAttributes.class);
+         Vector fileListMock = new Vector();
+@@ -589,8 +581,8 @@
+         Mockito.when(command.getPageSize()).thenReturn(10);
+         Mockito.when(command.getPath()).thenReturn("/path/to/file");
+ 
+-        Mockito.doReturn(connectionMock).when(citrixResourceBase).getConnection();
+-        Mockito.doReturn(srMock).when(citrixResourceBase).getStorageRepository(connectionMock, "storeUuid");
++        Mockito.doReturn(sharedConnectionMock).when(citrixResourceBase).getConnection();
++        Mockito.doReturn(srMock).when(citrixResourceBase).getStorageRepository(sharedConnectionMock, "storeUuid");
+         ReflectionTestUtils.setField(fileAttributesMock, "size", 1024L);
+         ReflectionTestUtils.setField(fileAttributesMock, "mtime", 123456789L);
+ 

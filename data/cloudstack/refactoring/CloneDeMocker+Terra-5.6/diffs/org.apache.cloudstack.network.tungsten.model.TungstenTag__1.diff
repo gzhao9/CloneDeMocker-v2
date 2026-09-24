@@ -1,0 +1,62 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -1072,7 +1072,6 @@
+     @Test
+     public void createTungstenTagTest() {
+         TungstenAnswer createTungstenTagAnswer = MockTungstenAnswerFactory.get(true);
+-        TungstenTag tungstenTag = mock(TungstenTag.class);
+         Tag tag = mock(Tag.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+@@ -1082,12 +1081,8 @@
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenTagCommand.class), anyLong())).thenReturn(createTungstenTagAnswer);
++        TungstenTag tungstenTag = createMockTungstenTag(tag, virtualNetwork, virtualMachine, virtualMachineInterface, networkPolicy);
+         when(createTungstenTagAnswer.getTungstenModel()).thenReturn(tungstenTag);
+-        when(tungstenTag.getTag()).thenReturn(tag);
+-        doReturn(List.of(virtualNetwork)).when(tungstenTag).getVirtualNetworkList();
+-        doReturn(List.of(virtualMachine)).when(tungstenTag).getVirtualMachineList();
+-        doReturn(List.of(virtualMachineInterface)).when(tungstenTag).getVirtualMachineInterfaceList();
+-        doReturn(List.of(networkPolicy)).when(tungstenTag).getNetworkPolicyList();
+ 
+         assertNotNull(tungstenService.createTungstenTag(1L, "testTag", "testTagType"));
+     }
+@@ -1108,7 +1103,6 @@
+     @Test
+     public void listTungstenTagsTest() {
+         TungstenAnswer listTungstenTagAnswer = MockTungstenAnswerFactory.get(true);
+-        TungstenTag tungstenTag = mock(TungstenTag.class);
+         Tag tag = mock(Tag.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+@@ -1119,12 +1113,8 @@
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenTagCommand.class), anyLong())).thenReturn(listTungstenTagAnswer);
++        TungstenTag tungstenTag = createMockTungstenTag(tag, virtualNetwork, virtualMachine, virtualMachineInterface, networkPolicy);
+         when(listTungstenTagAnswer.getTungstenModelList()).thenReturn(List.of(tungstenTag));
+-        when(tungstenTag.getTag()).thenReturn(tag);
+-        doReturn(List.of(virtualNetwork)).when(tungstenTag).getVirtualNetworkList();
+-        doReturn(List.of(virtualMachine)).when(tungstenTag).getVirtualMachineList();
+-        doReturn(List.of(virtualMachineInterface)).when(tungstenTag).getVirtualMachineInterfaceList();
+-        doReturn(List.of(networkPolicy)).when(tungstenTag).getNetworkPolicyList();
+ 
+         assertNotNull(tungstenService.listTungstenTags(1L, "948f421c-edde-4518-a391-09299cc25dc2"
+                 , "8b4637b6-5629-46de-8fb2-d0b0502bfa85", "8d097a79-a38d-4db4-8a41-16f15d9c5afa", "a329662e-1805-4a89-9b05-2b818ea35978",
+@@ -1668,4 +1658,15 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    private static TungstenTag createMockTungstenTag(Tag tag, VirtualNetwork virtualNetwork, VirtualMachine virtualMachine,
++            VirtualMachineInterface virtualMachineInterface, NetworkPolicy networkPolicy) {
++        TungstenTag tungstenTag = mock(TungstenTag.class);
++        when(tungstenTag.getTag()).thenReturn(tag);
++        doReturn(List.of(virtualNetwork)).when(tungstenTag).getVirtualNetworkList();
++        doReturn(List.of(virtualMachine)).when(tungstenTag).getVirtualMachineList();
++        doReturn(List.of(virtualMachineInterface)).when(tungstenTag).getVirtualMachineInterfaceList();
++        doReturn(List.of(networkPolicy)).when(tungstenTag).getNetworkPolicyList();
++        return tungstenTag;
++    }
+ }

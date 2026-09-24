@@ -1,0 +1,74 @@
+--- a/saml2/saml2-service-provider/src/opensaml5Test/java/org/springframework/security/saml2/provider/service/authentication/OpenSaml5AuthenticationProviderTests.java
++++ b/saml2/saml2-service-provider/src/opensaml5Test/java/org/springframework/security/saml2/provider/service/authentication/OpenSaml5AuthenticationProviderTests.java
+@@ -32,6 +32,7 @@
+ 
+ import javax.xml.namespace.QName;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.ArgumentCaptor;
+ import org.opensaml.core.xml.XMLObject;
+@@ -125,6 +126,13 @@
+ 	private Saml2Authentication authentication = new Saml2Authentication(this.principal, "response",
+ 			Collections.emptyList());
+ 
++	private Converter<ResponseToken, Saml2Authentication> responseAuthenticationConverterMock;
++
++	@BeforeEach
++	void setUp() {
++		this.responseAuthenticationConverterMock = mock(Converter.class);
++	}
++
+ 	@Test
+ 	public void supportsWhenSaml2AuthenticationTokenThenReturnTrue() {
+ 		assertThat(this.provider.supports(Saml2AuthenticationToken.class))
+@@ -762,13 +770,12 @@
+ 
+ 	@Test
+ 	public void authenticateWhenResponseAuthenticationConverterConfiguredThenUses() {
+-		Converter<ResponseToken, Saml2Authentication> authenticationConverter = mock(Converter.class);
+-		OpenSaml5AuthenticationProvider provider = new OpenSaml5AuthenticationProvider();
+-		provider.setResponseAuthenticationConverter(authenticationConverter);
++		OpenSaml5AuthenticationProvider provider = new OpenSaml5AuthenticationProvider();
++		provider.setResponseAuthenticationConverter(responseAuthenticationConverterMock);
+ 		Response response = TestOpenSamlObjects.signedResponseWithOneAssertion();
+ 		Saml2AuthenticationToken token = token(response, verifying(registration()));
+ 		provider.authenticate(token);
+-		verify(authenticationConverter).convert(any());
++		verify(responseAuthenticationConverterMock).convert(any());
+ 	}
+ 
+ 	@Test
+@@ -788,28 +795,26 @@
+ 
+ 	@Test
+ 	public void authenticateWhenValidateResponseAfterAssertionsThenCanHaveResponseAuthenticationConverterThatDoesntNeedANameID() {
+-		Converter<ResponseToken, Saml2Authentication> responseAuthenticationConverter = mock(Converter.class);
+ 		OpenSaml5AuthenticationProvider provider = new OpenSaml5AuthenticationProvider();
+ 		provider.setValidateResponseAfterAssertions(true);
+-		provider.setResponseAuthenticationConverter(responseAuthenticationConverter);
++		provider.setResponseAuthenticationConverter(responseAuthenticationConverterMock);
+ 		Response response = TestOpenSamlObjects
+ 			.signedResponseWithOneAssertion((r) -> r.getAssertions().get(0).setSubject(null));
+ 		Saml2AuthenticationToken token = token(response, verifying(registration()));
+ 		provider.authenticate(token);
+-		verify(responseAuthenticationConverter).convert(any());
++		verify(responseAuthenticationConverterMock).convert(any());
+ 	}
+ 
+ 	@Test
+ 	public void authenticateWhenValidateResponseBeforeAssertionsThenMustHaveNameID() {
+-		Converter<ResponseToken, Saml2Authentication> responseAuthenticationConverter = mock(Converter.class);
+ 		OpenSaml5AuthenticationProvider provider = new OpenSaml5AuthenticationProvider();
+ 		provider.setValidateResponseAfterAssertions(false);
+-		provider.setResponseAuthenticationConverter(responseAuthenticationConverter);
++		provider.setResponseAuthenticationConverter(responseAuthenticationConverterMock);
+ 		Response response = TestOpenSamlObjects
+ 			.signedResponseWithOneAssertion((r) -> r.getAssertions().get(0).setSubject(null));
+ 		Saml2AuthenticationToken token = token(response, verifying(registration()));
+ 		assertThatExceptionOfType(Saml2AuthenticationException.class).isThrownBy(() -> provider.authenticate(token));
+-		verifyNoInteractions(responseAuthenticationConverter);
++		verifyNoInteractions(responseAuthenticationConverterMock);
+ 	}
+ 
+ 	@Test

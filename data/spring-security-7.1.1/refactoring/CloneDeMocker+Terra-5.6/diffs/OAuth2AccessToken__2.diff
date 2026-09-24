@@ -1,0 +1,104 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/WebSessionServerOAuth2AuthorizedClientRepositoryTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/web/server/WebSessionServerOAuth2AuthorizedClientRepositoryTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.oauth2.client.web.server;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import reactor.core.publisher.Mono;
+ 
+@@ -53,6 +54,13 @@
+ 
+ 	private String principalName1 = "principalName-1";
+ 
++	private OAuth2AccessToken accessToken;
++
++	@BeforeEach
++	public void setUp() {
++		this.accessToken = mock(OAuth2AccessToken.class);
++	}
++
+ 	@Test
+ 	public void loadAuthorizedClientWhenClientRegistrationIdIsNullThenThrowIllegalArgumentException() {
+ 		assertThatIllegalArgumentException()
+@@ -81,7 +89,7 @@
+ 	@Test
+ 	public void loadAuthorizedClientWhenSavedThenReturnAuthorizedClient() {
+ 		OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(this.registration1, this.principalName1,
+-				mock(OAuth2AccessToken.class));
++				this.accessToken);
+ 		this.authorizedClientRepository.saveAuthorizedClient(authorizedClient, null, this.exchange).block();
+ 		OAuth2AuthorizedClient loadedAuthorizedClient = this.authorizedClientRepository
+ 			.loadAuthorizedClient(this.registrationId1, null, this.exchange)
+@@ -98,14 +106,14 @@
+ 	@Test
+ 	public void saveAuthorizedClientWhenAuthenticationIsNullThenExceptionNotThrown() {
+ 		OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(this.registration2, this.principalName1,
+-				mock(OAuth2AccessToken.class));
++				this.accessToken);
+ 		this.authorizedClientRepository.saveAuthorizedClient(authorizedClient, null, this.exchange).block();
+ 	}
+ 
+ 	@Test
+ 	public void saveAuthorizedClientWhenRequestIsNullThenThrowIllegalArgumentException() {
+ 		OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(this.registration2, this.principalName1,
+-				mock(OAuth2AccessToken.class));
++				this.accessToken);
+ 		assertThatIllegalArgumentException().isThrownBy(
+ 				() -> this.authorizedClientRepository.saveAuthorizedClient(authorizedClient, null, null).block());
+ 	}
+@@ -113,7 +121,7 @@
+ 	@Test
+ 	public void saveAuthorizedClientWhenSavedThenSavedToSession() {
+ 		OAuth2AuthorizedClient expected = new OAuth2AuthorizedClient(this.registration2, this.principalName1,
+-				mock(OAuth2AccessToken.class));
++				this.accessToken);
+ 		this.authorizedClientRepository.saveAuthorizedClient(expected, null, this.exchange).block();
+ 		OAuth2AuthorizedClient result = this.authorizedClientRepository
+ 			.loadAuthorizedClient(this.registrationId2, null, this.exchange)
+@@ -147,7 +155,7 @@
+ 	@Test
+ 	public void removeAuthorizedClientWhenClient1SavedAndClient2RemovedThenClient1NotRemoved() {
+ 		OAuth2AuthorizedClient authorizedClient1 = new OAuth2AuthorizedClient(this.registration1, this.principalName1,
+-				mock(OAuth2AccessToken.class));
++				this.accessToken);
+ 		this.authorizedClientRepository.saveAuthorizedClient(authorizedClient1, null, this.exchange).block();
+ 		// Remove registrationId2 (never added so is not removed either)
+ 		this.authorizedClientRepository.removeAuthorizedClient(this.registrationId2, null, this.exchange);
+@@ -161,7 +169,7 @@
+ 	@Test
+ 	public void removeAuthorizedClientWhenSavedThenRemoved() {
+ 		OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(this.registration2, this.principalName1,
+-				mock(OAuth2AccessToken.class));
++				this.accessToken);
+ 		this.authorizedClientRepository.saveAuthorizedClient(authorizedClient, null, this.exchange).block();
+ 		OAuth2AuthorizedClient loadedAuthorizedClient = this.authorizedClientRepository
+ 			.loadAuthorizedClient(this.registrationId2, null, this.exchange)
+@@ -177,7 +185,7 @@
+ 	@Test
+ 	public void removeAuthorizedClientWhenSavedThenRemovedFromSession() {
+ 		OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(this.registration1, this.principalName1,
+-				mock(OAuth2AccessToken.class));
++				this.accessToken);
+ 		this.authorizedClientRepository.saveAuthorizedClient(authorizedClient, null, this.exchange).block();
+ 		OAuth2AuthorizedClient loadedAuthorizedClient = this.authorizedClientRepository
+ 			.loadAuthorizedClient(this.registrationId1, null, this.exchange)
+@@ -192,7 +200,7 @@
+ 	@Test
+ 	public void removeAuthorizedClientWhenClient1Client2SavedAndClient1RemovedThenClient2NotRemoved() {
+ 		OAuth2AuthorizedClient authorizedClient1 = new OAuth2AuthorizedClient(this.registration1, this.principalName1,
+-				mock(OAuth2AccessToken.class));
++				this.accessToken);
+ 		this.authorizedClientRepository.saveAuthorizedClient(authorizedClient1, null, this.exchange).block();
+ 		OAuth2AuthorizedClient authorizedClient2 = new OAuth2AuthorizedClient(this.registration2, this.principalName1,
+ 				mock(OAuth2AccessToken.class));
+@@ -210,7 +218,7 @@
+ 		ServerWebExchange exchange = mock(ServerWebExchange.class);
+ 		given(exchange.getSession()).willReturn(Mono.empty());
+ 		OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(this.registration1, this.principalName1,
+-				mock(OAuth2AccessToken.class));
++				this.accessToken);
+ 		// @formatter:off
+ 		assertThatIllegalArgumentException()
+ 			.isThrownBy(() -> this.authorizedClientRepository.saveAuthorizedClient(authorizedClient, null, exchange).block())

@@ -1,0 +1,78 @@
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientAuthorizationCodeTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/RestClientAuthorizationCodeTokenResponseClientTests.java
+@@ -381,10 +381,10 @@
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		OAuth2AuthorizationCodeGrantRequest grantRequest = new OAuth2AuthorizationCodeGrantRequest(clientRegistration,
+ 				this.authorizationExchange);
+-		Converter<OAuth2AuthorizationCodeGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<OAuth2AuthorizationCodeGrantRequest, MultiValueMap<String, String>> parametersConverter = MockAuthorizationCodeGrantRequestParametersConverter
++			.createMockParametersConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.setParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(parametersConverter).convert(grantRequest);
+@@ -424,10 +424,9 @@
+ 		ClientRegistration clientRegistration = this.clientRegistration.build();
+ 		OAuth2AuthorizationCodeGrantRequest grantRequest = new OAuth2AuthorizationCodeGrantRequest(clientRegistration,
+ 				this.authorizationExchange);
+-		Converter<OAuth2AuthorizationCodeGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(grantRequest)).willReturn(parameters);
++		Converter<OAuth2AuthorizationCodeGrantRequest, MultiValueMap<String, String>> parametersConverter = MockAuthorizationCodeGrantRequestParametersConverter.createMockParametersConverter(grantRequest, parameters);
+ 		this.tokenResponseClient.addParametersConverter(parametersConverter);
+ 		this.tokenResponseClient.getTokenResponse(grantRequest);
+ 		verify(parametersConverter).convert(grantRequest);
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveAuthorizationCodeTokenResponseClientTests.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/WebClientReactiveAuthorizationCodeTokenResponseClientTests.java
+@@ -357,10 +357,9 @@
+ 	@Test
+ 	public void getTokenResponseWhenParametersConverterAddedThenCalled() throws Exception {
+ 		OAuth2AuthorizationCodeGrantRequest request = authorizationCodeGrantRequest();
+-		Converter<OAuth2AuthorizationCodeGrantRequest, MultiValueMap<String, String>> addedParametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(addedParametersConverter.convert(request)).willReturn(parameters);
++		Converter<OAuth2AuthorizationCodeGrantRequest, MultiValueMap<String, String>> addedParametersConverter = MockAuthorizationCodeGrantRequestParametersConverter.createMockParametersConverter(request, parameters);
+ 		this.tokenResponseClient.addParametersConverter(addedParametersConverter);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.tokenResponseClient.getTokenResponse(request).block();
+@@ -373,10 +372,10 @@
+ 	@Test
+ 	public void getTokenResponseWhenParametersConverterSetThenCalled() throws Exception {
+ 		OAuth2AuthorizationCodeGrantRequest request = authorizationCodeGrantRequest();
+-		Converter<OAuth2AuthorizationCodeGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
+ 		MultiValueMap<String, String> parameters = new LinkedMultiValueMap<>();
+ 		parameters.add("custom-parameter-name", "custom-parameter-value");
+-		given(parametersConverter.convert(request)).willReturn(parameters);
++		Converter<OAuth2AuthorizationCodeGrantRequest, MultiValueMap<String, String>> parametersConverter = MockAuthorizationCodeGrantRequestParametersConverter
++				.createMockParametersConverter(request, parameters);
+ 		this.tokenResponseClient.setParametersConverter(parametersConverter);
+ 		this.server.enqueue(MockResponses.json("access-token-response.json"));
+ 		this.tokenResponseClient.getTokenResponse(request).block();
+--- a/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/MockAuthorizationCodeGrantRequestParametersConverter.java
++++ b/oauth2/oauth2-client/src/test/java/org/springframework/security/oauth2/client/endpoint/MockAuthorizationCodeGrantRequestParametersConverter.java
+@@ -0,0 +1,21 @@
++package org.springframework.security.oauth2.client.endpoint;
++
++import org.springframework.core.convert.converter.Converter;
++import org.springframework.util.MultiValueMap;
++
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.mock;
++
++public final class MockAuthorizationCodeGrantRequestParametersConverter {
++
++	private MockAuthorizationCodeGrantRequestParametersConverter() {
++	}
++
++	public static Converter<OAuth2AuthorizationCodeGrantRequest, MultiValueMap<String, String>> createMockParametersConverter(
++			OAuth2AuthorizationCodeGrantRequest request, MultiValueMap<String, String> parameters) {
++		Converter<OAuth2AuthorizationCodeGrantRequest, MultiValueMap<String, String>> parametersConverter = mock();
++		given(parametersConverter.convert(request)).willReturn(parameters);
++		return parametersConverter;
++	}
++
++}

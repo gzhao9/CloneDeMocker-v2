@@ -1,0 +1,59 @@
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpRequestWrapperTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpRequestWrapperTest.java
+@@ -137,7 +137,6 @@
+ 
+     @Test
+     public void testConfigurePublicIpsOnLogicalRouterCommand() {
+-        final NiciraNvpApi niciraNvpApi = Mockito.mock(NiciraNvpApi.class);
+         final LogicalRouterPort port1 = Mockito.mock(LogicalRouterPort.class);
+ 
+         final List<LogicalRouterPort> listPorts = new ArrayList<LogicalRouterPort>();
+@@ -150,10 +149,9 @@
+ 
+         final ConfigurePublicIpsOnLogicalRouterCommand command = new ConfigurePublicIpsOnLogicalRouterCommand(logicalRouterUuid, l3GatewayServiceUuid, publicCidrs);
+ 
+-        when(niciraNvpResource.getNiciraNvpApi()).thenReturn(niciraNvpApi);
+-
+-        try {
+-            when(niciraNvpApi.findLogicalRouterPortByGatewayServiceUuid(command.getLogicalRouterUuid(), command.getL3GatewayServiceUuid())).thenReturn(listPorts);
++        try {
++            final NiciraNvpApi niciraNvpApi = MockNiciraNvpApi.createMockNiciraNvpApi(logicalRouterUuid, l3GatewayServiceUuid, listPorts);
++            when(niciraNvpResource.getNiciraNvpApi()).thenReturn(niciraNvpApi);
+             doNothing().when(niciraNvpApi).updateLogicalRouterPort(command.getLogicalRouterUuid(), port1);
+         } catch (final NiciraNvpApiException e) {
+             fail(e.getMessage());
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpResourceTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpResourceTest.java
+@@ -411,7 +411,7 @@
+ 
+         when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+         when(cmd.getL3GatewayServiceUuid()).thenReturn("bbbbb");
+-        when(nvpApi.findLogicalRouterPortByGatewayServiceUuid("aaaaa", "bbbbb")).thenReturn(list);
++        nvpApi = MockNiciraNvpApi.createMockNiciraNvpApi("aaaaa", "bbbbb", list);
+         doThrow(new NiciraNvpApiException()).when(nvpApi).updateLogicalRouterPort((String) any(), (LogicalRouterPort) any());
+ 
+         final ConfigurePublicIpsOnLogicalRouterAnswer answer = (ConfigurePublicIpsOnLogicalRouterAnswer) resource.executeRequest(cmd);
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/MockNiciraNvpApi.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/MockNiciraNvpApi.java
+@@ -0,0 +1,21 @@
++package com.cloud.network.resource;
++
++import static org.mockito.Mockito.when;
++
++import java.util.List;
++
++import org.mockito.Mockito;
++
++import com.cloud.network.nicira.LogicalRouterPort;
++import com.cloud.network.nicira.NiciraNvpApi;
++import com.cloud.network.nicira.NiciraNvpApiException;
++
++public class MockNiciraNvpApi {
++
++    public static NiciraNvpApi createMockNiciraNvpApi(final String logicalRouterUuid, final String l3GatewayServiceUuid,
++            final List<LogicalRouterPort> logicalRouterPorts) throws NiciraNvpApiException {
++        final NiciraNvpApi niciraNvpApi = Mockito.mock(NiciraNvpApi.class);
++        when(niciraNvpApi.findLogicalRouterPortByGatewayServiceUuid(logicalRouterUuid, l3GatewayServiceUuid)).thenReturn(logicalRouterPorts);
++        return niciraNvpApi;
++    }
++}

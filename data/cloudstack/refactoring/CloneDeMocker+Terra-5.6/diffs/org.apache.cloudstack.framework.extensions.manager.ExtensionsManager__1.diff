@@ -1,0 +1,47 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/api/AddCustomActionCmdTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/api/AddCustomActionCmdTest.java
+@@ -198,8 +198,9 @@
+         ExtensionCustomAction extensionCustomAction = mock(ExtensionCustomAction.class);
+         ExtensionCustomActionResponse response = mock(ExtensionCustomActionResponse.class);
+ 
++        extensionsManager = MockExtensionsManager.createMockExtensionsManager(extensionCustomAction, response);
++        cmd.extensionsManager = extensionsManager;
+         when(extensionsManager.addCustomAction(any(AddCustomActionCmd.class))).thenReturn(extensionCustomAction);
+-        when(extensionsManager.createCustomActionResponse(extensionCustomAction)).thenReturn(response);
+ 
+         AddCustomActionCmd spyCmd = spy(cmd);
+         doNothing().when(spyCmd).setResponseObject(any());
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/api/UpdateCustomActionCmdTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/api/UpdateCustomActionCmdTest.java
+@@ -211,8 +211,9 @@
+     public void executeSetsCustomActionResponseWhenManagerSucceeds() {
+         ExtensionCustomAction customAction = mock(ExtensionCustomAction.class);
+         ExtensionCustomActionResponse response = mock(ExtensionCustomActionResponse.class);
++        extensionsManager = MockExtensionsManager.createMockExtensionsManager(customAction, response);
++        ReflectionTestUtils.setField(cmd, "extensionsManager", extensionsManager);
+         when(extensionsManager.updateCustomAction(cmd)).thenReturn(customAction);
+-        when(extensionsManager.createCustomActionResponse(customAction)).thenReturn(response);
+ 
+         doNothing().when(cmd).setResponseObject(any());
+ 
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/api/MockExtensionsManager.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/api/MockExtensionsManager.java
+@@ -0,0 +1,18 @@
++package org.apache.cloudstack.framework.extensions.api;
++
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
++import org.apache.cloudstack.extension.ExtensionCustomAction;
++import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
++
++public class MockExtensionsManager {
++
++    public static ExtensionsManager createMockExtensionsManager(ExtensionCustomAction customAction,
++            ExtensionCustomActionResponse response) {
++        ExtensionsManager extensionsManager = mock(ExtensionsManager.class);
++        when(extensionsManager.createCustomActionResponse(customAction)).thenReturn(response);
++        return extensionsManager;
++    }
++}

@@ -1,0 +1,67 @@
+--- a/services/src/test/java/org/apache/druid/server/AsyncQueryForwardingServletTest.java
++++ b/services/src/test/java/org/apache/druid/server/AsyncQueryForwardingServletTest.java
+@@ -477,14 +477,8 @@
+                                         .context(ImmutableMap.of("queryId", "test-query-504"))
+                                         .build();
+ 
+-    final HttpServletRequest requestMock = Mockito.mock(HttpServletRequest.class);
+-    Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.avaticaQuery")).thenReturn(null);
+-    Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.query")).thenReturn(query);
+-    Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.sqlQuery")).thenReturn(null);
+-    Mockito.when(requestMock.getRemoteAddr()).thenReturn("127.0.0.1");
+-    Mockito.when(requestMock.getAttribute(AuthConfig.DRUID_AUTHENTICATION_RESULT))
+-           .thenReturn(new AuthenticationResult("testUser", "basic", "basic", null));
+-
++
++    final HttpServletRequest requestMock = createHttpServletRequestMock(query);
+     final Request proxyRequestMock = Mockito.mock(Request.class);
+     final Response responseMock = Mockito.mock(Response.class);
+     Mockito.when(responseMock.getStatus()).thenReturn(504); // Gateway Timeout
+@@ -541,14 +535,8 @@
+                                         .context(ImmutableMap.of("queryId", "closed-test"))
+                                         .build();
+ 
+-    final HttpServletRequest requestMock = Mockito.mock(HttpServletRequest.class);
+-    Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.avaticaQuery")).thenReturn(null);
+-    Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.query")).thenReturn(query);
+-    Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.sqlQuery")).thenReturn(null);
+-    Mockito.when(requestMock.getRemoteAddr()).thenReturn("127.0.0.1");
+-    Mockito.when(requestMock.getAttribute(AuthConfig.DRUID_AUTHENTICATION_RESULT))
+-           .thenReturn(new AuthenticationResult("testUser", "basic", "basic", null));
+-
++
++    final HttpServletRequest requestMock = createHttpServletRequestMock(query);
+     final Request proxyRequestMock = Mockito.mock(Request.class);
+     final Response responseMock = Mockito.mock(Response.class);
+     Mockito.when(responseMock.getStatus()).thenReturn(200); // Status OK
+@@ -612,13 +600,7 @@
+                                         .context(ImmutableMap.of("queryId", "zero-status-test"))
+                                         .build();
+ 
+-    final HttpServletRequest requestMock = Mockito.mock(HttpServletRequest.class);
+-    Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.avaticaQuery")).thenReturn(null);
+-    Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.query")).thenReturn(query);
+-    Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.sqlQuery")).thenReturn(null);
+-    Mockito.when(requestMock.getRemoteAddr()).thenReturn("127.0.0.1");
+-    Mockito.when(requestMock.getAttribute(AuthConfig.DRUID_AUTHENTICATION_RESULT))
+-           .thenReturn(new AuthenticationResult("testUser", "basic", "basic", null));
++    final HttpServletRequest requestMock = createHttpServletRequestMock(query);
+ 
+     final Response responseMock = Mockito.mock(Response.class);
+     Mockito.when(responseMock.getStatus()).thenReturn(0); // Test unassigned http status code case from server
+@@ -1235,4 +1217,15 @@
+     Mockito.verify(mockMapper).writeValue(ArgumentMatchers.eq(outputStream), captor.capture());
+     return captor;
+   }
++
++    private static HttpServletRequest createHttpServletRequestMock(TimeseriesQuery query) {
++        final HttpServletRequest requestMock = Mockito.mock(HttpServletRequest.class);
++        Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.avaticaQuery")).thenReturn(null);
++        Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.query")).thenReturn(query);
++        Mockito.when(requestMock.getAttribute("org.apache.druid.proxy.sqlQuery")).thenReturn(null);
++        Mockito.when(requestMock.getRemoteAddr()).thenReturn("127.0.0.1");
++        Mockito.when(requestMock.getAttribute(AuthConfig.DRUID_AUTHENTICATION_RESULT))
++            .thenReturn(new AuthenticationResult("testUser", "basic", "basic", null));
++        return requestMock;
++    }
+ }

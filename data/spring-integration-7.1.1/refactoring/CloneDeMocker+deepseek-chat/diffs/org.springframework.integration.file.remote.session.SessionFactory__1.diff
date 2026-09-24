@@ -1,0 +1,400 @@
+--- a/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
++++ b/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
+@@ -144,13 +144,7 @@
+ 	}
+ 
+ 	private void testMGetWildGuts(final String path1, final String path2) {
+-		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mget", "payload");
+-		gw.setLocalDirectory(new File(this.tmpDir));
+-		gw.afterPropertiesSet();
+-		new File(this.tmpDir + "/f1").delete();
+-		new File(this.tmpDir + "/f2").delete();
+-		when(sessionFactory.getSession()).thenReturn(new TestSession() {
++		SessionFactory sessionFactory = createMockSessionFactory(new TestSession() {
+ 
+ 			int n;
+ 
+@@ -175,6 +169,11 @@
+ 			}
+ 
+ 		});
++		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mget", "payload");
++		gw.setLocalDirectory(new File(this.tmpDir));
++		gw.afterPropertiesSet();
++		new File(this.tmpDir + "/f1").delete();
++		new File(this.tmpDir + "/f2").delete();
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<List<File>> out = (MessageBuilder<List<File>>) gw
+ 				.handleRequestMessage(new GenericMessage<>("testremote/*"));
+@@ -187,12 +186,7 @@
+ 
+ 	@Test
+ 	public void testMGetSingle() {
+-		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mget", "payload");
+-		gw.setLocalDirectory(new File(this.tmpDir));
+-		gw.afterPropertiesSet();
+-		new File(this.tmpDir + "/f1").delete();
+-		when(sessionFactory.getSession()).thenReturn(new TestSession() {
++		SessionFactory sessionFactory = createMockSessionFactory(new TestSession() {
+ 
+ 			@Override
+ 			public void read(String source, OutputStream outputStream)
+@@ -206,6 +200,10 @@
+ 			}
+ 
+ 		});
++		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mget", "payload");
++		gw.setLocalDirectory(new File(this.tmpDir));
++		gw.afterPropertiesSet();
++		new File(this.tmpDir + "/f1").delete();
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<List<File>> out = (MessageBuilder<List<File>>) gw
+ 				.handleRequestMessage(new GenericMessage<>("testremote/f1"));
+@@ -217,22 +215,21 @@
+ 
+ 	@Test
+ 	public void testMGetEmpty() {
+-		SessionFactory sessionFactory = mock(SessionFactory.class);
++		SessionFactory sessionFactory = createMockSessionFactory(new TestSession() {
++
++			@Override
++			public void read(String source, OutputStream outputStream)
++					throws IOException {
++				outputStream.write("testData".getBytes());
++			}
++
++		});
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mget", "payload");
+ 		gw.setLocalDirectory(new File(this.tmpDir));
+ 		gw.setOptions("   -x   ");
+ 		gw.afterPropertiesSet();
+ 		new File(this.tmpDir + "/f1").delete();
+ 		new File(this.tmpDir + "/f2").delete();
+-		when(sessionFactory.getSession()).thenReturn(new TestSession() {
+-
+-			@Override
+-			public void read(String source, OutputStream outputStream)
+-					throws IOException {
+-				outputStream.write("testData".getBytes());
+-			}
+-
+-		});
+ 
+ 		assertThatExceptionOfType(MessagingException.class)
+ 				.isThrownBy(() -> gw.handleRequestMessage(new GenericMessage<>("testremote/*")));
+@@ -552,12 +549,7 @@
+ 
+ 	@Test
+ 	public void testGet() throws IOException {
+-		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
+-		gw.setLocalDirectory(new File(this.tmpDir));
+-		gw.afterPropertiesSet();
+-		new File(this.tmpDir + "/f1").delete();
+-		when(sessionFactory.getSession()).thenReturn(new TestSession() {
++		SessionFactory sessionFactory = createMockSessionFactory(new TestSession() {
+ 
+ 			@Override
+ 			public TestLsEntry[] list(String path) {
+@@ -573,6 +565,10 @@
+ 			}
+ 
+ 		});
++		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
++		gw.setLocalDirectory(new File(this.tmpDir));
++		gw.afterPropertiesSet();
++		new File(this.tmpDir + "/f1").delete();
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<File> out = (MessageBuilder<File>) gw.handleRequestMessage(new GenericMessage<>("f1"));
+ 		File outFile = new File(this.tmpDir + "/f1").getCanonicalFile();
+@@ -586,7 +582,22 @@
+ 	@SuppressWarnings("unchecked")
+ 	@Test
+ 	public void testGetExists() throws Exception {
+-		SessionFactory sessionFactory = mock(SessionFactory.class);
++		SessionFactory sessionFactory = createMockSessionFactory(new TestSession() {
++
++			@Override
++			public TestLsEntry[] list(String path) {
++				return new TestLsEntry[] {
++						new TestLsEntry("f1", 1234, false, false, 12345, "-rw-r--r--")
++				};
++			}
++
++			@Override
++			public void read(String source, OutputStream outputStream)
++					throws IOException {
++				outputStream.write("testfile".getBytes());
++			}
++
++		});
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
+ 		gw.setLocalDirectory(new File(this.tmpDir));
+ 		gw.afterPropertiesSet();
+@@ -594,7 +605,42 @@
+ 		FileOutputStream fos = new FileOutputStream(outFile);
+ 		fos.write("foo".getBytes());
+ 		fos.close();
+-		when(sessionFactory.getSession()).thenReturn(new TestSession() {
++
++		// default (null)
++		MessageBuilder<File> out;
++
++		assertThatExceptionOfType(MessageHandlingException.class)
++				.isThrownBy(() -> gw.handleRequestMessage(new GenericMessage<>("f1")))
++				.withMessageContaining("already exists");
++
++		gw.setFileExistsMode(FileExistsMode.FAIL);
++
++		assertThatExceptionOfType(MessageHandlingException.class)
++				.isThrownBy(() -> gw.handleRequestMessage(new GenericMessage<>("f1")))
++				.withMessageContaining("already exists");
++
++		gw.setFileExistsMode(FileExistsMode.IGNORE);
++		out = (MessageBuilder<File>) gw.handleRequestMessage(new GenericMessage<>("f1"));
++		assertThat(out.getPayload()).isEqualTo(outFile);
++		assertContents("foo", outFile);
++
++		gw.setFileExistsMode(FileExistsMode.APPEND);
++		out = (MessageBuilder<File>) gw.handleRequestMessage(new GenericMessage<>("f1"));
++		assertThat(out.getPayload()).isEqualTo(outFile);
++		assertContents("footestfile", outFile);
++
++		gw.setFileExistsMode(FileExistsMode.REPLACE);
++		out = (MessageBuilder<File>) gw.handleRequestMessage(new GenericMessage<>("f1"));
++		assertThat(out.getPayload()).isEqualTo(outFile);
++		assertContents("testfile", outFile);
++
++		outFile.delete();
++	}
++
++	@Test
++	@SuppressWarnings("unchecked")
++	public void testGetExistsExpression() throws Exception {
++		SessionFactory sessionFactory = createMockSessionFactory(new TestSession() {
+ 
+ 			@Override
+ 			public TestLsEntry[] list(String path) {
+@@ -610,42 +656,6 @@
+ 			}
+ 
+ 		});
+-
+-		// default (null)
+-		MessageBuilder<File> out;
+-
+-		assertThatExceptionOfType(MessageHandlingException.class)
+-				.isThrownBy(() -> gw.handleRequestMessage(new GenericMessage<>("f1")))
+-				.withMessageContaining("already exists");
+-
+-		gw.setFileExistsMode(FileExistsMode.FAIL);
+-
+-		assertThatExceptionOfType(MessageHandlingException.class)
+-				.isThrownBy(() -> gw.handleRequestMessage(new GenericMessage<>("f1")))
+-				.withMessageContaining("already exists");
+-
+-		gw.setFileExistsMode(FileExistsMode.IGNORE);
+-		out = (MessageBuilder<File>) gw.handleRequestMessage(new GenericMessage<>("f1"));
+-		assertThat(out.getPayload()).isEqualTo(outFile);
+-		assertContents("foo", outFile);
+-
+-		gw.setFileExistsMode(FileExistsMode.APPEND);
+-		out = (MessageBuilder<File>) gw.handleRequestMessage(new GenericMessage<>("f1"));
+-		assertThat(out.getPayload()).isEqualTo(outFile);
+-		assertContents("footestfile", outFile);
+-
+-		gw.setFileExistsMode(FileExistsMode.REPLACE);
+-		out = (MessageBuilder<File>) gw.handleRequestMessage(new GenericMessage<>("f1"));
+-		assertThat(out.getPayload()).isEqualTo(outFile);
+-		assertContents("testfile", outFile);
+-
+-		outFile.delete();
+-	}
+-
+-	@Test
+-	@SuppressWarnings("unchecked")
+-	public void testGetExistsExpression() throws Exception {
+-		SessionFactory sessionFactory = mock(SessionFactory.class);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
+ 		gw.setFileExistsModeExpressionString("headers[\"file.exists.mode\"]");
+ 
+@@ -655,6 +665,56 @@
+ 		FileOutputStream fos = new FileOutputStream(outFile);
+ 		fos.write("foo".getBytes());
+ 		fos.close();
++		// default (null)
++		MessageBuilder<File> out;
++
++		assertThatExceptionOfType(MessageHandlingException.class)
++				.isThrownBy(() -> gw.handleRequestMessage(new GenericMessage<>("f1")))
++				.withMessageContaining("already exists");
++
++		assertThatExceptionOfType(MessageHandlingException.class)
++				.isThrownBy(() -> gw.handleRequestMessage(
++						new GenericMessage<>("f1", Map.of("file.exists.mode", FileExistsMode.FAIL))))
++				.withMessageContaining("already exists");
++
++		out = (MessageBuilder<File>) gw.handleRequestMessage(
++				new GenericMessage<>("f1", Map.of("file.exists.mode", "IGNORE")));
++		assertThat(out.getPayload()).isEqualTo(outFile);
++		assertContents("foo", outFile);
++
++		out = (MessageBuilder<File>) gw.handleRequestMessage(
++				new GenericMessage<>("f1", Map.of("file.exists.mode", "append")));
++		assertThat(out.getPayload()).isEqualTo(outFile);
++		assertContents("footestfile", outFile);
++
++		out = (MessageBuilder<File>) gw.handleRequestMessage(
++				new GenericMessage<>("f1", Map.of("file.exists.mode", FileExistsMode.REPLACE)));
++		assertThat(out.getPayload()).isEqualTo(outFile);
++		assertContents("testfile", outFile);
++
++		outFile.delete();
++	}
++
++	private void assertContents(String expected, File outFile) throws Exception {
++		BufferedReader reader = new BufferedReader(new FileReader(outFile));
++		assertThat(reader.readLine()).isEqualTo(expected);
++		reader.close();
++	}
++
++	private static SessionFactory createMockSessionFactory(Session session) {
++		SessionFactory sessionFactory = mock(SessionFactory.class);
++		when(sessionFactory.getSession()).thenReturn(session);
++		return sessionFactory;
++	}
++
++	@Test
++	public void testGetTempFileDelete() {
++		@SuppressWarnings("unchecked")
++		SessionFactory<TestLsEntry> sessionFactory = mock(SessionFactory.class);
++		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
++		gw.setLocalDirectory(new File(this.tmpDir));
++		gw.afterPropertiesSet();
++		new File(this.tmpDir + "/f1").delete();
+ 		when(sessionFactory.getSession()).thenReturn(new TestSession() {
+ 
+ 			@Override
+@@ -665,67 +725,6 @@
+ 			}
+ 
+ 			@Override
+-			public void read(String source, OutputStream outputStream)
+-					throws IOException {
+-				outputStream.write("testfile".getBytes());
+-			}
+-
+-		});
+-
+-		// default (null)
+-		MessageBuilder<File> out;
+-
+-		assertThatExceptionOfType(MessageHandlingException.class)
+-				.isThrownBy(() -> gw.handleRequestMessage(new GenericMessage<>("f1")))
+-				.withMessageContaining("already exists");
+-
+-		assertThatExceptionOfType(MessageHandlingException.class)
+-				.isThrownBy(() -> gw.handleRequestMessage(
+-						new GenericMessage<>("f1", Map.of("file.exists.mode", FileExistsMode.FAIL))))
+-				.withMessageContaining("already exists");
+-
+-		out = (MessageBuilder<File>) gw.handleRequestMessage(
+-				new GenericMessage<>("f1", Map.of("file.exists.mode", "IGNORE")));
+-		assertThat(out.getPayload()).isEqualTo(outFile);
+-		assertContents("foo", outFile);
+-
+-		out = (MessageBuilder<File>) gw.handleRequestMessage(
+-				new GenericMessage<>("f1", Map.of("file.exists.mode", "append")));
+-		assertThat(out.getPayload()).isEqualTo(outFile);
+-		assertContents("footestfile", outFile);
+-
+-		out = (MessageBuilder<File>) gw.handleRequestMessage(
+-				new GenericMessage<>("f1", Map.of("file.exists.mode", FileExistsMode.REPLACE)));
+-		assertThat(out.getPayload()).isEqualTo(outFile);
+-		assertContents("testfile", outFile);
+-
+-		outFile.delete();
+-	}
+-
+-	private void assertContents(String expected, File outFile) throws Exception {
+-		BufferedReader reader = new BufferedReader(new FileReader(outFile));
+-		assertThat(reader.readLine()).isEqualTo(expected);
+-		reader.close();
+-	}
+-
+-	@Test
+-	public void testGetTempFileDelete() {
+-		@SuppressWarnings("unchecked")
+-		SessionFactory<TestLsEntry> sessionFactory = mock(SessionFactory.class);
+-		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
+-		gw.setLocalDirectory(new File(this.tmpDir));
+-		gw.afterPropertiesSet();
+-		new File(this.tmpDir + "/f1").delete();
+-		when(sessionFactory.getSession()).thenReturn(new TestSession() {
+-
+-			@Override
+-			public TestLsEntry[] list(String path) {
+-				return new TestLsEntry[] {
+-						new TestLsEntry("f1", 1234, false, false, 12345, "-rw-r--r--")
+-				};
+-			}
+-
+-			@Override
+ 			public void read(String source, OutputStream outputStream) {
+ 				throw new RuntimeException("test remove .writing");
+ 			}
+@@ -744,16 +743,10 @@
+ 
+ 	@Test
+ 	public void testGet_P() throws IOException {
+-		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
+-		gw.setLocalDirectory(new File(this.tmpDir));
+-		gw.setOptions("-P");
+-		gw.afterPropertiesSet();
+-		new File(this.tmpDir + "/f1").delete();
+ 		Calendar cal = Calendar.getInstance();
+ 		cal.add(Calendar.MONTH, -1);
+ 		final Date modified = new Date(cal.getTime().getTime() / 1000 * 1000);
+-		when(sessionFactory.getSession()).thenReturn(new TestSession() {
++		SessionFactory sessionFactory = createMockSessionFactory(new TestSession() {
+ 
+ 			@Override
+ 			public TestLsEntry[] list(String path) {
+@@ -769,6 +762,11 @@
+ 			}
+ 
+ 		});
++		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
++		gw.setLocalDirectory(new File(this.tmpDir));
++		gw.setOptions("-P");
++		gw.afterPropertiesSet();
++		new File(this.tmpDir + "/f1").delete();
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<File> out = (MessageBuilder<File>) gw.handleRequestMessage(new GenericMessage<>("x/f1"));
+ 		File outFile = new File(this.tmpDir + "/f1").getCanonicalFile();
+@@ -784,11 +782,7 @@
+ 	public void testGet_create_dir() {
+ 		new File(this.tmpDir + "/x/f1").delete();
+ 		new File(this.tmpDir + "/x").delete();
+-		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
+-		gw.setLocalDirectory(new File(this.tmpDir + "/x"));
+-		gw.afterPropertiesSet();
+-		when(sessionFactory.getSession()).thenReturn(new TestSession() {
++		SessionFactory sessionFactory = createMockSessionFactory(new TestSession() {
+ 
+ 			@Override
+ 			public TestLsEntry[] list(String path) {
+@@ -803,6 +797,9 @@
+ 			}
+ 
+ 		});
++		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "get", "payload");
++		gw.setLocalDirectory(new File(this.tmpDir + "/x"));
++		gw.afterPropertiesSet();
+ 		gw.handleRequestMessage(new GenericMessage<>("f1"));
+ 		File out = new File(this.tmpDir + "/x/f1");
+ 		assertThat(out.exists()).isTrue();

@@ -1,0 +1,50 @@
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
+@@ -159,6 +159,13 @@
+         return rule;
+     }
+ 
++    private static ServiceOfferingVO createMockServiceOffering(int cpu, int ramSize) {
++        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
++        Mockito.when(serviceOffering.getCpu()).thenReturn(cpu);
++        Mockito.when(serviceOffering.getRamSize()).thenReturn(ramSize);
++        return serviceOffering;
++    }
++
+     @Test
+     public void validateIsolatedNetworkIpRulesNoConflictingRules() {
+         long ipId = 1L;
+@@ -331,11 +338,9 @@
+         Map<String, Long> map = new HashMap<>();
+         map.put(WORKER.name(), 1L);
+         map.put(CONTROL.name(), 2L);
+-        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
++        ServiceOfferingVO serviceOffering = createMockServiceOffering(2, 2048);
+         Mockito.when(serviceOfferingDao.findById(1L)).thenReturn(serviceOffering);
+         Mockito.when(serviceOffering.isDynamic()).thenReturn(false);
+-        Mockito.when(serviceOffering.getCpu()).thenReturn(2);
+-        Mockito.when(serviceOffering.getRamSize()).thenReturn(2048);
+         KubernetesSupportedVersion version = Mockito.mock(KubernetesSupportedVersion.class);
+         Mockito.when(version.getMinimumCpu()).thenReturn(2);
+         Mockito.when(version.getMinimumRamSize()).thenReturn(2048);
+@@ -367,16 +372,12 @@
+         int controlOfferingMemory = 2048;
+ 
+         Map<String, Long> map = Map.of(WORKER.name(), workerOfferingId, CONTROL.name(), controlOfferingId);
+-        Map<String, Long> nodeCount = Map.of(WORKER.name(), workerCount, CONTROL.name(), controlCount);
+-
+-        ServiceOfferingVO workerOffering = Mockito.mock(ServiceOfferingVO.class);
++        Map<String, Long> nodeCount = Map.of(WORKER.name(), workerCount, CONTROL.name(), controlOfferingId);
++
++        ServiceOfferingVO workerOffering = createMockServiceOffering(workerOfferingCpus, workerOfferingMemory);
+         Mockito.when(serviceOfferingDao.findById(workerOfferingId)).thenReturn(workerOffering);
+-        ServiceOfferingVO controlOffering = Mockito.mock(ServiceOfferingVO.class);
++        ServiceOfferingVO controlOffering = createMockServiceOffering(controlOfferingCpus, controlOfferingMemory);
+         Mockito.when(serviceOfferingDao.findById(controlOfferingId)).thenReturn(controlOffering);
+-        Mockito.when(workerOffering.getCpu()).thenReturn(workerOfferingCpus);
+-        Mockito.when(workerOffering.getRamSize()).thenReturn(workerOfferingMemory);
+-        Mockito.when(controlOffering.getCpu()).thenReturn(controlOfferingCpus);
+-        Mockito.when(controlOffering.getRamSize()).thenReturn(controlOfferingMemory);
+ 
+         Pair<Long, Long> pair = kubernetesClusterManager.calculateClusterCapacity(map, nodeCount, 1L);
+         Long expectedCpu = (workerOfferingCpus * workerCount) + (controlOfferingCpus * controlCount);

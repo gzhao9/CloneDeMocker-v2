@@ -1,0 +1,49 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
+@@ -147,10 +147,13 @@
+     @Inject
+     VMSnapshotDetailsDao vmSnapshotDetailsDao;
+ 
++    private DataStore mockDataStore;
++
+     @Override
+     @Before
+     public void setUp() throws Exception {
+         ComponentContext.initComponentsLifeCycle();
++        mockDataStore = Mockito.mock(DataStore.class);
+     }
+ 
+     @Test
+@@ -160,7 +163,6 @@
+         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
+         SnapshotInfo snapshotInfo = Mockito.mock(SnapshotInfo.class);
+         SnapshotStrategy strategy = Mockito.mock(SnapshotStrategy.class);
+-        DataStore dataStore = Mockito.mock(DataStore.class);
+         String volUuid = UUID.randomUUID().toString();
+         String vmUuid = UUID.randomUUID().toString();
+         SnapshotVO snapshot = new SnapshotVO(vol.getDataCenterId(), vol.getAccountId(), vol.getDomainId(),
+@@ -170,7 +172,7 @@
+         when(vmSnapshot.getUuid()).thenReturn(vmUuid);
+         when(vol.getUuid()).thenReturn(volUuid);
+         when(_snapshotDao.persist(any())).thenReturn(snapshot);
+-        when(vol.getDataStore()).thenReturn(dataStore);
++        when(vol.getDataStore()).thenReturn(mockDataStore);
+         when(_snapshotDataFactory.getSnapshot(snapshot.getId(), vol.getDataStore())).thenReturn(snapshotInfo);
+         when(_storageStrategyFactory.getSnapshotStrategy(snapshotInfo, SnapshotOperation.TAKE)).thenReturn(strategy);
+ 
+@@ -228,14 +230,13 @@
+         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
+         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
+         Snapshot snap = Mockito.mock(Snapshot.class);
+-        DataStore dataStore = Mockito.mock(DataStore.class);
+ 
+         String volUuid = UUID.randomUUID().toString();
+         String vmUuid = UUID.randomUUID().toString();
+         String name = vmUuid + "_" + volUuid;
+         when(vol.getUuid()).thenReturn(volUuid);
+         when(vmSnapshot.getUuid()).thenReturn(vmUuid);
+-        when(vol.getDataStore()).thenReturn(dataStore);
++        when(vol.getDataStore()).thenReturn(mockDataStore);
+         when(snapshotVO.getId()).thenReturn(1L);
+         when(_snapshotService.revertSnapshot(snapshotVO.getId())).thenReturn(snap);
+         vmStrategy.revertDiskSnapshot(vmSnapshot);

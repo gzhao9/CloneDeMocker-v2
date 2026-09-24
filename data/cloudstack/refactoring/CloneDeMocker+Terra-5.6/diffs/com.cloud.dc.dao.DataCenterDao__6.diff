@@ -1,0 +1,112 @@
+--- a/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
+@@ -668,7 +668,7 @@
+         StoragePoolVO primaryStorage = mockStoragePoolVOForChangeStoragePoolScope(currentScope, status);
+ 
+         Mockito.when(accountMgr.isRootAdmin(Mockito.any())).thenReturn(true);
+-        Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
++        MockDataCenterDao.mockDataCenterDaoFindById(dataCenterDao, 1L, zone);
+         Mockito.when(storagePoolDao.findById(1L)).thenReturn(primaryStorage);
+     }
+ 
+@@ -947,7 +947,7 @@
+         Mockito.when(cluster.getPodId()).thenReturn(3L);
+         Mockito.when(podDao.findById(3L)).thenReturn(pod);
+         Mockito.when(pod.getDataCenterId()).thenReturn(4L);
+-        Mockito.when(dataCenterDao.findById(4L)).thenReturn(zone);
++        MockDataCenterDao.mockDataCenterDaoFindById(dataCenterDao, 4L, zone);
+ 
+         Mockito.when(host.getStorageAccessGroups()).thenReturn("sag1");
+         Mockito.when(cluster.getStorageAccessGroups()).thenReturn("sag2");
+@@ -979,7 +979,7 @@
+         Mockito.when(cluster.getPodId()).thenReturn(3L);
+         Mockito.when(podDao.findById(3L)).thenReturn(pod);
+         Mockito.when(pod.getDataCenterId()).thenReturn(4L);
+-        Mockito.when(dataCenterDao.findById(4L)).thenReturn(zone);
++        MockDataCenterDao.mockDataCenterDaoFindById(dataCenterDao, 4L, zone);
+ 
+         Mockito.when(host.getStorageAccessGroups()).thenReturn("");
+         Mockito.when(cluster.getStorageAccessGroups()).thenReturn("sag2");
+@@ -1437,7 +1437,7 @@
+         List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+ 
+         DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
+-        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
++        MockDataCenterDao.mockDataCenterDaoFindById(dataCenterDao, zoneId, zoneVO);
+         Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group3,group4");
+ 
+         storageManagerImpl.checkIfStorageAccessGroupsExistsOnZone(zoneId, newStorageAccessGroups);
+@@ -1449,7 +1449,7 @@
+         List<String> newStorageAccessGroups = Arrays.asList("group1", "group2", "group3");
+ 
+         DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
+-        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
++        MockDataCenterDao.mockDataCenterDaoFindById(dataCenterDao, zoneId, zoneVO);
+         Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group3,group4");
+ 
+         CloudRuntimeException thrownException = assertThrows(CloudRuntimeException.class, () -> {
+@@ -1474,7 +1474,7 @@
+         Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group5,group6");
+ 
+         Mockito.when(podDao.findById(podId)).thenReturn(podVO);
+-        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
++        MockDataCenterDao.mockDataCenterDaoFindById(dataCenterDao, zoneId, zoneVO);
+ 
+         storageManagerImpl.checkIfStorageAccessGroupsExistsOnPod(podId, newStorageAccessGroups);
+     }
+@@ -1494,7 +1494,7 @@
+         Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group5,group6");
+ 
+         Mockito.when(podDao.findById(podId)).thenReturn(podVO);
+-        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
++        MockDataCenterDao.mockDataCenterDaoFindById(dataCenterDao, zoneId, zoneVO);
+ 
+         CloudRuntimeException thrownException = assertThrows(CloudRuntimeException.class, () -> {
+             storageManagerImpl.checkIfStorageAccessGroupsExistsOnPod(podId, newStorageAccessGroups);
+@@ -1524,7 +1524,7 @@
+ 
+         Mockito.when(clusterDao.findById(clusterId)).thenReturn(clusterVO);
+         Mockito.when(podDao.findById(podId)).thenReturn(podVO);
+-        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
++        MockDataCenterDao.mockDataCenterDaoFindById(dataCenterDao, zoneId, zoneVO);
+ 
+         storageManagerImpl.checkIfStorageAccessGroupsExistsOnCluster(clusterId, newStorageAccessGroups);
+     }
+@@ -1550,7 +1550,7 @@
+ 
+         Mockito.when(clusterDao.findById(clusterId)).thenReturn(clusterVO);
+         Mockito.when(podDao.findById(podId)).thenReturn(podVO);
+-        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
++        MockDataCenterDao.mockDataCenterDaoFindById(dataCenterDao, zoneId, zoneVO);
+ 
+         CloudRuntimeException thrownException = assertThrows(CloudRuntimeException.class, () -> {
+             storageManagerImpl.checkIfStorageAccessGroupsExistsOnCluster(clusterId, newStorageAccessGroups);
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -786,7 +786,7 @@
+         when(volumeDataFactoryMock.getVolume(9L)).thenReturn(volumeToAttach);
+         when(volumeToAttach.getState()).thenReturn(Volume.State.Uploaded);
+         DataCenterVO zoneWithDisabledLocalStorage = Mockito.mock(DataCenterVO.class);
+-        when(_dcDao.findById(anyLong())).thenReturn(zoneWithDisabledLocalStorage);
++        MockDataCenterDao.mockDataCenterDaoFindById(_dcDao, zoneWithDisabledLocalStorage);
+         when(zoneWithDisabledLocalStorage.isLocalStorageEnabled()).thenReturn(true);
+         doReturn(volumeVoMock).when(volumeApiServiceImpl).getVolumeAttachJobResult(Mockito.any(), Mockito.any(), Mockito.any());
+         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+--- a/server/src/test/java/com/cloud/storage/MockDataCenterDao.java
++++ b/server/src/test/java/com/cloud/storage/MockDataCenterDao.java
+@@ -0,0 +1,15 @@
++package com.cloud.storage;
++
++import com.cloud.dc.DataCenterVO;
++import com.cloud.dc.dao.DataCenterDao;
++import org.mockito.Mockito;
++
++public class MockDataCenterDao {
++    public static void mockDataCenterDaoFindById(DataCenterDao dataCenterDao, long dataCenterId, DataCenterVO dataCenter) {
++        Mockito.when(dataCenterDao.findById(dataCenterId)).thenReturn(dataCenter);
++    }
++
++    public static void mockDataCenterDaoFindById(DataCenterDao dataCenterDao, DataCenterVO dataCenter) {
++        Mockito.when(dataCenterDao.findById(Mockito.anyLong())).thenReturn(dataCenter);
++    }
++}

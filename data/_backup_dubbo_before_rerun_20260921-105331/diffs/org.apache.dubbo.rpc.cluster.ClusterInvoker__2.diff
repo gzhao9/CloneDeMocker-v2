@@ -1,0 +1,45 @@
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/DefaultMigrationAddressComparatorTest.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/DefaultMigrationAddressComparatorTest.java
+@@ -40,20 +40,17 @@
+     void test() {
+         DefaultMigrationAddressComparator comparator = new DefaultMigrationAddressComparator();
+ 
+-        ClusterInvoker newInvoker = Mockito.mock(ClusterInvoker.class);
+-        ClusterInvoker oldInvoker = Mockito.mock(ClusterInvoker.class);
+         Directory newDirectory = Mockito.mock(Directory.class);
+         Directory oldDirectory = Mockito.mock(Directory.class);
+         MigrationRule rule = Mockito.mock(MigrationRule.class);
+         URL url = Mockito.mock(URL.class);
+ 
+         Mockito.when(url.getDisplayServiceKey()).thenReturn("test");
++        ClusterInvoker newInvoker = createMockOldInvoker(url);
+         Mockito.when(newInvoker.getDirectory()).thenReturn(newDirectory);
++        ClusterInvoker oldInvoker = createMockOldInvoker(url);
+         Mockito.when(oldInvoker.getDirectory()).thenReturn(oldDirectory);
+-        Mockito.when(newInvoker.getUrl()).thenReturn(url);
+-        Mockito.when(oldInvoker.getUrl()).thenReturn(url);
+ 
+-        Mockito.when(newInvoker.hasProxyInvokers()).thenReturn(false);
+         Mockito.when(newDirectory.getAllInvokers()).thenReturn(Collections.emptyList());
+ 
+         Assertions.assertFalse(comparator.shouldMigrate(newInvoker, oldInvoker, rule));
+@@ -61,7 +58,6 @@
+         Assertions.assertEquals(0, comparator.getAddressSize("test").get(OLD_ADDRESS_SIZE));
+ 
+         Mockito.when(newInvoker.hasProxyInvokers()).thenReturn(true);
+-        Mockito.when(oldInvoker.hasProxyInvokers()).thenReturn(false);
+         Mockito.when(oldDirectory.getAllInvokers()).thenReturn(Collections.emptyList());
+ 
+         Assertions.assertTrue(comparator.shouldMigrate(newInvoker, oldInvoker, rule));
+@@ -97,4 +93,11 @@
+         Assertions.assertEquals(0, comparator.getAddressSize("test").get(NEW_ADDRESS_SIZE));
+         Assertions.assertEquals(2, comparator.getAddressSize("test").get(OLD_ADDRESS_SIZE));
+     }
++
++    private static ClusterInvoker createMockOldInvoker(URL url) {
++        ClusterInvoker oldInvoker = Mockito.mock(ClusterInvoker.class);
++        Mockito.when(oldInvoker.getUrl()).thenReturn(url);
++        Mockito.when(oldInvoker.hasProxyInvokers()).thenReturn(false);
++        return oldInvoker;
++    }
+ }

@@ -1,0 +1,45 @@
+--- a/plugins/database/quota/src/test/java/org/apache/cloudstack/api/response/QuotaResponseBuilderImplTest.java
++++ b/plugins/database/quota/src/test/java/org/apache/cloudstack/api/response/QuotaResponseBuilderImplTest.java
+@@ -1251,13 +1251,12 @@
+ 
+     @Test
+     public void persistQuotaCreditsTestCallsSetMinBalanceWhenProvided() {
+-        QuotaCreditsCmd cmd = Mockito.mock(QuotaCreditsCmd.class);
+         Long accountId = 1L;
+         Double value = 100.0;
+         Date depositedOn = new Date();
+         AccountVO account = Mockito.mock(AccountVO.class);
+ 
+-        Mockito.when(cmd.getMinBalance()).thenReturn(50.0);
++        QuotaCreditsCmd cmd = createMockQuotaCreditsCmd();
+         Mockito.doReturn(accountId).when(account).getId();
+         Mockito.when(quotaCreditsDaoMock.saveCredits(Mockito.any(QuotaCreditsVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+ 
+@@ -1268,7 +1267,7 @@
+ 
+     @Test
+     public void persistQuotaCreditsTestLocksOrUnlocksAccountWhenEnforcementIsEnabledGlobally() {
+-        QuotaCreditsCmd cmd = Mockito.mock(QuotaCreditsCmd.class);
++        QuotaCreditsCmd cmd = createMockQuotaCreditsCmd();
+         Long accountId = 1L;
+         Long domainId = 2L;
+         Double value = 100.0;
+@@ -1278,7 +1277,6 @@
+ 
+         Mockito.doReturn(accountId).when(account).getId();
+         Mockito.doReturn(domainId).when(account).getDomainId();
+-        Mockito.when(cmd.getMinBalance()).thenReturn(50.0);
+         Mockito.when(quotaCreditsDaoMock.saveCredits(Mockito.any(QuotaCreditsVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
+         Mockito.when(quotaBalanceDaoMock.getLastQuotaBalance(accountId, domainId)).thenReturn(currentBalance);
+ 
+@@ -1368,4 +1366,10 @@
+         Assert.assertEquals(record2.getStartDate(), secondHistory.getStartDate());
+         Assert.assertEquals(record2.getEndDate(), secondHistory.getEndDate());
+     }
++
++    private static QuotaCreditsCmd createMockQuotaCreditsCmd() {
++        QuotaCreditsCmd cmd = Mockito.mock(QuotaCreditsCmd.class);
++        Mockito.when(cmd.getMinBalance()).thenReturn(50.0);
++        return cmd;
++    }
+ }

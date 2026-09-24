@@ -1,0 +1,47 @@
+--- a/spring-integration-mail/src/test/java/org/springframework/integration/mail/inbound/ImapMailReceiverTests.java
++++ b/spring-integration-mail/src/test/java/org/springframework/integration/mail/inbound/ImapMailReceiverTests.java
+@@ -548,9 +548,7 @@
+ 
+ 		Field storeField = AbstractMailReceiver.class.getDeclaredField("store");
+ 		storeField.setAccessible(true);
+-		Store store = mock(Store.class);
+-		given(store.isConnected()).willReturn(true);
+-		given(store.getFolder(Mockito.any(URLName.class))).willReturn(folder);
++		Store store = createMockStore(true, folder);
+ 		storeField.set(receiver, store);
+ 		receiver.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+ 		receiver.afterPropertiesSet();
+@@ -614,9 +612,7 @@
+ 
+ 		Field storeField = AbstractMailReceiver.class.getDeclaredField("store");
+ 		storeField.setAccessible(true);
+-		Store store = mock(Store.class);
+-		given(store.isConnected()).willReturn(true);
+-		given(store.getFolder(Mockito.any(URLName.class))).willReturn(folder);
++		Store store = createMockStore(true, folder);
+ 		storeField.set(receiver, store);
+ 		receiver.setBeanFactory(TEST_INTEGRATION_CONTEXT);
+ 		receiver.afterPropertiesSet();
+@@ -829,9 +825,7 @@
+ 		given(folder.hasNewMessages()).willReturn(true);
+ 		Field storeField = AbstractMailReceiver.class.getDeclaredField("store");
+ 		storeField.setAccessible(true);
+-		Store store = mock(Store.class);
+-		given(store.isConnected()).willReturn(false);
+-		given(store.getFolder(Mockito.any(URLName.class))).willReturn(folder);
++		Store store = createMockStore(false, folder);
+ 		storeField.set(receiver, store);
+ 
+ 		ImapIdleChannelAdapter adapter = new ImapIdleChannelAdapter(receiver);
+@@ -1043,4 +1037,11 @@
+ 
+ 	}
+ 
++
++	private static Store createMockStore(boolean connected, Folder folder) {
++		Store store = mock(Store.class);
++		given(store.isConnected()).willReturn(connected);
++		given(store.getFolder(Mockito.any(URLName.class))).willReturn(folder);
++		return store;
++	}
+ }

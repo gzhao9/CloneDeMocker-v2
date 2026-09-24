@@ -1,0 +1,106 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -894,8 +894,8 @@
+         PolicyEntriesType policyEntriesType = mock(PolicyEntriesType.class);
+         PolicyRuleType policyRuleType = mock(PolicyRuleType.class);
+         ActionListType actionListType = mock(ActionListType.class);
+-        AddressType addressType = mock(AddressType.class);
+         SubnetType subnetType = mock(SubnetType.class);
++        AddressType addressType = createMockAddressType(subnetType);
+         PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+@@ -909,7 +909,6 @@
+         when(policyRuleType.getActionList()).thenReturn(actionListType);
+         when(actionListType.getSimpleAction()).thenReturn("pass");
+         when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
+-        when(addressType.getSubnet()).thenReturn(subnetType);
+         when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
+         when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
+         when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
+@@ -1001,8 +1000,36 @@
+         PolicyEntriesType policyEntriesType = mock(PolicyEntriesType.class);
+         PolicyRuleType policyRuleType = mock(PolicyRuleType.class);
+         ActionListType actionListType = mock(ActionListType.class);
+-        AddressType addressType = mock(AddressType.class);
+         SubnetType subnetType = mock(SubnetType.class);
++        PortType portType = mock(PortType.class);
++        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
++
++        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenPolicyRuleCommand.class), anyLong())).thenReturn(listTungstenPolicyRuleAnswer);
++        doReturn(networkPolicy).when(listTungstenPolicyRuleAnswer).getApiObjectBase();
++        when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
++        when(policyEntriesType.getPolicyRule()).thenReturn(List.of(policyRuleType));
++        when(policyRuleType.getRuleUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
++        when(policyRuleType.getActionList()).thenReturn(actionListType);
++        when(actionListType.getSimpleAction()).thenReturn("pass");
++        AddressType addressType = createMockAddressType(subnetType);
++        when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
++        when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
++        when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
++        when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
++
++        assertNotNull(tungstenService.listTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
++    }
++
++    @Test
++    public void listTungstenPolicyRuleWithAllRuleTest() {
++        TungstenAnswer listTungstenPolicyRuleAnswer = MockTungstenAnswerFactory.get(true);
++        NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
++        PolicyEntriesType policyEntriesType = mock(PolicyEntriesType.class);
++        PolicyRuleType policyRuleType = mock(PolicyRuleType.class);
++        ActionListType actionListType = mock(ActionListType.class);
++        SubnetType subnetType = mock(SubnetType.class);
++        AddressType addressType = createMockAddressType(subnetType);
+         PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+@@ -1015,36 +1042,6 @@
+         when(policyRuleType.getActionList()).thenReturn(actionListType);
+         when(actionListType.getSimpleAction()).thenReturn("pass");
+         when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
+-        when(addressType.getSubnet()).thenReturn(subnetType);
+-        when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
+-        when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
+-        when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
+-
+-        assertNotNull(tungstenService.listTungstenPolicyRule(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
+-    }
+-
+-    @Test
+-    public void listTungstenPolicyRuleWithAllRuleTest() {
+-        TungstenAnswer listTungstenPolicyRuleAnswer = MockTungstenAnswerFactory.get(true);
+-        NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+-        PolicyEntriesType policyEntriesType = mock(PolicyEntriesType.class);
+-        PolicyRuleType policyRuleType = mock(PolicyRuleType.class);
+-        ActionListType actionListType = mock(ActionListType.class);
+-        AddressType addressType = mock(AddressType.class);
+-        SubnetType subnetType = mock(SubnetType.class);
+-        PortType portType = mock(PortType.class);
+-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+-
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenPolicyRuleCommand.class), anyLong())).thenReturn(listTungstenPolicyRuleAnswer);
+-        doReturn(networkPolicy).when(listTungstenPolicyRuleAnswer).getApiObjectBase();
+-        when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
+-        when(policyEntriesType.getPolicyRule()).thenReturn(List.of(policyRuleType));
+-        when(policyRuleType.getRuleUuid()).thenReturn("8b4637b6-5629-46de-8fb2-d0b0502bfa85");
+-        when(policyRuleType.getActionList()).thenReturn(actionListType);
+-        when(actionListType.getSimpleAction()).thenReturn("pass");
+-        when(policyRuleType.getSrcAddresses()).thenReturn(List.of(addressType));
+-        when(addressType.getSubnet()).thenReturn(subnetType);
+         when(policyRuleType.getSrcPorts()).thenReturn(List.of(portType));
+         when(policyRuleType.getDstAddresses()).thenReturn(List.of(addressType));
+         when(policyRuleType.getDstPorts()).thenReturn(List.of(portType));
+@@ -1668,4 +1665,10 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    private static AddressType createMockAddressType(SubnetType subnetType) {
++        AddressType addressType = mock(AddressType.class);
++        when(addressType.getSubnet()).thenReturn(subnetType);
++        return addressType;
++    }
+ }

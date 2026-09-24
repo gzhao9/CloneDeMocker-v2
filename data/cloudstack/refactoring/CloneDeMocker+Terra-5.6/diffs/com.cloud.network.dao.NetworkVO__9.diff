@@ -1,0 +1,37 @@
+--- a/server/src/test/java/org/apache/cloudstack/storage/template/VnfTemplateManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/storage/template/VnfTemplateManagerImplTest.java
+@@ -269,10 +269,8 @@
+         when(nic3.getDeviceId()).thenReturn(2);
+         Mockito.doReturn(Arrays.asList(nic1, nic2, nic3)).when(nicDao).listByVmId(vmId);
+ 
+-        NetworkVO network = Mockito.mock(NetworkVO.class);
+-        when(network.getId()).thenReturn(networkId);
++        NetworkVO network = createMockNetwork();
+         when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
+-        when(network.getVpcId()).thenReturn(null);
+         Mockito.doReturn(network).when(networkDao).findById(networkId);
+         when(networkModel.areServicesSupportedInNetwork(networkId, Network.Service.StaticNat)).thenReturn(true);
+         when(networkModel.areServicesSupportedInNetwork(networkId, Network.Service.Firewall)).thenReturn(true);
+@@ -355,9 +353,7 @@
+         DeployVnfApplianceCmd cmd = Mockito.mock(DeployVnfApplianceCmd.class);
+ 
+         Map<Network, String> networkAndIpMap = new HashMap<>();
+-        NetworkVO network = Mockito.mock(NetworkVO.class);
+-        when(network.getId()).thenReturn(networkId);
+-        when(network.getVpcId()).thenReturn(null);
++        NetworkVO network = createMockNetwork();
+         networkAndIpMap.put(network, ipAddress);
+         Mockito.doReturn(networkAndIpMap).when(vnfTemplateManagerImpl).getManagementNetworkAndIp(template, vm);
+ 
+@@ -386,4 +382,11 @@
+         Mockito.verify(firewallRulesDao, Mockito.times(3)).persist(any());
+         Mockito.verify(firewallService, Mockito.times(1)).applyIngressFwRules(publicIpId, owner);
+     }
++
++    private static NetworkVO createMockNetwork() {
++        NetworkVO network = Mockito.mock(NetworkVO.class);
++        when(network.getId()).thenReturn(networkId);
++        when(network.getVpcId()).thenReturn(null);
++        return network;
++    }
+ }

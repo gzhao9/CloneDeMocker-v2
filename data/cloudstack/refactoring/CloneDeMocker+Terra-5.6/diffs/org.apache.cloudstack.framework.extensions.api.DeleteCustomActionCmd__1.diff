@@ -1,0 +1,43 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -1511,8 +1511,7 @@
+     @Test
+     public void deleteCustomAction_RemovesActionAndDetails_ReturnsTrue() {
+         long actionId = 10L;
+-        DeleteCustomActionCmd cmd = mock(DeleteCustomActionCmd.class);
+-        when(cmd.getId()).thenReturn(actionId);
++        DeleteCustomActionCmd cmd = createMockDeleteCustomActionCmd(actionId);
+ 
+         ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+         when(extensionCustomActionDao.findById(actionId)).thenReturn(actionVO);
+@@ -1528,8 +1527,7 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void deleteCustomAction_ActionNotFound() {
+         long actionId = 20L;
+-        DeleteCustomActionCmd cmd = mock(DeleteCustomActionCmd.class);
+-        when(cmd.getId()).thenReturn(actionId);
++        DeleteCustomActionCmd cmd = createMockDeleteCustomActionCmd(actionId);
+         when(extensionCustomActionDao.findById(actionId)).thenReturn(null);
+         extensionsManager.deleteCustomAction(cmd);
+         verify(extensionCustomActionDetailsDao, never()).removeDetails(anyLong());
+@@ -1539,8 +1537,7 @@
+     @Test(expected = CloudRuntimeException.class)
+     public void deleteCustomAction_RemoveFails() {
+         long actionId = 30L;
+-        DeleteCustomActionCmd cmd = mock(DeleteCustomActionCmd.class);
+-        when(cmd.getId()).thenReturn(actionId);
++        DeleteCustomActionCmd cmd = createMockDeleteCustomActionCmd(actionId);
+         ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+         when(extensionCustomActionDao.findById(actionId)).thenReturn(actionVO);
+         when(extensionCustomActionDao.remove(actionId)).thenReturn(false);
+@@ -3062,4 +3059,10 @@
+         assertTrue(resp.getResult().get(ApiConstants.DETAILS).contains("Action failed"));
+     }
+ 
++    private static DeleteCustomActionCmd createMockDeleteCustomActionCmd(long actionId) {
++        DeleteCustomActionCmd cmd = mock(DeleteCustomActionCmd.class);
++        when(cmd.getId()).thenReturn(actionId);
++        return cmd;
++    }
++
+ }

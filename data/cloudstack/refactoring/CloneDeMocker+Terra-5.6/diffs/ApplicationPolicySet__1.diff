@@ -1,0 +1,72 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
+@@ -189,6 +189,8 @@
+ 
+     AutoCloseable closeable;
+ 
++    private ApplicationPolicySet applicationPolicySetMock;
++
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
+@@ -196,6 +198,7 @@
+         tungstenResource.tungstenApi = tungstenApi;
+         ReflectionTestUtils.setField(tungstenResource, "vrouterPort", "9091");
+         tungstenVRouterApiMocked = Mockito.mockStatic(TungstenVRouterApi.class);
++        applicationPolicySetMock = mock(ApplicationPolicySet.class);
+ 
+         Project project = mock(Project.class);
+         when(project.getUuid()).thenReturn("065eab99-b819-4f3f-8e97-99c2ab22e6ed");
+@@ -1118,9 +1121,8 @@
+         NetworkPolicy networkPolicy1 = mock(NetworkPolicy.class);
+         NetworkPolicy networkPolicy2 = mock(NetworkPolicy.class);
+         Answer<List<ApiObjectBase>> networkPoliciesAnswer = setupApiObjectBaseListAnswer(networkPolicy1, networkPolicy2);
+-        ApplicationPolicySet applicationPolicySet1 = mock(ApplicationPolicySet.class);
+         ApplicationPolicySet applicationPolicySet2 = mock(ApplicationPolicySet.class);
+-        Answer<List<ApiObjectBase>> applicationPoliciesAnswer = setupApiObjectBaseListAnswer(applicationPolicySet1, applicationPolicySet2);
++        Answer<List<ApiObjectBase>> applicationPoliciesAnswer = setupApiObjectBaseListAnswer(applicationPolicySetMock, applicationPolicySet2);
+         when(tungstenApi.applyTungstenPolicyTag(anyString(), anyString())).thenReturn(true);
+         when(tungstenApi.getTungstenObject(eq(Tag.class), anyString())).thenReturn(tag);
+         when(tungstenApi.getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList())).thenAnswer(virtualNetworksAnswer);
+@@ -1169,9 +1171,8 @@
+         NetworkPolicy networkPolicy1 = mock(NetworkPolicy.class);
+         NetworkPolicy networkPolicy2 = mock(NetworkPolicy.class);
+         Answer<List<ApiObjectBase>> networkPoliciesAnswer = setupApiObjectBaseListAnswer(networkPolicy1, networkPolicy2);
+-        ApplicationPolicySet applicationPolicySet1 = mock(ApplicationPolicySet.class);
+         ApplicationPolicySet applicationPolicySet2 = mock(ApplicationPolicySet.class);
+-        Answer<List<ApiObjectBase>> applicationPoliciesAnswer = setupApiObjectBaseListAnswer(applicationPolicySet1, applicationPolicySet2);
++        Answer<List<ApiObjectBase>> applicationPoliciesAnswer = setupApiObjectBaseListAnswer(applicationPolicySetMock, applicationPolicySet2);
+         when(tungstenApi.removeTungstenTag(anyList(), anyList(), anyList(), anyString(), anyString(), anyString())).thenReturn(tag);
+         when(tungstenApi.getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList())).thenAnswer(virtualNetworksAnswer);
+         when(tungstenApi.getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList())).thenAnswer(virtualMachinesAnswer);
+@@ -1186,8 +1187,7 @@
+     @Test
+     public void executeRequestCreateTungstenApplicationPolicySetCommandTest() {
+         TungstenCommand command = new CreateTungstenApplicationPolicySetCommand("appPolicySetName");
+-        ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
+-        when(tungstenApi.createTungstenApplicationPolicySet(anyString(), anyString())).thenReturn(applicationPolicySet);
++        when(tungstenApi.createTungstenApplicationPolicySet(anyString(), anyString())).thenReturn(applicationPolicySetMock);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+         assertNotNull(answer.getApiObjectBase());
+@@ -1241,9 +1241,8 @@
+     @Test
+     public void executeRequestListTungstenApplicationPolicySetCommandTest() {
+         TungstenCommand command = new ListTungstenApplicationPolicySetCommand("d64e6082-10b3-11ec-82a8-0242ac130003");
+-        ApplicationPolicySet applicationPolicySet1 = mock(ApplicationPolicySet.class);
+         ApplicationPolicySet applicationPolicySet2 = mock(ApplicationPolicySet.class);
+-        Answer<List<ApiObjectBase>> applicationPolicySetsAnswer = setupApiObjectBaseListAnswer(applicationPolicySet1, applicationPolicySet2);
++        Answer<List<ApiObjectBase>> applicationPolicySetsAnswer = setupApiObjectBaseListAnswer(applicationPolicySetMock, applicationPolicySet2);
+         when(tungstenApi.listTungstenApplicationPolicySet(anyString())).thenAnswer(applicationPolicySetsAnswer);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+@@ -1303,8 +1302,7 @@
+     @Test
+     public void executeRequestDeleteTungstenApplicationPolicySetCommandTest() {
+         TungstenCommand command = new DeleteTungstenApplicationPolicySetCommand("0b27c38c-10b6-11ec-82a8-0242ac130003");
+-        ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
+-        when(tungstenApi.getTungstenObject(eq(ApplicationPolicySet.class), anyString())).thenReturn(applicationPolicySet);
++        when(tungstenApi.getTungstenObject(eq(ApplicationPolicySet.class), anyString())).thenReturn(applicationPolicySetMock);
+         when(tungstenApi.deleteTungstenObject(any(ApplicationPolicySet.class))).thenReturn(true);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());

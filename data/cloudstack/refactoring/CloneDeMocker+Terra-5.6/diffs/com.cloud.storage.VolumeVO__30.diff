@@ -1,0 +1,49 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -1829,7 +1829,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidationsForCheckVolumeAPIWithRunningVM() {
+-        VolumeVO volume = mock(VolumeVO.class);
++        VolumeVO volume = createMockVolume();
+ 
+         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
+         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+@@ -1837,7 +1837,6 @@
+ 
+         lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+ 
+-        when(volume.getInstanceId()).thenReturn(1L);
+         UserVmVO vm = mock(UserVmVO.class);
+         when(userVmDaoMock.findById(1L)).thenReturn(vm);
+         when(vm.getState()).thenReturn(State.Running);
+@@ -1847,7 +1846,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidationsForCheckVolumeAPIWithNonexistedVM() {
+-        VolumeVO volume = mock(VolumeVO.class);
++        VolumeVO volume = createMockVolume();
+ 
+         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
+         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+@@ -1855,7 +1854,6 @@
+ 
+         lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+ 
+-        when(volume.getInstanceId()).thenReturn(1L);
+         when(userVmDaoMock.findById(1L)).thenReturn(null);
+ 
+         volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
+@@ -2715,6 +2713,12 @@
+         }
+     }
+ 
++    private static VolumeVO createMockVolume() {
++        VolumeVO volume = mock(VolumeVO.class);
++        when(volume.getInstanceId()).thenReturn(1L);
++        return volume;
++    }
++
+ // =====================================================================
+ // VMware ROOT-volume resize / offering-change: VM power_state-lag tests
+ //

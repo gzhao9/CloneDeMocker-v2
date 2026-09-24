@@ -1,0 +1,82 @@
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/StorageStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/StorageStrategyTest.java
+@@ -214,9 +214,7 @@
+         svmResponse.setRecords(List.of(svm));
+ 
+         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
+-        Aggregate aggregateDetail = mock(Aggregate.class);
+-        when(aggregateDetail.getName()).thenReturn("aggr1");
+-        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
++        Aggregate aggregateDetail = createMockAggregateDetail();
+         when(aggregateDetail.getState()).thenReturn(Aggregate.StateEnum.ONLINE);
+         when(aggregateDetail.getSpace()).thenReturn(mock(Aggregate.AggregateSpace.class));
+         when(aggregateDetail.getAvailableBlockStorageSpace()).thenReturn(10000000000.0);
+@@ -253,9 +251,7 @@
+         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
+ 
+         // Aggregate is ONLINE but has far less free space than the configured pool size (5GB).
+-        Aggregate aggregateDetail = mock(Aggregate.class);
+-        when(aggregateDetail.getName()).thenReturn("aggr1");
+-        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
++        Aggregate aggregateDetail = createMockAggregateDetail();
+         when(aggregateDetail.getState()).thenReturn(Aggregate.StateEnum.ONLINE);
+         when(aggregateFeignClient.getAggregateByUUID(anyString(), eq("aggr-uuid-1"))).thenReturn(aggregateDetail);
+ 
+@@ -282,9 +278,7 @@
+ 
+         when(svmFeignClient.getSvmResponse(anyMap(), anyString())).thenReturn(svmResponse);
+ 
+-        Aggregate aggregateDetail = mock(Aggregate.class);
+-        when(aggregateDetail.getName()).thenReturn("aggr1");
+-        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
++        Aggregate aggregateDetail = createMockAggregateDetail();
+         when(aggregateDetail.getState()).thenReturn(null); // not online
+         when(aggregateFeignClient.getAggregateByUUID(anyString(), eq("aggr-uuid-1"))).thenReturn(aggregateDetail);
+ 
+@@ -428,9 +422,7 @@
+         storageStrategy.connect();
+ 
+         // Setup aggregate details
+-        Aggregate aggregateDetail = mock(Aggregate.class);
+-        when(aggregateDetail.getName()).thenReturn("aggr1");
+-        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
++        Aggregate aggregateDetail = createMockAggregateDetail();
+         when(aggregateDetail.getState()).thenReturn(Aggregate.StateEnum.ONLINE);
+         when(aggregateDetail.getSpace()).thenReturn(mock(Aggregate.AggregateSpace.class)); // Mock non-null space
+         when(aggregateDetail.getAvailableBlockStorageSpace()).thenReturn(10000000000.0);
+@@ -515,9 +507,7 @@
+         setupSuccessfulConnect();
+         storageStrategy.connect();
+ 
+-        Aggregate aggregateDetail = mock(Aggregate.class);
+-        when(aggregateDetail.getName()).thenReturn("aggr1");
+-        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
++        Aggregate aggregateDetail = createMockAggregateDetail();
+         when(aggregateDetail.getState()).thenReturn(null); // null state to simulate offline
+ 
+         when(aggregateFeignClient.getAggregateByUUID(anyString(), eq("aggr-uuid-1")))
+@@ -535,9 +525,7 @@
+         setupSuccessfulConnect();
+         storageStrategy.connect();
+ 
+-        Aggregate aggregateDetail = mock(Aggregate.class);
+-        when(aggregateDetail.getName()).thenReturn("aggr1");
+-        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
++        Aggregate aggregateDetail = createMockAggregateDetail();
+         when(aggregateDetail.getState()).thenReturn(Aggregate.StateEnum.ONLINE);
+         when(aggregateDetail.getAvailableBlockStorageSpace()).thenReturn(1000000.0); // Only 1MB available
+ 
+@@ -837,6 +825,13 @@
+ 
+     // ========== Helper Methods ==========
+ 
++    private static Aggregate createMockAggregateDetail() {
++        Aggregate aggregateDetail = mock(Aggregate.class);
++        when(aggregateDetail.getName()).thenReturn("aggr1");
++        when(aggregateDetail.getUuid()).thenReturn("aggr-uuid-1");
++        return aggregateDetail;
++    }
++
+     private void setupSuccessfulConnect() {
+         Svm svm = new Svm();
+         svm.setName("svm1");

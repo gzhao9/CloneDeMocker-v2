@@ -1,0 +1,118 @@
+--- a/core/src/test/java/org/springframework/security/core/context/ListeningSecurityContextHolderStrategyTests.java
++++ b/core/src/test/java/org/springframework/security/core/context/ListeningSecurityContextHolderStrategyTests.java
+@@ -18,6 +18,7 @@
+ 
+ import java.util.function.Supplier;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.ArgumentCaptor;
+ 
+@@ -36,44 +37,48 @@
+ 
+ public class ListeningSecurityContextHolderStrategyTests {
+ 
++	private SecurityContextChangedListener securityContextChangedListener;
++
++	@BeforeEach
++	public void setUp() {
++		this.securityContextChangedListener = mock(SecurityContextChangedListener.class);
++	}
++
+ 	@Test
+ 	public void setContextWhenInvokedThenListenersAreNotified() {
+ 		SecurityContextHolderStrategy delegate = spy(new MockSecurityContextHolderStrategy());
+-		SecurityContextChangedListener one = mock(SecurityContextChangedListener.class);
+ 		SecurityContextChangedListener two = mock(SecurityContextChangedListener.class);
+-		SecurityContextHolderStrategy strategy = new ListeningSecurityContextHolderStrategy(delegate, one, two);
++		SecurityContextHolderStrategy strategy = new ListeningSecurityContextHolderStrategy(delegate, securityContextChangedListener, two);
+ 		given(delegate.createEmptyContext()).willReturn(new SecurityContextImpl());
+ 		SecurityContext context = strategy.createEmptyContext();
+ 		strategy.setContext(context);
+ 		strategy.getContext();
+-		verify(one).securityContextChanged(any());
++		verify(securityContextChangedListener).securityContextChanged(any());
+ 		verify(two).securityContextChanged(any());
+ 	}
+ 
+ 	@Test
+ 	public void setContextWhenNoChangeToContextThenListenersAreNotNotified() {
+ 		SecurityContextHolderStrategy delegate = mock(SecurityContextHolderStrategy.class);
+-		SecurityContextChangedListener listener = mock(SecurityContextChangedListener.class);
+-		SecurityContextHolderStrategy strategy = new ListeningSecurityContextHolderStrategy(delegate, listener);
++		SecurityContextHolderStrategy strategy = new ListeningSecurityContextHolderStrategy(delegate, securityContextChangedListener);
+ 		SecurityContext context = new SecurityContextImpl();
+ 		given(delegate.getContext()).willReturn(context);
+ 		strategy.setContext(strategy.getContext());
+ 		strategy.getContext();
+-		verifyNoInteractions(listener);
++		verifyNoInteractions(securityContextChangedListener);
+ 	}
+ 
+ 	@Test
+ 	public void clearContextWhenNoGetContextThenContextIsNotRead() {
+ 		SecurityContextHolderStrategy delegate = mock(SecurityContextHolderStrategy.class);
+-		SecurityContextChangedListener listener = mock(SecurityContextChangedListener.class);
+-		SecurityContextHolderStrategy strategy = new ListeningSecurityContextHolderStrategy(delegate, listener);
++		SecurityContextHolderStrategy strategy = new ListeningSecurityContextHolderStrategy(delegate, securityContextChangedListener);
+ 		Supplier<SecurityContext> context = mock(Supplier.class);
+ 		ArgumentCaptor<SecurityContextChangedEvent> event = ArgumentCaptor.forClass(SecurityContextChangedEvent.class);
+ 		given(delegate.getDeferredContext()).willReturn(context);
+ 		given(delegate.getContext()).willAnswer((invocation) -> context.get());
+ 		strategy.clearContext();
+ 		verifyNoInteractions(context);
+-		verify(listener).securityContextChanged(event.capture());
++		verify(securityContextChangedListener).securityContextChanged(event.capture());
+ 		assertThat(event.getValue().isCleared()).isTrue();
+ 		strategy.getContext();
+ 		verify(context).get();
+@@ -84,38 +89,36 @@
+ 	@Test
+ 	public void getContextWhenCalledMultipleTimesThenEventPublishedOnce() {
+ 		SecurityContextHolderStrategy delegate = new MockSecurityContextHolderStrategy();
+-		SecurityContextChangedListener listener = mock(SecurityContextChangedListener.class);
+-		SecurityContextHolderStrategy strategy = new ListeningSecurityContextHolderStrategy(delegate, listener);
++		SecurityContextHolderStrategy strategy = new ListeningSecurityContextHolderStrategy(delegate, securityContextChangedListener);
+ 		strategy.setContext(new SecurityContextImpl());
+-		verifyNoInteractions(listener);
++		verifyNoInteractions(securityContextChangedListener);
+ 		strategy.getContext();
+-		verify(listener).securityContextChanged(any());
++		verify(securityContextChangedListener).securityContextChanged(any());
+ 		strategy.getContext();
+-		verifyNoMoreInteractions(listener);
++		verifyNoMoreInteractions(securityContextChangedListener);
+ 	}
+ 
+ 	@Test
+ 	public void setContextWhenCalledMultipleTimesThenPublishedEventsAlign() {
+ 		SecurityContextHolderStrategy delegate = new MockSecurityContextHolderStrategy();
+-		SecurityContextChangedListener listener = mock(SecurityContextChangedListener.class);
+-		SecurityContextHolderStrategy strategy = new ListeningSecurityContextHolderStrategy(delegate, listener);
++		SecurityContextHolderStrategy strategy = new ListeningSecurityContextHolderStrategy(delegate, securityContextChangedListener);
+ 		SecurityContext one = new SecurityContextImpl(new TestingAuthenticationToken("user", "pass"));
+ 		SecurityContext two = new SecurityContextImpl(new TestingAuthenticationToken("admin", "pass"));
+ 		ArgumentCaptor<SecurityContextChangedEvent> event = ArgumentCaptor.forClass(SecurityContextChangedEvent.class);
+ 		strategy.setContext(one);
+ 		strategy.setContext(two);
+-		verifyNoInteractions(listener);
++		verifyNoInteractions(securityContextChangedListener);
+ 		strategy.getContext();
+-		verify(listener).securityContextChanged(event.capture());
++		verify(securityContextChangedListener).securityContextChanged(event.capture());
+ 		assertThat(event.getValue().getOldContext()).isEqualTo(one);
+ 		assertThat(event.getValue().getNewContext()).isEqualTo(two);
+ 		strategy.getContext();
+-		verifyNoMoreInteractions(listener);
++		verifyNoMoreInteractions(securityContextChangedListener);
+ 		strategy.setContext(one);
+-		verifyNoMoreInteractions(listener);
+-		reset(listener);
++		verifyNoMoreInteractions(securityContextChangedListener);
++		reset(securityContextChangedListener);
+ 		strategy.getContext();
+-		verify(listener).securityContextChanged(event.capture());
++		verify(securityContextChangedListener).securityContextChanged(event.capture());
+ 		assertThat(event.getValue().getOldContext()).isEqualTo(two);
+ 		assertThat(event.getValue().getNewContext()).isEqualTo(one);
+ 	}

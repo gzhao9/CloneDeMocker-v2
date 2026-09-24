@@ -1,0 +1,79 @@
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java
+@@ -91,12 +91,21 @@
+         }
+     }
+ 
++    private static Invoker createMockSecondInvoker(URL url, Invocation invocation) {
++        Invoker secondInvoker = mock(Invoker.class);
++        given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
++        given(secondInvoker.getInterface()).willReturn(MenuService.class);
++        given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
++        given(secondInvoker.isAvailable()).willReturn(true);
++        return secondInvoker;
++    }
++
+     @BeforeEach
+     public void setUp() throws Exception {
+ 
+         directory = mock(Directory.class);
+         firstInvoker = mock(Invoker.class);
+-        secondInvoker = mock(Invoker.class);
++        secondInvoker = createMockSecondInvoker(url, invocation);
+         invocation = mock(RpcInvocation.class);
+     }
+ 
+@@ -195,10 +204,7 @@
+         given(firstInvoker.invoke(invocation)).willReturn(new AppResponse());
+         given(firstInvoker.isAvailable()).willReturn(true);
+ 
+-        given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+-        given(secondInvoker.getInterface()).willReturn(MenuService.class);
+-        given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
+-        given(secondInvoker.isAvailable()).willReturn(true);
++        secondInvoker = createMockSecondInvoker(url, invocation);
+ 
+         given(directory.list(invocation)).willReturn(new ArrayList() {
+ 
+@@ -307,10 +313,6 @@
+         given(firstInvoker.invoke(invocation))
+                 .willThrow(new RpcException(RpcException.NO_INVOKER_AVAILABLE_AFTER_FILTER));
+ 
+-        given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+-        given(secondInvoker.getInterface()).willReturn(MenuService.class);
+-        given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
+-        given(secondInvoker.isAvailable()).willReturn(true);
+         given(secondInvoker.invoke(invocation))
+                 .willThrow(new RpcException(RpcException.NO_INVOKER_AVAILABLE_AFTER_FILTER));
+ 
+@@ -357,16 +359,11 @@
+         given(invocation.getObjectAttachments()).willReturn(new HashMap<>());
+         given(invocation.getInvoker()).willReturn(firstInvoker);
+ 
++        firstInvoker = createMockSecondInvoker(url, invocation);
+         given(firstInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "first"));
+-        given(firstInvoker.getInterface()).willReturn(MenuService.class);
+-        given(firstInvoker.invoke(invocation)).willReturn(new AppResponse());
+-        given(firstInvoker.isAvailable()).willReturn(true);
+         given(firstInvoker.invoke(invocation)).willThrow(new RpcException(RpcException.NETWORK_EXCEPTION));
+ 
+-        given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+-        given(secondInvoker.getInterface()).willReturn(MenuService.class);
+-        given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
+-        given(secondInvoker.isAvailable()).willReturn(true);
++        secondInvoker = createMockSecondInvoker(url, invocation);
+         given(secondInvoker.invoke(invocation)).willThrow(new RpcException(RpcException.NETWORK_EXCEPTION));
+ 
+         given(directory.list(invocation)).willReturn(new ArrayList() {
+@@ -410,10 +407,7 @@
+         given(firstInvoker.invoke(invocation)).willReturn(new AppResponse());
+         given(firstInvoker.isAvailable()).willReturn(true);
+ 
+-        given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+-        given(secondInvoker.getInterface()).willReturn(MenuService.class);
+-        given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
+-        given(secondInvoker.isAvailable()).willReturn(true);
++        secondInvoker = createMockSecondInvoker(url, invocation);
+ 
+         given(directory.list(invocation)).willReturn(new ArrayList() {
+ 

@@ -1,0 +1,50 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
+@@ -151,6 +151,8 @@
+     @Mock
+     AgentManager agentMgr;
+ 
++    private final IPAddressVO ipAddressMock = mock(IPAddressVO.class);
++
+     TungstenGuestNetworkGuru guru;
+ 
+     AutoCloseable closeable;
+@@ -277,7 +279,6 @@
+         final Network network = mock(Network.class);
+         final DeployDestination deployDestination = mock(DeployDestination.class);
+         final ReservationContext reservationContext = mock(ReservationContext.class);
+-        final IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+ 
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(network.getMode()).thenReturn(Networks.Mode.Dhcp);
+@@ -298,7 +299,7 @@
+             anyLong())).thenReturn(new TungstenAnswer(new TungstenCommand(), new LogicalRouter(), true, ""));
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenNatIpCommand.class), anyLong())).thenReturn(
+             new TungstenAnswer(new TungstenCommand(), true, "192.168.1.100"));
+-        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
++        when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressMock);
+         when(tungstenService.allocateDnsIpAddress(any(Network.class), any(), anyString())).thenReturn(true);
+ 
+         final Network implemented = guru.implement(network, offering, deployDestination, reservationContext);
+@@ -400,7 +401,6 @@
+     public void testRelease() {
+         final NicProfile nic = mock(NicProfile.class);
+         final VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+-        final IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         final VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         final HostVO host = mock(HostVO.class);
+ 
+@@ -418,12 +418,11 @@
+     @Test
+     public void testShutdown() {
+         final NetworkProfile profile = mock(NetworkProfile.class);
+-        final IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         final FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
+ 
+         when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(new NetworkVO());
+-        when(ipAddressDao.listByAssociatedNetwork(anyLong(), any())).thenReturn(List.of(ipAddressVO));
++        when(ipAddressDao.listByAssociatedNetwork(anyLong(), any())).thenReturn(List.of(ipAddressMock));
+         when(firewallRulesDao.listByNetworkAndPurpose(anyLong(), any())).thenReturn(List.of(firewallRuleVO));
+ 
+         guru.shutdown(profile, offering);

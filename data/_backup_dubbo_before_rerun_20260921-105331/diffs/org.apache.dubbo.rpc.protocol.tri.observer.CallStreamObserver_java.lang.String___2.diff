@@ -1,0 +1,144 @@
+--- a/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/MutinyServerCallsTest.java
++++ b/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/MutinyServerCallsTest.java
+@@ -27,6 +27,7 @@
+ 
+ import io.smallrye.mutiny.Multi;
+ import io.smallrye.mutiny.Uni;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import static org.junit.jupiter.api.Assertions.assertEquals;
+@@ -42,6 +43,13 @@
+  * Unit test for MutinyServerCalls
+  */
+ public class MutinyServerCallsTest {
++
++    private CallStreamObserver<String> callStreamResponseObserver;
++
++    @BeforeEach
++    void setUp() {
++        callStreamResponseObserver = mock(CallStreamObserver.class);
++    }
+ 
+     @Test
+     void testOneToOne_success() {
+@@ -75,47 +83,44 @@
+ 
+     @Test
+     void testOneToMany_success() throws ExecutionException, InterruptedException {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
+ 
+         // multi results
+         Function<Uni<String>, Multi<String>> func = reqUni -> Multi.createFrom().items("a", "b", "c");
+ 
+-        CompletableFuture<List<String>> future = MutinyServerCalls.oneToMany("req", responseObserver, func);
++        CompletableFuture<List<String>> future = MutinyServerCalls.oneToMany("req", callStreamResponseObserver, func);
+ 
+         List<String> results = future.get();
+ 
+         assertEquals(3, results.size());
+ 
+         // test responseObserver
+-        verify(responseObserver, atLeastOnce()).onNext(any());
+-        verify(responseObserver, times(1)).onCompleted();
+-        verify(responseObserver, never()).onError(any());
++        verify(callStreamResponseObserver, atLeastOnce()).onNext(any());
++        verify(callStreamResponseObserver, times(1)).onCompleted();
++        verify(callStreamResponseObserver, never()).onError(any());
+     }
+ 
+     @Test
+     void testOneToMany_exception() {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
+ 
+         Function<Uni<String>, Multi<String>> func = reqUni -> {
+             throw new RuntimeException("fail");
+         };
+ 
+-        CompletableFuture<List<String>> future = MutinyServerCalls.oneToMany("req", responseObserver, func);
++        CompletableFuture<List<String>> future = MutinyServerCalls.oneToMany("req", callStreamResponseObserver, func);
+ 
+         assertTrue(future.isCompletedExceptionally());
+ 
+-        verify(responseObserver, times(1)).onError(any());
++        verify(callStreamResponseObserver, times(1)).onError(any());
+     }
+ 
+     @Test
+     void testManyToOne_success() throws InterruptedException {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
+ 
+         // return uni
+         Function<Multi<String>, Uni<String>> func =
+                 multi -> multi.collect().asList().onItem().transform(list -> "size:" + list.size());
+ 
+-        StreamObserver<String> requestObserver = MutinyServerCalls.manyToOne(responseObserver, func);
++        StreamObserver<String> requestObserver = MutinyServerCalls.manyToOne(callStreamResponseObserver, func);
+ 
+         // mock onNext/onCompleted
+         requestObserver.onNext("a");
+@@ -125,31 +130,29 @@
+ 
+         Thread.sleep(200);
+ 
+-        verify(responseObserver, times(1)).onNext("size:3");
+-        verify(responseObserver, times(1)).onCompleted();
+-        verify(responseObserver, never()).onError(any());
++        verify(callStreamResponseObserver, times(1)).onNext("size:3");
++        verify(callStreamResponseObserver, times(1)).onCompleted();
++        verify(callStreamResponseObserver, never()).onError(any());
+     }
+ 
+     @Test
+     void testManyToOne_funcThrows() {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
+ 
+         Function<Multi<String>, Uni<String>> func = multi -> {
+             throw new RuntimeException("fail");
+         };
+ 
+-        StreamObserver<String> requestObserver = MutinyServerCalls.manyToOne(responseObserver, func);
++        StreamObserver<String> requestObserver = MutinyServerCalls.manyToOne(callStreamResponseObserver, func);
+ 
+-        verify(responseObserver, times(1)).onError(any());
++        verify(callStreamResponseObserver, times(1)).onError(any());
+     }
+ 
+     @Test
+     void testManyToMany_success() throws InterruptedException {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
+ 
+         Function<Multi<String>, Multi<String>> func = multi -> multi.map(s -> s + "-resp");
+ 
+-        StreamObserver<String> requestObserver = MutinyServerCalls.manyToMany(responseObserver, func);
++        StreamObserver<String> requestObserver = MutinyServerCalls.manyToMany(callStreamResponseObserver, func);
+ 
+         // mock onNext/onCompleted
+         requestObserver.onNext("x");
+@@ -158,21 +161,20 @@
+ 
+         Thread.sleep(200);
+ 
+-        verify(responseObserver, atLeastOnce()).onNext(any());
+-        verify(responseObserver, times(1)).onCompleted();
+-        verify(responseObserver, never()).onError(any());
++        verify(callStreamResponseObserver, atLeastOnce()).onNext(any());
++        verify(callStreamResponseObserver, times(1)).onCompleted();
++        verify(callStreamResponseObserver, never()).onError(any());
+     }
+ 
+     @Test
+     void testManyToMany_funcThrows() {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
+ 
+         Function<Multi<String>, Multi<String>> func = multi -> {
+             throw new RuntimeException("fail");
+         };
+ 
+-        StreamObserver<String> requestObserver = MutinyServerCalls.manyToMany(responseObserver, func);
++        StreamObserver<String> requestObserver = MutinyServerCalls.manyToMany(callStreamResponseObserver, func);
+ 
+-        verify(responseObserver, times(1)).onError(any());
++        verify(callStreamResponseObserver, times(1)).onError(any());
+     }
+ }

@@ -1,0 +1,78 @@
+--- a/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
++++ b/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
+@@ -240,17 +240,16 @@
+ 
+ 	@Test
+ 	public void testMove() throws Exception {
+-		SessionFactory sessionFactory = mock(SessionFactory.class);
++		Session<?> session = mock(Session.class);
++		SessionFactory sessionFactory = createMockSessionFactory(session);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mv", "payload");
+ 		gw.afterPropertiesSet();
+-		Session<?> session = mock(Session.class);
+ 		final AtomicReference<String> args = new AtomicReference<>();
+ 		doAnswer(invocation -> {
+ 			Object[] arguments = invocation.getArguments();
+ 			args.set((String) arguments[0] + arguments[1]);
+ 			return null;
+ 		}).when(session).rename(anyString(), anyString());
+-		when(sessionFactory.getSession()).thenReturn(session);
+ 		Message<String> requestMessage = MessageBuilder.withPayload("foo")
+ 				.setHeader(FileHeaders.RENAME_TO, "bar")
+ 				.build();
+@@ -262,18 +261,17 @@
+ 
+ 	@Test
+ 	public void testMoveWithExpression() throws Exception {
+-		SessionFactory sessionFactory = mock(SessionFactory.class);
++		Session<?> session = mock(Session.class);
++		SessionFactory sessionFactory = createMockSessionFactory(session);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mv", "payload");
+ 		gw.setRenameExpression(PARSER.parseExpression("payload.substring(1)"));
+ 		gw.afterPropertiesSet();
+-		Session<?> session = mock(Session.class);
+ 		final AtomicReference<String> args = new AtomicReference<>();
+ 		doAnswer(invocation -> {
+ 			Object[] arguments = invocation.getArguments();
+ 			args.set((String) arguments[0] + arguments[1]);
+ 			return null;
+ 		}).when(session).rename(anyString(), anyString());
+-		when(sessionFactory.getSession()).thenReturn(session);
+ 		MessageBuilder<?> out = (MessageBuilder<?>) gw.handleRequestMessage(new GenericMessage<>("foo"));
+ 		assertThat(out.getHeaders().get(FileHeaders.RENAME_TO)).isEqualTo("oo");
+ 		assertThat(out.getHeaders().get(FileHeaders.REMOTE_FILE)).isEqualTo("foo");
+@@ -283,11 +281,11 @@
+ 
+ 	@Test
+ 	public void testMoveWithMkDirs() throws Exception {
+-		SessionFactory sessionFactory = mock(SessionFactory.class);
++		Session<?> session = mock(Session.class);
++		SessionFactory sessionFactory = createMockSessionFactory(session);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "mv", "payload");
+ 		gw.setRenameExpression(PARSER.parseExpression("'foo/bar/baz'"));
+ 		gw.afterPropertiesSet();
+-		Session<?> session = mock(Session.class);
+ 		final AtomicReference<String> args = new AtomicReference<>();
+ 		doAnswer(invocation -> {
+ 			Object[] arguments = invocation.getArguments();
+@@ -299,7 +297,6 @@
+ 			madeDirs.add(invocation.getArgument(0));
+ 			return true;
+ 		}).when(session).mkdir(anyString());
+-		when(sessionFactory.getSession()).thenReturn(session);
+ 		Message<String> requestMessage = MessageBuilder.withPayload("foo")
+ 				.setHeader(FileHeaders.RENAME_TO, "bar")
+ 				.build();
+@@ -700,6 +697,12 @@
+ 		assertContents("testfile", outFile);
+ 
+ 		outFile.delete();
++	}
++
++	private static SessionFactory createMockSessionFactory(Session<?> session) {
++		SessionFactory sessionFactory = mock(SessionFactory.class);
++		when(sessionFactory.getSession()).thenReturn(session);
++		return sessionFactory;
+ 	}
+ 
+ 	private void assertContents(String expected, File outFile) throws Exception {

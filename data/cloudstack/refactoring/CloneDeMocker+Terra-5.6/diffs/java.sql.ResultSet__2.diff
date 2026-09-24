@@ -1,0 +1,100 @@
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java
+@@ -96,7 +96,7 @@
+ 
+     @Test
+     public void indexExistsFalseTest() throws Exception {
+-        when(resultSetMock.next()).thenReturn(false);
++        resultSetMock = MockResultSetWithNextResponse.createMockResultSet(false);
+         when(connectionMock.prepareStatement(startsWith("SHOW INDEXES FROM"))).thenReturn(preparedStatementMock);
+         when(preparedStatementMock.executeQuery()).thenReturn(resultSetMock);
+ 
+@@ -112,7 +112,7 @@
+ 
+     @Test
+     public void indexExistsTrueTest() throws Exception {
+-        when(resultSetMock.next()).thenReturn(true);
++        resultSetMock = MockResultSetWithNextResponse.createMockResultSet(true);
+         when(connectionMock.prepareStatement(startsWith("SHOW INDEXES FROM"))).thenReturn(preparedStatementMock);
+         when(preparedStatementMock.executeQuery()).thenReturn(resultSetMock);
+ 
+@@ -514,8 +514,8 @@
+     @Test
+     public void testGetColumnType() throws Exception {
+         when(connectionMock.prepareStatement(contains("DESCRIBE"))).thenReturn(preparedStatementMock);
++        resultSetMock = MockResultSetWithNextResponse.createMockResultSet(true);
+         when(preparedStatementMock.executeQuery()).thenReturn(resultSetMock);
+-        when(resultSetMock.next()).thenReturn(true);
+         when(resultSetMock.getString("Type")).thenReturn("type");
+ 
+         Connection conn = connectionMock;
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java
+@@ -68,8 +68,7 @@
+                 when(txn.prepareAutoCloseStatement(sql)).thenReturn(pstmt);
+ 
+                 PreparedStatement preparedStatement = Mockito.mock(PreparedStatement.class);
+-                ResultSet resultSet = Mockito.mock(ResultSet.class);
+-                Mockito.when(resultSet.next()).thenReturn(false);
++                ResultSet resultSet = MockResultSetWithNextResponse.createMockResultSet(false);
+                 Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
+                 Mockito.when(conn.prepareStatement(anyString())).thenReturn(preparedStatement);
+                 upgrade.performDataMigration(conn);
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java
+@@ -154,9 +154,8 @@
+                 .thenReturn(selectStmt);
+         when(conn.prepareStatement("UPDATE snapshot_policy SET account_id = ?, domain_id = ? WHERE id = ?"))
+                 .thenReturn(updateStmt);
+-        when(selectStmt.executeQuery()).thenReturn(resultSet);
+-
+-        when(resultSet.next()).thenReturn(false);
++        resultSet = MockResultSetWithNextResponse.createMockResultSet(false);
++        when(selectStmt.executeQuery()).thenReturn(resultSet);
+ 
+         upgrade.updateSnapshotPolicyOwnership(conn);
+ 
+@@ -170,9 +169,8 @@
+                 .thenReturn(selectStmt);
+         when(conn.prepareStatement("UPDATE backup_schedule SET account_id = ?, domain_id = ? WHERE id = ?"))
+                 .thenReturn(updateStmt);
+-        when(selectStmt.executeQuery()).thenReturn(resultSet);
+-
+-        when(resultSet.next()).thenReturn(false);
++        resultSet = MockResultSetWithNextResponse.createMockResultSet(false);
++        when(selectStmt.executeQuery()).thenReturn(resultSet);
+ 
+         upgrade.updateBackupScheduleOwnership(conn);
+ 
+@@ -183,8 +181,8 @@
+     @Test
+     public void testPerformDataMigration() throws SQLException {
+         when(conn.prepareStatement(anyString())).thenReturn(selectStmt);
+-        when(selectStmt.executeQuery()).thenReturn(resultSet);
+-        when(resultSet.next()).thenReturn(false);
++        resultSet = MockResultSetWithNextResponse.createMockResultSet(false);
++        when(selectStmt.executeQuery()).thenReturn(resultSet);
+ 
+         upgrade.performDataMigration(conn);
+ 
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/MockResultSetWithNextResponse.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/MockResultSetWithNextResponse.java
+@@ -0,0 +1,18 @@
++package com.cloud.upgrade.dao;
++
++import java.sql.ResultSet;
++import java.sql.SQLException;
++
++import org.mockito.Mockito;
++
++public class MockResultSetWithNextResponse {
++    public static ResultSet createMockResultSet(boolean nextReturn) {
++        ResultSet resultSet = Mockito.mock(ResultSet.class);
++        try {
++            Mockito.when(resultSet.next()).thenReturn(nextReturn);
++        } catch (SQLException e) {
++            throw new RuntimeException(e);
++        }
++        return resultSet;
++    }
++}

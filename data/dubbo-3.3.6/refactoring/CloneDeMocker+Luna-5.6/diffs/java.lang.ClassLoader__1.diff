@@ -1,0 +1,46 @@
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ClassUtilsTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ClassUtilsTest.java
+@@ -16,6 +16,7 @@
+  */
+ package org.apache.dubbo.common.utils;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.Mockito;
+ 
+@@ -27,14 +28,20 @@
+ import static org.mockito.Mockito.verify;
+ 
+ class ClassUtilsTest {
++    private ClassLoader classLoaderMock;
++
++    @BeforeEach
++    void setUp() {
++        classLoaderMock = Mockito.mock(ClassLoader.class);
++    }
++
+     @Test
+     void testForNameWithThreadContextClassLoader() throws Exception {
+         ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+         try {
+-            ClassLoader classLoader = Mockito.mock(ClassLoader.class);
+-            Thread.currentThread().setContextClassLoader(classLoader);
++            Thread.currentThread().setContextClassLoader(classLoaderMock);
+             ClassUtils.forNameWithThreadContextClassLoader("a.b.c.D");
+-            verify(classLoader).loadClass("a.b.c.D");
++            verify(classLoaderMock).loadClass("a.b.c.D");
+         } finally {
+             Thread.currentThread().setContextClassLoader(oldClassLoader);
+         }
+@@ -86,9 +93,8 @@
+ 
+     @Test
+     void testForName3() throws Exception {
+-        ClassLoader classLoader = Mockito.mock(ClassLoader.class);
+-        ClassUtils.forName("a.b.c.D", classLoader);
+-        verify(classLoader).loadClass("a.b.c.D");
++        ClassUtils.forName("a.b.c.D", classLoaderMock);
++        verify(classLoaderMock).loadClass("a.b.c.D");
+     }
+ 
+     @Test

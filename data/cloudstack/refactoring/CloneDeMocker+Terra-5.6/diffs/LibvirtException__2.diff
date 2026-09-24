@@ -1,0 +1,39 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPreMigrationCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPreMigrationCommandWrapperTest.java
+@@ -66,6 +66,9 @@
+     @Mock
+     private LibvirtUtilitiesHelper libvirtUtilitiesHelper;
+ 
++    @Mock
++    private LibvirtException mockLibvirtException;
++
+     private LibvirtPreMigrationCommandWrapper wrapper;
+ 
+     private static final String VM_NAME = "test-vm";
+@@ -185,11 +188,10 @@
+     @Test
+     public void testExecute_DomainFreeFails_StillReturnsSuccess() throws LibvirtException {
+         List<DiskDef> disks = createNonClvmDisks();
+-        LibvirtException libvirtException = Mockito.mock(LibvirtException.class);
+-        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+-        when(connect.domainLookupByName(VM_NAME)).thenReturn(domain);
+-        when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
+-        Mockito.doThrow(libvirtException).when(domain).free();
++        when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
++        when(connect.domainLookupByName(VM_NAME)).thenReturn(domain);
++        when(libvirtComputingResource.getDisks(connect, VM_NAME)).thenReturn(disks);
++        Mockito.doThrow(mockLibvirtException).when(domain).free();
+ 
+         Answer answer = wrapper.execute(preMigrationCommand, libvirtComputingResource);
+ 
+@@ -198,9 +200,8 @@
+ 
+     @Test
+     public void testExecute_NullVmName_ReturnsFailure() throws LibvirtException {
+-        LibvirtException libvirtException = Mockito.mock(LibvirtException.class);
+         when(preMigrationCommand.getVmName()).thenReturn(null);
+-        when(libvirtUtilitiesHelper.getConnectionByVmName(null)).thenThrow(libvirtException);
++        when(libvirtUtilitiesHelper.getConnectionByVmName(null)).thenThrow(mockLibvirtException);
+ 
+         Answer answer = wrapper.execute(preMigrationCommand, libvirtComputingResource);
+ 

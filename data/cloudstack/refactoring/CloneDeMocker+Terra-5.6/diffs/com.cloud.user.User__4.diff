@@ -1,0 +1,33 @@
+--- a/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
+@@ -111,6 +111,8 @@
+     @Mock
+     private User _user;
+     @Mock
++    private User otherUser;
++    @Mock
+     private UserAccountVO userAccountVO;
+ 
+     @Mock
+@@ -596,9 +598,8 @@
+         Mockito.doReturn(1L).when(userVoMock).getId();
+         Mockito.doReturn(apiKeyPairVOMock).when(apiKeyPairDaoMock).getLastApiKeyCreatedByUser(1L);
+ 
+-        User otherUserMock = Mockito.mock(User.class);
+-
+-        Ternary<User, Account, ApiKeyPair> pairUserAccountMock = new Ternary<User, Account, ApiKeyPair>(otherUserMock, Mockito.mock(Account.class), apiKeyPairVOMock);
++
++        Ternary<User, Account, ApiKeyPair> pairUserAccountMock = new Ternary<User, Account, ApiKeyPair>(otherUser, Mockito.mock(Account.class), apiKeyPairVOMock);
+         Mockito.doReturn(pairUserAccountMock).when(accountManagerImpl).findUserByApiKey(apiKey);
+ 
+         accountManagerImpl.validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
+@@ -2128,8 +2129,7 @@
+         Account rootAdminAccount = Mockito.mock(Account.class);
+         Mockito.when(rootAdminAccount.getId()).thenReturn(1L);
+         Mockito.when(accountManagerImpl.isRootAdmin(1L)).thenReturn(true);
+-        User callingUser = Mockito.mock(User.class);
+-        CallContext.register(callingUser, rootAdminAccount);
++        CallContext.register(otherUser, rootAdminAccount);
+ 
+         String newPassword = "newPassword";
+         configureUserMockAuthenticators(newPassword);

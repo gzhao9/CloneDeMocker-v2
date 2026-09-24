@@ -1,0 +1,43 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -194,6 +194,8 @@
+     @Mock
+     private ManagementServerHostDao managementServerHostDao;
+     @Mock
++    private ManagementServerHostVO managementServerHost;
++    @Mock
+     private ClusterManager clusterManager;
+     @Mock
+     private AlertManager alertManager;
+@@ -256,8 +258,7 @@
+         Extension ext = mock(Extension.class);
+         Answer[] answers = new Answer[]{new Answer(mock(PrepareExtensionPathCommand.class), true, "ok")};
+         String json = GsonHelper.getGson().toJson(answers);
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+-        Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, msHost, "op");
++        Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, managementServerHost, "op");
+         assertTrue(result.first());
+         assertEquals("ok", result.second());
+     }
+@@ -267,8 +268,7 @@
+         Extension ext = mock(Extension.class);
+         Answer[] answers = new Answer[]{new Answer(mock(PrepareExtensionPathCommand.class), false, "fail")};
+         String json = GsonHelper.getGson().toJson(answers);
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+-        Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, msHost, "op");
++        Pair<Boolean, String> result = extensionsManager.getResultFromAnswersString(json, ext, managementServerHost, "op");
+         assertFalse(result.first());
+         assertEquals("fail", result.second());
+     }
+@@ -611,9 +611,8 @@
+         when(ext.getRelativePath()).thenReturn("entry.sh");
+         when(externalProvisioner.getChecksumForExtensionPath("ext", "entry.sh")).thenReturn("checksum123");
+         when(extensionDao.createForUpdate(anyLong())).thenReturn(ext);
+-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+-        doReturn(new Pair<>(true, "checksum123")).when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, msHost);
+-        extensionsManager.checkExtensionPathState(ext, Collections.singletonList(msHost));
++        doReturn(new Pair<>(true, "checksum123")).when(extensionsManager).getChecksumForExtensionPathOnMSPeer(ext, managementServerHost);
++        extensionsManager.checkExtensionPathState(ext, Collections.singletonList(managementServerHost));
+         verify(extensionsManager).updateExtensionPathReady(ext, true);
+     }
+ 

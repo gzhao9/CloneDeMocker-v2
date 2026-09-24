@@ -1,0 +1,188 @@
+--- a/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
+@@ -1227,6 +1227,12 @@
+         return devices;
+     }
+ 
++    private static GpuDeviceVO createMockParentDevice(GpuDevice.State state) {
++        GpuDeviceVO parentDevice = mock(GpuDeviceVO.class);
++        when(parentDevice.getState()).thenReturn(state);
++        return parentDevice;
++    }
++
+     @Test
+     public void testGetGpuDevicesToAllocate_SimpleDebug() {
+         // Simple test with minimal setup
+@@ -1263,9 +1269,8 @@
+     @Test
+     public void testCheckAndUpdateParentGpuDeviceState_ValidParentId() {
+         Long parentDeviceId = PARENT_GPU_DEVICE_ID;
+-        GpuDeviceVO parentDevice = mock(GpuDeviceVO.class);
++        GpuDeviceVO parentDevice = createMockParentDevice(GpuDevice.State.Free);
+         when(parentDevice.getId()).thenReturn(parentDeviceId);
+-        when(parentDevice.getState()).thenReturn(GpuDevice.State.Free);
+ 
+         when(gpuDeviceDao.findById(parentDeviceId)).thenReturn(parentDevice);
+         when(gpuDeviceDao.listByParentGpuDeviceId(parentDeviceId)).thenReturn(new ArrayList<>());
+@@ -1289,9 +1294,8 @@
+ 
+     @Test
+     public void testCheckAndUpdateParentGpuDeviceState_NoChildDevices() {
+-        GpuDeviceVO parentDevice = mock(GpuDeviceVO.class);
++        GpuDeviceVO parentDevice = createMockParentDevice(GpuDevice.State.PartiallyAllocated);
+         when(parentDevice.getId()).thenReturn(PARENT_GPU_DEVICE_ID);
+-        when(parentDevice.getState()).thenReturn(GpuDevice.State.PartiallyAllocated);
+ 
+         when(gpuDeviceDao.listByParentGpuDeviceId(PARENT_GPU_DEVICE_ID)).thenReturn(new ArrayList<>());
+         when(gpuDeviceDao.update(eq(PARENT_GPU_DEVICE_ID), any(GpuDeviceVO.class))).thenReturn(true);
+@@ -1305,15 +1309,13 @@
+ 
+     @Test
+     public void testCheckAndUpdateParentGpuDeviceState_AllFreeChildDevices() {
+-        GpuDeviceVO parentDevice = mock(GpuDeviceVO.class);
++        GpuDeviceVO parentDevice = createMockParentDevice(GpuDevice.State.PartiallyAllocated);
+         when(parentDevice.getId()).thenReturn(PARENT_GPU_DEVICE_ID);
+-        when(parentDevice.getState()).thenReturn(GpuDevice.State.PartiallyAllocated);
+ 
+         // Create child devices all in Free state
+         List<GpuDeviceVO> childDevices = new ArrayList<>();
+         for (int i = 0; i < 3; i++) {
+-            GpuDeviceVO child = mock(GpuDeviceVO.class);
+-            when(child.getState()).thenReturn(GpuDevice.State.Free);
++            GpuDeviceVO child = createMockParentDevice(GpuDevice.State.Free);
+             childDevices.add(child);
+         }
+ 
+@@ -1329,23 +1331,19 @@
+ 
+     @Test
+     public void testCheckAndUpdateParentGpuDeviceState_SomeAllocatedChildDevices() {
+-        GpuDeviceVO parentDevice = mock(GpuDeviceVO.class);
++        GpuDeviceVO parentDevice = createMockParentDevice(GpuDevice.State.Free);
+         when(parentDevice.getId()).thenReturn(PARENT_GPU_DEVICE_ID);
+-        when(parentDevice.getState()).thenReturn(GpuDevice.State.Free);
+ 
+         // Create child devices with mixed states - some Free, some Allocated
+         List<GpuDeviceVO> childDevices = new ArrayList<>();
+ 
+-        GpuDeviceVO child1 = mock(GpuDeviceVO.class);
+-        when(child1.getState()).thenReturn(GpuDevice.State.Free);
++        GpuDeviceVO child1 = createMockParentDevice(GpuDevice.State.Free);
+         childDevices.add(child1);
+ 
+-        GpuDeviceVO child2 = mock(GpuDeviceVO.class);
+-        when(child2.getState()).thenReturn(GpuDevice.State.Allocated);
++        GpuDeviceVO child2 = createMockParentDevice(GpuDevice.State.Allocated);
+         childDevices.add(child2);
+ 
+-        GpuDeviceVO child3 = mock(GpuDeviceVO.class);
+-        when(child3.getState()).thenReturn(GpuDevice.State.Free);
++        GpuDeviceVO child3 = createMockParentDevice(GpuDevice.State.Free);
+         childDevices.add(child3);
+ 
+         when(gpuDeviceDao.listByParentGpuDeviceId(PARENT_GPU_DEVICE_ID)).thenReturn(childDevices);
+@@ -1360,23 +1358,19 @@
+ 
+     @Test
+     public void testCheckAndUpdateParentGpuDeviceState_ErrorChildDevices() {
+-        GpuDeviceVO parentDevice = mock(GpuDeviceVO.class);
++        GpuDeviceVO parentDevice = createMockParentDevice(GpuDevice.State.Free);
+         when(parentDevice.getId()).thenReturn(PARENT_GPU_DEVICE_ID);
+-        when(parentDevice.getState()).thenReturn(GpuDevice.State.Free);
+ 
+         // Create child devices with mixed states - Error should take priority
+         List<GpuDeviceVO> childDevices = new ArrayList<>();
+ 
+-        GpuDeviceVO child1 = mock(GpuDeviceVO.class);
+-        when(child1.getState()).thenReturn(GpuDevice.State.Free);
++        GpuDeviceVO child1 = createMockParentDevice(GpuDevice.State.Free);
+         childDevices.add(child1);
+ 
+-        GpuDeviceVO child2 = mock(GpuDeviceVO.class);
+-        when(child2.getState()).thenReturn(GpuDevice.State.Allocated);
++        GpuDeviceVO child2 = createMockParentDevice(GpuDevice.State.Allocated);
+         childDevices.add(child2);
+ 
+-        GpuDeviceVO child3 = mock(GpuDeviceVO.class);
+-        when(child3.getState()).thenReturn(GpuDevice.State.Error);
++        GpuDeviceVO child3 = createMockParentDevice(GpuDevice.State.Error);
+         childDevices.add(child3);
+ 
+         when(gpuDeviceDao.listByParentGpuDeviceId(PARENT_GPU_DEVICE_ID)).thenReturn(childDevices);
+@@ -1391,15 +1385,13 @@
+ 
+     @Test
+     public void testCheckAndUpdateParentGpuDeviceState_AllAllocatedChildDevices() {
+-        GpuDeviceVO parentDevice = mock(GpuDeviceVO.class);
++        GpuDeviceVO parentDevice = createMockParentDevice(GpuDevice.State.Free);
+         when(parentDevice.getId()).thenReturn(PARENT_GPU_DEVICE_ID);
+-        when(parentDevice.getState()).thenReturn(GpuDevice.State.Free);
+ 
+         // Create child devices all in Allocated state
+         List<GpuDeviceVO> childDevices = new ArrayList<>();
+         for (int i = 0; i < 2; i++) {
+-            GpuDeviceVO child = mock(GpuDeviceVO.class);
+-            when(child.getState()).thenReturn(GpuDevice.State.Allocated);
++            GpuDeviceVO child = createMockParentDevice(GpuDevice.State.Allocated);
+             childDevices.add(child);
+         }
+ 
+@@ -1415,15 +1407,13 @@
+ 
+     @Test
+     public void testCheckAndUpdateParentGpuDeviceState_NoStateChange() {
+-        GpuDeviceVO parentDevice = mock(GpuDeviceVO.class);
++        GpuDeviceVO parentDevice = createMockParentDevice(GpuDevice.State.Free);
+         when(parentDevice.getId()).thenReturn(PARENT_GPU_DEVICE_ID);
+-        when(parentDevice.getState()).thenReturn(GpuDevice.State.Free);
+ 
+         // Create child devices all in Free state - should not change parent state
+         List<GpuDeviceVO> childDevices = new ArrayList<>();
+         for (int i = 0; i < 2; i++) {
+-            GpuDeviceVO child = mock(GpuDeviceVO.class);
+-            when(child.getState()).thenReturn(GpuDevice.State.Free);
++            GpuDeviceVO child = createMockParentDevice(GpuDevice.State.Free);
+             childDevices.add(child);
+         }
+ 
+@@ -1438,15 +1428,13 @@
+ 
+     @Test
+     public void testCheckAndUpdateParentGpuDeviceState_MultipleErrorStates() {
+-        GpuDeviceVO parentDevice = mock(GpuDeviceVO.class);
++        GpuDeviceVO parentDevice = createMockParentDevice(GpuDevice.State.PartiallyAllocated);
+         when(parentDevice.getId()).thenReturn(PARENT_GPU_DEVICE_ID);
+-        when(parentDevice.getState()).thenReturn(GpuDevice.State.PartiallyAllocated);
+ 
+         // Create child devices with multiple Error states
+         List<GpuDeviceVO> childDevices = new ArrayList<>();
+ 
+-        GpuDeviceVO child1 = mock(GpuDeviceVO.class);
+-        when(child1.getState()).thenReturn(GpuDevice.State.Error);
++        GpuDeviceVO child1 = createMockParentDevice(GpuDevice.State.Error);
+         childDevices.add(child1);
+ 
+         GpuDeviceVO child2 = mock(GpuDeviceVO.class);
+@@ -1464,19 +1452,16 @@
+ 
+     @Test
+     public void testCheckAndUpdateParentGpuDeviceState_ErrorTakesPriority() {
+-        GpuDeviceVO parentDevice = mock(GpuDeviceVO.class);
++        GpuDeviceVO parentDevice = createMockParentDevice(GpuDevice.State.Free);
+         when(parentDevice.getId()).thenReturn(PARENT_GPU_DEVICE_ID);
+-        when(parentDevice.getState()).thenReturn(GpuDevice.State.Free);
+ 
+         // Create child devices - should break on first Error state found
+         List<GpuDeviceVO> childDevices = new ArrayList<>();
+ 
+-        GpuDeviceVO child1 = mock(GpuDeviceVO.class);
+-        when(child1.getState()).thenReturn(GpuDevice.State.Allocated);
++        GpuDeviceVO child1 = createMockParentDevice(GpuDevice.State.Allocated);
+         childDevices.add(child1);
+ 
+-        GpuDeviceVO child2 = mock(GpuDeviceVO.class);
+-        when(child2.getState()).thenReturn(GpuDevice.State.Error);
++        GpuDeviceVO child2 = createMockParentDevice(GpuDevice.State.Error);
+         childDevices.add(child2);
+ 
+         // This child should not affect the final state since Error was found first

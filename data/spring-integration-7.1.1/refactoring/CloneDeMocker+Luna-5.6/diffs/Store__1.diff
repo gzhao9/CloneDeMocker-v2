@@ -1,0 +1,29 @@
+--- a/spring-integration-mail/src/test/java/org/springframework/integration/mail/inbound/ImapMailReceiverTests.java
++++ b/spring-integration-mail/src/test/java/org/springframework/integration/mail/inbound/ImapMailReceiverTests.java
+@@ -674,12 +674,11 @@
+ 		final AtomicInteger failed = new AtomicInteger(0);
+ 		for (int i = 0; i < 100; i++) {
+ 			final ImapMailReceiver receiver = new ImapMailReceiver("imap://foo");
+-			Store store = mock(Store.class);
+ 			Folder folder = mock(Folder.class);
+ 			given(folder.exists()).willReturn(true);
+ 			given(folder.isOpen()).willReturn(true);
+ 			given(folder.search(Mockito.any())).willReturn(new Message[] {});
+-			given(store.getFolder(Mockito.any(URLName.class))).willReturn(folder);
++			Store store = createMockStore(folder);
+ 			given(folder.getPermanentFlags()).willReturn(new Flags(Flags.Flag.USER));
+ 
+ 			DirectFieldAccessor df = new DirectFieldAccessor(receiver);
+@@ -750,6 +749,12 @@
+ 		assertThat(content).isInstanceOf(Multipart.class);
+ 		assertThat(((Multipart) content).getBodyPart(0).getContent().toString().trim()).isEqualTo("bar");
+ 		assertThat(((Multipart) content).getBodyPart(1).getContent().toString().trim()).isEqualTo("foo");
++	}
++
++	private static Store createMockStore(final Folder folder) {
++		Store store = mock(Store.class);
++		given(store.getFolder(Mockito.any(URLName.class))).willReturn(folder);
++		return store;
+ 	}
+ 
+ 	private Folder testAttachmentsGuts(final ImapMailReceiver receiver) throws MessagingException, IOException {

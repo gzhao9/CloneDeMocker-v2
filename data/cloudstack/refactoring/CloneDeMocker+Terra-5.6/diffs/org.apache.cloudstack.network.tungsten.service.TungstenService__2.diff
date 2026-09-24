@@ -1,0 +1,56 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/api/command/AddTungstenFabricNetworkGatewayToLogicalRouterCmdTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/api/command/AddTungstenFabricNetworkGatewayToLogicalRouterCmdTest.java
+@@ -71,8 +71,7 @@
+         String network = "123";
+         List<String> networkList = List.of(network);
+         BaseResponse baseResponse = Mockito.mock(BaseResponse.class);
+-        Mockito.when(tungstenService.listConnectedNetworkFromLogicalRouter(ArgumentMatchers.anyLong(),
+-                ArgumentMatchers.anyString())).thenReturn(networkList);
++        MockTungstenService.stubConnectedNetworkLookup(tungstenService, networkList);
+         Mockito.when(tungstenService.addNetworkGatewayToLogicalRouter(ArgumentMatchers.anyLong(),
+                 ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(baseResponse);
+         addTungstenFabricNetworkGatewayToLogicalRouterCmd.execute();
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/api/command/DeleteTungstenFabricLogicalRouterCmdTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/api/command/DeleteTungstenFabricLogicalRouterCmdTest.java
+@@ -60,8 +60,7 @@
+     @Test
+     public void executeTest() throws Exception {
+         List<String> networkList = new ArrayList<>();
+-        Mockito.when(tungstenService.listConnectedNetworkFromLogicalRouter(ArgumentMatchers.anyLong(),
+-                ArgumentMatchers.anyString())).thenReturn(networkList);
++        MockTungstenService.stubConnectedNetworkLookup(tungstenService, networkList);
+         Mockito.when(tungstenService.deleteLogicalRouter(ArgumentMatchers.anyLong(),
+                 ArgumentMatchers.anyString())).thenReturn(true);
+         deleteTungstenFabricLogicalRouterCmd.execute();
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/api/command/RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmdTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/api/command/RemoveTungstenFabricNetworkGatewayFromLogicalRouterCmdTest.java
+@@ -70,8 +70,7 @@
+             ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+         List<String> networkList = Arrays.asList("test");
+         BaseResponse baseResponse = Mockito.mock(BaseResponse.class);
+-        Mockito.when(tungstenService.listConnectedNetworkFromLogicalRouter(ArgumentMatchers.anyLong(),
+-                ArgumentMatchers.anyString())).thenReturn(networkList);
++        MockTungstenService.stubConnectedNetworkLookup(tungstenService, networkList);
+         Mockito.when(tungstenService.removeNetworkGatewayFromLogicalRouter(ArgumentMatchers.anyLong(),
+                 ArgumentMatchers.anyString(),
+                 ArgumentMatchers.anyString())).thenReturn(baseResponse);
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/api/command/MockTungstenService.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/api/command/MockTungstenService.java
+@@ -0,0 +1,17 @@
++package org.apache.cloudstack.network.tungsten.api.command;
++
++import java.util.List;
++
++import org.apache.cloudstack.network.tungsten.service.TungstenService;
++import org.mockito.ArgumentMatchers;
++import org.mockito.Mockito;
++
++public final class MockTungstenService {
++    private MockTungstenService() {
++    }
++
++    public static void stubConnectedNetworkLookup(TungstenService tungstenService, List<String> networkList) {
++        Mockito.when(tungstenService.listConnectedNetworkFromLogicalRouter(ArgumentMatchers.anyLong(),
++                ArgumentMatchers.anyString())).thenReturn(networkList);
++    }
++}

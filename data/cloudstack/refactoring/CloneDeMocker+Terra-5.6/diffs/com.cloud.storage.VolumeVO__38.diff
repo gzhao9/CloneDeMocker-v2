@@ -1,0 +1,62 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -1856,14 +1856,11 @@
+             when(vm.getServiceOfferingId()).thenReturn(serviceOfferingId);
+ 
+             List<VolumeVO> rootVols = new ArrayList<>();
+-            VolumeVO rootVol = mock(VolumeVO.class);
++            VolumeVO rootVol = createMockVolume(100L, 20L * 1024 * 1024 * 1024L);
+             when(rootVol.getId()).thenReturn(10L);
+             when(rootVol.getState()).thenReturn(Volume.State.Ready);
+             when(rootVol.getPoolId()).thenReturn(5L);
+             when(rootVol.getTemplateId()).thenReturn(1L);
+-            when(rootVol.getSize()).thenReturn(20L * 1024 * 1024 * 1024L); // 20GB
+-            when(rootVol.getDiskOfferingId()).thenReturn(100L);
+-            when(rootVol.isDisplay()).thenReturn(true);
+             rootVols.add(rootVol);
+             DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+             when(diskOfferingDao.findById(100L)).thenReturn(diskOffering);
+@@ -1909,24 +1906,12 @@
+         Mockito.when(diskOfferingDao.findById(diskOffId3)).thenReturn(diskOfferingVO3);
+         Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO3)).thenReturn(new ArrayList<>());
+ 
+-        VolumeVO vol1 = Mockito.mock(VolumeVO.class);
+-        Mockito.when(vol1.getDiskOfferingId()).thenReturn(diskOffId1);
+-        Mockito.when(vol1.getSize()).thenReturn(10L);
+-        Mockito.when(vol1.isDisplay()).thenReturn(true);
++        VolumeVO vol1 = createMockVolume(diskOffId1, 10L);
+         VolumeVO undisplayedVolume = Mockito.mock(VolumeVO.class); // shouldn't be considered for limits
+         Mockito.when(undisplayedVolume.isDisplay()).thenReturn(false);
+-        VolumeVO vol3 = Mockito.mock(VolumeVO.class);
+-        Mockito.when(vol3.getDiskOfferingId()).thenReturn(diskOffId2);
+-        Mockito.when(vol3.getSize()).thenReturn(30L);
+-        Mockito.when(vol3.isDisplay()).thenReturn(true);
+-        VolumeVO vol4 = Mockito.mock(VolumeVO.class);
+-        Mockito.when(vol4.getDiskOfferingId()).thenReturn(diskOffId3);
+-        Mockito.when(vol4.getSize()).thenReturn(40L);
+-        Mockito.when(vol4.isDisplay()).thenReturn(true);
+-        VolumeVO vol5 = Mockito.mock(VolumeVO.class);
+-        Mockito.when(vol5.getDiskOfferingId()).thenReturn(diskOffId1);
+-        Mockito.when(vol5.getSize()).thenReturn(50L);
+-        Mockito.when(vol5.isDisplay()).thenReturn(true);
++        VolumeVO vol3 = createMockVolume(diskOffId2, 30L);
++        VolumeVO vol4 = createMockVolume(diskOffId3, 40L);
++        VolumeVO vol5 = createMockVolume(diskOffId1, 50L);
+ 
+         List<VolumeVO> volumes = List.of(vol1, undisplayedVolume, vol3, vol4, vol5);
+         List<Reserver> reservations = new ArrayList<>();
+@@ -4652,6 +4637,14 @@
+         return serviceOffering;
+     }
+ 
++    private static VolumeVO createMockVolume(long diskOfferingId, long size) {
++        VolumeVO volume = Mockito.mock(VolumeVO.class);
++        Mockito.when(volume.getDiskOfferingId()).thenReturn(diskOfferingId);
++        Mockito.when(volume.getSize()).thenReturn(size);
++        Mockito.when(volume.isDisplay()).thenReturn(true);
++        return volume;
++    }
++
+     @Test
+     public void customOfferingNeedsCustomizationThrowsException() {
+         ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, true);

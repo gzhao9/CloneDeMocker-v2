@@ -1,0 +1,53 @@
+--- a/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
+@@ -961,16 +961,14 @@
+         when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)).thenReturn(false);
+         when(lbVmMapDao.isVmAttachedToLoadBalancer(loadBalancerId)).thenReturn(false);
+ 
+-        SearchBuilder<AutoScalePolicyVO> searchBuilderMock = Mockito.mock(SearchBuilder.class);
+         SearchCriteria<AutoScalePolicyVO> searchCriteriaMock = Mockito.mock(SearchCriteria.class);
++        SearchBuilder<AutoScalePolicyVO> searchBuilderMock = createMockAutoScalePolicySearchBuilder(searchCriteriaMock, asScaleUpPolicyMock);
+         when(asScaleUpPolicyMock.getDuration()).thenReturn(scaleUpPolicyDuration);
+         when(asScaleUpPolicyMock.getAction()).thenReturn(AutoScalePolicy.Action.SCALEUP);
+         when(asScaleDownPolicyMock.getDuration()).thenReturn(scaleDownPolicyDuration);
+         when(asScaleDownPolicyMock.getAction()).thenReturn(AutoScalePolicy.Action.SCALEDOWN);
+ 
+         Mockito.doReturn(searchBuilderMock).when(asPolicyDao).createSearchBuilder();
+-        when(searchBuilderMock.entity()).thenReturn(asScaleUpPolicyMock);
+-        Mockito.doReturn(searchCriteriaMock).when(searchBuilderMock).create();
+         when(asPolicyDao.search(searchCriteriaMock, null)).thenReturn(Arrays.asList(asScaleUpPolicyMock)).thenReturn(Arrays.asList(asScaleDownPolicyMock));
+ 
+         when(autoScaleVmProfileDao.findById(vmProfileId)).thenReturn(asVmProfileMock);
+@@ -1048,16 +1046,14 @@
+         when(asVmGroupMock.getProfileId()).thenReturn(vmProfileId);
+         when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
+ 
+-        SearchBuilder<AutoScalePolicyVO> searchBuilderMock = Mockito.mock(SearchBuilder.class);
+         SearchCriteria<AutoScalePolicyVO> searchCriteriaMock = Mockito.mock(SearchCriteria.class);
++        SearchBuilder<AutoScalePolicyVO> searchBuilderMock = createMockAutoScalePolicySearchBuilder(searchCriteriaMock, asScaleUpPolicyMock);
+         when(asScaleUpPolicyMock.getDuration()).thenReturn(scaleUpPolicyDuration);
+         when(asScaleUpPolicyMock.getAction()).thenReturn(AutoScalePolicy.Action.SCALEUP);
+         when(asScaleDownPolicyMock.getDuration()).thenReturn(scaleDownPolicyDuration);
+         when(asScaleDownPolicyMock.getAction()).thenReturn(AutoScalePolicy.Action.SCALEDOWN);
+ 
+         Mockito.doReturn(searchBuilderMock).when(asPolicyDao).createSearchBuilder();
+-        when(searchBuilderMock.entity()).thenReturn(asScaleUpPolicyMock);
+-        Mockito.doReturn(searchCriteriaMock).when(searchBuilderMock).create();
+         when(asPolicyDao.search(searchCriteriaMock, null)).thenReturn(Arrays.asList(asScaleUpPolicyMock)).thenReturn(Arrays.asList(asScaleDownPolicyMock));
+ 
+         when(lbDao.findById(loadBalancerId)).thenReturn(loadBalancerMock);
+@@ -2529,6 +2525,14 @@
+         Assert.assertTrue(result.second().endsWith(result.first().split("-")[2]));
+     }
+ 
++    private static SearchBuilder<AutoScalePolicyVO> createMockAutoScalePolicySearchBuilder(
++            SearchCriteria<AutoScalePolicyVO> searchCriteriaMock, AutoScalePolicyVO entity) {
++        SearchBuilder<AutoScalePolicyVO> searchBuilderMock = Mockito.mock(SearchBuilder.class);
++        when(searchBuilderMock.entity()).thenReturn(entity);
++        Mockito.doReturn(searchCriteriaMock).when(searchBuilderMock).create();
++        return searchBuilderMock;
++    }
++
+     @Test
+     public void getNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForWindowsTemplateUsingGuestOsName() {
+         GuestOSVO guestOS = Mockito.mock(GuestOSVO.class);

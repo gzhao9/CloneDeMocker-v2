@@ -1,0 +1,72 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -215,6 +215,9 @@
+     private BackupScheduleVO backupScheduleVOMock;
+ 
+     @Mock
++    private BackupScheduleVO scheduleMock;
++
++    @Mock
+     private AccountVO accountVOMock;
+ 
+     @Mock
+@@ -638,15 +641,14 @@
+         when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
+         when(offering.getProvider()).thenReturn("test");
+ 
+-        BackupScheduleVO schedule = mock(BackupScheduleVO.class);
+-        when(backupScheduleDao.findByVMAndIntervalType(vmId, DateUtil.IntervalType.DAILY)).thenReturn(schedule);
++        when(backupScheduleDao.findByVMAndIntervalType(vmId, DateUtil.IntervalType.DAILY)).thenReturn(scheduleMock);
+ 
+         backupManager.configureBackupSchedule(cmd);
+ 
+-        verify(schedule, times(1)).setScheduleType((short) DateUtil.IntervalType.DAILY.ordinal());
+-        verify(schedule, times(1)).setSchedule("00:00:00");
+-        verify(schedule, times(1)).setTimezone(TimeZone.getTimeZone("GMT").getID());
+-        verify(schedule, times(1)).setMaxBackups(8);
++        verify(scheduleMock, times(1)).setScheduleType((short) DateUtil.IntervalType.DAILY.ordinal());
++        verify(scheduleMock, times(1)).setSchedule("00:00:00");
++        verify(scheduleMock, times(1)).setTimezone(TimeZone.getTimeZone("GMT").getID());
++        verify(scheduleMock, times(1)).setMaxBackups(8);
+     }
+ 
+     @Test
+@@ -1954,9 +1956,8 @@
+         overrideBackupFrameworkConfigValue();
+         Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+ 
+-        BackupScheduleVO schedule1 = Mockito.mock(BackupScheduleVO.class);
+         BackupScheduleVO schedule2 = Mockito.mock(BackupScheduleVO.class);
+-        List<BackupScheduleVO> schedules = List.of(schedule1, schedule2);
++        List<BackupScheduleVO> schedules = List.of(scheduleMock, schedule2);
+ 
+         SearchBuilder<BackupScheduleVO> searchBuilder = Mockito.mock(SearchBuilder.class);
+         SearchCriteria<BackupScheduleVO> searchCriteria = Mockito.mock(SearchCriteria.class);
+@@ -1971,7 +1972,7 @@
+         List<BackupSchedule> result = backupManager.listBackupSchedules(cmd);
+ 
+         assertEquals(2, result.size());
+-        assertTrue(result.contains(schedule1));
++        assertTrue(result.contains(scheduleMock));
+         assertTrue(result.contains(schedule2));
+     }
+ 
+@@ -1989,8 +1990,7 @@
+         overrideBackupFrameworkConfigValue();
+         Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+ 
+-        BackupScheduleVO schedule = Mockito.mock(BackupScheduleVO.class);
+-        List<BackupScheduleVO> schedules = List.of(schedule);
++        List<BackupScheduleVO> schedules = List.of(scheduleMock);
+ 
+         SearchBuilder<BackupScheduleVO> searchBuilder = Mockito.mock(SearchBuilder.class);
+         SearchCriteria<BackupScheduleVO> searchCriteria = Mockito.mock(SearchCriteria.class);
+@@ -2009,7 +2009,7 @@
+         List<BackupSchedule> result = backupManager.listBackupSchedules(cmd);
+ 
+         assertEquals(1, result.size());
+-        assertTrue(result.contains(schedule));
++        assertTrue(result.contains(scheduleMock));
+     }
+ 
+     @Test

@@ -1,0 +1,83 @@
+--- a/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerImplTest.java
+@@ -373,18 +373,14 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testGetCheckedSnapshotForCopyDestContainsSource() {
+-        SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
+-        Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
+-        Mockito.when(snapshotVO.getVolumeId()).thenReturn(1L);
++        SnapshotVO snapshotVO = MockSnapshotVO.createMockSnapshotVO(Snapshot.State.BackedUp, 1L);
+         Mockito.when(volumeDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VolumeVO.class));
+         snapshotManager.getCheckedSnapshotForCopy(snapshotVO, List.of(100L, 1L), 1L, false);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testGetCheckedSnapshotForCopyNullSourceZone() {
+-        SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
+-        Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
+-        Mockito.when(snapshotVO.getVolumeId()).thenReturn(1L);
++        SnapshotVO snapshotVO = MockSnapshotVO.createMockSnapshotVO(Snapshot.State.BackedUp, 1L);
+         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+         Mockito.when(volumeVO.getDataCenterId()).thenReturn(1L);
+         Mockito.when(volumeDao.findById(Mockito.anyLong())).thenReturn(volumeVO);
+@@ -394,9 +390,7 @@
+     @Test
+     public void testGetCheckedSnapshotForCopyValid() {
+         final Long zoneId = 1L;
+-        SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
+-        Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
+-        Mockito.when(snapshotVO.getVolumeId()).thenReturn(1L);
++        SnapshotVO snapshotVO = MockSnapshotVO.createMockSnapshotVO(Snapshot.State.BackedUp, 1L);
+         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+         Mockito.when(volumeVO.getDataCenterId()).thenReturn(zoneId);
+         Mockito.when(volumeDao.findById(Mockito.anyLong())).thenReturn(volumeVO);
+@@ -409,9 +403,7 @@
+     @Test
+     public void testGetCheckedSnapshotForCopyNullDest() {
+         final Long zoneId = 1L;
+-        SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
+-        Mockito.when(snapshotVO.getState()).thenReturn(Snapshot.State.BackedUp);
+-        Mockito.when(snapshotVO.getVolumeId()).thenReturn(1L);
++        SnapshotVO snapshotVO = MockSnapshotVO.createMockSnapshotVO(Snapshot.State.BackedUp, 1L);
+         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+         Mockito.when(volumeVO.getDataCenterId()).thenReturn(zoneId);
+         Mockito.when(volumeDao.findById(Mockito.anyLong())).thenReturn(volumeVO);
+--- a/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerTest.java
++++ b/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerTest.java
+@@ -330,8 +330,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testDeleteSnapshotDestroyedFailure() {
++        snapshotMock = MockSnapshotVO.createMockSnapshotVO(Snapshot.State.Destroyed);
+         when(_snapshotDao.findById(TEST_SNAPSHOT_ID)).thenReturn(snapshotMock);
+-        when(snapshotMock.getState()).thenReturn(Snapshot.State.Destroyed);
+         _snapshotMgr.deleteSnapshot(TEST_SNAPSHOT_ID, null);
+     }
+ 
+--- a/server/src/test/java/com/cloud/storage/snapshot/MockSnapshotVO.java
++++ b/server/src/test/java/com/cloud/storage/snapshot/MockSnapshotVO.java
+@@ -0,0 +1,23 @@
++package com.cloud.storage.snapshot;
++
++import com.cloud.storage.Snapshot;
++import com.cloud.storage.SnapshotVO;
++
++import org.mockito.Mockito;
++
++public final class MockSnapshotVO {
++    private MockSnapshotVO() {
++    }
++
++    public static SnapshotVO createMockSnapshotVO(Snapshot.State state) {
++        SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
++        Mockito.when(snapshotVO.getState()).thenReturn(state);
++        return snapshotVO;
++    }
++
++    public static SnapshotVO createMockSnapshotVO(Snapshot.State state, long volumeId) {
++        SnapshotVO snapshotVO = createMockSnapshotVO(state);
++        Mockito.when(snapshotVO.getVolumeId()).thenReturn(volumeId);
++        return snapshotVO;
++    }
++}

@@ -1,0 +1,92 @@
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java
+@@ -637,21 +637,13 @@
+         Set<String> serviceNames = new HashSet<>();
+         serviceNames.add("app1");
+         serviceNames.add("app2");
++        serviceDiscovery = MockServiceDiscoveryWithMetadata.createMockServiceDiscovery(registryURL, metadataInfo_111, metadataInfo_222,
++                metadataInfo_333, metadataInfo_555_tri);
+         listener = new ServiceInstancesChangedListener(serviceNames, serviceDiscovery);
+ 
+         // notify app1 instance change
+         ServiceInstancesChangedEvent event = new ServiceInstancesChangedEvent("app1", app1Instances);
+         listener.onEvent(event);
+-
+-        when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenAnswer(new Answer<MetadataInfo>() {
+-            @Override
+-            public MetadataInfo answer(InvocationOnMock invocationOnMock) throws Throwable {
+-                if (Thread.currentThread().getName().contains("Dubbo-framework-metadata-retry")) {
+-                    return metadataInfo_222;
+-                }
+-                return MetadataInfo.EMPTY;
+-            }
+-        });
+ 
+         ServiceInstancesChangedEvent event2 = new ServiceInstancesChangedEvent("app2", app1FailedInstances2);
+         listener.onEvent(event2);
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java
+@@ -636,21 +636,12 @@
+         Set<String> serviceNames = new HashSet<>();
+         serviceNames.add("app1");
+         serviceNames.add("app2");
++        serviceDiscovery = MockServiceDiscoveryWithMetadata.createMockServiceDiscovery(registryURL, metadataInfo_111, metadataInfo_222, metadataInfo_333, metadataInfo_555_tri);
+         listener = new ServiceInstancesChangedListener(serviceNames, serviceDiscovery);
+ 
+         // notify app1 instance change
+         ServiceInstancesChangedEvent event = new ServiceInstancesChangedEvent("app1", app1Instances);
+         listener.onEvent(event);
+-
+-        when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenAnswer(new Answer<MetadataInfo>() {
+-            @Override
+-            public MetadataInfo answer(InvocationOnMock invocationOnMock) throws Throwable {
+-                if (Thread.currentThread().getName().contains("Dubbo-framework-metadata-retry")) {
+-                    return metadataInfo_222;
+-                }
+-                return MetadataInfo.EMPTY;
+-            }
+-        });
+ 
+         ServiceInstancesChangedEvent event2 = new ServiceInstancesChangedEvent("app2", app1FailedInstances2);
+         listener.onEvent(event2);
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/MockServiceDiscoveryWithMetadata.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/MockServiceDiscoveryWithMetadata.java
+@@ -0,0 +1,38 @@
++package org.apache.dubbo.registry.client.event.listener;
++
++import org.apache.dubbo.common.URL;
++import org.apache.dubbo.metadata.MetadataInfo;
++import org.apache.dubbo.registry.client.ServiceDiscovery;
++import org.mockito.invocation.InvocationOnMock;
++import org.mockito.stubbing.Answer;
++
++import static org.mockito.ArgumentMatchers.anyList;
++import static org.mockito.ArgumentMatchers.eq;
++import static org.mockito.Mockito.when;
++
++public class MockServiceDiscoveryWithMetadata {
++
++    public static ServiceDiscovery createMockServiceDiscovery(URL registryURL,
++                                                               MetadataInfo metadataInfo_111,
++                                                               MetadataInfo metadataInfo_222,
++                                                               MetadataInfo metadataInfo_333,
++                                                               MetadataInfo metadataInfo_555_tri) {
++        ServiceDiscovery serviceDiscovery = org.mockito.Mockito.mock(ServiceDiscovery.class);
++        when(serviceDiscovery.getUrl()).thenReturn(registryURL);
++        when(serviceDiscovery.getRemoteMetadata(eq("111"), anyList())).thenReturn(metadataInfo_111);
++        when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenReturn(metadataInfo_222);
++        when(serviceDiscovery.getRemoteMetadata(eq("333"), anyList())).thenReturn(metadataInfo_333);
++        when(serviceDiscovery.getRemoteMetadata(eq("444"), anyList())).thenReturn(MetadataInfo.EMPTY);
++        when(serviceDiscovery.getRemoteMetadata(eq("555"), anyList())).thenReturn(metadataInfo_555_tri);
++        when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenAnswer(new Answer<MetadataInfo>() {
++            @Override
++            public MetadataInfo answer(InvocationOnMock invocationOnMock) throws Throwable {
++                if (Thread.currentThread().getName().contains("Dubbo-framework-metadata-retry")) {
++                    return metadataInfo_222;
++                }
++                return MetadataInfo.EMPTY;
++            }
++        });
++        return serviceDiscovery;
++    }
++}

@@ -1,0 +1,52 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
+@@ -90,6 +90,8 @@
+     @Mock
+     ManagementServerHostDao managementServerHostDao;
+     @Mock
++    private ManagementServerHostVO managementServerHostVOMock;
++    @Mock
+     AccountManager accountManager;
+ 
+     @Mock
+@@ -326,8 +328,7 @@
+     @Test
+     public void basicWebhookDeliveryApiCheckReturnsManagementServerHostVOForValidInput() {
+         Account caller = Mockito.mock(Account.class);
+-        ManagementServerHostVO managementServerHostVO = Mockito.mock(ManagementServerHostVO.class);
+-        Mockito.when(managementServerHostDao.findById(1L)).thenReturn(managementServerHostVO);
++        Mockito.when(managementServerHostDao.findById(1L)).thenReturn(managementServerHostVOMock);
+         ManagementServerHostVO result = webhookApiServiceImpl.basicWebhookDeliveryApiCheck(caller, null, null, 1L, null, null, true);
+     }
+ 
+@@ -457,11 +458,10 @@
+     public void shouldReturnManagementServerWhenAdminAccessesValidServer() {
+         Account caller = Mockito.mock(Account.class);
+         Long managementServerId = 1L;
+-        ManagementServerHostVO managementServerHostVO = Mockito.mock(ManagementServerHostVO.class);
+-        Mockito.when(managementServerHostDao.findById(managementServerId)).thenReturn(managementServerHostVO);
++        Mockito.when(managementServerHostDao.findById(managementServerId)).thenReturn(managementServerHostVOMock);
+         ManagementServerHostVO result = webhookApiServiceImpl.basicWebhookDeliveryApiCheck(caller, null, null, managementServerId, null, null, true);
+         Assert.assertNotNull(result);
+-        Assert.assertEquals(managementServerHostVO, result);
++        Assert.assertEquals(managementServerHostVOMock, result);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+@@ -479,14 +479,13 @@
+         WebhookDeliveryVO deliveryVO = Mockito.mock(WebhookDeliveryVO.class);
+         Mockito.when(deliveryVO.getWebhookId()).thenReturn(1L);
+         WebhookVO webhookVO = Mockito.mock(WebhookVO.class);
+-        ManagementServerHostVO managementServerHostVO = Mockito.mock(ManagementServerHostVO.class);
+         Mockito.when(webhookDeliveryDao.findById(deliveryId)).thenReturn(deliveryVO);
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhookVO);
+         Mockito.doNothing().when(accountManager).checkAccess(caller, SecurityChecker.AccessType.OperateEntry, false, webhookVO);
+-        Mockito.when(managementServerHostDao.findById(managementServerId)).thenReturn(managementServerHostVO);
++        Mockito.when(managementServerHostDao.findById(managementServerId)).thenReturn(managementServerHostVOMock);
+         ManagementServerHostVO result = webhookApiServiceImpl.basicWebhookDeliveryApiCheck(caller, deliveryId, null, managementServerId, null, null, true);
+         Assert.assertNotNull(result);
+-        Assert.assertEquals(managementServerHostVO, result);
++        Assert.assertEquals(managementServerHostVOMock, result);
+     }
+ 
+     @Test

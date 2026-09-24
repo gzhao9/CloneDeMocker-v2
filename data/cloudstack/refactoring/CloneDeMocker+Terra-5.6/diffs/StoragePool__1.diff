@@ -1,0 +1,78 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/storage/LibvirtStoragePoolTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/storage/LibvirtStoragePoolTest.java
+@@ -17,6 +17,7 @@
+ package com.cloud.hypervisor.kvm.storage;
+ 
+ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.libvirt.StoragePool;
+@@ -30,6 +31,13 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class LibvirtStoragePoolTest extends TestCase {
+ 
++    private StoragePool storagePool;
++
++    @Before
++    public void setUp() {
++        storagePool = Mockito.mock(StoragePool.class);
++    }
++
+     @Test
+     public void testAttributes() {
+         String uuid = "4c4fb08b-373e-4f30-a120-3aa3a43f31da";
+@@ -38,9 +46,8 @@
+         StoragePoolType type = StoragePoolType.NetworkFilesystem;
+ 
+         StorageAdaptor adapter = Mockito.mock(LibvirtStorageAdaptor.class);
+-        StoragePool storage = Mockito.mock(StoragePool.class);
+ 
+-        LibvirtStoragePool pool = new LibvirtStoragePool(uuid, name, type, adapter, storage);
++        LibvirtStoragePool pool = new LibvirtStoragePool(uuid, name, type, adapter, storagePool);
+         assertEquals(pool.getCapacity(), 0);
+         assertEquals(pool.getUsed(), 0);
+         assertEquals(pool.getName(), name);
+@@ -63,17 +70,16 @@
+         String name = "myfirstpool";
+ 
+         StorageAdaptor adapter = Mockito.mock(LibvirtStorageAdaptor.class);
+-        StoragePool storage = Mockito.mock(StoragePool.class);
+ 
+-        LibvirtStoragePool nfsPool = new LibvirtStoragePool(uuid, name, StoragePoolType.NetworkFilesystem, adapter, storage);
++        LibvirtStoragePool nfsPool = new LibvirtStoragePool(uuid, name, StoragePoolType.NetworkFilesystem, adapter, storagePool);
+         assertEquals(nfsPool.getDefaultFormat(), PhysicalDiskFormat.QCOW2);
+         assertEquals(nfsPool.getStoragePoolType(), StoragePoolType.NetworkFilesystem);
+ 
+-        LibvirtStoragePool rbdPool = new LibvirtStoragePool(uuid, name, StoragePoolType.RBD, adapter, storage);
++        LibvirtStoragePool rbdPool = new LibvirtStoragePool(uuid, name, StoragePoolType.RBD, adapter, storagePool);
+         assertEquals(rbdPool.getDefaultFormat(), PhysicalDiskFormat.RAW);
+         assertEquals(rbdPool.getStoragePoolType(), StoragePoolType.RBD);
+ 
+-        LibvirtStoragePool clvmPool = new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM, adapter, storage);
++        LibvirtStoragePool clvmPool = new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM, adapter, storagePool);
+         assertEquals(clvmPool.getDefaultFormat(), PhysicalDiskFormat.RAW);
+         assertEquals(clvmPool.getStoragePoolType(), StoragePoolType.CLVM);
+     }
+@@ -84,18 +90,17 @@
+         String name = "myfirstpool";
+ 
+         StorageAdaptor adapter = Mockito.mock(LibvirtStorageAdaptor.class);
+-        StoragePool storage = Mockito.mock(StoragePool.class);
+ 
+-        LibvirtStoragePool nfsPool = new LibvirtStoragePool(uuid, name, StoragePoolType.NetworkFilesystem, adapter, storage);
++        LibvirtStoragePool nfsPool = new LibvirtStoragePool(uuid, name, StoragePoolType.NetworkFilesystem, adapter, storagePool);
+         if (nfsPool.getType() != StoragePoolType.NetworkFilesystem) {
+             System.out.println("tested");
+         }
+         assertFalse(nfsPool.isExternalSnapshot());
+ 
+-        LibvirtStoragePool rbdPool = new LibvirtStoragePool(uuid, name, StoragePoolType.RBD, adapter, storage);
++        LibvirtStoragePool rbdPool = new LibvirtStoragePool(uuid, name, StoragePoolType.RBD, adapter, storagePool);
+         assertTrue(rbdPool.isExternalSnapshot());
+ 
+-        LibvirtStoragePool clvmPool = new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM, adapter, storage);
++        LibvirtStoragePool clvmPool = new LibvirtStoragePool(uuid, name, StoragePoolType.CLVM, adapter, storagePool);
+         assertTrue(clvmPool.isExternalSnapshot());
+     }
+ }

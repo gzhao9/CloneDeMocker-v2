@@ -1,0 +1,74 @@
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java
+@@ -95,7 +95,6 @@
+     public void setUp() throws Exception {
+ 
+         directory = mock(Directory.class);
+-        firstInvoker = mock(Invoker.class);
+         secondInvoker = mock(Invoker.class);
+         invocation = mock(RpcInvocation.class);
+     }
+@@ -506,36 +505,41 @@
+ 
+     @Test
+     void testDestroy() {
++        firstInvoker = createMockSecondInvoker(url, invocation);
++        given(firstInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "first"));
++
+         given(invocation.getMethodName()).willReturn("getMenu");
+         given(invocation.getParameterTypes()).willReturn(new Class<?>[] {});
+         given(invocation.getArguments()).willReturn(new Object[] {});
+         given(invocation.getObjectAttachments()).willReturn(new HashMap<>());
+         given(invocation.getInvoker()).willReturn(firstInvoker);
+ 
+-        given(firstInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "first"));
+-        given(firstInvoker.getInterface()).willReturn(MenuService.class);
+-        given(firstInvoker.invoke(invocation)).willReturn(new AppResponse());
+-
++        secondInvoker = createMockSecondInvoker(url, invocation);
++
++        given(directory.list(invocation)).willReturn(new ArrayList() {
++
++            {
++                add(firstInvoker);
++                add(secondInvoker);
++            }
++        });
++        given(directory.getUrl()).willReturn(url);
++        given(directory.getConsumerUrl()).willReturn(url);
++        given(directory.getConsumerUrl()).willReturn(url);
++        given(directory.getInterface()).willReturn(MenuService.class);
++
++        mergeableClusterInvoker = new MergeableClusterInvoker<MenuService>(directory);
++        mergeableClusterInvoker.destroy();
++
++        assertFalse(firstInvoker.isAvailable());
++        assertFalse(secondInvoker.isAvailable());
++    }
++
++    private static Invoker createMockSecondInvoker(URL url, Invocation invocation) {
++        Invoker secondInvoker = mock(Invoker.class);
+         given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+         given(secondInvoker.getInterface()).willReturn(MenuService.class);
+         given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
+-
+-        given(directory.list(invocation)).willReturn(new ArrayList() {
+-
+-            {
+-                add(firstInvoker);
+-                add(secondInvoker);
+-            }
+-        });
+-        given(directory.getUrl()).willReturn(url);
+-        given(directory.getConsumerUrl()).willReturn(url);
+-        given(directory.getConsumerUrl()).willReturn(url);
+-        given(directory.getInterface()).willReturn(MenuService.class);
+-
+-        mergeableClusterInvoker = new MergeableClusterInvoker<MenuService>(directory);
+-        mergeableClusterInvoker.destroy();
+-
+-        assertFalse(firstInvoker.isAvailable());
+-        assertFalse(secondInvoker.isAvailable());
++        return secondInvoker;
+     }
+ }

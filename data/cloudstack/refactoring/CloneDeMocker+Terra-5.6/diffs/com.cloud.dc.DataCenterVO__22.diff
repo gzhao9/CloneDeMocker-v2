@@ -1,0 +1,82 @@
+--- a/server/src/test/java/com/cloud/consoleproxy/ConsoleProxyManagerTest.java
++++ b/server/src/test/java/com/cloud/consoleproxy/ConsoleProxyManagerTest.java
+@@ -136,9 +136,7 @@
+ 
+     @Test
+     public void getDefaultNetworkForAdvancedNonSG() {
+-        DataCenterVO dc = mock(DataCenterVO.class);
+-        when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
+-        when(dc.isSecurityGroupEnabled()).thenReturn(false);
++        DataCenterVO dc = createMockDataCenter(NetworkType.Advanced, false);
+ 
+         when(dataCenterDaoMock.findById(Mockito.anyLong())).thenReturn(dc);
+ 
+@@ -162,9 +160,7 @@
+ 
+     @Test
+     public void getDefaultNetworkForAdvancedSG() {
+-        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+-        when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
+-        when(dc.isSecurityGroupEnabled()).thenReturn(true);
++        DataCenterVO dc = createMockDataCenter(NetworkType.Advanced, true);
+ 
+         when(dataCenterDaoMock.findById(Mockito.anyLong())).thenReturn(dc);
+ 
+@@ -184,9 +180,7 @@
+ 
+     @Test
+     public void getDefaultNetworkForBasicNonSG() {
+-        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+-        when(dc.getNetworkType()).thenReturn(NetworkType.Basic);
+-        when(dc.isSecurityGroupEnabled()).thenReturn(false);
++        DataCenterVO dc = createMockDataCenter(NetworkType.Basic, false);
+ 
+         when(dataCenterDaoMock.findById(Mockito.anyLong())).thenReturn(dc);
+ 
+@@ -206,9 +200,7 @@
+ 
+     @Test
+     public void getDefaultNetworkForBasicSG() {
+-        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+-        when(dc.getNetworkType()).thenReturn(NetworkType.Basic);
+-        when(dc.isSecurityGroupEnabled()).thenReturn(true);
++        DataCenterVO dc = createMockDataCenter(NetworkType.Basic, true);
+ 
+         when(dataCenterDaoMock.findById(Mockito.anyLong())).thenReturn(dc);
+ 
+@@ -230,9 +222,7 @@
+     //also test invalid input
+     @Test(expected=CloudRuntimeException.class)
+     public void getDefaultNetworkForBasicSGWrongZoneType() {
+-        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+-        when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
+-        when(dc.isSecurityGroupEnabled()).thenReturn(true);
++        DataCenterVO dc = createMockDataCenter(NetworkType.Advanced, true);
+ 
+         when(dataCenterDaoMock.findById(Mockito.anyLong())).thenReturn(dc);
+ 
+@@ -249,9 +239,7 @@
+ 
+     @Test(expected=CloudRuntimeException.class)
+     public void getDefaultNetworkForAdvancedWrongZoneType() {
+-        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+-        when(dc.getNetworkType()).thenReturn(NetworkType.Basic);
+-        when(dc.isSecurityGroupEnabled()).thenReturn(true);
++        DataCenterVO dc = createMockDataCenter(NetworkType.Basic, true);
+ 
+         when(dataCenterDaoMock.findById(Mockito.anyLong())).thenReturn(dc);
+ 
+@@ -289,6 +277,13 @@
+         ConsoleProxyStatus expectedResult = null;
+         ConsoleProxyStatus result = new ConsoleProxyManagerImpl().parseJsonToConsoleProxyStatus(null);
+         Assert.assertEquals(expectedResult, result);
++    }
++
++    private static DataCenterVO createMockDataCenter(NetworkType networkType, boolean securityGroupEnabled) {
++        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
++        when(dc.getNetworkType()).thenReturn(networkType);
++        when(dc.isSecurityGroupEnabled()).thenReturn(securityGroupEnabled);
++        return dc;
+     }
+ 
+     private void verifyScannablePoolsZoneIds(List<Long> expected, Long[] result) {

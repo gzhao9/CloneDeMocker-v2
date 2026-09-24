@@ -1,0 +1,89 @@
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/CreateRoleCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/CreateRoleCmdTest.java
+@@ -49,12 +49,8 @@
+     @Test
+     public void testCreateRoleWithRoleType() {
+         ReflectionTestUtils.setField(createRoleCmd,"roleType", "User");
++        role = MockRole.createMockRole("12345-abcgdkajd", "User test", "testuser");
+         when(role.getId()).thenReturn(1L);
+-        when(role.getUuid()).thenReturn("12345-abcgdkajd");
+-        when(role.getDescription()).thenReturn("User test");
+-        when(role.getName()).thenReturn("testuser");
+-        when(role.getRoleType()).thenReturn(RoleType.User);
+-        when(role.getState()).thenReturn(Role.State.ENABLED);
+         when(roleService.createRole(createRoleCmd.getRoleName(), createRoleCmd.getRoleType(), createRoleCmd.getRoleDescription(), true)).thenReturn(role);
+         createRoleCmd.execute();
+         RoleResponse response = (RoleResponse) createRoleCmd.getResponseObject();
+@@ -66,13 +62,8 @@
+     public void testCreateRoleWithExistingRole() {
+         ReflectionTestUtils.setField(createRoleCmd,"roleId",1L);
+         when(roleService.findRole(createRoleCmd.getRoleId())).thenReturn(role);
+-        Role newRole = Mockito.mock(Role.class);
++        Role newRole = MockRole.createMockRole("67890-xyztestid", "User test", "testuser");
+         when(newRole.getId()).thenReturn(2L);
+-        when(newRole.getUuid()).thenReturn("67890-xyztestid");
+-        when(newRole.getDescription()).thenReturn("User test");
+-        when(newRole.getName()).thenReturn("testuser");
+-        when(newRole.getRoleType()).thenReturn(RoleType.User);
+-        when(newRole.getState()).thenReturn(Role.State.ENABLED);
+         when(roleService.createRole(createRoleCmd.getRoleName(), role, createRoleCmd.getRoleDescription(), true)).thenReturn(newRole);
+         createRoleCmd.execute();
+         RoleResponse response = (RoleResponse) createRoleCmd.getResponseObject();
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/ImportRoleCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/ImportRoleCmdTest.java
+@@ -83,11 +83,7 @@
+ 
+         ReflectionTestUtils.setField(importRoleCmd,"rules",rules);
+ 
+-        when(role.getUuid()).thenReturn("12345-abcgdkajd");
+-        when(role.getDescription()).thenReturn("test user imported");
+-        when(role.getName()).thenReturn("Test User");
+-        when(role.getRoleType()).thenReturn(RoleType.User);
+-        when(role.getState()).thenReturn(Role.State.ENABLED);
++        role = MockRole.createMockRole("12345-abcgdkajd", "test user imported", "Test User");
+         when(roleService.importRole(anyString(), any(), anyString(), any(), anyBoolean(), anyBoolean())).thenReturn(role);
+ 
+         importRoleCmd.execute();
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/UpdateRoleCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/UpdateRoleCmdTest.java
+@@ -52,17 +52,10 @@
+ 
+     @Test
+     public void testUpdateSuccess() {
++        role = MockRole.createMockRole("12345-abcgdkajd", "Description Initial", "User");
+         when(roleService.findRole(updateRoleCmd.getRoleId())).thenReturn(role);
+         when(role.getId()).thenReturn(1L);
+-        when(role.getUuid()).thenReturn("12345-abcgdkajd");
+-        when(role.getDescription()).thenReturn("Default user");
+-        when(role.getName()).thenReturn("User");
+-        when(role.getRoleType()).thenReturn(RoleType.User);
+         when(roleService.updateRole(role, updateRoleCmd.getRoleName(), updateRoleCmd.getRoleType(), updateRoleCmd.getRoleDescription(), updateRoleCmd.isPublicRole())).thenReturn(role);
+-        when(role.getId()).thenReturn(1L);
+-        when(role.getDescription()).thenReturn("Description Initial");
+-        when(role.getName()).thenReturn("User");
+-        when(role.getState()).thenReturn(Role.State.ENABLED);
+         updateRoleCmd.execute();
+         RoleResponse response = (RoleResponse) updateRoleCmd.getResponseObject();
+         assertEquals((String)ReflectionTestUtils.getField(response, "roleName"),role.getName());
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/MockRole.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/MockRole.java
+@@ -0,0 +1,19 @@
++package org.apache.cloudstack.api.command.test;
++
++import static org.mockito.Mockito.when;
++
++import org.apache.cloudstack.acl.Role;
++import org.apache.cloudstack.acl.RoleType;
++import org.mockito.Mockito;
++
++public class MockRole {
++    public static Role createMockRole(String uuid, String description, String name) {
++        Role role = Mockito.mock(Role.class);
++        when(role.getUuid()).thenReturn(uuid);
++        when(role.getDescription()).thenReturn(description);
++        when(role.getName()).thenReturn(name);
++        when(role.getRoleType()).thenReturn(RoleType.User);
++        when(role.getState()).thenReturn(Role.State.ENABLED);
++        return role;
++    }
++}

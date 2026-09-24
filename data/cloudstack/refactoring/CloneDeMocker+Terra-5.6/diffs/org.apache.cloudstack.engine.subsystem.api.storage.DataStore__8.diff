@@ -1,0 +1,61 @@
+--- a/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/AncientDataMotionStrategyTest.java
++++ b/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/AncientDataMotionStrategyTest.java
+@@ -38,6 +38,7 @@
+ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+ import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
+ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
++import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+ import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+@@ -107,6 +108,12 @@
+         return clvmPoolManager;
+     }
+ 
++    private static DataStore createMockDataStore(Scope scope) {
++        DataStore srcDataStore = Mockito.mock(DataStore.class);
++        Mockito.doReturn(scope).when(srcDataStore).getScope();
++        return srcDataStore;
++    }
++
+     @Test
+     public void testAddFullCloneFlagOnVMwareDest(){
+         strategy.addFullCloneAndDiskprovisiongStrictnessFlagOnVMwareDest(dataTO);
+@@ -227,15 +234,13 @@
+     public void testCanBypassSecondaryStorageWithClusterWideNFSPoolsInSameCluster() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+         Mockito.doReturn(HypervisorType.KVM).when(srcVolumeInfo).getHypervisorType();
+-        DataStore srcDataStore = Mockito.mock(DataStore.class);
+-        Mockito.doReturn(new ClusterScope(5L, 2L, 1L)).when(srcDataStore).getScope();
++        DataStore srcDataStore = createMockDataStore(new ClusterScope(5L, 2L, 1L));
+         Mockito.doReturn(srcDataStore).when(srcVolumeInfo).getDataStore();
+         Mockito.doReturn(Storage.StoragePoolType.NetworkFilesystem).when(srcVolumeInfo).getStoragePoolType();
+ 
+         VolumeObject destVolumeInfo = Mockito.spy(new VolumeObject());
+         Mockito.doReturn(HypervisorType.KVM).when(destVolumeInfo).getHypervisorType();
+-        DataStore destDataStore = Mockito.mock(DataStore.class);
+-        Mockito.doReturn(new ClusterScope(5L, 2L, 1L)).when(destDataStore).getScope();
++        DataStore destDataStore = createMockDataStore(new ClusterScope(5L, 2L, 1L));
+         Mockito.doReturn(destDataStore).when(destVolumeInfo).getDataStore();
+         Mockito.doReturn(Storage.StoragePoolType.NetworkFilesystem).when(destVolumeInfo).getStoragePoolType();
+ 
+@@ -257,8 +262,7 @@
+ 
+         VolumeObject destVolumeInfo = Mockito.spy(new VolumeObject());
+         Mockito.doReturn(HypervisorType.KVM).when(destVolumeInfo).getHypervisorType();
+-        DataStore destDataStore = Mockito.mock(DataStore.class);
+-        Mockito.doReturn(new ClusterScope(1L, 1L, 1L)).when(destDataStore).getScope();
++        DataStore destDataStore = createMockDataStore(new ClusterScope(1L, 1L, 1L));
+         Mockito.doReturn(destDataStore).when(destVolumeInfo).getDataStore();
+         Mockito.doReturn(Storage.StoragePoolType.NetworkFilesystem).when(destVolumeInfo).getStoragePoolType();
+ 
+@@ -302,8 +306,7 @@
+     public void testCanBypassSecondaryStorageWithClusterWideNFSAndZoneWideNFSPoolsInSameZone() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+         VolumeObject srcVolumeInfo = Mockito.spy(new VolumeObject());
+         Mockito.doReturn(HypervisorType.KVM).when(srcVolumeInfo).getHypervisorType();
+-        DataStore srcDataStore = Mockito.mock(DataStore.class);
+-        Mockito.doReturn(new ClusterScope(5L, 2L, 1L)).when(srcDataStore).getScope();
++        DataStore srcDataStore = createMockDataStore(new ClusterScope(5L, 2L, 1L));
+         Mockito.doReturn(srcDataStore).when(srcVolumeInfo).getDataStore();
+         Mockito.doReturn(Storage.StoragePoolType.NetworkFilesystem).when(srcVolumeInfo).getStoragePoolType();
+ 

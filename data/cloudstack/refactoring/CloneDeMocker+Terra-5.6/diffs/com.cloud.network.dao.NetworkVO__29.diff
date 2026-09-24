@@ -1,0 +1,36 @@
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -163,6 +163,8 @@
+     @Mock
+     NetworkDao networkDao;
+     @Mock
++    private NetworkVO networkVOMock;
++    @Mock
+     NicDao nicDao;
+     @Mock
+     IPAddressDao ipAddressDao;
+@@ -687,10 +689,9 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCheckAndUpdateNetworkDnsL2NetworkFailure() {
+-        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
+         NetworkOffering offering = Mockito.mock(NetworkOffering.class);
+         Mockito.when(offering.getGuestType()).thenReturn(Network.GuestType.L2);
+-        service.checkAndUpdateNetworkDns(networkVO, offering, ip4Dns[0], null, null, null);
++        service.checkAndUpdateNetworkDns(networkVOMock, offering, ip4Dns[0], null, null, null);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+@@ -1259,11 +1260,10 @@
+     @Test(expected = CloudRuntimeException.class)
+     public void testGetNicVlanValueForExternalVm_Nsx_NoBean() {
+         NicTO nic = mock(NicTO.class);
+-        NetworkVO networkVO = mock(NetworkVO.class);
+         String broadcastUri = "nsx://segment";
+         when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+         when(nic.getNetworkId()).thenReturn(42L);
+-        when(networkDao.findById(42L)).thenReturn(networkVO);
++        when(networkDao.findById(42L)).thenReturn(networkVOMock);
+         try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+             when(ComponentContext.getDelegateComponentOfType(NsxService.class)).thenThrow(NoSuchBeanDefinitionException.class);
+             service.getNicVlanValueForExternalVm(nic);

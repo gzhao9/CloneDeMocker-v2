@@ -1,0 +1,59 @@
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisGuestNetworkGuruTest.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisGuestNetworkGuruTest.java
+@@ -86,7 +86,6 @@
+     @InjectMocks
+     private NetrisGuestNetworkGuru guru = new NetrisGuestNetworkGuru();
+ 
+-    @Mock
+     private NetworkOfferingVO networkOffering;
+     @Mock
+     private PhysicalNetworkVO physicalNetwork;
+@@ -120,10 +119,8 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
+-        Mockito.when(networkOffering.getId()).thenReturn(networkOfferingId);
+-        Mockito.when(networkOffering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
++        networkOffering = MockNetworkOffering.createMockNetworkOffering(networkOfferingId, Networks.TrafficType.Guest);
+         Mockito.when(networkOffering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED);
+-        Mockito.when(networkOffering.isRedundantRouter()).thenReturn(false);
+         Mockito.when(networkOfferingDao.findById(networkOfferingId)).thenReturn(networkOffering);
+         Mockito.when(physicalNetwork.getIsolationMethods()).thenReturn(List.of("netris"));
+         Mockito.when(physicalNetworkDao.findById(physicalNetworkId)).thenReturn(physicalNetwork);
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisPublicNetworkGuruTest.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisPublicNetworkGuruTest.java
+@@ -104,14 +104,12 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
+-        Mockito.when(networkOffering.getId()).thenReturn(networkOfferingId);
+-        Mockito.when(networkOffering.getTrafficType()).thenReturn(Networks.TrafficType.Public);
++        networkOffering = MockNetworkOffering.createMockNetworkOffering(networkOfferingId, Networks.TrafficType.Public);
+         Mockito.when(networkOffering.isSystemOnly()).thenReturn(true);
+         Mockito.when(networkModel.isProviderForNetworkOffering(Network.Provider.Netris, networkOfferingId)).thenReturn(true);
+         Mockito.when(network.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Netris);
+         Mockito.when(deploymentPlan.getDataCenterId()).thenReturn(zoneId);
+         Mockito.when(deploymentPlan.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+-        Mockito.when(networkOffering.isRedundantRouter()).thenReturn(false);
+         Mockito.when(nicProfile.getIPv4Address()).thenReturn(vrNicIp);
+         Mockito.when(ipAddressDao.findByIp(vrNicIp)).thenReturn(ipAddressVpcVR);
+         Mockito.when(ipAddressVpcVR.getVpcId()).thenReturn(vpcId);
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/MockNetworkOffering.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/MockNetworkOffering.java
+@@ -0,0 +1,16 @@
++package org.apache.cloudstack.service;
++
++import com.cloud.network.Networks;
++import com.cloud.offerings.NetworkOfferingVO;
++import org.mockito.Mockito;
++
++public class MockNetworkOffering {
++
++    public static NetworkOfferingVO createMockNetworkOffering(long networkOfferingId, Networks.TrafficType trafficType) {
++        NetworkOfferingVO networkOffering = Mockito.mock(NetworkOfferingVO.class);
++        Mockito.when(networkOffering.getId()).thenReturn(networkOfferingId);
++        Mockito.when(networkOffering.getTrafficType()).thenReturn(trafficType);
++        Mockito.when(networkOffering.isRedundantRouter()).thenReturn(false);
++        return networkOffering;
++    }
++}

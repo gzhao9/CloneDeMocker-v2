@@ -1,0 +1,72 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckVirtualMachineCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckVirtualMachineCommandWrapperTest.java
+@@ -142,8 +142,7 @@
+ 
+     @Test
+     public void testExecuteLibvirtExceptionOnGetConnectionReturnsFailure() throws LibvirtException {
+-        LibvirtException libvirtException = mock(LibvirtException.class);
+-        when(libvirtException.getMessage()).thenReturn("Connection refused");
++        LibvirtException libvirtException = MockLibvirtException.createMockLibvirtException("Connection refused");
+         when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenThrow(libvirtException);
+ 
+         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) wrapper.execute(command, libvirtComputingResource);
+@@ -154,8 +153,7 @@
+ 
+     @Test
+     public void testExecuteLibvirtExceptionOnGetVncPortReturnsFailure() throws LibvirtException {
+-        LibvirtException libvirtException = mock(LibvirtException.class);
+-        when(libvirtException.getMessage()).thenReturn("VNC port error");
++        LibvirtException libvirtException = MockLibvirtException.createMockLibvirtException("VNC port error");
+         when(libvirtComputingResource.getVmState(conn, VM_NAME)).thenReturn(PowerState.PowerOn);
+         when(libvirtComputingResource.getVncPort(conn, VM_NAME)).thenThrow(libvirtException);
+ 
+@@ -167,8 +165,7 @@
+ 
+     @Test
+     public void testExecuteLibvirtExceptionOnDomainLookupReturnsFailure() throws LibvirtException {
+-        LibvirtException libvirtException = mock(LibvirtException.class);
+-        when(libvirtException.getMessage()).thenReturn("Domain not found");
++        LibvirtException libvirtException = MockLibvirtException.createMockLibvirtException("Domain not found");
+         when(libvirtComputingResource.getVmState(conn, VM_NAME)).thenReturn(PowerState.PowerOn);
+         when(libvirtComputingResource.getVncPort(conn, VM_NAME)).thenReturn(5900);
+         when(conn.domainLookupByName(VM_NAME)).thenThrow(libvirtException);
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPostMigrationCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPostMigrationCommandWrapperTest.java
+@@ -168,8 +168,7 @@
+ 
+     @Test
+     public void testExecute_LibvirtException_ReturnsFailure() throws LibvirtException {
+-        LibvirtException libvirtException = Mockito.mock(LibvirtException.class);
+-        when(libvirtException.getMessage()).thenReturn("Connection failed");
++        LibvirtException libvirtException = MockLibvirtException.createMockLibvirtException("Connection failed");
+ 
+         try (MockedStatic<LibvirtConnection> mockedConnection = Mockito.mockStatic(LibvirtConnection.class)) {
+             mockedConnection.when(() -> LibvirtConnection.getConnectionByVmName(VM_NAME))
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPreMigrationCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtPreMigrationCommandWrapperTest.java
+@@ -170,8 +170,7 @@
+ 
+     @Test
+     public void testExecute_LibvirtException_ReturnsFailure() throws LibvirtException {
+-        LibvirtException libvirtException = Mockito.mock(LibvirtException.class);
+-        when(libvirtException.getMessage()).thenReturn("Connection failed");
++        LibvirtException libvirtException = MockLibvirtException.createMockLibvirtException("Connection failed");
+         when(libvirtUtilitiesHelper.getConnectionByVmName(VM_NAME)).thenReturn(connect);
+         when(connect.domainLookupByName(VM_NAME)).thenThrow(libvirtException);
+ 
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockLibvirtException.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockLibvirtException.java
+@@ -0,0 +1,13 @@
++package com.cloud.hypervisor.kvm.resource.wrapper;
++
++import org.libvirt.LibvirtException;
++import org.mockito.Mockito;
++
++public class MockLibvirtException {
++
++    public static LibvirtException createMockLibvirtException(String message) {
++        LibvirtException libvirtException = Mockito.mock(LibvirtException.class);
++        Mockito.when(libvirtException.getMessage()).thenReturn(message);
++        return libvirtException;
++    }
++}

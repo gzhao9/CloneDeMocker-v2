@@ -1,0 +1,108 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -2126,7 +2126,7 @@
+ 
+     @Test
+     public void getHostToRestoreTestQuickRestoreUsesProvidedHostId() throws AgentUnavailableException {
+-        doReturn(Status.Up).when(hostVOMock).getStatus();
++        MockHostVOWithStatus.stubStatus(hostVOMock, Status.Up);
+         doReturn(false).when(hostVOMock).isInMaintenanceStates();
+         doReturn(ResourceState.Enabled).when(hostVOMock).getResourceState();
+         doReturn(hostVOMock).when(hostDaoMock).findByIdIncludingRemoved(55L);
+@@ -2141,7 +2141,7 @@
+     @Test
+     public void getHostToRestoreTestQuickRestoreUsesVmLastHostIdWhenHostIdIsNull() throws AgentUnavailableException {
+         doReturn(99L).when(virtualMachineMock).getLastHostId();
+-        doReturn(Status.Up).when(hostVOMock).getStatus();
++        MockHostVOWithStatus.stubStatus(hostVOMock, Status.Up);
+         doReturn(false).when(hostVOMock).isInMaintenanceStates();
+         doReturn(ResourceState.Enabled).when(hostVOMock).getResourceState();
+         doReturn(hostVOMock).when(hostDaoMock).findByIdIncludingRemoved(99L);
+@@ -2161,7 +2161,7 @@
+ 
+     @Test(expected = AgentUnavailableException.class)
+     public void getHostToRestoreTestQuickRestoreWithHostDownThrows() throws AgentUnavailableException {
+-        doReturn(Status.Down).when(hostVOMock).getStatus();
++        MockHostVOWithStatus.stubStatus(hostVOMock, Status.Down);
+         doReturn(hostVOMock).when(hostDaoMock).findByIdIncludingRemoved(55L);
+ 
+         kbossBackupProviderSpy.getHostToRestore(virtualMachineMock, true, 55L);
+@@ -2169,7 +2169,7 @@
+ 
+     @Test(expected = AgentUnavailableException.class)
+     public void getHostToRestoreTestQuickRestoreWithHostInMaintenanceThrows() throws AgentUnavailableException {
+-        doReturn(Status.Up).when(hostVOMock).getStatus();
++        MockHostVOWithStatus.stubStatus(hostVOMock, Status.Up);
+         doReturn(true).when(hostVOMock).isInMaintenanceStates();
+         doReturn(hostVOMock).when(hostDaoMock).findByIdIncludingRemoved(55L);
+ 
+@@ -2178,7 +2178,7 @@
+ 
+     @Test(expected = AgentUnavailableException.class)
+     public void getHostToRestoreTestQuickRestoreWithHostDisabledThrows() throws AgentUnavailableException {
+-        doReturn(Status.Up).when(hostVOMock).getStatus();
++        MockHostVOWithStatus.stubStatus(hostVOMock, Status.Up);
+         doReturn(false).when(hostVOMock).isInMaintenanceStates();
+         doReturn(ResourceState.Disabled).when(hostVOMock).getResourceState();
+         doReturn(hostVOMock).when(hostDaoMock).findByIdIncludingRemoved(55L);
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupCompressionServiceJobControllerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupCompressionServiceJobControllerTest.java
+@@ -218,7 +218,7 @@
+     public void getHostToNumberOfExecutingJobsAndTotalExecutingJobsTestNoExecutingJobsAndNoEligibleHosts() {
+         doReturn(datacenterId).when(dataCenterVoMock).getId();
+         doReturn(List.of(hostVO)).when(hostDaoMock).listAllRoutingHostsByZoneAndHypervisorType(datacenterId, Hypervisor.HypervisorType.KVM);
+-        doReturn(Status.Down).when(hostVO).getStatus();
++        MockHostVOWithStatus.stubStatus(hostVO, Status.Down);
+         doReturn(List.of()).when(internalBackupServiceJobDaoMock).listExecutingJobsByZoneIdAndJobType(datacenterId);
+ 
+         Pair<HashMap<HostVO, Long>, Integer> result =
+@@ -234,7 +234,7 @@
+     public void getHostToNumberOfExecutingJobsAndTotalExecutingJobsTestOneEligibleHostAndOneExecutingJob() {
+         doReturn(datacenterId).when(dataCenterVoMock).getId();
+         doReturn(hostId).when(hostVO).getId();
+-        doReturn(Status.Up).when(hostVO).getStatus();
++        MockHostVOWithStatus.stubStatus(hostVO, Status.Up);
+         doReturn(ResourceState.Enabled).when(hostVO).getResourceState();
+         doReturn(List.of(hostVO)).when(hostDaoMock).listAllRoutingHostsByZoneAndHypervisorType(datacenterId, Hypervisor.HypervisorType.KVM);
+         doReturn(List.of(internalBackupServiceJobVoMock)).when(internalBackupServiceJobDaoMock).listExecutingJobsByZoneIdAndJobType(datacenterId);
+@@ -253,7 +253,7 @@
+     public void getHostToNumberOfExecutingJobsAndTotalExecutingJobsTestEligibleHostButExecutingJobOnDisabledHostIsIgnored() {
+         doReturn(datacenterId).when(dataCenterVoMock).getId();
+         doReturn(hostId).when(hostVO).getId();
+-        doReturn(Status.Down).when(hostVO).getStatus();
++        MockHostVOWithStatus.stubStatus(hostVO, Status.Down);
+         doReturn(List.of(hostVO)).when(hostDaoMock).listAllRoutingHostsByZoneAndHypervisorType(datacenterId, Hypervisor.HypervisorType.KVM);
+         doReturn(List.of(internalBackupServiceJobVoMock)).when(internalBackupServiceJobDaoMock).listExecutingJobsByZoneIdAndJobType(datacenterId);
+         doReturn(hostId).when(internalBackupServiceJobVoMock).getHostId();
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/MockHostVOWithStatus.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/MockHostVOWithStatus.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.backup;
++
++import com.cloud.host.HostVO;
++import com.cloud.host.Status;
++
++final class MockHostVOWithStatus {
++    private MockHostVOWithStatus() {
++    }
++
++    static void stubStatus(HostVO hostVO, Status status) {
++        org.mockito.Mockito.doReturn(status).when(hostVO).getStatus();
++    }
++}
+--- a/server/src/test/java/org/apache/cloudstack/backup/MockHostVOWithStatus.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/MockHostVOWithStatus.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.backup;
++
++import com.cloud.host.HostVO;
++import com.cloud.host.Status;
++
++final class MockHostVOWithStatus {
++    private MockHostVOWithStatus() {
++    }
++
++    static void stubStatus(HostVO hostVO, Status status) {
++        org.mockito.Mockito.doReturn(status).when(hostVO).getStatus();
++    }
++}

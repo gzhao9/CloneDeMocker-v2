@@ -1,0 +1,33 @@
+--- a/spring-integration-core/src/test/java/org/springframework/integration/endpoint/MessageSourcePollingTemplateTests.java
++++ b/spring-integration-core/src/test/java/org/springframework/integration/endpoint/MessageSourcePollingTemplateTests.java
+@@ -44,8 +44,7 @@
+ 
+ 	@Test
+ 	public void testAckNack() {
+-		AcknowledgmentCallback callback = mock(AcknowledgmentCallback.class);
+-		given(callback.isAutoAck()).willReturn(true);
++		AcknowledgmentCallback callback = createAcknowledgmentCallback(true);
+ 		MessageSource<?> source = () -> new GenericMessage<>("foo",
+ 				Collections.singletonMap(IntegrationMessageHeaderAccessor.ACKNOWLEDGMENT_CALLBACK, callback));
+ 		MessageSourcePollingTemplate template = new MessageSourcePollingTemplate(source);
+@@ -66,8 +65,7 @@
+ 
+ 	@Test
+ 	public void testNoAutoAck() {
+-		AcknowledgmentCallback callback = mock(AcknowledgmentCallback.class);
+-		given(callback.isAutoAck()).willReturn(false);
++		AcknowledgmentCallback callback = createAcknowledgmentCallback(false);
+ 		MessageSource<?> source = () -> new GenericMessage<>("foo",
+ 				Collections.singletonMap(IntegrationMessageHeaderAccessor.ACKNOWLEDGMENT_CALLBACK, callback));
+ 		MessageSourcePollingTemplate template = new MessageSourcePollingTemplate(source);
+@@ -77,4 +75,10 @@
+ 		verify(callback, never()).acknowledge(Status.REJECT);
+ 	}
+ 
++
++	private static AcknowledgmentCallback createAcknowledgmentCallback(boolean autoAck) {
++		AcknowledgmentCallback callback = mock(AcknowledgmentCallback.class);
++		given(callback.isAutoAck()).willReturn(autoAck);
++		return callback;
++	}
+ }

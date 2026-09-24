@@ -1,0 +1,62 @@
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
+@@ -159,6 +159,14 @@
+         return rule;
+     }
+ 
++    private static KubernetesClusterVO createMockKubernetesClusterVO(long nodeCount) {
++        KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
++        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
++        Mockito.when(clusterVO.getControlNodeCount()).thenReturn(1L);
++        Mockito.when(clusterVO.getNodeCount()).thenReturn(nodeCount);
++        return clusterVO;
++    }
++
+     @Test
+     public void validateIsolatedNetworkIpRulesNoConflictingRules() {
+         long ipId = 1L;
+@@ -228,18 +236,13 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateKubernetesClusterScaleSizeOverMaxSize() {
+-        KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
+-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
+-        Mockito.when(clusterVO.getControlNodeCount()).thenReturn(1L);
++        KubernetesClusterVO clusterVO = createMockKubernetesClusterVO(0L);
+         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 4L, 4, Mockito.mock(DataCenter.class));
+     }
+ 
+     @Test
+     public void testValidateKubernetesClusterScaleSizeDownscaleNoError() {
+-        KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
+-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
+-        Mockito.when(clusterVO.getControlNodeCount()).thenReturn(1L);
+-        Mockito.when(clusterVO.getNodeCount()).thenReturn(4L);
++        KubernetesClusterVO clusterVO = createMockKubernetesClusterVO(4L);
+         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 2L, 10, Mockito.mock(DataCenter.class));
+     }
+ 
+@@ -255,10 +258,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateKubernetesClusterScaleSizeUpscaleNotInZoneTemplate() {
+-        KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
+-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
+-        Mockito.when(clusterVO.getControlNodeCount()).thenReturn(1L);
+-        Mockito.when(clusterVO.getNodeCount()).thenReturn(2L);
++        KubernetesClusterVO clusterVO = createMockKubernetesClusterVO(2L);
+         Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VMTemplateVO.class));
+         Mockito.when(templateJoinDao.newTemplateView(Mockito.any(VMTemplateVO.class), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(null);
+         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 4L, 10, Mockito.mock(DataCenter.class));
+@@ -266,10 +266,7 @@
+ 
+     @Test
+     public void testValidateKubernetesClusterScaleSizeUpscaleNoError() {
+-        KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
+-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
+-        Mockito.when(clusterVO.getControlNodeCount()).thenReturn(1L);
+-        Mockito.when(clusterVO.getNodeCount()).thenReturn(2L);
++        KubernetesClusterVO clusterVO = createMockKubernetesClusterVO(2L);
+         Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VMTemplateVO.class));
+         Mockito.when(templateJoinDao.newTemplateView(Mockito.any(VMTemplateVO.class), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(TemplateJoinVO.class)));
+         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 4L, 10, Mockito.mock(DataCenter.class));

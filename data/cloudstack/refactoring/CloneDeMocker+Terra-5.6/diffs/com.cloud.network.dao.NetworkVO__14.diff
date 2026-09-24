@@ -1,0 +1,37 @@
+--- a/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
++++ b/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
+@@ -225,6 +225,12 @@
+         return Arrays.asList(newRule1, newRule2, newRule3, newRule4);
+     }
+ 
++    private static NetworkVO createMockNetwork() {
++        NetworkVO network = Mockito.mock(NetworkVO.class);
++        when(network.getVpcId()).thenReturn(null);
++        return network;
++    }
++
+     @Test
+     public void testDetectRulesConflictIsolatedNetwork() {
+         List<FirewallRuleVO> ruleList = createExistingFirewallListRulesList(1L);
+@@ -232,9 +238,8 @@
+ 
+         List<FirewallRule> newRuleList = createNewRuleList(1L);
+ 
+-        NetworkVO networkVO = Mockito.mock(NetworkVO.class);
++        NetworkVO networkVO = createMockNetwork();
+         when(_firewallMgr._networkDao.findById(1L)).thenReturn(networkVO);
+-        when(networkVO.getVpcId()).thenReturn(null);
+ 
+         try {
+             for (FirewallRule newRule : newRuleList) {
+@@ -424,9 +429,8 @@
+ 
+     @Test
+     public void testGetFirewallServiceCapabilitiesForNonVpcNetworkUsesNetworkModel() {
+-        NetworkVO network = Mockito.mock(NetworkVO.class);
++        NetworkVO network = createMockNetwork();
+         when(network.getId()).thenReturn(1L);
+-        when(network.getVpcId()).thenReturn(null);
+         Map<Capability, String> caps = new HashMap<>();
+         caps.put(Capability.SupportedProtocols, "tcp,udp");
+         when(_networkModel.getNetworkServiceCapabilities(1L, Service.Firewall)).thenReturn(caps);

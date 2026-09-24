@@ -1,0 +1,45 @@
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/stub/StubSuppliersTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/stub/StubSuppliersTest.java
+@@ -19,6 +19,7 @@
+ import org.apache.dubbo.rpc.Invoker;
+ import org.apache.dubbo.rpc.model.ServiceDescriptor;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Assertions;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.Mockito;
+@@ -26,6 +27,13 @@
+ import static org.junit.jupiter.api.Assertions.fail;
+ 
+ class StubSuppliersTest {
++
++    private Invoker<?> sharedInvoker;
++
++    @BeforeEach
++    void setUp() {
++        sharedInvoker = Mockito.mock(Invoker.class);
++    }
+ 
+     private final String serviceName = "service";
+ 
+@@ -38,17 +46,15 @@
+ 
+     @Test
+     void addSupplier() {
+-        Invoker<?> invoker = Mockito.mock(Invoker.class);
+         ServiceDescriptor descriptor = Mockito.mock(ServiceDescriptor.class);
+-        StubSuppliers.addSupplier(serviceName, i -> invoker);
+-        Assertions.assertEquals(invoker, StubSuppliers.createStub(serviceName, invoker));
++        StubSuppliers.addSupplier(serviceName, i -> sharedInvoker);
++        Assertions.assertEquals(sharedInvoker, StubSuppliers.createStub(serviceName, sharedInvoker));
+     }
+ 
+     @Test
+     void createStub() {
+-        Invoker<?> invoker = Mockito.mock(Invoker.class);
+         try {
+-            StubSuppliers.createStub(serviceName + 1, invoker);
++            StubSuppliers.createStub(serviceName + 1, sharedInvoker);
+             fail();
+         } catch (IllegalStateException e) {
+             // pass

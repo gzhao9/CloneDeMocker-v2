@@ -1,0 +1,45 @@
+--- a/framework/quota/src/test/java/org/apache/cloudstack/quota/activationrule/presetvariables/PresetVariableHelperTest.java
++++ b/framework/quota/src/test/java/org/apache/cloudstack/quota/activationrule/presetvariables/PresetVariableHelperTest.java
+@@ -370,6 +370,12 @@
+         Mockito.doNothing().when(presetVariableHelperSpy).validateIfObjectIsNull(Mockito.any(), Mockito.anyLong(), Mockito.anyString());
+     }
+ 
++    private static SnapshotDataStoreVO createMockSnapshotDataStoreVO(Long dataStoreId) {
++        SnapshotDataStoreVO snapshotDataStoreVoMock = Mockito.mock(SnapshotDataStoreVO.class);
++        Mockito.doReturn(dataStoreId).when(snapshotDataStoreVoMock).getDataStoreId();
++        return snapshotDataStoreVoMock;
++    }
++
+     private GenericPresetVariable getGenericPresetVariableForTests() {
+         GenericPresetVariable gpv = new GenericPresetVariable();
+         gpv.setId("test_id");
+@@ -1056,11 +1062,10 @@
+ 
+     @Test
+     public void getSnapshotDataStoreIdTestDoNotBackupSnapshotToSecondaryRetrievePrimaryStorage() {
+-        SnapshotDataStoreVO snapshotDataStoreVoMock = Mockito.mock(SnapshotDataStoreVO.class);
+-
+         Long expected = 1L;
++        SnapshotDataStoreVO snapshotDataStoreVoMock = createMockSnapshotDataStoreVO(expected);
++
+         Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findOneBySnapshotAndDatastoreRole(Mockito.anyLong(), Mockito.any(DataStoreRole.class));
+-        Mockito.doReturn(expected).when(snapshotDataStoreVoMock).getDataStoreId();
+         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = false;
+ 
+         Long result = presetVariableHelperSpy.getSnapshotDataStoreId(1L, 1L);
+@@ -1078,14 +1083,12 @@
+ 
+     @Test
+     public void getSnapshotDataStoreIdTestBackupSnapshotToSecondaryRetrieveSecondaryStorage() {
+-        SnapshotDataStoreVO snapshotDataStoreVoMock = Mockito.mock(SnapshotDataStoreVO.class);
+-
+         Long expected = 2L;
++        SnapshotDataStoreVO snapshotDataStoreVoMock = createMockSnapshotDataStoreVO(expected);
+         ImageStoreVO imageStore = Mockito.mock(ImageStoreVO.class);
+         Mockito.when(imageStoreDaoMock.findById(Mockito.anyLong())).thenReturn(imageStore);
+         Mockito.when(imageStore.getDataCenterId()).thenReturn(1L);
+         Mockito.when(snapshotDataStoreDaoMock.listReadyBySnapshot(Mockito.anyLong(), Mockito.any(DataStoreRole.class))).thenReturn(List.of(snapshotDataStoreVoMock));
+-        Mockito.doReturn(expected).when(snapshotDataStoreVoMock).getDataStoreId();
+         presetVariableHelperSpy.backupSnapshotAfterTakingSnapshot = true;
+ 
+         Long result = presetVariableHelperSpy.getSnapshotDataStoreId(2L, 1L);

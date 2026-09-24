@@ -1,0 +1,59 @@
+--- a/server/src/test/java/com/cloud/api/ApiServletTest.java
++++ b/server/src/test/java/com/cloud/api/ApiServletTest.java
+@@ -192,6 +192,13 @@
+         )).thenReturn(value);
+     }
+ 
++    private static HttpSession createMockHttpSession(boolean is2faVerified) {
++        HttpSession cuurentSession = Mockito.mock(HttpSession.class);
++        Mockito.when(cuurentSession.getAttribute("userid")).thenReturn(1L);
++        Mockito.when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(is2faVerified);
++        return cuurentSession;
++    }
++
+     @Test
+     public void utf8Fixup() {
+         Mockito.when(request.getQueryString()).thenReturn(
+@@ -362,8 +369,7 @@
+ 
+     @Test
+     public void testSkip2FAcheckForUserWhenAlreadyVerified() {
+-        Mockito.when(session.getAttribute("userid")).thenReturn(1L);
+-        Mockito.when(session.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(true);
++        session = createMockHttpSession(true);
+ 
+         boolean result = servlet.skip2FAcheckForUser(session);
+         Assert.assertEquals(true, result);
+@@ -372,9 +378,7 @@
+     @Test
+     public void testDoNotSkip2FAcheckForUserWhen2FAEnabled() {
+         servlet.accountMgr = accountMgr;
+-        HttpSession cuurentSession = Mockito.mock(HttpSession.class);
+-        Mockito.when(cuurentSession.getAttribute("userid")).thenReturn(1L);
+-        Mockito.when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(false);
++        HttpSession cuurentSession = createMockHttpSession(false);
+         Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
+         Mockito.when(userAccount.isUser2faEnabled()).thenReturn(true);
+ 
+@@ -385,9 +389,7 @@
+     @Test
+     public void testDoNotSkip2FAcheckForUserWhen2FAMandated() {
+         servlet.accountMgr = accountMgr;
+-        HttpSession cuurentSession = Mockito.mock(HttpSession.class);
+-        Mockito.when(cuurentSession.getAttribute("userid")).thenReturn(1L);
+-        Mockito.when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(false);
++        HttpSession cuurentSession = createMockHttpSession(false);
+ 
+         Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
+         Mockito.when(userAccount.getDomainId()).thenReturn(1L);
+@@ -404,9 +406,7 @@
+     @Test
+     public void testSkip2FAcheckForUserWhen2FAisNotEnabledAndNotMandated() {
+         servlet.accountMgr = accountMgr;
+-        HttpSession cuurentSession = Mockito.mock(HttpSession.class);
+-        Mockito.when(cuurentSession.getAttribute("userid")).thenReturn(1L);
+-        Mockito.when(cuurentSession.getAttribute(ApiConstants.IS_2FA_VERIFIED)).thenReturn(false);
++        HttpSession cuurentSession = createMockHttpSession(false);
+ 
+         Mockito.when(accountMgr.getUserAccountById(1L)).thenReturn(userAccount);
+         Mockito.when(userAccount.getDomainId()).thenReturn(1L);

@@ -1,0 +1,72 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
+@@ -147,7 +147,7 @@
+ 
+         when(physicalNetwork.getIsolationMethods()).thenReturn(List.of("NSX"));
+ 
+-        when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
++        offering = MockNetworkOffering.createMockNetworkOffering(Networks.TrafficType.Guest);
+         when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         when(offering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED);
+         when(offering.getId()).thenReturn(1L);
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
+@@ -97,8 +97,7 @@
+         ReflectionTestUtils.setField(guru, "nsxControllerUtils", nsxControllerUtils);
+         ReflectionTestUtils.setField(guru, "networkModel", networkModel);
+ 
+-        offering = Mockito.mock(NetworkOffering.class);
+-        when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Public);
++        offering = MockNetworkOffering.createMockNetworkOffering(Networks.TrafficType.Public);
+         when(offering.isSystemOnly()).thenReturn(true);
+         when(networkModel.isProviderForNetworkOffering(eq(Network.Provider.Nsx), anyLong())).thenReturn(true);
+     }
+@@ -110,9 +109,7 @@
+ 
+     @Test
+     public void testCannotHandle() {
+-        NetworkOffering offering = Mockito.mock(NetworkOffering.class);
+-
+-        when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
++        NetworkOffering offering = MockNetworkOffering.createMockNetworkOffering(Networks.TrafficType.Guest);
+ 
+         Assert.assertFalse(guru.canHandle(offering));
+     }
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/MockNetworkOffering.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/MockNetworkOffering.java
+@@ -0,0 +1,35 @@
++// Licensed to the Apache Software Foundation (ASF) under one
++// or more contributor license agreements.  See the NOTICE file
++// distributed with this work for additional information
++// regarding copyright ownership.  The ASF licenses this file
++// to you under the Apache License, Version 2.0 (the
++// "License"); you may not use this file except in compliance
++// with the License.  You may obtain a copy of the License at
++//
++//   http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing,
++// software distributed under the License is distributed on an
++// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++// KIND, either express or implied.  See the License for the
++// specific language governing permissions and limitations
++// under the License.
++package org.apache.cloudstack.service;
++
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++import com.cloud.network.Networks;
++import com.cloud.offering.NetworkOffering;
++
++public final class MockNetworkOffering {
++
++    private MockNetworkOffering() {
++    }
++
++    public static NetworkOffering createMockNetworkOffering(Networks.TrafficType trafficType) {
++        NetworkOffering offering = mock(NetworkOffering.class);
++        when(offering.getTrafficType()).thenReturn(trafficType);
++        return offering;
++    }
++}

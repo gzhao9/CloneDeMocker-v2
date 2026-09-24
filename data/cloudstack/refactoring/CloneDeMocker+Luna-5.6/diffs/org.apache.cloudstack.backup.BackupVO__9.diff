@@ -1,0 +1,58 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/BackupVOToBackupConverterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/BackupVOToBackupConverterTest.java
+@@ -37,15 +37,11 @@
+ 
+     @Test
+     public void testToBackup_MapsCoreFieldsAndResolvedRefs() {
+-        final BackupVO backupVO = mock(BackupVO.class);
+-        when(backupVO.getUuid()).thenReturn("bkp-1");
++        final BackupVO backupVO = createMockBackupVO(new Date(1000L), Backup.Status.ReadyForImageTransfer, "bkp-1", 101L);
+         when(backupVO.getName()).thenReturn("backup-1");
+         when(backupVO.getDescription()).thenReturn("desc-1");
+-        when(backupVO.getDate()).thenReturn(new Date(1000L));
+-        when(backupVO.getStatus()).thenReturn(Backup.Status.ReadyForImageTransfer);
+         when(backupVO.getFromCheckpointId()).thenReturn("cp-1");
+         when(backupVO.getToCheckpointId()).thenReturn("cp-2");
+-        when(backupVO.getVmId()).thenReturn(101L);
+         when(backupVO.getHostId()).thenReturn(201L);
+ 
+         final UserVmVO vmVO = mock(UserVmVO.class);
+@@ -74,26 +70,23 @@
+ 
+     @Test
+     public void testToBackup_PhaseMappingForDifferentStatuses() {
+-        final BackupVO queued = mock(BackupVO.class);
+-        when(queued.getUuid()).thenReturn("b1");
+-        when(queued.getDate()).thenReturn(new Date(1L));
+-        when(queued.getStatus()).thenReturn(Backup.Status.Queued);
+-        when(queued.getVmId()).thenReturn(1L);
++        final BackupVO queued = createMockBackupVO(new Date(1L), Backup.Status.Queued, "b1", 1L);
+ 
+-        final BackupVO finalizing = mock(BackupVO.class);
+-        when(finalizing.getUuid()).thenReturn("b2");
+-        when(finalizing.getDate()).thenReturn(new Date(2L));
+-        when(finalizing.getStatus()).thenReturn(Backup.Status.FinalizingImageTransfer);
+-        when(finalizing.getVmId()).thenReturn(2L);
++        final BackupVO finalizing = createMockBackupVO(new Date(2L), Backup.Status.FinalizingImageTransfer, "b2", 2L);
+ 
+-        final BackupVO failed = mock(BackupVO.class);
+-        when(failed.getUuid()).thenReturn("b3");
+-        when(failed.getDate()).thenReturn(new Date(3L));
+-        when(failed.getStatus()).thenReturn(Backup.Status.Failed);
+-        when(failed.getVmId()).thenReturn(3L);
++        final BackupVO failed = createMockBackupVO(new Date(3L), Backup.Status.Failed, "b3", 3L);
+ 
+         assertEquals("initializing", BackupVOToBackupConverter.toBackup(queued, null, null, null).getPhase());
+         assertEquals("finalizing", BackupVOToBackupConverter.toBackup(finalizing, null, null, null).getPhase());
+         assertEquals("failed", BackupVOToBackupConverter.toBackup(failed, null, null, null).getPhase());
+     }
++
++    private static BackupVO createMockBackupVO(Date date, Backup.Status status, String uuid, long vmId) {
++        BackupVO backupVO = mock(BackupVO.class);
++        when(backupVO.getDate()).thenReturn(date);
++        when(backupVO.getStatus()).thenReturn(status);
++        when(backupVO.getUuid()).thenReturn(uuid);
++        when(backupVO.getVmId()).thenReturn(vmId);
++        return backupVO;
++    }
+ }

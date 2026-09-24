@@ -1,0 +1,155 @@
+--- a/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpNetConnectionTests.java
++++ b/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpNetConnectionTests.java
+@@ -95,9 +95,8 @@
+ 
+ 	@Test
+ 	public void testBinary() throws Exception {
+-		SocketChannel socketChannel = mock(SocketChannel.class);
+ 		Socket socket = mock(Socket.class);
+-		when(socketChannel.socket()).thenReturn(socket);
++		SocketChannel socketChannel = MockSocketChannel.createMockSocketChannel(socket);
+ 		TcpNioConnection connection = new TcpNioConnection(socketChannel, true, false, e -> {
+ 		}, null);
+ 		ChannelInputStream inputStream =
+@@ -179,4 +178,15 @@
+ 		server.stop();
+ 	}
+ 
++
++	public final class MockSocketChannel {
++		private MockSocketChannel() {
++		}
++
++		public static java.nio.channels.SocketChannel createMockSocketChannel(java.net.Socket socket) {
++			java.nio.channels.SocketChannel socketChannel = Mockito.mock(java.nio.channels.SocketChannel.class);
++			Mockito.when(socketChannel.socket()).thenReturn(socket);
++			return socketChannel;
++		}
++	}
+ }
+--- a/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpNioConnectionTests.java
++++ b/spring-integration-ip/src/test/java/org/springframework/integration/ip/tcp/connection/TcpNioConnectionTests.java
+@@ -300,9 +300,8 @@
+ 	@Test
+ 	public void testInsufficientThreads() throws Exception {
+ 		final ExecutorService exec = Executors.newFixedThreadPool(2);
+-		SocketChannel channel = mock();
+ 		Socket socket = mock();
+-		Mockito.when(channel.socket()).thenReturn(socket);
++		SocketChannel channel = MockSocketChannel.createMockSocketChannel(socket);
+ 		doAnswer(invocation -> {
+ 			ByteBuffer buffer = invocation.getArgument(0);
+ 			buffer.position(1);
+@@ -343,9 +342,8 @@
+ 	public void testSufficientThreads() throws Exception {
+ 		ExecutorService exec = Executors.newFixedThreadPool(3);
+ 		CountDownLatch messageLatch = new CountDownLatch(1);
+-		SocketChannel channel = mock();
++		SocketChannel channel = MockSocketChannel.createMockSocketChannel(socket);
+ 		Socket socket = mock();
+-		Mockito.when(channel.socket()).thenReturn(socket);
+ 		doAnswer(invocation -> {
+ 			ByteBuffer buffer = invocation.getArgument(0);
+ 			buffer.position(1025);
+@@ -378,9 +376,8 @@
+ 
+ 	@Test
+ 	public void testByteArrayRead() throws Exception {
+-		SocketChannel socketChannel = mock();
+ 		Socket socket = mock();
+-		when(socketChannel.socket()).thenReturn(socket);
++		SocketChannel socketChannel = MockSocketChannel.createMockSocketChannel(socket);
+ 		TcpNioConnection connection = new TcpNioConnection(socketChannel, false, false, null, null);
+ 		TcpNioConnection.ChannelInputStream stream =
+ 				TestUtils.<TcpNioConnection.ChannelInputStream>getPropertyValue(connection, "channelInputStream");
+@@ -397,9 +394,8 @@
+ 
+ 	@Test
+ 	public void testByteArrayReadMulti() throws Exception {
+-		SocketChannel socketChannel = mock();
+ 		Socket socket = mock();
+-		when(socketChannel.socket()).thenReturn(socket);
++		SocketChannel socketChannel = MockSocketChannel.createMockSocketChannel(socket);
+ 		TcpNioConnection connection = new TcpNioConnection(socketChannel, false, false, null, null);
+ 		TcpNioConnection.ChannelInputStream stream =
+ 				TestUtils.<TcpNioConnection.ChannelInputStream>getPropertyValue(connection, "channelInputStream");
+@@ -415,7 +411,7 @@
+ 	public void testByteArrayReadWithOffset() throws Exception {
+ 		SocketChannel socketChannel = mock();
+ 		Socket socket = mock();
+-		when(socketChannel.socket()).thenReturn(socket);
++		SocketChannel socketChannel = MockSocketChannel.createMockSocketChannel(socket);
+ 		TcpNioConnection connection = new TcpNioConnection(socketChannel, false, false, null, null);
+ 		TcpNioConnection.ChannelInputStream stream =
+ 				TestUtils.<TcpNioConnection.ChannelInputStream>getPropertyValue(connection, "channelInputStream");
+@@ -428,9 +424,8 @@
+ 
+ 	@Test
+ 	public void testByteArrayReadWithBadArgs() throws Exception {
+-		SocketChannel socketChannel = mock();
+ 		Socket socket = mock();
+-		when(socketChannel.socket()).thenReturn(socket);
++		SocketChannel socketChannel = MockSocketChannel.createMockSocketChannel(socket);
+ 		TcpNioConnection connection = new TcpNioConnection(socketChannel, false, false, null, null);
+ 		TcpNioConnection.ChannelInputStream stream =
+ 				TestUtils.<TcpNioConnection.ChannelInputStream>getPropertyValue(connection, "channelInputStream");
+@@ -449,9 +444,8 @@
+ 
+ 	@Test
+ 	public void testByteArrayBlocksForZeroRead() throws Exception {
+-		SocketChannel socketChannel = mock();
+ 		Socket socket = mock();
+-		when(socketChannel.socket()).thenReturn(socket);
++		SocketChannel socketChannel = MockSocketChannel.createMockSocketChannel(socket);
+ 		TcpNioConnection connection = new TcpNioConnection(socketChannel, false, false, null, null);
+ 		final TcpNioConnection.ChannelInputStream stream =
+ 				TestUtils.<TcpNioConnection.ChannelInputStream>getPropertyValue(connection, "channelInputStream");
+@@ -476,9 +470,8 @@
+ 	@Test
+ 	public void transferHeaders() throws Exception {
+ 		Socket inSocket = mock();
+-		SocketChannel inChannel = mock();
+-		when(inChannel.socket()).thenReturn(inSocket);
+-
++
++		SocketChannel inChannel = MockSocketChannel.createMockSocketChannel(inSocket);
+ 		TcpNioConnection inboundConnection = new TcpNioConnection(inChannel, true, false, nullPublisher, null);
+ 		inboundConnection.setDeserializer(new MapJsonSerializer());
+ 		MapMessageConverter inConverter = new MapMessageConverter();
+@@ -493,8 +486,7 @@
+ 		}).when(inChannel).read(any(ByteBuffer.class));
+ 
+ 		Socket outSocket = mock();
+-		SocketChannel outChannel = mock();
+-		when(outChannel.socket()).thenReturn(outSocket);
++		SocketChannel outChannel = MockSocketChannel.createMockSocketChannel(outSocket);
+ 		TcpNioConnection outboundConnection = new TcpNioConnection(outChannel, true, false, nullPublisher, null);
+ 		doAnswer(invocation -> {
+ 			ByteBuffer buff = invocation.getArgument(0);
+@@ -796,9 +788,8 @@
+ 
+ 	@Test
+ 	public void testWritingLatchClearedAfterRead() throws Exception {
+-		SocketChannel channel = mock();
+ 		Socket socket = mock();
+-		when(channel.socket()).thenReturn(socket);
++		SocketChannel channel = MockSocketChannel.createMockSocketChannel(socket);
+ 		when(socket.getReceiveBufferSize()).thenReturn(1024);
+ 
+ 		doAnswer(invocation -> {
+@@ -950,4 +941,15 @@
+ 		}
+ 	}
+ 
++
++	public final class MockSocketChannel {
++		private MockSocketChannel() {
++		}
++
++		public static java.nio.channels.SocketChannel createMockSocketChannel(java.net.Socket socket) {
++			java.nio.channels.SocketChannel socketChannel = Mockito.mock(java.nio.channels.SocketChannel.class);
++			Mockito.when(socketChannel.socket()).thenReturn(socket);
++			return socketChannel;
++		}
++	}
+ }

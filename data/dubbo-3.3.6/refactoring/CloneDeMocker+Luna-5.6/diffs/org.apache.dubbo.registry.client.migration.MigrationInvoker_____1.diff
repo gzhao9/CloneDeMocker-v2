@@ -1,0 +1,77 @@
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationRuleListenerTest.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationRuleListenerTest.java
+@@ -26,6 +26,7 @@
+ import java.util.concurrent.CountDownLatch;
+ 
+ import org.junit.jupiter.api.AfterEach;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Assertions;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.ArgumentCaptor;
+@@ -34,6 +35,8 @@
+ import static org.awaitility.Awaitility.await;
+ 
+ class MigrationRuleListenerTest {
++
++    private MigrationInvoker<?> migrationInvokerMock;
+ 
+     private String localRule = "key: demo-consumer\n" + "step: APPLICATION_FIRST\n"
+             + "threshold: 1.0\n"
+@@ -72,6 +75,11 @@
+             + "force: false\n"
+             + "interfaces:\n";
+ 
++    @BeforeEach
++    public void setUp() {
++        migrationInvokerMock = Mockito.mock(MigrationInvoker.class);
++    }
++
+     @AfterEach
+     public void tearDown() {
+         ApplicationModel.reset();
+@@ -118,8 +126,7 @@
+                     }
+                 };
+ 
+-        MigrationInvoker<?> migrationInvoker = Mockito.mock(MigrationInvoker.class);
+-        migrationRuleListener.getHandlers().put(migrationInvoker, handler);
++        migrationRuleListener.getHandlers().put(migrationInvokerMock, handler);
+ 
+         countDownLatch.countDown();
+         await().untilAsserted(() -> {
+@@ -127,7 +134,7 @@
+         });
+         //        Mockito.verify(handler, Mockito.timeout(5000)).doMigrate(Mockito.any());
+ 
+-        migrationRuleListener.onRefer(null, migrationInvoker, consumerURL, null);
++        migrationRuleListener.onRefer(null, migrationInvokerMock, consumerURL, null);
+         Mockito.verify(handler, Mockito.times(2)).doMigrate(Mockito.any());
+     }
+ 
+@@ -152,9 +159,8 @@
+ 
+         MigrationRuleListener migrationRuleListener =
+                 new MigrationRuleListener(ApplicationModel.defaultModel().getDefaultModule());
+-        MigrationInvoker<?> migrationInvoker = Mockito.mock(MigrationInvoker.class);
+-        migrationRuleListener.getHandlers().put(migrationInvoker, handler);
+-        migrationRuleListener.onRefer(null, migrationInvoker, consumerURL, null);
++        migrationRuleListener.getHandlers().put(migrationInvokerMock, handler);
++        migrationRuleListener.onRefer(null, migrationInvokerMock, consumerURL, null);
+         // check migration happened after invoker referred
+         Mockito.verify(handler, Mockito.times(1)).doMigrate(MigrationRule.getInitRule());
+ 
+@@ -203,12 +209,11 @@
+                 new MigrationRuleListener(ApplicationModel.defaultModel().getDefaultModule());
+         Assertions.assertNotNull(migrationRuleListener.localRuleMigrationFuture);
+         Assertions.assertNull(migrationRuleListener.ruleMigrationFuture);
+-        MigrationInvoker<?> migrationInvoker = Mockito.mock(MigrationInvoker.class);
+         MigrationInvoker<?> migrationInvoker2 = Mockito.mock(MigrationInvoker.class);
+ 
+         // Remote rule will be applied when onRefer gets executed
+-        migrationRuleListener.getHandlers().put(migrationInvoker, handler);
+-        migrationRuleListener.onRefer(null, migrationInvoker, consumerURL, null);
++        migrationRuleListener.getHandlers().put(migrationInvokerMock, handler);
++        migrationRuleListener.onRefer(null, migrationInvokerMock, consumerURL, null);
+ 
+         MigrationRule tmpRemoteRule = migrationRuleListener.getRule();
+         ArgumentCaptor<MigrationRule> captor = ArgumentCaptor.forClass(MigrationRule.class);

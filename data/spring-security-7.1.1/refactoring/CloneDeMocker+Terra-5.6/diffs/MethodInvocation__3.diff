@@ -1,0 +1,55 @@
+--- a/core/src/test/java/org/springframework/security/authorization/method/AuthorizationManagerAfterMethodInterceptorTests.java
++++ b/core/src/test/java/org/springframework/security/authorization/method/AuthorizationManagerAfterMethodInterceptorTests.java
+@@ -19,6 +19,7 @@
+ import java.util.function.Supplier;
+ 
+ import org.aopalliance.intercept.MethodInvocation;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.aop.Pointcut;
+@@ -53,6 +54,13 @@
+  */
+ public class AuthorizationManagerAfterMethodInterceptorTests {
+ 
++	private MethodInvocation methodInvocation;
++
++	@BeforeEach
++	void setUp() {
++		this.methodInvocation = mock(MethodInvocation.class);
++	}
++
+ 	@Test
+ 	public void instantiateWhenMethodMatcherNullThenException() {
+ 		AuthorizationManager<MethodInvocationResult> mockAuthorizationManager = mock(AuthorizationManager.class);
+@@ -86,13 +94,12 @@
+ 		Authentication authentication = TestAuthentication.authenticatedUser();
+ 		SecurityContextHolderStrategy strategy = mockSecurityContextHolderStrategy(
+ 				new SecurityContextImpl(authentication));
+-		MethodInvocation invocation = mock(MethodInvocation.class);
+ 		AuthorizationManager<MethodInvocationResult> authorizationManager = AuthenticatedAuthorizationManager
+ 			.authenticated();
+ 		AuthorizationManagerAfterMethodInterceptor advice = new AuthorizationManagerAfterMethodInterceptor(
+ 				Pointcut.TRUE, authorizationManager);
+ 		advice.setSecurityContextHolderStrategy(strategy);
+-		advice.invoke(invocation);
++		advice.invoke(methodInvocation);
+ 		verify(strategy).getContext();
+ 	}
+ 
+@@ -103,14 +110,13 @@
+ 				AuthorityUtils.createAuthorityList("authority"));
+ 		SecurityContextHolderStrategy strategy = mockSecurityContextHolderStrategy(
+ 				new SecurityContextImpl(authentication));
+-		MethodInvocation invocation = mock(MethodInvocation.class);
+ 		AuthorizationManager<MethodInvocationResult> authorizationManager = AuthenticatedAuthorizationManager
+ 			.authenticated();
+ 		AuthorizationManagerAfterMethodInterceptor advice = new AuthorizationManagerAfterMethodInterceptor(
+ 				Pointcut.TRUE, authorizationManager);
+ 		SecurityContextHolderStrategy saved = SecurityContextHolder.getContextHolderStrategy();
+ 		SecurityContextHolder.setContextHolderStrategy(strategy);
+-		advice.invoke(invocation);
++		advice.invoke(methodInvocation);
+ 		verify(strategy).getContext();
+ 		SecurityContextHolder.setContextHolderStrategy(saved);
+ 	}

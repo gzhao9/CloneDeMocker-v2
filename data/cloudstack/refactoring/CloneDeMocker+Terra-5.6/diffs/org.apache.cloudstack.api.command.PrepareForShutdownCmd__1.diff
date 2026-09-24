@@ -1,0 +1,75 @@
+--- a/plugins/maintenance/src/test/java/org/apache/cloudstack/maintenance/ManagementServerMaintenanceManagerImplTest.java
++++ b/plugins/maintenance/src/test/java/org/apache/cloudstack/maintenance/ManagementServerMaintenanceManagerImplTest.java
+@@ -82,6 +82,12 @@
+         return expectedCount;
+     }
+ 
++    private static PrepareForShutdownCmd createMockPrepareForShutdownCmd() {
++        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
++        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        return cmd;
++    }
++
+     @Test
+     public void countPendingJobs() {
+         long expectedCount = prepareCountPendingJobs();
+@@ -133,8 +139,7 @@
+     @Test
+     public void prepareForShutdownCmdNoMsHost() {
+         Mockito.when(msHostDao.findById(1L)).thenReturn(null);
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+ 
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+             spy.prepareForShutdown(cmd);
+@@ -146,8 +151,7 @@
+         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+         Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.Maintenance);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+ 
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+             spy.prepareForShutdown(cmd);
+@@ -163,8 +167,7 @@
+         msHostList.add(msHost2);
+         Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+ 
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+             spy.prepareForShutdown(cmd);
+@@ -178,8 +181,7 @@
+         List<ManagementServerHostVO> msHostList = new ArrayList<>();
+         Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn(null);
+ 
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+@@ -194,8 +196,7 @@
+         List<ManagementServerHostVO> msHostList = new ArrayList<>();
+         Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn("Failed");
+ 
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+@@ -210,8 +211,7 @@
+         Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(new ArrayList<>());
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
+         Mockito.when(hostDao.listByMs(anyLong())).thenReturn(new ArrayList<>());
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn("Success");
+ 
+         spy.prepareForShutdown(cmd);

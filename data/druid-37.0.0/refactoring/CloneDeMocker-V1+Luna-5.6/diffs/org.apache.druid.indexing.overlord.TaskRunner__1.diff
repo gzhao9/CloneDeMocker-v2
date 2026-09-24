@@ -1,0 +1,51 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateStatusActionTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateStatusActionTest.java
+@@ -19,6 +19,7 @@
+ 
+ package org.apache.druid.indexing.common.actions;
+ 
++import org.mockito.Mock;
+ 
+ import com.google.common.base.Optional;
+ import org.apache.druid.indexer.TaskStatus;
+@@ -38,6 +39,8 @@
+ 
+ public class UpdateStatusActionTest
+ {
++    @Mock
++    private TaskRunner runner;
+ 
+   private static final String ID = "id";
+ 
+@@ -47,7 +50,6 @@
+     UpdateStatusAction action = new UpdateStatusAction("successful");
+     Task task = NoopTask.create();
+     TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+-    TaskRunner runner = mock(TaskRunner.class);
+     when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
+     action.perform(task, toolbox);
+     verify(runner, times(1)).updateStatus(eq(task), eq(TaskStatus.success(task.getId())));
+@@ -59,7 +61,6 @@
+     UpdateStatusAction action = new UpdateStatusAction("failure");
+     Task task = NoopTask.create();
+     TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+-    TaskRunner runner = mock(TaskRunner.class);
+     when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
+     action.perform(task, toolbox);
+     verify(runner, times(1)).updateStatus(eq(task), eq(TaskStatus.failure(task.getId(), "Error with task")));
+@@ -70,7 +71,6 @@
+   {
+     Task task = NoopTask.create();
+     TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+-    TaskRunner runner = mock(TaskRunner.class);
+     when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
+     TaskStatus taskStatus = TaskStatus.failure(task.getId(), "custom error message");
+     UpdateStatusAction action = new UpdateStatusAction("failure", taskStatus);
+@@ -84,7 +84,6 @@
+     UpdateStatusAction action = new UpdateStatusAction("", TaskStatus.success(ID));
+     Task task = NoopTask.create();
+     TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+-    TaskRunner runner = mock(TaskRunner.class);
+     when(toolbox.getTaskRunner()).thenReturn(Optional.absent());
+     action.perform(task, toolbox);
+     verify(runner, never()).updateStatus(any(), any());

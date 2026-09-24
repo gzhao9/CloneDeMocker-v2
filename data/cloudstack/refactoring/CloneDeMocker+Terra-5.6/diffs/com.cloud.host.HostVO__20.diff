@@ -1,0 +1,64 @@
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
+@@ -370,8 +370,7 @@
+ 
+         Mockito.when(hostDao.findHypervisorHostInCluster(clusterId)).thenReturn(Collections.emptyList());
+ 
+-        HostVO fallbackHost = mock(HostVO.class);
+-        Mockito.when(fallbackHost.getId()).thenReturn(5L);
++        HostVO fallbackHost = MockHostVO.createMockHostVO(5L);
+         Mockito.when(resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId))
+                 .thenReturn(fallbackHost);
+ 
+@@ -604,8 +603,7 @@
+         Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         Mockito.when(storagePoolDao.findByUuid(dsUuid)).thenReturn(pool);
+ 
+-        HostVO host = mock(HostVO.class);
+-        Mockito.when(host.getId()).thenReturn(8L);
++        HostVO host = MockHostVO.createMockHostVO(8L);
+         Mockito.when(hostDao.findByIp(hostIp)).thenReturn(host);
+ 
+         Backup.VolumeInfo backedUp = new Backup.VolumeInfo(volUuid, "i-2-99-VM/2026/data1.qcow2",
+--- a/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
+@@ -381,8 +381,8 @@
+             pool.setPath("/primary");
+             when(primaryDataStoreDao.findById(701L)).thenReturn(pool);
+ 
++            hostVO = MockHostVO.createMockHostVO(801L);
+             when(hostDao.findByDataCenterId(1L)).thenReturn(List.of(hostVO));
+-            when(hostVO.getId()).thenReturn(801L);
+             when(hostVO.getDataCenterId()).thenReturn(1L);
+             when(agentManager.send(eq(801L), any(Command.class)))
+                     .thenReturn(new CreateImageTransferAnswer(null, true, null, "ticket-1", "https://transfer/file"));
+--- a/server/src/test/java/org/apache/cloudstack/backup/MockHostVO.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/MockHostVO.java
+@@ -0,0 +1,12 @@
++package org.apache.cloudstack.backup;
++
++import com.cloud.host.HostVO;
++import org.mockito.Mockito;
++
++public class MockHostVO {
++    public static HostVO createMockHostVO(long id) {
++        HostVO hostVO = Mockito.mock(HostVO.class);
++        Mockito.when(hostVO.getId()).thenReturn(id);
++        return hostVO;
++    }
++}
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/MockHostVO.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/MockHostVO.java
+@@ -0,0 +1,12 @@
++package org.apache.cloudstack.backup;
++
++import com.cloud.host.HostVO;
++import org.mockito.Mockito;
++
++public class MockHostVO {
++    public static HostVO createMockHostVO(long id) {
++        HostVO hostVO = Mockito.mock(HostVO.class);
++        Mockito.when(hostVO.getId()).thenReturn(id);
++        return hostVO;
++    }
++}

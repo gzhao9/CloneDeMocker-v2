@@ -1,0 +1,60 @@
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/MockServiceDiscoveryWithRemoteMetadata.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/MockServiceDiscoveryWithRemoteMetadata.java
+@@ -0,0 +1,57 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.dubbo.registry.client.event.listener;
++
++import org.apache.dubbo.common.URL;
++import org.apache.dubbo.metadata.MetadataInfo;
++import org.apache.dubbo.registry.client.ServiceDiscovery;
++
++import org.mockito.invocation.InvocationOnMock;
++import org.mockito.stubbing.Answer;
++
++import static org.mockito.ArgumentMatchers.anyList;
++import static org.mockito.ArgumentMatchers.eq;
++import static org.mockito.Mockito.when;
++
++public class MockServiceDiscoveryWithRemoteMetadata {
++
++    public static ServiceDiscovery createMockServiceDiscoveryWithRemoteMetadata(
++            MetadataInfo metadataInfo_111,
++            MetadataInfo metadataInfo_222,
++            MetadataInfo metadataInfo_333,
++            MetadataInfo metadataInfo_444,
++            MetadataInfo metadataInfo_555,
++            URL url) {
++        ServiceDiscovery serviceDiscovery = org.mockito.Mockito.mock(ServiceDiscovery.class);
++        when(serviceDiscovery.getRemoteMetadata(eq("111"), anyList())).thenReturn(metadataInfo_111);
++        when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenAnswer(new Answer<MetadataInfo>() {
++            @Override
++            public MetadataInfo answer(InvocationOnMock invocationOnMock) throws Throwable {
++                if (Thread.currentThread().getName().contains("Dubbo-framework-metadata-retry")) {
++                    return metadataInfo_222;
++                }
++                return MetadataInfo.EMPTY;
++            }
++        });
++        when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenReturn(metadataInfo_222);
++        when(serviceDiscovery.getRemoteMetadata(eq("333"), anyList())).thenReturn(metadataInfo_333);
++        when(serviceDiscovery.getRemoteMetadata(eq("444"), anyList())).thenReturn(metadataInfo_444);
++        when(serviceDiscovery.getRemoteMetadata(eq("555"), anyList())).thenReturn(metadataInfo_555);
++        when(serviceDiscovery.getUrl()).thenReturn(url);
++        return serviceDiscovery;
++    }
++}

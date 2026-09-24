@@ -1,0 +1,175 @@
+--- a/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
++++ b/spring-integration-file/src/test/java/org/springframework/integration/file/remote/gateway/RemoteFileOutboundGatewayTests.java
+@@ -117,12 +117,11 @@
+ 	@Test
+ 	public void testLs() throws Exception {
+ 		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		Session session = mock(Session.class);
++		TestLsEntry[] files = fileList();
++		Session session = createMockSession("testremote/x/", files);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "ls", "payload");
+ 		gw.afterPropertiesSet();
+ 		when(sessionFactory.getSession()).thenReturn(session);
+-		TestLsEntry[] files = fileList();
+-		when(session.list("testremote/x/")).thenReturn(files);
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<List<TestLsEntry>> out = (MessageBuilder<List<TestLsEntry>>) gw
+ 				.handleRequestMessage(new GenericMessage<>("testremote/x"));
+@@ -326,13 +325,12 @@
+ 	@Test
+ 	public void testLs_f() throws Exception {
+ 		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		Session session = mock(Session.class);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "ls", "payload");
+ 		gw.setOptions("-f");
+ 		gw.afterPropertiesSet();
+-		when(sessionFactory.getSession()).thenReturn(session);
+ 		TestLsEntry[] files = fileList();
+-		when(session.list("testremote/x/")).thenReturn(files);
++		Session session = createMockSession("testremote/x/", files);
++		when(sessionFactory.getSession()).thenReturn(session);
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<List<TestLsEntry>> out = (MessageBuilder<List<TestLsEntry>>) gw
+ 				.handleRequestMessage(new GenericMessage<>("testremote/x"));
+@@ -367,15 +365,14 @@
+ 	@Test
+ 	public void testLs_f_R() throws Exception {
+ 		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		Session session = mock(Session.class);
++		TestLsEntry[] level1 = level1List();
++		Session session = createMockSession("testremote/x/", level1);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "ls", "payload");
+ 		gw.setOptions("-f -R");
+ 		gw.afterPropertiesSet();
+ 		when(sessionFactory.getSession()).thenReturn(session);
+-		TestLsEntry[] level1 = level1List();
+ 		TestLsEntry[] level2 = level2List();
+ 		TestLsEntry[] level3 = level3List();
+-		when(session.list("testremote/x/")).thenReturn(level1);
+ 		when(session.list("testremote/x/d1/")).thenReturn(level2);
+ 		when(session.list("testremote/x/d1/d2/")).thenReturn(level3);
+ 		@SuppressWarnings("unchecked")
+@@ -421,12 +418,11 @@
+ 	@Test
+ 	public void testLs_None() throws Exception {
+ 		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		Session session = mock(Session.class);
++		TestLsEntry[] files = new TestLsEntry[0];
++		Session session = createMockSession("testremote/", files);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "ls", "payload");
+ 		gw.afterPropertiesSet();
+ 		when(sessionFactory.getSession()).thenReturn(session);
+-		TestLsEntry[] files = new TestLsEntry[0];
+-		when(session.list("testremote/")).thenReturn(files);
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<List<TestLsEntry>> out = (MessageBuilder<List<TestLsEntry>>) gw
+ 				.handleRequestMessage(new GenericMessage<>("testremote"));
+@@ -437,13 +433,12 @@
+ 	@Test
+ 	public void testLs_1() throws Exception {
+ 		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		Session session = mock(Session.class);
++		TestLsEntry[] files = fileList();
++		Session session = createMockSession("testremote/", files);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "ls", "payload");
+ 		gw.setOptions("-1");
+ 		gw.afterPropertiesSet();
+ 		when(sessionFactory.getSession()).thenReturn(session);
+-		TestLsEntry[] files = fileList();
+-		when(session.list("testremote/")).thenReturn(files);
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<List<String>> out = (MessageBuilder<List<String>>) gw
+ 				.handleRequestMessage(new GenericMessage<>("testremote"));
+@@ -456,13 +451,12 @@
+ 	@Test
+ 	public void testLs_1_f() throws Exception { //no sort
+ 		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		Session session = mock(Session.class);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "ls", "payload");
+ 		gw.setOptions("-1 -f");
+ 		gw.afterPropertiesSet();
+-		when(sessionFactory.getSession()).thenReturn(session);
+ 		TestLsEntry[] files = fileList();
+-		when(session.list("testremote/")).thenReturn(files);
++		Session session = createMockSession("testremote/", files);
++		when(sessionFactory.getSession()).thenReturn(session);
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<List<String>> out = (MessageBuilder<List<String>>) gw
+ 				.handleRequestMessage(new GenericMessage<>("testremote"));
+@@ -474,13 +468,11 @@
+ 	@Test
+ 	public void testLs_1_dirs() throws Exception {
+ 		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		Session session = mock(Session.class);
++		Session session = createMockSession("testremote/", fileList());
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "ls", "payload");
+ 		gw.setOptions("-1 -dirs");
+ 		gw.afterPropertiesSet();
+ 		when(sessionFactory.getSession()).thenReturn(session);
+-		TestLsEntry[] files = fileList();
+-		when(session.list("testremote/")).thenReturn(files);
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<List<String>> out = (MessageBuilder<List<String>>) gw
+ 				.handleRequestMessage(new GenericMessage<>("testremote"));
+@@ -493,13 +485,12 @@
+ 	@Test
+ 	public void testLs_1_dirs_links() throws Exception {
+ 		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		Session session = mock(Session.class);
++		TestLsEntry[] files = fileList();
++		Session session = createMockSession("testremote/", files);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "ls", "payload");
+ 		gw.setOptions("-1 -dirs -links");
+ 		gw.afterPropertiesSet();
+ 		when(sessionFactory.getSession()).thenReturn(session);
+-		TestLsEntry[] files = fileList();
+-		when(session.list("testremote/")).thenReturn(files);
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<List<String>> out = (MessageBuilder<List<String>>) gw
+ 				.handleRequestMessage(new GenericMessage<>("testremote"));
+@@ -513,13 +504,12 @@
+ 	@Test
+ 	public void testLs_1_a_f_dirs_links() throws Exception {
+ 		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		Session session = mock(Session.class);
++		TestLsEntry[] files = fileList();
++		Session session = createMockSession("testremote/", files);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "ls", "payload");
+ 		gw.setOptions("-1 -a -f -dirs -links");
+ 		gw.afterPropertiesSet();
+ 		when(sessionFactory.getSession()).thenReturn(session);
+-		TestLsEntry[] files = fileList();
+-		when(session.list("testremote/")).thenReturn(files);
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<List<String>> out = (MessageBuilder<List<String>>) gw
+ 				.handleRequestMessage(new GenericMessage<>("testremote"));
+@@ -535,14 +525,13 @@
+ 	@Test
+ 	public void testLs_1_a_f_dirs_links_filtered() throws Exception {
+ 		SessionFactory sessionFactory = mock(SessionFactory.class);
+-		Session session = mock(Session.class);
++		TestLsEntry[] files = fileList();
++		Session session = createMockSession("testremote/", files);
+ 		TestRemoteFileOutboundGateway gw = new TestRemoteFileOutboundGateway(sessionFactory, "ls", "payload");
+ 		gw.setOptions("-1 -a -f -dirs -links");
+ 		gw.setFilter(new TestPatternFilter("*4"));
+ 		gw.afterPropertiesSet();
+ 		when(sessionFactory.getSession()).thenReturn(session);
+-		TestLsEntry[] files = fileList();
+-		when(session.list("testremote/")).thenReturn(files);
+ 		@SuppressWarnings("unchecked")
+ 		MessageBuilder<List<String>> out = (MessageBuilder<List<String>>) gw
+ 				.handleRequestMessage(new GenericMessage<>("testremote"));
+@@ -706,6 +695,12 @@
+ 		BufferedReader reader = new BufferedReader(new FileReader(outFile));
+ 		assertThat(reader.readLine()).isEqualTo(expected);
+ 		reader.close();
++	}
++
++	private static Session createMockSession(String path, TestLsEntry[] files) throws Exception {
++		Session session = mock(Session.class);
++		when(session.list(path)).thenReturn(files);
++		return session;
+ 	}
+ 
+ 	@Test

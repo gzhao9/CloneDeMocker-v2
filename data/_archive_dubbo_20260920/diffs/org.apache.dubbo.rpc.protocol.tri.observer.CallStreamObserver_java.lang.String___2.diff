@@ -1,0 +1,116 @@
+--- a/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/MutinyServerCallsTest.java
++++ b/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/MutinyServerCallsTest.java
+@@ -75,7 +75,7 @@
+ 
+     @Test
+     void testOneToMany_success() throws ExecutionException, InterruptedException {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
++        CallStreamObserver<String> responseObserver = mockResponseObserver();
+ 
+         // multi results
+         Function<Uni<String>, Multi<String>> func = reqUni -> Multi.createFrom().items("a", "b", "c");
+@@ -87,14 +87,12 @@
+         assertEquals(3, results.size());
+ 
+         // test responseObserver
+-        verify(responseObserver, atLeastOnce()).onNext(any());
+-        verify(responseObserver, times(1)).onCompleted();
+-        verify(responseObserver, never()).onError(any());
++        verifyStreamingResponse(responseObserver);
+     }
+ 
+     @Test
+     void testOneToMany_exception() {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
++        CallStreamObserver<String> responseObserver = mockResponseObserver();
+ 
+         Function<Uni<String>, Multi<String>> func = reqUni -> {
+             throw new RuntimeException("fail");
+@@ -104,12 +102,12 @@
+ 
+         assertTrue(future.isCompletedExceptionally());
+ 
+-        verify(responseObserver, times(1)).onError(any());
++        verifyResponseError(responseObserver);
+     }
+ 
+     @Test
+     void testManyToOne_success() throws InterruptedException {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
++        CallStreamObserver<String> responseObserver = mockResponseObserver();
+ 
+         // return uni
+         Function<Multi<String>, Uni<String>> func =
+@@ -126,13 +124,12 @@
+         Thread.sleep(200);
+ 
+         verify(responseObserver, times(1)).onNext("size:3");
+-        verify(responseObserver, times(1)).onCompleted();
+-        verify(responseObserver, never()).onError(any());
++        verifyResponseCompletedWithoutError(responseObserver);
+     }
+ 
+     @Test
+     void testManyToOne_funcThrows() {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
++        CallStreamObserver<String> responseObserver = mockResponseObserver();
+ 
+         Function<Multi<String>, Uni<String>> func = multi -> {
+             throw new RuntimeException("fail");
+@@ -140,12 +137,12 @@
+ 
+         StreamObserver<String> requestObserver = MutinyServerCalls.manyToOne(responseObserver, func);
+ 
+-        verify(responseObserver, times(1)).onError(any());
++        verifyResponseError(responseObserver);
+     }
+ 
+     @Test
+     void testManyToMany_success() throws InterruptedException {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
++        CallStreamObserver<String> responseObserver = mockResponseObserver();
+ 
+         Function<Multi<String>, Multi<String>> func = multi -> multi.map(s -> s + "-resp");
+ 
+@@ -158,14 +155,12 @@
+ 
+         Thread.sleep(200);
+ 
+-        verify(responseObserver, atLeastOnce()).onNext(any());
+-        verify(responseObserver, times(1)).onCompleted();
+-        verify(responseObserver, never()).onError(any());
++        verifyStreamingResponse(responseObserver);
+     }
+ 
+     @Test
+     void testManyToMany_funcThrows() {
+-        CallStreamObserver<String> responseObserver = mock(CallStreamObserver.class);
++        CallStreamObserver<String> responseObserver = mockResponseObserver();
+ 
+         Function<Multi<String>, Multi<String>> func = multi -> {
+             throw new RuntimeException("fail");
+@@ -173,6 +168,24 @@
+ 
+         StreamObserver<String> requestObserver = MutinyServerCalls.manyToMany(responseObserver, func);
+ 
++        verifyResponseError(responseObserver);
++    }
++
++    private CallStreamObserver<String> mockResponseObserver() {
++        return mock(CallStreamObserver.class);
++    }
++
++    private void verifyStreamingResponse(CallStreamObserver<String> responseObserver) {
++        verify(responseObserver, atLeastOnce()).onNext(any());
++        verifyResponseCompletedWithoutError(responseObserver);
++    }
++
++    private void verifyResponseCompletedWithoutError(CallStreamObserver<String> responseObserver) {
++        verify(responseObserver, times(1)).onCompleted();
++        verify(responseObserver, never()).onError(any());
++    }
++
++    private void verifyResponseError(CallStreamObserver<String> responseObserver) {
+         verify(responseObserver, times(1)).onError(any());
+     }
+ }

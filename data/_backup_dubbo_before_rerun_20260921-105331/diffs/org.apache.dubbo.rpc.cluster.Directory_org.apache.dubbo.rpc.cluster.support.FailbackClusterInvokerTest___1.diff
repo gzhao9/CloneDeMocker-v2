@@ -1,0 +1,73 @@
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailbackClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailbackClusterInvokerTest.java
+@@ -102,14 +102,20 @@
+         given(invoker.getInterface()).willReturn(FailbackClusterInvokerTest.class);
+     }
+ 
+-    @Test
+-    void testInvokeWithIllegalRetriesParam() {
+-        URL url = URL.valueOf("test://test:11/test?retries=-1&failbacktasks=2");
++    private static Directory<FailbackClusterInvokerTest> createMockDirectory(
++            URL url, RpcInvocation invocation, List<Invoker<FailbackClusterInvokerTest>> invokers) {
+         Directory<FailbackClusterInvokerTest> dic = mock(Directory.class);
+         given(dic.getUrl()).willReturn(url);
+         given(dic.getConsumerUrl()).willReturn(url);
+         given(dic.getInterface()).willReturn(FailbackClusterInvokerTest.class);
+-        given(dic.list(invocation)).willReturn(invokers);
++        given(dic.list(invocation)).willReturn((List<Invoker<FailbackClusterInvokerTest>>) invokers);
++        return dic;
++    }
++
++    @Test
++    void testInvokeWithIllegalRetriesParam() {
++        URL url = URL.valueOf("test://test:11/test?retries=-1&failbacktasks=2");
++        Directory<FailbackClusterInvokerTest> dic = createMockDirectory(url, invocation, invokers);
+         given(invoker.getUrl()).willReturn(url);
+ 
+         FailbackClusterInvoker<FailbackClusterInvokerTest> invoker = new FailbackClusterInvoker<>(dic);
+@@ -158,12 +164,7 @@
+     @Test
+     @Order(3)
+     public void testNoInvoke() {
+-        dic = mock(Directory.class);
+-
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+-        given(dic.list(invocation)).willReturn(null);
+-        given(dic.getInterface()).willReturn(FailbackClusterInvokerTest.class);
++        dic = createMockDirectory(url, invocation, null);
+ 
+         invocation.setMethodName("method1");
+         invokers.add(invoker);
+@@ -221,6 +222,7 @@
+             throws InterruptedException, NoSuchFieldException, IllegalAccessException {
+         int retries = 0;
+         resetInvokerToException();
++        dic = createMockDirectory(url, invocation, invokers);
+         given(dic.getConsumerUrl()).willReturn(url.addParameter(RETRIES_KEY, retries));
+ 
+         FailbackClusterInvoker<FailbackClusterInvokerTest> invoker = new FailbackClusterInvoker<>(dic);
+@@ -246,6 +248,7 @@
+             throws InterruptedException, NoSuchFieldException, IllegalAccessException {
+         int retries = 2;
+         resetInvokerToException();
++        dic = createMockDirectory(url, invocation, invokers);
+         given(dic.getConsumerUrl()).willReturn(url.addParameter(RETRIES_KEY, retries));
+ 
+         FailbackClusterInvoker<FailbackClusterInvokerTest> invoker = new FailbackClusterInvoker<>(dic);
+@@ -270,6 +273,7 @@
+     public void testInvokeRetryTimesWithDefaultValue()
+             throws InterruptedException, NoSuchFieldException, IllegalAccessException {
+         resetInvokerToException();
++        dic = createMockDirectory(url, invocation, invokers);
+         given(dic.getConsumerUrl()).willReturn(URL.valueOf("test://test:11/test"));
+ 
+         FailbackClusterInvoker<FailbackClusterInvokerTest> invoker = new FailbackClusterInvoker<>(dic);
+@@ -294,6 +298,7 @@
+     public void testInvokeRetryTimesWithIllegalValue()
+             throws InterruptedException, NoSuchFieldException, IllegalAccessException {
+         resetInvokerToException();
++        dic = createMockDirectory(url, invocation, invokers);
+         given(dic.getConsumerUrl()).willReturn(url.addParameter(RETRIES_KEY, -100));
+ 
+         FailbackClusterInvoker<FailbackClusterInvokerTest> invoker = new FailbackClusterInvoker<>(dic);

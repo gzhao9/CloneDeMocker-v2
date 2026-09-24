@@ -1,0 +1,37 @@
+--- a/server/src/test/java/com/cloud/resourcelimit/ResourceLimitManagerImplTest.java
++++ b/server/src/test/java/com/cloud/resourcelimit/ResourceLimitManagerImplTest.java
+@@ -254,9 +254,8 @@
+     @Test
+     public void testGetResourceLimitHostTags1() {
+         ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
+-        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+         Mockito.when(serviceOffering.getHostTag()).thenReturn(hostTags.get(0));
+-        Mockito.when(template.getTemplateTag()).thenReturn(hostTags.get(1));
++        VirtualMachineTemplate template = createMockVirtualMachineTemplate(hostTags.get(1));
+         List<String> tags = resourceLimitManager.getResourceLimitHostTags(serviceOffering, template);
+         Assert.assertEquals(2, tags.size());
+         Assert.assertEquals(hostTags.get(0), tags.get(0));
+@@ -286,11 +285,10 @@
+     public void testCheckVmResourceLimit() {
+         List<Reserver> reservations = new ArrayList<>();
+         ServiceOffering serviceOffering = Mockito.mock(ServiceOffering.class);
+-        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
+         Mockito.when(serviceOffering.getHostTag()).thenReturn(hostTags.get(0));
+         Mockito.when(serviceOffering.getCpu()).thenReturn(2);
+         Mockito.when(serviceOffering.getRamSize()).thenReturn(256);
+-        Mockito.when(template.getTemplateTag()).thenReturn(hostTags.get(0));
++        VirtualMachineTemplate template = createMockVirtualMachineTemplate(hostTags.get(0));
+         Account account = Mockito.mock(Account.class);
+         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+             resourceLimitManager.checkVmResourceLimit(account, true, serviceOffering, template, reservations);
+@@ -1410,4 +1408,10 @@
+         Assert.assertEquals(EnumSet.allOf(Resource.ResourceType.class).size(), result.size());
+         Assert.assertEquals(25L, result.get(0).getMax().longValue());
+     }
++
++    private static VirtualMachineTemplate createMockVirtualMachineTemplate(String templateTag) {
++        VirtualMachineTemplate template = Mockito.mock(VirtualMachineTemplate.class);
++        Mockito.when(template.getTemplateTag()).thenReturn(templateTag);
++        return template;
++    }
+ }

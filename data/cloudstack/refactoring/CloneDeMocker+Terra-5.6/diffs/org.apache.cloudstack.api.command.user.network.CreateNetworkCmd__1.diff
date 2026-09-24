@@ -1,0 +1,46 @@
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -600,12 +600,17 @@
+         }
+     }
+ 
++    private static CreateNetworkCmd createMockCreateNetworkCmd(String ip4Dns1) {
++        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
++        Mockito.when(cmd.getIp4Dns1()).thenReturn(ip4Dns1);
++        return cmd;
++    }
++
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateL2NetworkDnsFailure() {
+         registerCallContext();
+-        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
++        CreateNetworkCmd cmd = createMockCreateNetworkCmd(ip4Dns[0]);
+         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.L2, false, false, true);
+-        Mockito.when(cmd.getIp4Dns1()).thenReturn(ip4Dns[0]);
+         try {
+             service.createGuestNetwork(cmd);
+         } catch (InsufficientCapacityException | ResourceAllocationException e) {
+@@ -616,9 +621,8 @@
+     @Test
+     public void testCreateNetworkDnsVpcFailure() {
+         registerCallContext();
+-        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
++        CreateNetworkCmd cmd = createMockCreateNetworkCmd(ip4Dns[0]);
+         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
+-        Mockito.when(cmd.getIp4Dns1()).thenReturn(ip4Dns[0]);
+         Mockito.when(cmd.getCidrSize()).thenReturn(null);
+         try {
+             service.createGuestNetwork(cmd);
+@@ -630,11 +634,10 @@
+     @Test(expected = CloudRuntimeException.class)
+     public void testCreateNetworkDnsOfferingServiceFailure() {
+         registerCallContext();
+-        CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
++        CreateNetworkCmd cmd = createMockCreateNetworkCmd(ip4Dns[0]);
+         Mockito.when(cmd.getDomainId()).thenReturn(null);
+         Mockito.when(cmd.getProjectId()).thenReturn(null);
+         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, false);
+-        Mockito.when(cmd.getIp4Dns1()).thenReturn(ip4Dns[0]);
+         try {
+             service.createGuestNetwork(cmd);
+         } catch (InsufficientCapacityException | ResourceAllocationException e) {

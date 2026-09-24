@@ -1,0 +1,91 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -819,12 +819,9 @@
+         when(vmwareGuru.createVMTemplateOutOfBand(anyString(), anyString(), anyMap(), any(DataStoreTO.class), anyInt())).thenReturn(tmplFileName);
+         when(vmwareGuru.removeVMTemplateOutOfBand(any(DataStoreTO.class), anyString())).thenReturn(true);
+ 
+-        HostVO convertHost = mock(HostVO.class);
+         long convertHostId = 1L;
+-        when(convertHost.getStatus()).thenReturn(Status.Up);
+-        when(convertHost.getResourceState()).thenReturn(ResourceState.Enabled);
++        HostVO convertHost = createMockHost(ResourceState.Enabled, Host.Type.Routing);
+         when(convertHost.getId()).thenReturn(convertHostId);
+-        when(convertHost.getType()).thenReturn(Host.Type.Routing);
+         when(convertHost.getDataCenterId()).thenReturn(zoneId);
+         when(convertHost.getClusterId()).thenReturn(clusterId);
+         if (selectConvertHost) {
+@@ -1082,6 +1079,14 @@
+         return cluster;
+     }
+ 
++    private static HostVO createMockHost(ResourceState resourceState, Host.Type type) {
++        HostVO host = Mockito.mock(HostVO.class);
++        when(host.getResourceState()).thenReturn(resourceState);
++        when(host.getStatus()).thenReturn(Status.Up);
++        when(host.getType()).thenReturn(type);
++        return host;
++    }
++
+     @Test(expected = CloudRuntimeException.class)
+     public void testSelectInstanceConversionTemporaryLocationInvalidStorage() {
+         ClusterVO cluster = getClusterForTests();
+@@ -1150,10 +1155,7 @@
+     public void testSelectKVMHostForImportingInClusterWithImportInstanceIdSuccess() {
+         Long hostId = 1L;
+         ClusterVO cluster = getClusterForTests();
+-        HostVO host = Mockito.mock(HostVO.class);
+-        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+-        when(host.getStatus()).thenReturn(Status.Up);
+-        when(host.getType()).thenReturn(Host.Type.Routing);
++        HostVO host = createMockHost(ResourceState.Enabled, Host.Type.Routing);
+         when(host.getClusterId()).thenReturn(1L);
+ 
+         when(hostDao.findById(hostId)).thenReturn(host);
+@@ -1199,10 +1201,7 @@
+     public void testSelectKVMHostForImportingInClusterWithImportInstanceIdInvalidType() {
+         Long hostId = 1L;
+         ClusterVO cluster = getClusterForTests();
+-        HostVO host = Mockito.mock(HostVO.class);
+-        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+-        when(host.getStatus()).thenReturn(Status.Up);
+-        when(host.getType()).thenReturn(Host.Type.Storage);
++        HostVO host = createMockHost(ResourceState.Enabled, Host.Type.Storage);
+ 
+         when(hostDao.findById(hostId)).thenReturn(host);
+ 
+@@ -1264,10 +1263,7 @@
+     public void testSelectKVMHostForConversionInClusterWithImportInstanceIdDisabledHost() {
+         Long hostId = 1L;
+         ClusterVO cluster = getClusterForTests();
+-        HostVO host = Mockito.mock(HostVO.class);
+-        when(host.getResourceState()).thenReturn(ResourceState.Disabled);
+-        when(host.getStatus()).thenReturn(Status.Up);
+-        when(host.getType()).thenReturn(Host.Type.Routing);
++        HostVO host = createMockHost(ResourceState.Disabled, Host.Type.Routing);
+         when(host.getDataCenterId()).thenReturn(1L);
+ 
+         when(hostDao.findById(hostId)).thenReturn(host);
+@@ -1318,10 +1314,7 @@
+     public void testSelectKVMHostForConversionInClusterWithImportInstanceIdInvalidZone() {
+         Long hostId = 1L;
+         ClusterVO cluster = getClusterForTests();
+-        HostVO host = Mockito.mock(HostVO.class);
+-        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+-        when(host.getStatus()).thenReturn(Status.Up);
+-        when(host.getType()).thenReturn(Host.Type.Routing);
++        HostVO host = createMockHost(ResourceState.Enabled, Host.Type.Routing);
+         when(host.getDataCenterId()).thenReturn(2L);
+ 
+         when(hostDao.findById(hostId)).thenReturn(host);
+@@ -1333,10 +1326,7 @@
+     public void testSelectKVMHostForConversionInClusterWithImportInstanceIdInvalidType() {
+         Long hostId = 1L;
+         ClusterVO cluster = getClusterForTests();
+-        HostVO host = Mockito.mock(HostVO.class);
+-        when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+-        when(host.getStatus()).thenReturn(Status.Up);
+-        when(host.getType()).thenReturn(Host.Type.SecondaryStorage);
++        HostVO host = createMockHost(ResourceState.Enabled, Host.Type.SecondaryStorage);
+ 
+         when(hostDao.findById(hostId)).thenReturn(host);
+ 

@@ -1,0 +1,70 @@
+--- a/config/src/test/java/org/springframework/security/config/annotation/web/reactive/ReactiveOAuth2ClientImportSelectorTests.java
++++ b/config/src/test/java/org/springframework/security/config/annotation/web/reactive/ReactiveOAuth2ClientImportSelectorTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.config.annotation.web.reactive;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.junit.jupiter.api.extension.ExtendWith;
+ import reactor.core.publisher.Mono;
+@@ -57,7 +58,14 @@
+ 
+ 	public final SpringTestContext spring = new SpringTestContext(this);
+ 
++	private ReactiveClientRegistrationRepository reactiveClientRegistrationRepository;
++
+ 	WebTestClient client;
++
++	@BeforeEach
++	void setUp() {
++		this.reactiveClientRegistrationRepository = mock(ReactiveClientRegistrationRepository.class);
++	}
+ 
+ 	@Autowired
+ 	public void setApplicationContext(ApplicationContext context) {
+@@ -72,8 +80,6 @@
+ 	public void requestWhenAuthorizedClientManagerConfiguredThenUsed() {
+ 		String clientRegistrationId = "client";
+ 		String principalName = "user";
+-		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+-				ReactiveClientRegistrationRepository.class);
+ 		ServerOAuth2AuthorizedClientRepository authorizedClientRepository = mock(
+ 				ServerOAuth2AuthorizedClientRepository.class);
+ 		ReactiveOAuth2AuthorizedClientManager authorizedClientManager = mock(
+@@ -84,7 +90,7 @@
+ 		OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(clientRegistration, principalName,
+ 				TestOAuth2AccessTokens.noScopes());
+ 		given(authorizedClientManager.authorize(any())).willReturn(Mono.just(authorizedClient));
+-		OAuth2AuthorizedClientManagerRegisteredConfig.CLIENT_REGISTRATION_REPOSITORY = clientRegistrationRepository;
++		OAuth2AuthorizedClientManagerRegisteredConfig.CLIENT_REGISTRATION_REPOSITORY = reactiveClientRegistrationRepository;
+ 		OAuth2AuthorizedClientManagerRegisteredConfig.AUTHORIZED_CLIENT_REPOSITORY = authorizedClientRepository;
+ 		OAuth2AuthorizedClientManagerRegisteredConfig.AUTHORIZED_CLIENT_MANAGER = authorizedClientManager;
+ 		this.spring.register(OAuth2AuthorizedClientManagerRegisteredConfig.class).autowire();
+@@ -96,7 +102,7 @@
+ 				.expectBody(String.class).isEqualTo("resolved");
+ 		// @formatter:on
+ 		verify(authorizedClientManager).authorize(any());
+-		verifyNoInteractions(clientRegistrationRepository);
++		verifyNoInteractions(reactiveClientRegistrationRepository);
+ 		verifyNoInteractions(authorizedClientRepository);
+ 	}
+ 
+@@ -104,8 +110,6 @@
+ 	public void requestWhenAuthorizedClientManagerNotConfigureThenUseDefaultAuthorizedClientManager() {
+ 		String clientRegistrationId = "client";
+ 		String principalName = "user";
+-		ReactiveClientRegistrationRepository clientRegistrationRepository = mock(
+-				ReactiveClientRegistrationRepository.class);
+ 		ServerOAuth2AuthorizedClientRepository authorizedClientRepository = mock(
+ 				ServerOAuth2AuthorizedClientRepository.class);
+ 		ClientRegistration clientRegistration = TestClientRegistrations.clientCredentials()
+@@ -113,7 +117,7 @@
+ 			.build();
+ 		OAuth2AuthorizedClient authorizedClient = new OAuth2AuthorizedClient(clientRegistration, principalName,
+ 				TestOAuth2AccessTokens.noScopes());
+-		OAuth2AuthorizedClientManagerRegisteredConfig.CLIENT_REGISTRATION_REPOSITORY = clientRegistrationRepository;
++		OAuth2AuthorizedClientManagerRegisteredConfig.CLIENT_REGISTRATION_REPOSITORY = reactiveClientRegistrationRepository;
+ 		OAuth2AuthorizedClientManagerRegisteredConfig.AUTHORIZED_CLIENT_REPOSITORY = authorizedClientRepository;
+ 		OAuth2AuthorizedClientManagerRegisteredConfig.AUTHORIZED_CLIENT_MANAGER = null;
+ 		given(authorizedClientRepository.loadAuthorizedClient(any(), any(), any()))

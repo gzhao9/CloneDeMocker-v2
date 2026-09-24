@@ -1,0 +1,90 @@
+--- a/saml2/saml2-service-provider/src/opensaml5Test/java/org/springframework/security/saml2/provider/service/web/OpenSaml5AuthenticationTokenConverterTests.java
++++ b/saml2/saml2-service-provider/src/opensaml5Test/java/org/springframework/security/saml2/provider/service/web/OpenSaml5AuthenticationTokenConverterTests.java
+@@ -158,15 +158,13 @@
+ 
+ 	@Test
+ 	public void convertWhenSavedAuthenticationRequestThenToken() {
+-		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+-				Saml2AuthenticationRequestRepository.class);
+ 		AbstractSaml2AuthenticationRequest authenticationRequest = mock(AbstractSaml2AuthenticationRequest.class);
++		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = MockSaml2AuthenticationRequestRepository
++			.createMockSaml2AuthenticationRequestRepository(authenticationRequest);
+ 		given(authenticationRequest.getRelyingPartyRegistrationId()).willReturn(this.registration.getRegistrationId());
+ 		OpenSaml5AuthenticationTokenConverter converter = new OpenSaml5AuthenticationTokenConverter(this.registrations);
+ 		converter.setAuthenticationRequestRepository(authenticationRequestRepository);
+ 		given(this.registrations.findByRegistrationId(any())).willReturn(this.registration);
+-		given(authenticationRequestRepository.loadAuthenticationRequest(any(HttpServletRequest.class)))
+-			.willReturn(authenticationRequest);
+ 		MockHttpServletRequest request = post("/login/saml2/sso/" + this.registration.getRegistrationId());
+ 		request.setParameter(Saml2ParameterNames.SAML_RESPONSE,
+ 				Saml2Utils.samlEncode("response".getBytes(StandardCharsets.UTF_8)));
+--- a/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/Saml2AuthenticationTokenConverterTests.java
++++ b/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/Saml2AuthenticationTokenConverterTests.java
+@@ -171,18 +171,16 @@
+ 
+ 	@Test
+ 	public void convertWhenSavedAuthenticationRequestThenToken() {
+-		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+-				Saml2AuthenticationRequestRepository.class);
+ 		AbstractSaml2AuthenticationRequest authenticationRequest = mock(AbstractSaml2AuthenticationRequest.class);
+ 		given(authenticationRequest.getRelyingPartyRegistrationId())
+ 			.willReturn(this.relyingPartyRegistration.getRegistrationId());
++		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = MockSaml2AuthenticationRequestRepository
++				.createMockSaml2AuthenticationRequestRepository(authenticationRequest);
+ 		Saml2AuthenticationTokenConverter converter = new Saml2AuthenticationTokenConverter(
+ 				this.relyingPartyRegistrationResolver);
+ 		converter.setAuthenticationRequestRepository(authenticationRequestRepository);
+ 		given(this.relyingPartyRegistrationResolver.resolve(any(HttpServletRequest.class), any()))
+ 			.willReturn(this.relyingPartyRegistration);
+-		given(authenticationRequestRepository.loadAuthenticationRequest(any(HttpServletRequest.class)))
+-			.willReturn(authenticationRequest);
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		request.setParameter(Saml2ParameterNames.SAML_RESPONSE,
+ 				Saml2Utils.samlEncode("response".getBytes(StandardCharsets.UTF_8)));
+@@ -196,16 +194,14 @@
+ 	@Test
+ 	public void convertWhenSavedAuthenticationRequestThenTokenWithRelyingPartyRegistrationResolver(
+ 			@Mock RelyingPartyRegistrationResolver resolver) {
+-		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
+-				Saml2AuthenticationRequestRepository.class);
+ 		AbstractSaml2AuthenticationRequest authenticationRequest = mock(AbstractSaml2AuthenticationRequest.class);
+ 		given(authenticationRequest.getRelyingPartyRegistrationId())
+ 			.willReturn(this.relyingPartyRegistration.getRegistrationId());
++		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = MockSaml2AuthenticationRequestRepository
++				.createMockSaml2AuthenticationRequestRepository(authenticationRequest);
+ 		Saml2AuthenticationTokenConverter converter = new Saml2AuthenticationTokenConverter(resolver);
+ 		converter.setAuthenticationRequestRepository(authenticationRequestRepository);
+ 		given(resolver.resolve(any(HttpServletRequest.class), any())).willReturn(this.relyingPartyRegistration);
+-		given(authenticationRequestRepository.loadAuthenticationRequest(any(HttpServletRequest.class)))
+-			.willReturn(authenticationRequest);
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		request.setParameter(Saml2ParameterNames.SAML_RESPONSE,
+ 				Saml2Utils.samlEncode("response".getBytes(StandardCharsets.UTF_8)));
+--- a/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/MockSaml2AuthenticationRequestRepository.java
++++ b/saml2/saml2-service-provider/src/test/java/org/springframework/security/saml2/provider/service/web/MockSaml2AuthenticationRequestRepository.java
+@@ -0,0 +1,25 @@
++package org.springframework.security.saml2.provider.service.web;
++
++import jakarta.servlet.http.HttpServletRequest;
++
++import org.springframework.security.saml2.provider.service.authentication.AbstractSaml2AuthenticationRequest;
++
++import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.mock;
++
++public final class MockSaml2AuthenticationRequestRepository {
++
++	private MockSaml2AuthenticationRequestRepository() {
++	}
++
++	public static Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> createMockSaml2AuthenticationRequestRepository(
++			AbstractSaml2AuthenticationRequest authenticationRequest) {
++		Saml2AuthenticationRequestRepository<AbstractSaml2AuthenticationRequest> authenticationRequestRepository = mock(
++				Saml2AuthenticationRequestRepository.class);
++		given(authenticationRequestRepository.loadAuthenticationRequest(any(HttpServletRequest.class)))
++			.willReturn(authenticationRequest);
++		return authenticationRequestRepository;
++	}
++
++}

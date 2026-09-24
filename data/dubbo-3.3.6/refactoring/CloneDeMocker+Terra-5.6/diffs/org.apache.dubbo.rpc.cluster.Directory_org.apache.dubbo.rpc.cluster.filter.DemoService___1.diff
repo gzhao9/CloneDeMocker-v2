@@ -1,0 +1,72 @@
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/BroadCastClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/BroadCastClusterInvokerTest.java
+@@ -53,17 +53,13 @@
+     @BeforeEach
+     public void setUp() throws Exception {
+ 
+-        dic = mock(Directory.class);
+-
+         invoker1 = new MockInvoker();
+         invoker2 = new MockInvoker();
+         invoker3 = new MockInvoker();
+         invoker4 = new MockInvoker();
+ 
+         url = URL.valueOf("test://127.0.0.1:8080/test");
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+-        given(dic.getInterface()).willReturn(DemoService.class);
++        dic = MockDemoServiceDirectory.createMockDemoServiceDirectory(url);
+ 
+         invocation = new RpcInvocation();
+         invocation.setMethodName("test");
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailSafeClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailSafeClusterInvokerTest.java
+@@ -57,12 +57,9 @@
+     public void setUp() throws Exception {
+         RpcContext.removeServiceContext();
+ 
+-        dic = mock(Directory.class);
++        dic = MockDemoServiceDirectory.createMockDemoServiceDirectory(url);
+ 
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+         given(dic.list(invocation)).willReturn(invokers);
+-        given(dic.getInterface()).willReturn(DemoService.class);
+         invocation.setMethodName("method1");
+ 
+         invokers.add(invoker);
+@@ -100,12 +97,7 @@
+ 
+     @Test
+     void testNoInvoke() {
+-        dic = mock(Directory.class);
+-
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+         given(dic.list(invocation)).willReturn(null);
+-        given(dic.getInterface()).willReturn(DemoService.class);
+ 
+         invocation.setMethodName("method1");
+ 
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MockDemoServiceDirectory.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MockDemoServiceDirectory.java
+@@ -0,0 +1,19 @@
++package org.apache.dubbo.rpc.cluster.support;
++
++import org.apache.dubbo.common.URL;
++import org.apache.dubbo.rpc.cluster.Directory;
++import org.apache.dubbo.rpc.cluster.filter.DemoService;
++
++import static org.mockito.BDDMockito.given;
++import static org.mockito.Mockito.mock;
++
++public class MockDemoServiceDirectory {
++
++    public static Directory<DemoService> createMockDemoServiceDirectory(URL url) {
++        Directory<DemoService> dic = mock(Directory.class);
++        given(dic.getUrl()).willReturn(url);
++        given(dic.getConsumerUrl()).willReturn(url);
++        given(dic.getInterface()).willReturn(DemoService.class);
++        return dic;
++    }
++}

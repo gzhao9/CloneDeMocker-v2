@@ -1,0 +1,56 @@
+--- a/core/src/test/java/org/springframework/security/authentication/jaas/DefaultJaasAuthenticationProviderTests.java
++++ b/core/src/test/java/org/springframework/security/authentication/jaas/DefaultJaasAuthenticationProviderTests.java
+@@ -126,11 +126,10 @@
+ 	@Test
+ 	public void logout() throws Exception {
+ 		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
+-		SecurityContext securityContext = mock(SecurityContext.class);
+ 		JaasAuthenticationToken token = mock(JaasAuthenticationToken.class);
++		SecurityContext securityContext = createMockSecurityContext(token);
+ 		LoginContext context = mock(LoginContext.class);
+ 		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
+-		given(securityContext.getAuthentication()).willReturn(token);
+ 		given(token.getLoginContext()).willReturn(context);
+ 		this.provider.onApplicationEvent(event);
+ 		verify(event).getSecurityContexts();
+@@ -177,10 +176,9 @@
+ 	@Test
+ 	public void logoutNullLoginContext() {
+ 		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
+-		SecurityContext securityContext = mock(SecurityContext.class);
+ 		JaasAuthenticationToken token = mock(JaasAuthenticationToken.class);
+-		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
+-		given(securityContext.getAuthentication()).willReturn(token);
++		SecurityContext securityContext = createMockSecurityContext(token);
++		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
+ 		this.provider.onApplicationEvent(event);
+ 		verify(event).getSecurityContexts();
+ 		verify(securityContext).getAuthentication();
+@@ -191,12 +189,11 @@
+ 	@Test
+ 	public void logoutLoginException() throws Exception {
+ 		SessionDestroyedEvent event = mock(SessionDestroyedEvent.class);
+-		SecurityContext securityContext = mock(SecurityContext.class);
+ 		JaasAuthenticationToken token = mock(JaasAuthenticationToken.class);
+ 		LoginContext context = mock(LoginContext.class);
+ 		LoginException loginException = new LoginException("Failed Login");
+-		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
+-		given(securityContext.getAuthentication()).willReturn(token);
++		SecurityContext securityContext = createMockSecurityContext(token);
++		given(event.getSecurityContexts()).willReturn(Arrays.asList(securityContext));
+ 		given(token.getLoginContext()).willReturn(context);
+ 		willThrow(loginException).given(context).logout();
+ 		this.provider.onApplicationEvent(event);
+@@ -226,6 +223,12 @@
+ 		}
+ 	}
+ 
++	private static SecurityContext createMockSecurityContext(JaasAuthenticationToken token) {
++		SecurityContext securityContext = mock(SecurityContext.class);
++		given(securityContext.getAuthentication()).willReturn(token);
++		return securityContext;
++	}
++
+ 	private void verifyFailedLogin() {
+ 		ArgumentCaptor<JaasAuthenticationFailedEvent> event = ArgumentCaptor
+ 			.forClass(JaasAuthenticationFailedEvent.class);

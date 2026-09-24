@@ -1,0 +1,58 @@
+--- a/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java
++++ b/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java
+@@ -89,7 +89,6 @@
+         // Create mocks
+         Response mockResponse = mock(Response.class);
+         Request mockRequest = mock(Request.class);
+-        RetryHandlerOption mockOption = mock(RetryHandlerOption.class);
+         Span mockSpan = mock(Span.class);
+ 
+         // Setup mock behaviors
+@@ -97,12 +96,7 @@
+         when(mockResponse.header("Retry-After")).thenReturn("invalid");
+         when(mockRequest.method()).thenReturn("GET");
+         when(mockRequest.body()).thenReturn(null);
+-        when(mockOption.maxRetries()).thenReturn(3);
+-        when(mockOption.delay()).thenReturn(3L);
+-        when(mockOption.shouldRetry())
+-                .thenReturn(
+-                        (delay, executionCount, request, response) ->
+-                                true); // Always retry for this test
++        RetryHandlerOption mockOption = createMockRetryHandlerOption(3, 3L);
+ 
+         // Call retryRequest - it should not throw IllegalArgumentException
+         // The main goal is to verify no exception is thrown when retry interval is negative
+@@ -118,7 +112,6 @@
+         // Create mocks
+         Response mockResponse = mock(Response.class);
+         Request mockRequest = mock(Request.class);
+-        RetryHandlerOption mockOption = mock(RetryHandlerOption.class);
+         Span mockSpan = mock(Span.class);
+ 
+         // Setup mock behaviors to force negative retry interval
+@@ -126,10 +119,7 @@
+         when(mockResponse.header("Retry-After")).thenReturn("invalid");
+         when(mockRequest.method()).thenReturn("POST");
+         when(mockRequest.body()).thenReturn(null);
+-        when(mockOption.maxRetries()).thenReturn(5);
+-        when(mockOption.delay()).thenReturn(1L);
+-        when(mockOption.shouldRetry())
+-                .thenReturn((delay, executionCount, request, response) -> true);
++        RetryHandlerOption mockOption = createMockRetryHandlerOption(5, 1L);
+ 
+         // Test multiple times to verify no exception is thrown
+         // This verifies the fix for negative retry intervals
+@@ -140,4 +130,13 @@
+             assertTrue(result, "Expected retryRequest to return true on iteration " + i);
+         }
+     }
++
++    private static RetryHandlerOption createMockRetryHandlerOption(int maxRetries, long delay) {
++        RetryHandlerOption mockOption = mock(RetryHandlerOption.class);
++        when(mockOption.maxRetries()).thenReturn(maxRetries);
++        when(mockOption.delay()).thenReturn(delay);
++        when(mockOption.shouldRetry())
++                .thenReturn((delayValue, executionCount, request, response) -> true);
++        return mockOption;
++    }
+ }

@@ -1,0 +1,47 @@
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/api/command/AddNetrisProviderCmdTest.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/api/command/AddNetrisProviderCmdTest.java
+@@ -52,6 +52,8 @@
+ 
+     private AutoCloseable closeable;
+ 
++    private NetrisProvider netrisProvider;
++
+     private static final long ZONE_ID = 1L;
+     private static final String NAME = "test-provider";
+     private static final String URL = "http://domain.provider.dev";
+@@ -64,6 +66,7 @@
+     @Before
+     public void setup() throws Exception {
+         closeable = MockitoAnnotations.openMocks(this);
++        netrisProvider = Mockito.mock(NetrisProvider.class);
+         callContextMockedStatic = Mockito.mockStatic(CallContext.class);
+         callContextMockedStatic.when(CallContext::current).thenReturn(callContext);
+ 
+@@ -92,22 +95,20 @@
+ 
+     @Test
+     public void testExecuteSuccess() throws ConcurrentOperationException {
+-        NetrisProvider provider = Mockito.mock(NetrisProvider.class);
+         NetrisProviderResponse response = Mockito.mock(NetrisProviderResponse.class);
+-        Mockito.when(netrisProviderService.addProvider(cmd)).thenReturn(provider);
+-        Mockito.when(netrisProviderService.createNetrisProviderResponse(provider)).thenReturn(response);
++        Mockito.when(netrisProviderService.addProvider(cmd)).thenReturn(netrisProvider);
++        Mockito.when(netrisProviderService.createNetrisProviderResponse(netrisProvider)).thenReturn(response);
+         cmd.execute();
+         Mockito.verify(netrisProviderService).addProvider(cmd);
+-        Mockito.verify(netrisProviderService).createNetrisProviderResponse(provider);
++        Mockito.verify(netrisProviderService).createNetrisProviderResponse(netrisProvider);
+         Mockito.verify(response).setResponseName(cmd.getCommandName());
+         Assert.assertEquals(response, cmd.getResponseObject());
+     }
+ 
+     @Test(expected = ServerApiException.class)
+     public void testExecuteFailure() throws ConcurrentOperationException {
+-        NetrisProvider provider = Mockito.mock(NetrisProvider.class);
+-        Mockito.when(netrisProviderService.addProvider(cmd)).thenReturn(provider);
+-        Mockito.when(netrisProviderService.createNetrisProviderResponse(provider)).thenReturn(null);
++        Mockito.when(netrisProviderService.addProvider(cmd)).thenReturn(netrisProvider);
++        Mockito.when(netrisProviderService.createNetrisProviderResponse(netrisProvider)).thenReturn(null);
+         cmd.execute();
+     }
+ 

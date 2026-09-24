@@ -1,0 +1,66 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtGetVolumesOnStorageCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtGetVolumesOnStorageCommandWrapperTest.java
+@@ -88,7 +88,7 @@
+         Mockito.when(pool.getUuid()).thenReturn(poolUuid);
+         Mockito.when(pool.getType()).thenReturn(poolType);
+         Mockito.when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+-        Mockito.when(storagePoolMgr.getStoragePool(poolType, poolUuid, true, true)).thenReturn(storagePool);
++        Mockito.when(storagePoolMgr.getStoragePool(poolType, poolUuid, true, true)).thenAnswer(invocation -> storagePool);
+ 
+         qemuImg = Mockito.mockConstruction(QemuImg.class, (mock, context) -> {
+             Mockito.when(mock.info(Mockito.any(QemuImgFile.class), Mockito.eq(true))).thenReturn(qemuImgInfo);
+@@ -114,7 +114,7 @@
+             Mockito.when(disk.getQemuEncryptFormat()).thenReturn(QemuObject.EncryptFormat.LUKS);
+             physicalDisks.add(disk);
+         }
+-        Mockito.when(storagePool.listPhysicalDisks()).thenReturn(physicalDisks);
++        storagePool = MockKVMStoragePoolWithPhysicalDisks.createMockKVMStoragePoolWithPhysicalDisks(physicalDisks);
+ 
+         Answer answer = libvirtGetVolumesOnStorageCommandWrapper.execute(command, libvirtComputingResource);
+         Assert.assertTrue(answer instanceof GetVolumesOnStorageAnswer);
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtImportConvertedInstanceCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtImportConvertedInstanceCommandWrapperTest.java
+@@ -76,10 +76,10 @@
+     public void setUp() {
+         Mockito.when(secondaryDataStore.getUrl()).thenReturn(secondaryPoolUrl);
+         Mockito.when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolManager);
+-        Mockito.when(storagePoolManager.getStoragePoolByURI(secondaryPoolUrl)).thenReturn(temporaryPool);
+         KVMPhysicalDisk physicalDisk1 = Mockito.mock(KVMPhysicalDisk.class);
+         KVMPhysicalDisk physicalDisk2 = Mockito.mock(KVMPhysicalDisk.class);
+-        Mockito.when(temporaryPool.listPhysicalDisks()).thenReturn(Arrays.asList(physicalDisk1, physicalDisk2));
++        temporaryPool = MockKVMStoragePoolWithPhysicalDisks.createMockKVMStoragePoolWithPhysicalDisks(Arrays.asList(physicalDisk1, physicalDisk2));
++        Mockito.when(storagePoolManager.getStoragePoolByURI(secondaryPoolUrl)).thenReturn(temporaryPool);
+     }
+ 
+     @Test
+@@ -103,7 +103,7 @@
+         Mockito.when(convertedDisk2.getName()).thenReturn(String.format("%s-sdb", convertPrefix));
+         KVMPhysicalDisk convertedXml = Mockito.mock(KVMPhysicalDisk.class);
+         Mockito.when(convertedXml.getName()).thenReturn(String.format("%s.xml", convertPrefix));
+-        Mockito.when(temporaryPool.listPhysicalDisks()).thenReturn(Arrays.asList(physicalDisk1, physicalDisk2,
++        temporaryPool = MockKVMStoragePoolWithPhysicalDisks.createMockKVMStoragePoolWithPhysicalDisks(Arrays.asList(physicalDisk1, physicalDisk2,
+                 convertedDisk1, convertedDisk2, convertedXml));
+ 
+         List<KVMPhysicalDisk> convertedDisks = importInstanceCommandWrapper.getTemporaryDisksWithPrefixFromTemporaryPool(temporaryPool, convertPath, convertPrefix);
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockKVMStoragePoolWithPhysicalDisks.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockKVMStoragePoolWithPhysicalDisks.java
+@@ -0,0 +1,19 @@
++package com.cloud.hypervisor.kvm.resource.wrapper;
++
++import java.util.List;
++
++import org.mockito.Mockito;
++
++import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
++import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
++
++public final class MockKVMStoragePoolWithPhysicalDisks {
++    private MockKVMStoragePoolWithPhysicalDisks() {
++    }
++
++    public static KVMStoragePool createMockKVMStoragePoolWithPhysicalDisks(List<KVMPhysicalDisk> physicalDisks) {
++        KVMStoragePool temporaryPool = Mockito.mock(KVMStoragePool.class);
++        Mockito.when(temporaryPool.listPhysicalDisks()).thenReturn(physicalDisks);
++        return temporaryPool;
++    }
++}

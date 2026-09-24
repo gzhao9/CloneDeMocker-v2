@@ -1,0 +1,32 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtRevertSnapshotCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtRevertSnapshotCommandWrapperTest.java
+@@ -89,9 +89,8 @@
+     @Test
+     public void validateGetSnapshotPathExistsOnPrimaryStorage() {
+         String snapshotPath = "test";
++        snapshotObjectToPrimaryMock = createMockSnapshotObjectTO();
+         Pair<String, SnapshotObjectTO> expectedResult = new Pair<>(snapshotPath, snapshotObjectToPrimaryMock);
+-
+-        Mockito.doReturn(snapshotPath).when(snapshotObjectToPrimaryMock).getPath();
+ 
+         try (MockedStatic<Files> ignored = Mockito.mockStatic(Files.class)) {
+             Mockito.when(Files.exists(Mockito.any(Path.class))).thenReturn(true);
+@@ -115,6 +114,7 @@
+             Mockito.when(Paths.get(Mockito.any(), Mockito.any())).thenReturn(pathMock);
+             Mockito.when(Files.exists(Mockito.any(Path.class), Mockito.any())).thenReturn(false);
+ 
++            snapshotObjectToSecondaryMock = createMockSnapshotObjectTO();
+             Mockito.doReturn(snapshotPath).when(snapshotObjectToSecondaryMock).getPath();
+             Mockito.doReturn(snapshotPath).when(libvirtRevertSnapshotCommandWrapperSpy).getFullPathAccordingToStorage(
+                     Mockito.any(), Mockito.any());
+@@ -169,4 +169,10 @@
+         libvirtRevertSnapshotCommandWrapperSpy.revertVolumeToSnapshot(kvmStoragePoolSecondaryMock, snapshotObjectToPrimaryMock, snapshotObjectToSecondaryMock, kvmStoragePoolPrimaryMock, resourceMock
+         , false);
+     }
++
++    private static SnapshotObjectTO createMockSnapshotObjectTO() {
++        SnapshotObjectTO snapshotObjectToMock = Mockito.mock(SnapshotObjectTO.class);
++        Mockito.doReturn("test").when(snapshotObjectToMock).getPath();
++        return snapshotObjectToMock;
++    }
+ }

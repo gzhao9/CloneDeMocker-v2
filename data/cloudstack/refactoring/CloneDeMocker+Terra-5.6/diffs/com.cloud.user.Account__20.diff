@@ -1,0 +1,37 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -783,9 +783,8 @@
+         when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
+         when(offering.getProvider()).thenReturn("testbackupprovider");
+ 
+-        Account account = Mockito.mock(Account.class);
++        Account account = createMockAccount();
+         when(accountManager.getAccount(accountId)).thenReturn(account);
+-        when(account.getDomainId()).thenReturn(domainId);
+         Mockito.doThrow(new ResourceAllocationException("", Resource.ResourceType.backup)).when(resourceLimitMgr)
+                 .checkResourceLimitWithTag(account, domainId, true, Resource.ResourceType.backup, null, 1L);
+ 
+@@ -833,9 +832,8 @@
+ 
+         Mockito.doReturn(scheduleId).when(backupManager).getBackupScheduleId(asyncJobVOMock);
+ 
+-        Account account = Mockito.mock(Account.class);
++        Account account = createMockAccount();
+         when(accountManager.getAccount(accountId)).thenReturn(account);
+-        when(account.getDomainId()).thenReturn(domainId);
+         Mockito.doThrow(new ResourceAllocationException("", Resource.ResourceType.backup_storage))
+                 .when(resourceLimitMgr)
+                 .checkResourceLimitWithTag(account, domainId, true, Resource.ResourceType.backup_storage, null, size);
+@@ -2616,6 +2614,12 @@
+             assertTrue(result.first().stream().anyMatch(o -> o.getName().equals("Global Offering")));
+             assertTrue(result.first().stream().anyMatch(o -> o.getName().equals("User Domain Offering")));
+         }
++    }
++
++    private static Account createMockAccount() {
++        Account account = Mockito.mock(Account.class);
++        when(account.getDomainId()).thenReturn(101L);
++        return account;
+     }
+ 
+     private BackupOfferingVO createMockOffering(Long id, String name) {

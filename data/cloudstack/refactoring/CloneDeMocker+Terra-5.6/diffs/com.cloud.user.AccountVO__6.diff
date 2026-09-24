@@ -1,0 +1,94 @@
+--- a/server/src/test/java/com/cloud/network/NetworkModelTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkModelTest.java
+@@ -299,9 +299,7 @@
+     @Test
+     public void testCheckNetworkPermissions() {
+         long accountId = 1L;
+-        AccountVO caller = mock(AccountVO.class);
+-        when(caller.getId()).thenReturn(accountId);
+-        when(caller.getType()).thenReturn(Account.Type.NORMAL);
++        AccountVO caller = createMockCaller(Account.Type.NORMAL);
+         NetworkVO network = mock(NetworkVO.class);
+         when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         when(network.getAccountId()).thenReturn(accountId);
+@@ -314,9 +312,7 @@
+     @Test
+     public void testCheckNetworkPermissionsForAdmin() {
+         long accountId = 1L;
+-        AccountVO caller = mock(AccountVO.class);
+-        when(caller.getId()).thenReturn(accountId);
+-        when(caller.getType()).thenReturn(Account.Type.ADMIN);
++        AccountVO caller = createMockCaller(Account.Type.ADMIN);
+         NetworkVO network = mock(NetworkVO.class);
+         when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         when(network.getAccountId()).thenReturn(accountId);
+@@ -336,9 +332,7 @@
+     @Test(expected = PermissionDeniedException.class)
+     public void testCheckNetworkPermissionsNoOwner() {
+         long accountId = 1L;
+-        AccountVO caller = mock(AccountVO.class);
+-        when(caller.getId()).thenReturn(accountId);
+-        when(caller.getType()).thenReturn(Account.Type.NORMAL);
++        AccountVO caller = createMockCaller(Account.Type.NORMAL);
+         NetworkVO network = mock(NetworkVO.class);
+         when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         when(network.getAccountId()).thenReturn(accountId);
+@@ -349,9 +343,7 @@
+     @Test(expected = PermissionDeniedException.class)
+     public void testCheckNetworkPermissionsNoPermission() {
+         long accountId = 1L;
+-        AccountVO caller = mock(AccountVO.class);
+-        when(caller.getId()).thenReturn(accountId);
+-        when(caller.getType()).thenReturn(Account.Type.NORMAL);
++        AccountVO caller = createMockCaller(Account.Type.NORMAL);
+         NetworkVO network = mock(NetworkVO.class);
+         when(network.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         when(network.getAccountId()).thenReturn(accountId);
+@@ -365,10 +357,8 @@
+     public void testCheckNetworkPermissionsSharedNetwork() {
+         long id = 1L;
+         long subDomainId = 2L;
+-        AccountVO caller = mock(AccountVO.class);
+-        when(caller.getId()).thenReturn(id);
++        AccountVO caller = createMockCaller(Account.Type.NORMAL);
+         when(caller.getDomainId()).thenReturn(id);
+-        when(caller.getType()).thenReturn(Account.Type.NORMAL);
+         NetworkVO network = mock(NetworkVO.class);
+         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+         when(network.getId()).thenReturn(id);
+@@ -387,10 +377,9 @@
+     public void testCheckNetworkPermissionsSharedNetworkNoSubDomainAccess() {
+         long id = 1L;
+         long subDomainId = 2L;
+-        AccountVO caller = mock(AccountVO.class);
++        AccountVO caller = createMockCaller(Account.Type.NORMAL);
+         when(caller.getId()).thenReturn(id);
+         when(caller.getDomainId()).thenReturn(subDomainId);
+-        when(caller.getType()).thenReturn(Account.Type.NORMAL);
+         NetworkVO network = mock(NetworkVO.class);
+         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+         when(network.getId()).thenReturn(id);
+@@ -407,10 +396,8 @@
+     public void testCheckNetworkPermissionsSharedNetworkNotSubDomain() {
+         long id = 1L;
+         long subDomainId = 2L;
+-        AccountVO caller = mock(AccountVO.class);
+-        when(caller.getId()).thenReturn(id);
++        AccountVO caller = createMockCaller(Account.Type.NORMAL);
+         when(caller.getDomainId()).thenReturn(subDomainId);
+-        when(caller.getType()).thenReturn(Account.Type.NORMAL);
+         NetworkVO network = mock(NetworkVO.class);
+         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+         when(network.getId()).thenReturn(id);
+@@ -423,4 +410,11 @@
+         when(domainManager.getDomainParentIds(subDomainId)).thenReturn(Set.of(0L));
+         networkModel.checkNetworkPermissions(caller, network);
+     }
++
++    private static AccountVO createMockCaller(Account.Type type) {
++        AccountVO caller = mock(AccountVO.class);
++        when(caller.getId()).thenReturn(1L);
++        when(caller.getType()).thenReturn(type);
++        return caller;
++    }
+ }

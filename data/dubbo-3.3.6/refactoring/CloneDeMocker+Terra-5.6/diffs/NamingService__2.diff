@@ -1,0 +1,76 @@
+--- a/dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosRegistryTest.java
++++ b/dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosRegistryTest.java
+@@ -157,7 +157,7 @@
+ 
+     @Test
+     void testSubscribe() {
+-        NamingService namingService = mock(NacosNamingService.class);
++        NamingService namingService;
+ 
+         try {
+ 
+@@ -175,9 +175,7 @@
+ 
+             List<Instance> instances = new ArrayList<>();
+             instances.add(instance);
+-            when(namingService.getAllInstances(
+-                            serviceName, this.registryUrl.getParameter(GROUP_KEY, Constants.DEFAULT_GROUP)))
+-                    .thenReturn(instances);
++            namingService = createMockNamingService(this.registryUrl, instances);
+         } catch (NacosException e) {
+             // ignore
+         }
+@@ -196,7 +194,7 @@
+ 
+     @Test
+     void testUnSubscribe() {
+-        NamingService namingService = mock(NacosNamingService.class);
++        NamingService namingService = null;
+ 
+         try {
+ 
+@@ -214,9 +212,7 @@
+ 
+             List<Instance> instances = new ArrayList<>();
+             instances.add(instance);
+-            when(namingService.getAllInstances(
+-                            serviceName, this.registryUrl.getParameter(GROUP_KEY, Constants.DEFAULT_GROUP)))
+-                    .thenReturn(instances);
++            namingService = createMockNamingService(this.registryUrl, instances);
+ 
+         } catch (NacosException e) {
+             // ignore
+@@ -241,7 +237,7 @@
+ 
+     @Test
+     void testIsConformRules() {
+-        NamingService namingService = mock(NacosNamingService.class);
++        NamingService namingService = null;
+         URL serviceUrlWithoutCategory = URL.valueOf("nacos://127.0.0.1:3333/" + serviceInterface + "?interface="
+                 + serviceInterface + "&notify=false&methods=test1,test2&version=1.0.0&group=default");
+         try {
+@@ -259,9 +255,7 @@
+ 
+             List<Instance> instances = new ArrayList<>();
+             instances.add(instance);
+-            when(namingService.getAllInstances(
+-                            serviceName, this.registryUrl.getParameter(GROUP_KEY, Constants.DEFAULT_GROUP)))
+-                    .thenReturn(instances);
++            namingService = createMockNamingService(this.registryUrl, instances);
+ 
+             String serviceNameWithoutVersion = "providers:org.apache.dubbo.registry.nacos.NacosService:default";
+             String serviceName1 = "providers:org.apache.dubbo.registry.nacos.NacosService:1.0.0:default";
+@@ -309,4 +303,13 @@
+         Assertions.assertEquals(2, registered.size());
+         Assertions.assertEquals(1, subscribed.get(serviceUrlWithWildcard).size());
+     }
++
++    private static NamingService createMockNamingService(URL registryUrl, List<Instance> instances) throws NacosException {
++        NamingService namingService = mock(NacosNamingService.class);
++        when(namingService.getAllInstances(
++                        "providers:org.apache.dubbo.registry.nacos.NacosService:1.0.0:default",
++                        registryUrl.getParameter(GROUP_KEY, Constants.DEFAULT_GROUP)))
++                .thenReturn(instances);
++        return namingService;
++    }
+ }

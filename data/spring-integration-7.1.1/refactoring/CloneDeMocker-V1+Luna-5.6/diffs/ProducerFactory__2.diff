@@ -1,0 +1,37 @@
+--- a/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/outbound/KafkaProducerMessageHandlerTests.java
++++ b/spring-integration-kafka/src/test/java/org/springframework/integration/kafka/outbound/KafkaProducerMessageHandlerTests.java
+@@ -486,10 +486,8 @@
+ 	@SuppressWarnings({"rawtypes", "unchecked"})
+ 	@Test
+ 	void testTransaction() {
+-		ProducerFactory pf = mock();
+-		given(pf.transactionCapable()).willReturn(true);
+ 		Producer producer = mock();
+-		given(pf.createProducer(isNull())).willReturn(producer);
++		ProducerFactory pf = createProducerFactory(producer);
+ 		willReturn(mock(Future.class)).given(producer).send(any(ProducerRecord.class), any(Callback.class));
+ 		KafkaTemplate template = new KafkaTemplate(pf);
+ 		KafkaProducerMessageHandler handler = new KafkaProducerMessageHandler(template);
+@@ -616,9 +614,7 @@
+ 	@Test
+ 	void testTransactionSynch() {
+ 		Producer producer = mock();
+-		ProducerFactory pf = mock();
+-		given(pf.transactionCapable()).willReturn(true);
+-		given(pf.createProducer(isNull())).willReturn(producer);
++		ProducerFactory pf = createProducerFactory(producer);
+ 		willReturn(mock(Future.class)).given(producer).send(any(ProducerRecord.class), any(Callback.class));
+ 		KafkaTemplate template = new KafkaTemplate(pf);
+ 		KafkaProducerMessageHandler handler = new KafkaProducerMessageHandler(template);
+@@ -840,4 +836,11 @@
+ 
+ 	}
+ 
++
++	private static ProducerFactory createProducerFactory(Producer producer) {
++		ProducerFactory producerFactory = mock();
++		given(producerFactory.transactionCapable()).willReturn(true);
++		given(producerFactory.createProducer(isNull())).willReturn(producer);
++		return producerFactory;
++	}
+ }

@@ -1,0 +1,105 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
+@@ -111,6 +111,7 @@
+     private String guruName = "GuestNetworkGuru";
+     private String dhcpProvider = "VirtualRouter";
+     private NetworkGuru guru = mock(NetworkGuru.class);
++    private NicVO nicMock;
+     private NetworkExtensionElement networkExtensionElement;
+ 
+     NetworkOfferingVO networkOffering = mock(NetworkOfferingVO.class);
+@@ -126,6 +127,7 @@
+     @Before
+     public void setUp() {
+         // make class-scope mocks
++        nicMock = mock(NicVO.class);
+         testOrchestrator._nicDao = mock(NicDao.class);
+         testOrchestrator._networksDao = mock(NetworkDao.class);
+         testOrchestrator._networkModel = mock(NetworkModel.class);
+@@ -169,7 +171,6 @@
+     public void testRemoveDhcpServiceWithNic() {
+         // make local mocks
+         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+-        NicVO nic = mock(NicVO.class);
+         NetworkVO network = mock(NetworkVO.class);
+ 
+         // make sure that release dhcp will be called
+@@ -177,44 +178,42 @@
+         when(testOrchestrator._networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)).thenReturn(true);
+         when(network.getTrafficType()).thenReturn(TrafficType.Guest);
+         when(network.getGuestType()).thenReturn(GuestType.Shared);
+-        when(testOrchestrator._nicDao.listByNetworkIdTypeAndGatewayAndBroadcastUri(nic.getNetworkId(), VirtualMachine.Type.User, nic.getIPv4Gateway(), nic.getBroadcastUri()))
++        when(testOrchestrator._nicDao.listByNetworkIdTypeAndGatewayAndBroadcastUri(nicMock.getNetworkId(), VirtualMachine.Type.User, nicMock.getIPv4Gateway(), nicMock.getBroadcastUri()))
+                 .thenReturn(new ArrayList<NicVO>());
+ 
+         when(network.getGuruName()).thenReturn(guruName);
+-        when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+-
+-        testOrchestrator.removeNic(vm, nic);
+-
+-        verify(nic, times(1)).setState(Nic.State.Deallocating);
++        when(testOrchestrator._networksDao.findById(nicMock.getNetworkId())).thenReturn(network);
++
++        testOrchestrator.removeNic(vm, nicMock);
++
++        verify(nicMock, times(1)).setState(Nic.State.Deallocating);
+         verify(testOrchestrator._networkModel, times(2)).getElementImplementingProvider(dhcpProvider);
+         verify(testOrchestrator._ntwkSrvcDao, times(2)).getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
+-        verify(testOrchestrator._networksDao, times(2)).findById(nic.getNetworkId());
++        verify(testOrchestrator._networksDao, times(2)).findById(nicMock.getNetworkId());
+     }
+     @Test
+     public void testDontRemoveDhcpServiceFromDomainRouter() {
+         // make local mocks
+         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+-        NicVO nic = mock(NicVO.class);
+         NetworkVO network = mock(NetworkVO.class);
+ 
+         // make sure that release dhcp won't be called
+         when(vm.getType()).thenReturn(Type.DomainRouter);
+ 
+         when(network.getGuruName()).thenReturn(guruName);
+-        when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+-
+-        testOrchestrator.removeNic(vm, nic);
+-
+-        verify(nic, times(1)).setState(Nic.State.Deallocating);
++        when(testOrchestrator._networksDao.findById(nicMock.getNetworkId())).thenReturn(network);
++
++        testOrchestrator.removeNic(vm, nicMock);
++
++        verify(nicMock, times(1)).setState(Nic.State.Deallocating);
+         verify(testOrchestrator._networkModel, never()).getElementImplementingProvider(dhcpProvider);
+         verify(testOrchestrator._ntwkSrvcDao, never()).getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
+-        verify(testOrchestrator._networksDao, times(1)).findById(nic.getNetworkId());
++        verify(testOrchestrator._networksDao, times(1)).findById(nicMock.getNetworkId());
+     }
+     @Test
+     public void testDontRemoveDhcpServiceWhenNotProvided() {
+         // make local mocks
+         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+-        NicVO nic = mock(NicVO.class);
+         NetworkVO network = mock(NetworkVO.class);
+ 
+         // make sure that release dhcp will *not* be called
+@@ -222,14 +221,14 @@
+         when(testOrchestrator._networkModel.areServicesSupportedInNetwork(network.getId(), Service.Dhcp)).thenReturn(false);
+ 
+         when(network.getGuruName()).thenReturn(guruName);
+-        when(testOrchestrator._networksDao.findById(nic.getNetworkId())).thenReturn(network);
+-
+-        testOrchestrator.removeNic(vm, nic);
+-
+-        verify(nic, times(1)).setState(Nic.State.Deallocating);
++        when(testOrchestrator._networksDao.findById(nicMock.getNetworkId())).thenReturn(network);
++
++        testOrchestrator.removeNic(vm, nicMock);
++
++        verify(nicMock, times(1)).setState(Nic.State.Deallocating);
+         verify(testOrchestrator._networkModel, never()).getElementImplementingProvider(dhcpProvider);
+         verify(testOrchestrator._ntwkSrvcDao, never()).getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
+-        verify(testOrchestrator._networksDao, times(1)).findById(nic.getNetworkId());
++        verify(testOrchestrator._networksDao, times(1)).findById(nicMock.getNetworkId());
+     }
+ 
+     @Test

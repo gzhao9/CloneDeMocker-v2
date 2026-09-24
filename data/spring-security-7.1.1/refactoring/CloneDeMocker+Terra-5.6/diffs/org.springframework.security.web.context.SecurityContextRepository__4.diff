@@ -1,0 +1,54 @@
+--- a/cas/src/test/java/org/springframework/security/cas/web/CasAuthenticationFilterTests.java
++++ b/cas/src/test/java/org/springframework/security/cas/web/CasAuthenticationFilterTests.java
+@@ -23,6 +23,7 @@
+ import jakarta.servlet.http.HttpSession;
+ import org.apereo.cas.client.proxy.ProxyGrantingTicketStorage;
+ import org.junit.jupiter.api.AfterEach;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.mock.web.MockFilterChain;
+@@ -66,6 +67,13 @@
+  */
+ public class CasAuthenticationFilterTests {
+ 
++	private SecurityContextRepository securityContextRepositoryMock;
++
++	@BeforeEach
++	void setUp() {
++		securityContextRepositoryMock = mock(SecurityContextRepository.class);
++	}
++
+ 	@AfterEach
+ 	public void tearDown() {
+ 		SecurityContextHolder.clearContext();
+@@ -213,11 +221,10 @@
+ 		serviceProperties.setAuthenticateAllArtifacts(true);
+ 		filter.setServiceProperties(serviceProperties);
+ 
+-		SecurityContextRepository securityContextRepository = mock(SecurityContextRepository.class);
+-		ReflectionTestUtils.setField(filter, "securityContextRepository", securityContextRepository);
++		ReflectionTestUtils.setField(filter, "securityContextRepository", securityContextRepositoryMock);
+ 
+ 		filter.successfulAuthentication(request, response, new MockFilterChain(), mock(Authentication.class));
+-		verify(securityContextRepository).saveContext(any(SecurityContext.class), eq(request), eq(response));
++		verify(securityContextRepositoryMock).saveContext(any(SecurityContext.class), eq(request), eq(response));
+ 	}
+ 
+ 	@Test
+@@ -241,12 +248,11 @@
+ 
+ 	@Test
+ 	void successfulAuthenticationWhenSecurityContextRepositorySetThenUses() throws ServletException, IOException {
+-		SecurityContextRepository securityContextRepository = mock(SecurityContextRepository.class);
+-		CasAuthenticationFilter filter = new CasAuthenticationFilter();
+-		filter.setSecurityContextRepository(securityContextRepository);
++		CasAuthenticationFilter filter = new CasAuthenticationFilter();
++		filter.setSecurityContextRepository(securityContextRepositoryMock);
+ 		filter.successfulAuthentication(new MockHttpServletRequest(), new MockHttpServletResponse(),
+ 				new MockFilterChain(), mock(Authentication.class));
+-		verify(securityContextRepository).saveContext(any(SecurityContext.class), any(), any());
++		verify(securityContextRepositoryMock).saveContext(any(SecurityContext.class), any(), any());
+ 	}
+ 
+ 	@Test

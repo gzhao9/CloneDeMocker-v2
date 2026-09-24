@@ -1,0 +1,142 @@
+--- a/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/inbound/InboundEndpointTests.java
++++ b/spring-integration-amqp/src/test/java/org/springframework/integration/amqp/inbound/InboundEndpointTests.java
+@@ -26,6 +26,7 @@
+ 
+ import com.rabbitmq.client.Channel;
+ import org.assertj.core.api.InstanceOfAssertFactories;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.Mockito;
+ 
+@@ -93,6 +94,13 @@
+  */
+ public class InboundEndpointTests implements TestApplicationContextAware {
+ 
++	private Channel channelMock;
++
++	@BeforeEach
++	public void setUp() {
++		channelMock = mock(Channel.class);
++	}
++
+ 	@Test
+ 	public void testInt2809JavaTypePropertiesToAmqp() throws Exception {
+ 		Connection connection = mock();
+@@ -125,14 +133,13 @@
+ 		DefaultAmqpHeaderMapper.inboundMapper().fromHeadersToRequest(jsonMessage.getHeaders(), amqpMessageProperties);
+ 
+ 		ChannelAwareMessageListener listener = (ChannelAwareMessageListener) container.getMessageListener();
+-		Channel rabbitChannel = mock(Channel.class);
+-		listener.onMessage(amqpMessage, rabbitChannel);
++		listener.onMessage(amqpMessage, channelMock);
+ 
+ 		Message<?> result = channel.receive(1000);
+ 		assertThat(result.getPayload()).isEqualTo(payload);
+ 
+ 		assertThat(result.getHeaders())
+-				.containsEntry(AmqpHeaders.CHANNEL, rabbitChannel)
++				.containsEntry(AmqpHeaders.CHANNEL, channelMock)
+ 				.containsEntry(AmqpHeaders.DELIVERY_TAG, 123L);
+ 		org.springframework.amqp.core.Message sourceData = StaticMessageHeaderAccessor.getSourceData(result);
+ 		assertThat(sourceData).isSameAs(amqpMessage);
+@@ -188,10 +195,9 @@
+ 
+ 		DirectChannel channel = new DirectChannel();
+ 
+-		Channel rabbitChannel = mock();
+ 
+ 		channel.subscribe(new MessageTransformingHandler(message -> {
+-			assertThat(message.getHeaders().get(AmqpHeaders.CHANNEL)).isSameAs(rabbitChannel);
++			assertThat(message.getHeaders().get(AmqpHeaders.CHANNEL)).isSameAs(channelMock);
+ 			assertThat(message.getHeaders().get(AmqpHeaders.DELIVERY_TAG)).isEqualTo(123L);
+ 			return MessageBuilder.fromMessage(message)
+ 					.setHeader(JsonHeaders.TYPE_ID, "foo")
+@@ -239,7 +245,7 @@
+ 						.toMessage(payload, amqpMessageProperties);
+ 
+ 		ChannelAwareMessageListener listener = (ChannelAwareMessageListener) container.getMessageListener();
+-		listener.onMessage(amqpMessage, rabbitChannel);
++		listener.onMessage(amqpMessage, channelMock);
+ 
+ 		assertThat(sendLatch.await(10, TimeUnit.SECONDS)).isTrue();
+ 	}
+@@ -281,9 +287,8 @@
+ 
+ 		container.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+ 		adapter.afterPropertiesSet(); // ack mode is now captured during init
+-		Channel channel = mock();
+ 		((ChannelAwareMessageListener) container.getMessageListener())
+-				.onMessage(message, channel);
++				.onMessage(message, channelMock);
+ 		assertThat(outputChannel.receive(0)).isNull();
+ 		received = errorChannel.receive(0);
+ 		assertThat(received).isNotNull();
+@@ -291,7 +296,7 @@
+ 		assertThat(received.getPayload()).isInstanceOf(ManualAckListenerExecutionFailedException.class);
+ 		ManualAckListenerExecutionFailedException ex = (ManualAckListenerExecutionFailedException) received
+ 				.getPayload();
+-		assertThat(ex.getChannel()).isEqualTo(channel);
++		assertThat(ex.getChannel()).isEqualTo(channelMock);
+ 		assertThat(ex.getDeliveryTag()).isEqualTo(props.getDeliveryTag());
+ 	}
+ 
+@@ -336,9 +341,8 @@
+ 		assertThat(received.getHeaders()).containsKey(AmqpMessageHeaderErrorMessageStrategy.AMQP_RAW_MESSAGE);
+ 
+ 		container.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+-		Channel channel = mock();
+ 		((ChannelAwareMessageListener) container.getMessageListener())
+-				.onMessage(message, channel);
++				.onMessage(message, channelMock);
+ 		assertThat(outputChannel.receive(0)).isNull();
+ 		received = errorChannel.receive(0);
+ 		assertThat(received).isNotNull();
+@@ -346,7 +350,7 @@
+ 		assertThat(received.getPayload()).isInstanceOf(ManualAckListenerExecutionFailedException.class);
+ 		ManualAckListenerExecutionFailedException ex = (ManualAckListenerExecutionFailedException) received
+ 				.getPayload();
+-		assertThat(ex.getChannel()).isEqualTo(channel);
++		assertThat(ex.getChannel()).isEqualTo(channelMock);
+ 		assertThat(ex.getDeliveryTag()).isEqualTo(props.getDeliveryTag());
+ 	}
+ 
+@@ -681,9 +685,8 @@
+ 
+ 		container.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+ 		adapter.afterPropertiesSet(); // ack mode is now captured during init
+-		Channel channel = mock(Channel.class);
+ 		((ChannelAwareBatchMessageListener) container.getMessageListener())
+-				.onMessageBatch(messages, channel);
++				.onMessageBatch(messages, channelMock);
+ 		assertThat(outputChannel.receive(0)).isNull();
+ 		received = errorChannel.receive(0);
+ 		assertThat(received).isNotNull();
+@@ -691,7 +694,7 @@
+ 		assertThat(received.getPayload()).isInstanceOf(ManualAckListenerExecutionFailedException.class);
+ 		ManualAckListenerExecutionFailedException ex = (ManualAckListenerExecutionFailedException) received
+ 				.getPayload();
+-		assertThat(ex.getChannel()).isEqualTo(channel);
++		assertThat(ex.getChannel()).isEqualTo(channelMock);
+ 		assertThat(ex.getDeliveryTag()).isEqualTo(43L);
+ 	}
+ 
+@@ -738,9 +741,8 @@
+ 
+ 		container.setAcknowledgeMode(AcknowledgeMode.MANUAL);
+ 		adapter.afterPropertiesSet(); // ack mode is now captured during init
+-		Channel channel = mock(Channel.class);
+ 		((ChannelAwareBatchMessageListener) container.getMessageListener())
+-				.onMessageBatch(messages, channel);
++				.onMessageBatch(messages, channelMock);
+ 		assertThat(outputChannel.receive(0)).isNull();
+ 		received = errorChannel.receive(0);
+ 		assertThat(received).isNotNull();
+@@ -748,7 +750,7 @@
+ 		assertThat(received.getPayload()).isInstanceOf(ManualAckListenerExecutionFailedException.class);
+ 		ManualAckListenerExecutionFailedException ex = (ManualAckListenerExecutionFailedException) received
+ 				.getPayload();
+-		assertThat(ex.getChannel()).isEqualTo(channel);
++		assertThat(ex.getChannel()).isEqualTo(channelMock);
+ 		assertThat(ex.getDeliveryTag()).isEqualTo(43L);
+ 	}
+ 

@@ -1,0 +1,33 @@
+--- a/webauthn/src/test/java/org/springframework/security/web/webauthn/registration/WebAuthnRegistrationFilterTests.java
++++ b/webauthn/src/test/java/org/springframework/security/web/webauthn/registration/WebAuthnRegistrationFilterTests.java
+@@ -232,8 +232,7 @@
+ 
+ 	@Test
+ 	void doFilterWhenDeleteAndCustomAuthorizationManagerThenUses() throws Exception {
+-		AuthorizationManager<Bytes> authorizationManager = mock(AuthorizationManager.class);
+-		given(authorizationManager.authorize(any(), any())).willReturn(new AuthorizationDecision(true));
++		AuthorizationManager<Bytes> authorizationManager = createMockAuthorizationManager(new AuthorizationDecision(true));
+ 		this.filter.setDeleteCredentialAuthorizationManager(authorizationManager);
+ 		MockHttpServletRequest request = MockMvcRequestBuilders.delete("/webauthn/register/123456")
+ 			.buildRequest(new MockServletContext());
+@@ -243,8 +242,7 @@
+ 
+ 	@Test
+ 	void doFilterWhenDeleteAndAuthorizationDeniedThenForbidden() throws Exception {
+-		AuthorizationManager<Bytes> authorizationManager = mock(AuthorizationManager.class);
+-		given(authorizationManager.authorize(any(), any())).willReturn(new AuthorizationDecision(false));
++		AuthorizationManager<Bytes> authorizationManager = createMockAuthorizationManager(new AuthorizationDecision(false));
+ 		this.filter.setDeleteCredentialAuthorizationManager(authorizationManager);
+ 		MockHttpServletRequest request = MockMvcRequestBuilders.delete("/webauthn/register/123456")
+ 			.buildRequest(new MockServletContext());
+@@ -258,4 +256,10 @@
+ 			.buildRequest(new MockServletContext());
+ 	}
+ 
++	private static AuthorizationManager<Bytes> createMockAuthorizationManager(AuthorizationDecision authorizationDecision) {
++		AuthorizationManager<Bytes> authorizationManager = mock(AuthorizationManager.class);
++		given(authorizationManager.authorize(any(), any())).willReturn(authorizationDecision);
++		return authorizationManager;
++	}
++
+ }

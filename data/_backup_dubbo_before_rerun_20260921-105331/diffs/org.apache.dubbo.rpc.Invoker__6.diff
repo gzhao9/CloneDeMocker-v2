@@ -1,0 +1,138 @@
+--- a/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ConsumerSignFilterTest.java
++++ b/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ConsumerSignFilterTest.java
+@@ -38,9 +38,8 @@
+     @Test
+     void testAuthDisabled() {
+         URL url = mock(URL.class);
+-        Invoker invoker = mock(Invoker.class);
++        Invoker invoker = MockInvoker.createMockInvoker(url);
+         Invocation invocation = mock(Invocation.class);
+-        when(invoker.getUrl()).thenReturn(url);
+         ConsumerSignFilter consumerSignFilter = new ConsumerSignFilter(FrameworkModel.defaultModel());
+         consumerSignFilter.invoke(invoker, invocation);
+         verify(invocation, never()).setAttachment(eq(Constants.REQUEST_SIGNATURE_KEY), anyString());
+@@ -54,9 +53,8 @@
+                 .addParameter(CommonConstants.APPLICATION_KEY, "test")
+                 .addParameter(Constants.AUTHENTICATOR_KEY, "accesskey")
+                 .addParameter(Constants.AUTH_KEY, true);
+-        Invoker invoker = mock(Invoker.class);
+         Invocation invocation = mock(Invocation.class);
+-        when(invoker.getUrl()).thenReturn(url);
++        Invoker invoker = MockInvoker.createMockInvoker(url);
+         ConsumerSignFilter consumerSignFilter = new ConsumerSignFilter(FrameworkModel.defaultModel());
+         consumerSignFilter.invoke(invoker, invocation);
+         verify(invocation, times(1)).setAttachment(eq(Constants.REQUEST_SIGNATURE_KEY), anyString());
+--- a/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java
++++ b/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java
+@@ -43,9 +43,8 @@
+     @Test
+     void testAuthDisabled() {
+         URL url = mock(URL.class);
+-        Invoker invoker = mock(Invoker.class);
++        Invoker invoker = MockInvoker.createMockInvoker(url);
+         Invocation invocation = mock(RpcInvocation.class);
+-        when(invoker.getUrl()).thenReturn(url);
+         ProviderAuthFilter providerAuthFilter = new ProviderAuthFilter(FrameworkModel.defaultModel());
+         providerAuthFilter.invoke(invoker, invocation);
+         verify(url, never()).getParameter(eq(Constants.AUTHENTICATOR_KEY), eq(Constants.DEFAULT_AUTHENTICATOR));
+@@ -59,9 +58,8 @@
+                 .addParameter(CommonConstants.APPLICATION_KEY, "test")
+                 .addParameter(Constants.AUTHENTICATOR_KEY, "accesskey")
+                 .addParameter(Constants.AUTH_KEY, true);
+-        Invoker invoker = mock(Invoker.class);
++        Invoker invoker = MockInvoker.createMockInvoker(url);
+         Invocation invocation = mock(RpcInvocation.class);
+-        when(invoker.getUrl()).thenReturn(url);
+         ProviderAuthFilter providerAuthFilter = new ProviderAuthFilter(FrameworkModel.defaultModel());
+         providerAuthFilter.invoke(invoker, invocation);
+         verify(invocation, atLeastOnce()).getAttachment(anyString());
+@@ -75,10 +73,9 @@
+                 .addParameter(CommonConstants.APPLICATION_KEY, "test")
+                 .addParameter(Constants.AUTHENTICATOR_KEY, "accesskey")
+                 .addParameter(Constants.AUTH_KEY, true);
+-        Invoker invoker = mock(Invoker.class);
+         Invocation invocation = mock(RpcInvocation.class);
+         when(invocation.getAttachment(Constants.REQUEST_SIGNATURE_KEY)).thenReturn(null);
+-        when(invoker.getUrl()).thenReturn(url);
++        Invoker invoker = MockInvoker.createMockInvoker(url);
+ 
+         ProviderAuthFilter providerAuthFilter = new ProviderAuthFilter(FrameworkModel.defaultModel());
+         Result result = providerAuthFilter.invoke(invoker, invocation);
+@@ -93,10 +90,9 @@
+                 .addParameter(CommonConstants.APPLICATION_KEY, "test")
+                 .addParameter(Constants.AUTHENTICATOR_KEY, "accesskey")
+                 .addParameter(Constants.AUTH_KEY, true);
+-        Invoker invoker = mock(Invoker.class);
++        Invoker invoker = MockInvoker.createMockInvoker(url);
+         Invocation invocation = mock(RpcInvocation.class);
+         when(invocation.getAttachment(Constants.REQUEST_SIGNATURE_KEY)).thenReturn(null);
+-        when(invoker.getUrl()).thenReturn(url);
+ 
+         ProviderAuthFilter providerAuthFilter = new ProviderAuthFilter(FrameworkModel.defaultModel());
+         Result result = providerAuthFilter.invoke(invoker, invocation);
+@@ -109,13 +105,12 @@
+                 .addParameter(CommonConstants.APPLICATION_KEY, "test-provider")
+                 .addParameter(Constants.AUTHENTICATOR_KEY, "accesskey")
+                 .addParameter(Constants.AUTH_KEY, true);
+-        Invoker invoker = mock(Invoker.class);
+         Invocation invocation = mock(RpcInvocation.class);
+         when(invocation.getObjectAttachment(Constants.REQUEST_SIGNATURE_KEY)).thenReturn("dubbo");
+         when(invocation.getObjectAttachment(Constants.AK_KEY)).thenReturn("ak");
+         when(invocation.getObjectAttachment(CommonConstants.CONSUMER)).thenReturn("test-consumer");
+         when(invocation.getObjectAttachment(Constants.REQUEST_TIMESTAMP_KEY)).thenReturn(System.currentTimeMillis());
+-        when(invoker.getUrl()).thenReturn(url);
++        Invoker invoker = MockInvoker.createMockInvoker(url);
+ 
+         ProviderAuthFilter providerAuthFilter = new ProviderAuthFilter(FrameworkModel.defaultModel());
+         Result result = providerAuthFilter.invoke(invoker, invocation);
+@@ -138,7 +133,6 @@
+                 .addParameter(Constants.AUTHENTICATOR_KEY, "accesskey")
+                 .addParameter(Constants.AUTH_KEY, true);
+ 
+-        Invoker invoker = mock(Invoker.class);
+         Invocation invocation = mock(RpcInvocation.class);
+         when(invocation.getObjectAttachment(Constants.AK_KEY)).thenReturn("ak");
+         when(invocation.getObjectAttachment(CommonConstants.CONSUMER)).thenReturn("test-consumer");
+@@ -146,7 +140,7 @@
+         when(invocation.getMethodName()).thenReturn(method);
+         Object[] fakeParams = new Object[] {"dubbo1", "dubbo3"};
+         when(invocation.getArguments()).thenReturn(fakeParams);
+-        when(invoker.getUrl()).thenReturn(url);
++        Invoker invoker = MockInvoker.createMockInvoker(url);
+ 
+         String requestString = String.format(
+                 Constants.SIGNATURE_STRING_FORMAT,
+@@ -175,13 +169,12 @@
+                 .addParameter(CommonConstants.APPLICATION_KEY, "test-provider")
+                 .addParameter(Constants.AUTHENTICATOR_KEY, "accesskey")
+                 .addParameter(Constants.AUTH_KEY, true);
+-        Invoker invoker = mock(Invoker.class);
++        Invoker invoker = MockInvoker.createMockInvoker(url);
+         Invocation invocation = mock(RpcInvocation.class);
+         when(invocation.getAttachment(Constants.AK_KEY)).thenReturn("ak");
+         when(invocation.getAttachment(CommonConstants.CONSUMER)).thenReturn("test-consumer");
+         when(invocation.getAttachment(Constants.REQUEST_TIMESTAMP_KEY)).thenReturn(String.valueOf(currentTimeMillis));
+         when(invocation.getMethodName()).thenReturn(method);
+-        when(invoker.getUrl()).thenReturn(url);
+ 
+         String requestString = String.format(
+                 Constants.SIGNATURE_STRING_FORMAT,
+--- a/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/MockInvoker.java
++++ b/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/MockInvoker.java
+@@ -0,0 +1,16 @@
++package org.apache.dubbo.auth.filter;
++
++import org.apache.dubbo.common.URL;
++import org.apache.dubbo.rpc.Invoker;
++
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++public class MockInvoker {
++
++    public static Invoker createMockInvoker(URL url) {
++        Invoker invoker = mock(Invoker.class);
++        when(invoker.getUrl()).thenReturn(url);
++        return invoker;
++    }
++}

@@ -1,0 +1,62 @@
+--- a/spring-integration-xmpp/src/test/java/org/springframework/integration/xmpp/inbound/PresenceListeningEndpointTests.java
++++ b/spring-integration-xmpp/src/test/java/org/springframework/integration/xmpp/inbound/PresenceListeningEndpointTests.java
+@@ -23,6 +23,7 @@
+ import org.jivesoftware.smack.packet.StanzaBuilder;
+ import org.jivesoftware.smack.roster.Roster;
+ import org.jivesoftware.smack.roster.RosterListener;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.beans.factory.BeanFactory;
+@@ -50,14 +51,20 @@
+  */
+ public class PresenceListeningEndpointTests {
+ 
++	private XMPPConnection xmppConnection;
++
++	@BeforeEach
++	public void setUp() {
++		this.xmppConnection = mock(XMPPConnection.class);
++	}
++
+ 	@Test
+ 	public void testEndpointLifecycle() {
+-		XMPPConnection connection = mock(XMPPConnection.class);
+-		Roster roster = Roster.getInstanceFor(connection);
++		Roster roster = Roster.getInstanceFor(xmppConnection);
+ 
+ 		Set<RosterListener> rosterSet = TestUtils.getPropertyValue(roster, "rosterListeners");
+ 
+-		PresenceListeningEndpoint rosterEndpoint = new PresenceListeningEndpoint(connection);
++		PresenceListeningEndpoint rosterEndpoint = new PresenceListeningEndpoint(xmppConnection);
+ 		rosterEndpoint.setOutputChannel(new QueueChannel());
+ 		rosterEndpoint.setBeanFactory(mock(BeanFactory.class));
+ 		rosterEndpoint.afterPropertiesSet();
+@@ -70,15 +77,14 @@
+ 
+ 	@Test
+ 	public void testNonInitializedFailure() {
+-		PresenceListeningEndpoint rosterEndpoint = new PresenceListeningEndpoint(mock(XMPPConnection.class));
++		PresenceListeningEndpoint rosterEndpoint = new PresenceListeningEndpoint(xmppConnection);
+ 		assertThatIllegalArgumentException()
+ 				.isThrownBy(rosterEndpoint::start);
+ 	}
+ 
+ 	@Test
+ 	public void testRosterPresenceChangeEvent() {
+-		XMPPConnection connection = mock(XMPPConnection.class);
+-		PresenceListeningEndpoint rosterEndpoint = new PresenceListeningEndpoint(connection);
++		PresenceListeningEndpoint rosterEndpoint = new PresenceListeningEndpoint(xmppConnection);
+ 		QueueChannel channel = new QueueChannel();
+ 		rosterEndpoint.setOutputChannel(channel);
+ 		rosterEndpoint.setBeanFactory(mock(BeanFactory.class));
+@@ -117,8 +123,7 @@
+ 	@Test
+ 	public void testWithErrorChannel() {
+ 		DefaultListableBeanFactory bf = new DefaultListableBeanFactory();
+-		XMPPConnection connection = mock(XMPPConnection.class);
+-		bf.registerSingleton(XmppContextUtils.XMPP_CONNECTION_BEAN_NAME, connection);
++		bf.registerSingleton(XmppContextUtils.XMPP_CONNECTION_BEAN_NAME, xmppConnection);
+ 
+ 		PresenceListeningEndpoint endpoint = new PresenceListeningEndpoint();
+ 

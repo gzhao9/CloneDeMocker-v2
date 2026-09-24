@@ -1,0 +1,91 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -179,6 +179,8 @@
+     TungstenFabricLBHealthMonitorDao tungstenFabricLBHealthMonitorDao;
+     @Mock
+     LoadBalancerCertMapDao loadBalancerCertMapDao;
++    @Mock
++    private TungstenAnswer deleteTungstenVRouterPortAnswerMock;
+ 
+     TungstenElement tungstenElement;
+ 
+@@ -641,13 +643,12 @@
+         ReservationContext reservationContext = mock(ReservationContext.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         HostVO host = mock(HostVO.class);
+-        TungstenAnswer createTungstenVMAnswer = mock(TungstenAnswer.class);
+ 
+         nicProfile.setIPv4Address("192.168.100.100");
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Management);
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(createTungstenVMAnswer);
++        when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswerMock);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+ 
+         tungstenElement.prepare(network, nicProfile, virtualMachineProfile, deployDestination, reservationContext);
+@@ -662,7 +663,6 @@
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         HostVO host = mock(HostVO.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+-        TungstenAnswer deleteTungstenVRouterPortAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer deleteVmiAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer deleteVmAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer deleteTungstenNetworkPolicyAnswer = mock(TungstenAnswer.class);
+@@ -673,7 +673,7 @@
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswer);
++        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswerMock);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmInterfaceCommand.class), anyLong())).thenReturn(deleteVmiAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong())).thenReturn(deleteVmAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteTungstenNetworkPolicyAnswer);
+@@ -689,7 +689,6 @@
+         ReservationContext reservationContext = mock(ReservationContext.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         HostVO host = mock(HostVO.class);
+-        TungstenAnswer deleteTungstenVRouterPortAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer deleteVmiAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer deleteVmAnswer = mock(TungstenAnswer.class);
+ 
+@@ -697,7 +696,7 @@
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswer);
++        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswerMock);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmInterfaceCommand.class), anyLong())).thenReturn(deleteVmiAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong())).thenReturn(deleteVmAnswer);
+ 
+@@ -712,14 +711,13 @@
+         ReservationContext reservationContext = mock(ReservationContext.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         HostVO host = mock(HostVO.class);
+-        TungstenAnswer deleteTungstenVRouterPortAnswer = mock(TungstenAnswer.class);
+         TungstenAnswer deleteVmiAnswer = mock(TungstenAnswer.class);
+ 
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Management);
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswer);
++        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswerMock);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmInterfaceCommand.class), anyLong())).thenReturn(deleteVmiAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVmCommand.class), anyLong())).thenThrow(IllegalArgumentException.class);
+ 
+@@ -870,13 +868,12 @@
+         Network network = mock(Network.class);
+         FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
+         Network publicNetwork = mock(Network.class);
+-        TungstenAnswer deleteNetworkPolicyAnswer = mock(TungstenAnswer.class);
+ 
+         when(firewallRuleVO.getState()).thenReturn(FirewallRule.State.Revoke);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+         when(firewallRuleVO.getPurpose()).thenReturn(FirewallRule.Purpose.Firewall);
+         when(firewallRuleVO.getTrafficType()).thenReturn(FirewallRule.TrafficType.Ingress);
+-        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteNetworkPolicyAnswer);
++        when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswerMock);
+ 
+         assertTrue(tungstenElement.applyFWRules(network, List.of(firewallRuleVO)));
+     }

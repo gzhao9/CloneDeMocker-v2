@@ -1,0 +1,48 @@
+--- a/acl/src/test/java/org/springframework/security/acls/AclPermissionEvaluatorTests.java
++++ b/acl/src/test/java/org/springframework/security/acls/AclPermissionEvaluatorTests.java
+@@ -42,15 +42,14 @@
+ 
+ 	@Test
+ 	public void hasPermissionReturnsTrueIfAclGrantsPermission() {
+-		AclService service = mock(AclService.class);
++		Acl acl = mock(Acl.class);
++		AclService service = createMockAclService(acl);
+ 		AclPermissionEvaluator pe = new AclPermissionEvaluator(service);
+ 		ObjectIdentity oid = mock(ObjectIdentity.class);
+ 		ObjectIdentityRetrievalStrategy oidStrategy = mock(ObjectIdentityRetrievalStrategy.class);
+ 		given(oidStrategy.getObjectIdentity(any(Object.class))).willReturn(oid);
+ 		pe.setObjectIdentityRetrievalStrategy(oidStrategy);
+ 		pe.setSidRetrievalStrategy(mock(SidRetrievalStrategy.class));
+-		Acl acl = mock(Acl.class);
+-		given(service.readAclById(any(ObjectIdentity.class), anyList())).willReturn(acl);
+ 		given(acl.isGranted(anyList(), anyList(), eq(false))).willReturn(true);
+ 		assertThat(pe.hasPermission(mock(Authentication.class), new Object(), "READ")).isTrue();
+ 	}
+@@ -59,18 +58,23 @@
+ 	public void resolvePermissionNonEnglishLocale() {
+ 		Locale systemLocale = Locale.getDefault();
+ 		Locale.setDefault(new Locale("tr"));
+-		AclService service = mock(AclService.class);
+-		AclPermissionEvaluator pe = new AclPermissionEvaluator(service);
+ 		ObjectIdentity oid = mock(ObjectIdentity.class);
+ 		ObjectIdentityRetrievalStrategy oidStrategy = mock(ObjectIdentityRetrievalStrategy.class);
+ 		given(oidStrategy.getObjectIdentity(any(Object.class))).willReturn(oid);
++		Acl acl = mock(Acl.class);
++		AclService service = createMockAclService(acl);
++		AclPermissionEvaluator pe = new AclPermissionEvaluator(service);
+ 		pe.setObjectIdentityRetrievalStrategy(oidStrategy);
+ 		pe.setSidRetrievalStrategy(mock(SidRetrievalStrategy.class));
+-		Acl acl = mock(Acl.class);
+-		given(service.readAclById(any(ObjectIdentity.class), anyList())).willReturn(acl);
+ 		given(acl.isGranted(anyList(), anyList(), eq(false))).willReturn(true);
+ 		assertThat(pe.hasPermission(mock(Authentication.class), new Object(), "write")).isTrue();
+ 		Locale.setDefault(systemLocale);
+ 	}
+ 
++	private static AclService createMockAclService(Acl acl) {
++		AclService service = mock(AclService.class);
++		given(service.readAclById(any(ObjectIdentity.class), anyList())).willReturn(acl);
++		return service;
++	}
++
+ }

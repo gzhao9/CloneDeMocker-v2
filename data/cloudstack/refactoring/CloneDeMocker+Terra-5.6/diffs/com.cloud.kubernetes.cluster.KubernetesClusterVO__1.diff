@@ -1,0 +1,75 @@
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
+@@ -297,7 +297,7 @@
+ 
+     @Test
+     public void addVmsToCluster() {
+-        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
++        KubernetesClusterVO cluster = createMockKubernetesCluster(KubernetesCluster.ClusterType.ExternalManaged);
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+         AddVirtualMachinesToKubernetesClusterCmd cmd = Mockito.mock(AddVirtualMachinesToKubernetesClusterCmd.class);
+         List<Long> vmIds = Arrays.asList(1L, 2L, 3L);
+@@ -305,7 +305,6 @@
+         Mockito.when(cmd.getId()).thenReturn(1L);
+         Mockito.when(cmd.getVmIds()).thenReturn(vmIds);
+         Mockito.when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class));
+-        Mockito.when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
+         Mockito.when(vmInstanceDao.findById(Mockito.anyLong())).thenReturn(vm);
+         Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
+         Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(1L, vmIds)).thenReturn(Collections.emptyList());
+@@ -314,16 +313,21 @@
+ 
+     @Test
+     public void removeVmsFromCluster() {
+-        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
++        KubernetesClusterVO cluster = createMockKubernetesCluster(KubernetesCluster.ClusterType.ExternalManaged);
+         RemoveVirtualMachinesFromKubernetesClusterCmd cmd = Mockito.mock(RemoveVirtualMachinesFromKubernetesClusterCmd.class);
+         List<Long> vmIds = Arrays.asList(1L, 2L, 3L);
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+         Mockito.when(cmd.getVmIds()).thenReturn(vmIds);
+         Mockito.when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class));
+-        Mockito.when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
+         Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
+         Assert.assertTrue(kubernetesClusterManager.removeVmsFromCluster(cmd).size() > 0);
++    }
++
++    private KubernetesClusterVO createMockKubernetesCluster(KubernetesCluster.ClusterType clusterType) {
++        KubernetesClusterVO kubernetesCluster = Mockito.mock(KubernetesClusterVO.class);
++        Mockito.when(kubernetesCluster.getClusterType()).thenReturn(clusterType);
++        return kubernetesCluster;
+     }
+ 
+     @Test
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesServiceHelperImplTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesServiceHelperImplTest.java
+@@ -83,9 +83,8 @@
+         KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
+         Mockito.when(map.getClusterId()).thenReturn(1L);
+         Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(map);
+-        KubernetesClusterVO kubernetesCluster = Mockito.mock(KubernetesClusterVO.class);
++        KubernetesClusterVO kubernetesCluster = createMockKubernetesCluster(KubernetesCluster.ClusterType.CloudManaged);
+         Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(kubernetesCluster);
+-        Mockito.when(kubernetesCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.CloudManaged);
+         kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
+     }
+ 
+@@ -97,10 +96,15 @@
+         KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
+         Mockito.when(map.getClusterId()).thenReturn(1L);
+         Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(map);
++        KubernetesClusterVO kubernetesCluster = createMockKubernetesCluster(KubernetesCluster.ClusterType.ExternalManaged);
++        Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(kubernetesCluster);
++        kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
++    }
++
++    private KubernetesClusterVO createMockKubernetesCluster(KubernetesCluster.ClusterType clusterType) {
+         KubernetesClusterVO kubernetesCluster = Mockito.mock(KubernetesClusterVO.class);
+-        Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(kubernetesCluster);
+-        Mockito.when(kubernetesCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
+-        kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
++        Mockito.when(kubernetesCluster.getClusterType()).thenReturn(clusterType);
++        return kubernetesCluster;
+     }
+ 
+     @Test

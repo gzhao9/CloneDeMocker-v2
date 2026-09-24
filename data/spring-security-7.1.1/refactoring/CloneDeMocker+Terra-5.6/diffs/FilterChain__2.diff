@@ -1,0 +1,114 @@
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2TokenRevocationEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2TokenRevocationEndpointFilterTests.java
+@@ -78,12 +78,15 @@
+ 
+ 	private OAuth2TokenRevocationEndpointFilter filter;
+ 
++	private FilterChain tokenRevocationFilterChain;
++
+ 	private final HttpMessageConverter<OAuth2Error> errorHttpResponseConverter = new OAuth2ErrorHttpMessageConverter();
+ 
+ 	@BeforeEach
+ 	public void setUp() {
+ 		this.authenticationManager = mock(AuthenticationManager.class);
+ 		this.filter = new OAuth2TokenRevocationEndpointFilter(this.authenticationManager);
++		this.tokenRevocationFilterChain = mock(FilterChain.class);
+ 	}
+ 
+ 	@AfterEach
+@@ -139,11 +142,10 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest("POST", requestUri);
+ 		request.setServletPath(requestUri);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
++
++		this.filter.doFilter(request, response, tokenRevocationFilterChain);
++
++		verify(tokenRevocationFilterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+ 
+ 	@Test
+@@ -152,11 +154,10 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest("GET", requestUri);
+ 		request.setServletPath(requestUri);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
++
++		this.filter.doFilter(request, response, tokenRevocationFilterChain);
++
++		verify(tokenRevocationFilterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+ 
+ 	@Test
+@@ -198,11 +199,10 @@
+ 
+ 		MockHttpServletRequest request = createTokenRevocationRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verifyNoInteractions(filterChain);
++
++		this.filter.doFilter(request, response, tokenRevocationFilterChain);
++
++		verifyNoInteractions(tokenRevocationFilterChain);
+ 		verify(this.authenticationManager).authenticate(any());
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+@@ -235,9 +235,8 @@
+ 		SecurityContextHolder.setContext(securityContext);
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, tokenRevocationFilterChain);
+ 
+ 		verify(authenticationDetailsSource).buildDetails(any());
+ 	}
+@@ -265,9 +264,8 @@
+ 
+ 		MockHttpServletRequest request = createTokenRevocationRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, tokenRevocationFilterChain);
+ 
+ 		verify(authenticationConverter).convert(any());
+ 	}
+@@ -294,9 +292,8 @@
+ 
+ 		MockHttpServletRequest request = createTokenRevocationRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, tokenRevocationFilterChain);
+ 
+ 		verify(authenticationSuccessHandler).onAuthenticationSuccess(any(), any(), any());
+ 	}
+@@ -318,9 +315,8 @@
+ 
+ 		MockHttpServletRequest request = createTokenRevocationRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, tokenRevocationFilterChain);
+ 
+ 		verify(authenticationFailureHandler).onAuthenticationFailure(any(), any(), any());
+ 	}

@@ -1,0 +1,38 @@
+--- a/server/src/test/java/com/cloud/api/query/QueryManagerImplTest.java
++++ b/server/src/test/java/com/cloud/api/query/QueryManagerImplTest.java
+@@ -229,6 +229,13 @@
+         return cmd;
+     }
+ 
++    private static NetworkVO createMockNetwork(long accountId) {
++        NetworkVO network = mock(NetworkVO.class);
++        Mockito.when(network.getId()).thenReturn(1L);
++        Mockito.when(network.getAccountId()).thenReturn(accountId);
++        return network;
++    }
++
+     @Test
+     public void searchForEventsSuccess() {
+         ListEventsCmd cmd = setupMockListEventsCmd();
+@@ -246,9 +253,7 @@
+         eventJoins.add(mock(EventJoinVO.class));
+         eventJoins.add(mock(EventJoinVO.class));
+ 
+-        NetworkVO network = mock(NetworkVO.class);
+-        Mockito.when(network.getId()).thenReturn(1L);
+-        Mockito.when(network.getAccountId()).thenReturn(account.getId());
++        NetworkVO network = createMockNetwork(account.getId());
+         Mockito.when(entityManager.findByUuidIncludingRemoved(Network.class, uuid)).thenReturn(network);
+         Mockito.doNothing().when(accountManager).checkAccess(account, SecurityChecker.AccessType.ListEntry, true, network);
+         Mockito.when(eventDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class))).thenReturn(pair);
+@@ -304,9 +309,7 @@
+         String uuid = UUID.randomUUID().toString();
+         Mockito.when(cmd.getResourceId()).thenReturn(uuid);
+         Mockito.when(cmd.getResourceType()).thenReturn(ApiCommandResourceType.Network.toString());
+-        NetworkVO network = mock(NetworkVO.class);
+-        Mockito.when(network.getId()).thenReturn(1L);
+-        Mockito.when(network.getAccountId()).thenReturn(2L);
++        NetworkVO network = createMockNetwork(2L);
+         Mockito.when(entityManager.findByUuidIncludingRemoved(Network.class, uuid)).thenReturn(network);
+         Mockito.doThrow(new PermissionDeniedException("Denied")).when(accountManager).checkAccess(account, SecurityChecker.AccessType.ListEntry, false, network);
+         queryManager.searchForEvents(cmd);

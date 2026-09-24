@@ -1,0 +1,66 @@
+--- a/plugins/hypervisors/external/src/test/java/org/apache/cloudstack/hypervisor/external/provisioner/ExternalPathPayloadProvisionerTest.java
++++ b/plugins/hypervisors/external/src/test/java/org/apache/cloudstack/hypervisor/external/provisioner/ExternalPathPayloadProvisionerTest.java
+@@ -175,6 +175,14 @@
+         testScript.setWritable(true);
+     }
+ 
++    private static StartCommand createMockStartCommand(VirtualMachineTO vmTO) {
++        StartCommand cmd = mock(StartCommand.class);
++        when(cmd.getVirtualMachine()).thenReturn(vmTO);
++        when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
++        when(cmd.getWait()).thenReturn(30);
++        return cmd;
++    }
++
+     @Test
+     public void testLoadAccessDetails() {
+         Map<String, Map<String, String>> externalDetails = new HashMap<>();
+@@ -354,12 +362,9 @@
+ 
+     @Test
+     public void testStartInstance() {
+-        StartCommand cmd = mock(StartCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
+-        when(cmd.getVirtualMachine()).thenReturn(vmTO);
+-        when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
+-        when(cmd.getWait()).thenReturn(30);
++        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        when(vmTO.getUuid()).thenReturn("test-uuid");
++        StartCommand cmd = createMockStartCommand(vmTO);
+ 
+         doReturn(new Pair<>(true, "{\"status\": \"success\", \"message\": \"Instance started\"}")).when(provisioner)
+             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
+@@ -372,15 +377,12 @@
+ 
+     @Test
+     public void testStartInstanceDeploy() {
+-        StartCommand cmd = mock(StartCommand.class);
+         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+         when(vmTO.getUuid()).thenReturn("test-uuid");
+         Map<String, String> details = new HashMap<>();
+         details.put("deployvm", "true");
+         when(vmTO.getDetails()).thenReturn(details);
+-        when(cmd.getVirtualMachine()).thenReturn(vmTO);
+-        when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
+-        when(cmd.getWait()).thenReturn(30);
++        StartCommand cmd = createMockStartCommand(vmTO);
+ 
+         doReturn(new Pair<>(true, "{\"status\": \"success\", \"message\": \"Instance started\"}")).when(provisioner)
+                 .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
+@@ -393,12 +395,9 @@
+ 
+     @Test
+     public void testStartInstanceError() {
+-        StartCommand cmd = mock(StartCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
+-        when(cmd.getVirtualMachine()).thenReturn(vmTO);
+-        when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
+-        when(cmd.getWait()).thenReturn(30);
++        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        when(vmTO.getUuid()).thenReturn("test-uuid");
++        StartCommand cmd = createMockStartCommand(vmTO);
+ 
+         doReturn(new Pair<>(false, "{\"error\": \"Instance failed to start\"}")).when(provisioner)
+                 .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());

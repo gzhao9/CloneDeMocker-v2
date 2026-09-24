@@ -1,0 +1,57 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
+@@ -157,20 +157,18 @@
+     public void testCreateDiskSnapshotBasedOnStrategy() throws Exception {
+         VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
+         List<SnapshotInfo> snapshotsForRollback = new ArrayList<>();
+-        VolumeInfo vol = Mockito.mock(VolumeInfo.class);
+         SnapshotInfo snapshotInfo = Mockito.mock(SnapshotInfo.class);
+         SnapshotStrategy strategy = Mockito.mock(SnapshotStrategy.class);
+         DataStore dataStore = Mockito.mock(DataStore.class);
+         String volUuid = UUID.randomUUID().toString();
++        VolumeInfo vol = createMockVolumeInfo(volUuid, dataStore);
+         String vmUuid = UUID.randomUUID().toString();
+         SnapshotVO snapshot = new SnapshotVO(vol.getDataCenterId(), vol.getAccountId(), vol.getDomainId(),
+                                vol.getId(),vol.getDiskOfferingId(), vmUuid + "_" + volUuid,(short) SnapshotVO.MANUAL_POLICY_ID,
+                                "MANUAL",vol.getSize(),vol.getMinIops(),vol.getMaxIops(), Hypervisor.HypervisorType.KVM, null);
+         when(vmSnapshot.getOptions()).thenReturn(new VMSnapshotOptions(true));
+         when(vmSnapshot.getUuid()).thenReturn(vmUuid);
+-        when(vol.getUuid()).thenReturn(volUuid);
+         when(_snapshotDao.persist(any())).thenReturn(snapshot);
+-        when(vol.getDataStore()).thenReturn(dataStore);
+         when(_snapshotDataFactory.getSnapshot(snapshot.getId(), vol.getDataStore())).thenReturn(snapshotInfo);
+         when(_storageStrategyFactory.getSnapshotStrategy(snapshotInfo, SnapshotOperation.TAKE)).thenReturn(strategy);
+ 
+@@ -225,7 +223,6 @@
+     @Test
+     public void testRevertDiskSnapshot() throws Exception {
+         VMSnapshot vmSnapshot = Mockito.mock(VMSnapshot.class);
+-        VolumeInfo vol = Mockito.mock(VolumeInfo.class);
+         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
+         Snapshot snap = Mockito.mock(Snapshot.class);
+         DataStore dataStore = Mockito.mock(DataStore.class);
+@@ -233,9 +230,8 @@
+         String volUuid = UUID.randomUUID().toString();
+         String vmUuid = UUID.randomUUID().toString();
+         String name = vmUuid + "_" + volUuid;
+-        when(vol.getUuid()).thenReturn(volUuid);
++        VolumeInfo vol = createMockVolumeInfo(volUuid, dataStore);
+         when(vmSnapshot.getUuid()).thenReturn(vmUuid);
+-        when(vol.getDataStore()).thenReturn(dataStore);
+         when(snapshotVO.getId()).thenReturn(1L);
+         when(_snapshotService.revertSnapshot(snapshotVO.getId())).thenReturn(snap);
+         vmStrategy.revertDiskSnapshot(vmSnapshot);
+@@ -299,6 +295,13 @@
+         assertTrue(result);
+     }
+ 
++    private static VolumeInfo createMockVolumeInfo(String volUuid, DataStore dataStore) {
++        VolumeInfo vol = Mockito.mock(VolumeInfo.class);
++        when(vol.getUuid()).thenReturn(volUuid);
++        when(vol.getDataStore()).thenReturn(dataStore);
++        return vol;
++    }
++
+     @SuppressWarnings("unchecked")
+     private SnapshotVO testFindSnapshotByName(String snapshotName) {
+         SearchBuilder<SnapshotVO> sb = Mockito.mock(SearchBuilder.class);

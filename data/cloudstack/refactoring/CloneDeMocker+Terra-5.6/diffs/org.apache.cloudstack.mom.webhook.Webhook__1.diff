@@ -1,0 +1,53 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
+@@ -410,11 +410,10 @@
+ 
+     @Test
+     public void getManualDeliveryJobCreatesJobWithDefaultPayloadWhenPayloadIsBlank() {
+-        Webhook webhook = Mockito.mock(Webhook.class);
+         CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = Mockito.mock(CompletableFuture.class);
+         Account account = Mockito.mock(Account.class);
+ 
+-        Mockito.when(webhook.getAccountId()).thenReturn(2L);
++        Webhook webhook = createMockWebhook(2L);
+         Mockito.when(webhook.getPayloadUrl()).thenReturn("https://example.com");
+         Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(account);
+ 
+@@ -450,11 +449,10 @@
+ 
+     @Test
+     public void getManualDeliveryJobCreatesJobWithWebhookAccountDetailsWhenNoExistingDelivery() {
+-        Webhook webhook = Mockito.mock(Webhook.class);
++        Webhook webhook = createMockWebhook(1L);
+         Account account = Mockito.mock(Account.class);
+         CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = Mockito.mock(CompletableFuture.class);
+ 
+-        Mockito.when(webhook.getAccountId()).thenReturn(1L);
+         Mockito.when(accountManager.getAccount(1L)).thenReturn(account);
+         Mockito.when(account.getUuid()).thenReturn("account-uuid");
+ 
+@@ -619,12 +617,11 @@
+ 
+     @Test
+     public void executeWebhookDeliveryCreatesAndReturnsNewDeliveryWhenDeliveryIsNull() {
+-        Webhook webhook = Mockito.mock(Webhook.class);
++        Webhook webhook = createMockWebhook(2L);
+         WebhookDeliveryThread.WebhookDeliveryResult result =
+                 Mockito.mock(WebhookDeliveryThread.WebhookDeliveryResult.class);
+         Account account = Mockito.mock(Account.class);
+ 
+-        Mockito.when(webhook.getAccountId()).thenReturn(2L);
+         Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(account);
+         Mockito.when(result.getHeaders()).thenReturn("headers");
+         Mockito.when(result.getPayload()).thenReturn("payload");
+@@ -670,4 +667,10 @@
+ 
+         Mockito.verify(cache, Mockito.times(1)).invalidate(123L);
+     }
++
++    private static Webhook createMockWebhook(long accountId) {
++        Webhook webhook = Mockito.mock(Webhook.class);
++        Mockito.when(webhook.getAccountId()).thenReturn(accountId);
++        return webhook;
++    }
+ }

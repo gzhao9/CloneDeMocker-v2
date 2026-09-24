@@ -1,0 +1,46 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -245,6 +245,8 @@
+     private DiskOfferingVO diskOfferingMock;
+     @Mock
+     private DiskOfferingVO newDiskOfferingMock;
++    @Mock
++    private DiskOfferingVO diskOfferingForMigration;
+ 
+     @Mock
+     private VolumeVO volumeVoMock;
+@@ -539,7 +541,6 @@
+         Account owner = Mockito.mock(Account.class);
+         DataCenter zone = Mockito.mock(DataCenter.class);
+         DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+-        DiskOfferingVO deniedOffering = Mockito.mock(DiskOfferingVO.class);
+         DiskOfferingVO allowedOffering = Mockito.mock(DiskOfferingVO.class);
+ 
+         Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Active);
+@@ -547,13 +548,13 @@
+         Mockito.doThrow(new PermissionDeniedException("default denied")).when(_configMgr).checkDiskOfferingAccess(owner, defaultOffering, zone);
+ 
+         Mockito.when(allowedOffering.getId()).thenReturn(24L);
+-        Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(deniedOffering, allowedOffering));
+-        Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(owner, deniedOffering, zone);
++        Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(diskOfferingForMigration, allowedOffering));
++        Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(owner, diskOfferingForMigration, zone);
+ 
+         Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, false);
+ 
+         Assert.assertEquals(Long.valueOf(24L), result);
+-        Mockito.verify(_configMgr).checkDiskOfferingAccess(owner, deniedOffering, zone);
++        Mockito.verify(_configMgr).checkDiskOfferingAccess(owner, diskOfferingForMigration, zone);
+         Mockito.verify(_configMgr).checkDiskOfferingAccess(owner, allowedOffering, zone);
+     }
+ 
+@@ -1784,8 +1785,7 @@
+             Mockito.when(vol.getPoolId()).thenReturn(1L);
+             Mockito.when(vol.getInstanceId()).thenReturn(null);
+             Mockito.when(vol.getDiskOfferingId()).thenReturn(1L);
+-            DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+-            Mockito.when(_diskOfferingDao.findById(1L)).thenReturn(diskOffering);
++            Mockito.when(_diskOfferingDao.findById(1L)).thenReturn(diskOfferingForMigration);
+ 
+             StoragePoolVO srcStoragePoolVOMock = Mockito.mock(StoragePoolVO.class);
+             PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);

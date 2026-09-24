@@ -1,0 +1,92 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
+@@ -206,7 +206,7 @@
+ 
+     @Before
+     public void setUp() throws Exception {
+-        Mockito.when(configurationVOMock.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
++        configurationVOMock = createMockConfigurationVO(ConfigKey.Scope.Global);
+         Mockito.when(configDao.findByName(Mockito.anyString())).thenReturn(configurationVOMock);
+         Mockito.when(configDepot.get(Mockito.anyString())).thenReturn(configKeyMock);
+ 
+@@ -484,8 +484,7 @@
+ 
+     @Test
+     public void testValidateInvalidScopeForConfiguration() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
+-        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Account));
++        ConfigurationVO cfg = createMockConfigurationVO(ConfigKey.Scope.Account);
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+         String msg = configurationManagerImplSpy.validateConfigurationValue("test.config.name", "testvalue", ConfigKey.Scope.Domain);
+         Assert.assertEquals("Invalid scope id provided for the parameter test.config.name", msg);
+@@ -493,8 +492,7 @@
+ 
+     @Test
+     public void testValidateConfig_ThreadsOnKVMHostToTransferVMwareVMFiles_Failure() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
+-        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
++        ConfigurationVO cfg = createMockConfigurationVO(ConfigKey.Scope.Global);
+         ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
+@@ -506,8 +504,7 @@
+ 
+     @Test
+     public void testValidateConfig_ThreadsOnKVMHostToTransferVMwareVMFiles_Success() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
+-        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
++        ConfigurationVO cfg = createMockConfigurationVO(ConfigKey.Scope.Global);
+         ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
+@@ -517,8 +514,7 @@
+ 
+     @Test
+     public void testValidateConfig_ConvertVmwareInstanceToKvmTimeout_Failure() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
+-        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
++        ConfigurationVO cfg = createMockConfigurationVO(ConfigKey.Scope.Global);
+         ConfigKey<Integer> configKey = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
+@@ -531,8 +527,7 @@
+ 
+     @Test
+     public void testValidateConfig_ConvertVmwareInstanceToKvmTimeout_Success() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
+-        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
++        ConfigurationVO cfg = createMockConfigurationVO(ConfigKey.Scope.Global);
+         ConfigKey<Integer> configKey = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
+@@ -543,8 +538,7 @@
+ 
+     @Test
+     public void testValidateConfig_KMSDekSizeBits_Failure() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
+-        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
++        ConfigurationVO cfg = createMockConfigurationVO(ConfigKey.Scope.Global);
+         ConfigKey<Integer> configKey = KMSManager.KMSDekSizeBits;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
+@@ -556,8 +550,7 @@
+ 
+     @Test
+     public void testValidateConfig_KMSDekSizeBits_Success() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
+-        when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
++        ConfigurationVO cfg = createMockConfigurationVO(ConfigKey.Scope.Global);
+         ConfigKey<Integer> configKey = KMSManager.KMSDekSizeBits;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
+@@ -1410,4 +1403,10 @@
+         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
+         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
+     }
++
++    private static ConfigurationVO createMockConfigurationVO(ConfigKey.Scope scope) {
++        ConfigurationVO cfg = mock(ConfigurationVO.class);
++        when(cfg.getScopes()).thenReturn(List.of(scope));
++        return cfg;
++    }
+ }

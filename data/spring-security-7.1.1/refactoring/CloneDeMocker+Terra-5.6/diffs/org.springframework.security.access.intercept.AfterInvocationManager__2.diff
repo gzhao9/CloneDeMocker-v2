@@ -1,0 +1,42 @@
+--- a/access/src/test/java/org/springframework/security/web/access/intercept/FilterSecurityInterceptorTests.java
++++ b/access/src/test/java/org/springframework/security/web/access/intercept/FilterSecurityInterceptorTests.java
+@@ -73,6 +73,8 @@
+ 
+ 	private RunAsManager ram;
+ 
++	private AfterInvocationManager afterInvocationManager;
++
+ 	private FilterSecurityInterceptor interceptor;
+ 
+ 	private ApplicationEventPublisher publisher;
+@@ -84,6 +86,7 @@
+ 		this.ods = mock(FilterInvocationSecurityMetadataSource.class);
+ 		this.adm = mock(AccessDecisionManager.class);
+ 		this.ram = mock(RunAsManager.class);
++		this.afterInvocationManager = mock(AfterInvocationManager.class);
+ 		this.publisher = mock(ApplicationEventPublisher.class);
+ 		this.interceptor.setAuthenticationManager(this.am);
+ 		this.interceptor.setSecurityMetadataSource(this.ods);
+@@ -136,10 +139,9 @@
+ 		willThrow(new RuntimeException()).given(chain)
+ 			.doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 		given(this.ods.getAttributes(fi)).willReturn(SecurityConfig.createList("MOCK_OK"));
+-		AfterInvocationManager aim = mock(AfterInvocationManager.class);
+-		this.interceptor.setAfterInvocationManager(aim);
++		this.interceptor.setAfterInvocationManager(afterInvocationManager);
+ 		assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> this.interceptor.invoke(fi));
+-		verifyNoMoreInteractions(aim);
++		verifyNoMoreInteractions(afterInvocationManager);
+ 	}
+ 
+ 	// SEC-1967
+@@ -159,8 +161,7 @@
+ 		willThrow(new RuntimeException()).given(chain)
+ 			.doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 		given(this.ods.getAttributes(fi)).willReturn(SecurityConfig.createList("MOCK_OK"));
+-		AfterInvocationManager aim = mock(AfterInvocationManager.class);
+-		this.interceptor.setAfterInvocationManager(aim);
++		this.interceptor.setAfterInvocationManager(afterInvocationManager);
+ 		assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> this.interceptor.invoke(fi));
+ 		// Check we've changed back
+ 		assertThat(SecurityContextHolder.getContext()).isSameAs(ctx);

@@ -1,0 +1,42 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/storage/KVMStorageProcessorTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/storage/KVMStorageProcessorTest.java
+@@ -112,6 +112,8 @@
+     @Mock
+     Logger loggerMock;
+ 
++    @Mock
++    private KVMPhysicalDisk snapshotBaseFile;
+ 
+     private static final String directDownloadTemporaryPath = "/var/lib/libvirt/images/dd";
+     private static final long templateSize = 80000L;
+@@ -291,28 +293,26 @@
+ 
+     @Test
+     public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestFailToConvertWithLibvirtExceptionReturnErrorMessage() {
+-        KVMPhysicalDisk baseFile = Mockito.mock(KVMPhysicalDisk.class);
+         String snapshotPath = "snapshotPath";
+ 
+         Mockito.doReturn(true).when(kvmStoragePoolMock).createFolder(Mockito.anyString());
+         try (MockedConstruction<QemuImg> ignored = Mockito.mockConstructionWithAnswer(QemuImg.class, invocation -> {
+             throw Mockito.mock(LibvirtException.class);
+         })) {
+-            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeObjectToMock, 1);
++            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInStorageDir(kvmStoragePoolMock, snapshotBaseFile, snapshotPath, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeObjectToMock, 1);
+             Assert.assertNotNull(result);
+         }
+     }
+ 
+     @Test
+     public void convertBaseFileToSnapshotFileInPrimaryStorageDirTestConvertSuccessReturnNull() throws Exception {
+-        KVMPhysicalDisk baseFile = Mockito.mock(KVMPhysicalDisk.class);
+         String snapshotPath = "snapshotPath";
+ 
+         Mockito.doReturn(true).when(kvmStoragePoolMock).createFolder(Mockito.anyString());
+         try (MockedConstruction<QemuImg> ignored = Mockito.mockConstruction(QemuImg.class, (mock, context) -> {
+             Mockito.doNothing().when(mock).convert(Mockito.any(QemuImgFile.class), Mockito.any(QemuImgFile.class));
+         })) {
+-            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInStorageDir(kvmStoragePoolMock, baseFile, snapshotPath, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeObjectToMock, 1);
++            String result = storageProcessorSpy.convertBaseFileToSnapshotFileInStorageDir(kvmStoragePoolMock, snapshotBaseFile, snapshotPath, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, volumeObjectToMock, 1);
+             Assert.assertNull(result);
+         }
+     }

@@ -1,0 +1,43 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
+@@ -56,6 +56,9 @@
+     private KMSKeyDao kmsKeyDao;
+ 
+     @Mock
++    private KMSKeyVO kmsKey;
++
++    @Mock
+     private HSMProfileDao hsmProfileDao;
+ 
+     @Mock
+@@ -117,24 +120,22 @@
+ 
+     @Test(expected = PermissionDeniedException.class)
+     public void testFindKMSKeyAndCheckAccess_ThrowsWhenPermissionDenied() {
+-        KMSKeyVO key = mock(KMSKeyVO.class);
+-        Account caller = mock(Account.class);
+-        when(kmsKeyDao.findById(1L)).thenReturn(key);
++        Account caller = mock(Account.class);
++        when(kmsKeyDao.findById(1L)).thenReturn(kmsKey);
+         doThrow(new PermissionDeniedException("denied"))
+-                .when(accountManager).checkAccess(caller, null, true, key);
++                .when(accountManager).checkAccess(caller, null, true, kmsKey);
+ 
+         kmsManager.findKMSKeyAndCheckAccess(1L, caller);
+     }
+ 
+     @Test
+     public void testFindKMSKeyAndCheckAccess_ReturnsKeyOnSuccess() {
+-        KMSKeyVO key = mock(KMSKeyVO.class);
+-        Account caller = mock(Account.class);
+-        when(kmsKeyDao.findById(1L)).thenReturn(key);
++        Account caller = mock(Account.class);
++        when(kmsKeyDao.findById(1L)).thenReturn(kmsKey);
+ 
+         KMSKeyVO result = kmsManager.findKMSKeyAndCheckAccess(1L, caller);
+ 
+-        assertSame(key, result);
++        assertSame(kmsKey, result);
+     }
+ 
+     @Test

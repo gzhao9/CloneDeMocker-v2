@@ -1,0 +1,76 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
+@@ -129,13 +129,12 @@
+ 
+     @Test
+     public void testProcessCreateVmSnapshotAnswerPersistsNvramPath() throws Exception {
+-        VMSnapshot vmSnapshot = mock(VMSnapshot.class);
++        VMSnapshot vmSnapshot = MockVMSnapshotFactory.createMockVMSnapshot("vm-snapshot");
+         CreateDiskOnlyVmSnapshotAnswer answer = mock(CreateDiskOnlyVmSnapshotAnswer.class);
+         UserVm userVm = mock(UserVm.class);
+         VMSnapshotVO vmSnapshotVO = mock(VMSnapshotVO.class);
+ 
+         when(vmSnapshot.getId()).thenReturn(42L);
+-        when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+         when(answer.getMapVolumeToSnapshotSize()).thenReturn(Collections.emptyMap());
+         when(answer.getNvramSnapshotPath()).thenReturn("nvram/42.fd");
+ 
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
+@@ -224,7 +224,6 @@
+ 
+     @Test
+     public void testRevertDiskSnapshot() throws Exception {
+-        VMSnapshot vmSnapshot = Mockito.mock(VMSnapshot.class);
+         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
+         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
+         Snapshot snap = Mockito.mock(Snapshot.class);
+@@ -232,9 +231,9 @@
+ 
+         String volUuid = UUID.randomUUID().toString();
+         String vmUuid = UUID.randomUUID().toString();
++        VMSnapshot vmSnapshot = MockVMSnapshotFactory.createMockVMSnapshot(vmUuid);
+         String name = vmUuid + "_" + volUuid;
+         when(vol.getUuid()).thenReturn(volUuid);
+-        when(vmSnapshot.getUuid()).thenReturn(vmUuid);
+         when(vol.getDataStore()).thenReturn(dataStore);
+         when(snapshotVO.getId()).thenReturn(1L);
+         when(_snapshotService.revertSnapshot(snapshotVO.getId())).thenReturn(snap);
+@@ -243,7 +242,6 @@
+ 
+     @Test
+     public void testDeleteDiskSnapshot() {
+-        VMSnapshot vmSnapshot = Mockito.mock(VMSnapshot.class);
+         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
+         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
+         Snapshot snap = Mockito.mock(Snapshot.class);
+@@ -253,7 +251,7 @@
+         String vmUuid = UUID.randomUUID().toString();
+         String name = vmUuid + "_" + volUuid;
+         when(vol.getUuid()).thenReturn(volUuid);
+-        when(vmSnapshot.getUuid()).thenReturn(vmUuid);
++        VMSnapshot vmSnapshot = MockVMSnapshotFactory.createMockVMSnapshot(vmUuid);
+         when(snapshotVO.getId()).thenReturn(1L);
+         when( _snapshotDataFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore())).thenReturn(info);
+         when(_storageStrategyFactory.getSnapshotStrategy(info, SnapshotOperation.DELETE)).thenReturn(strategy);
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockVMSnapshotFactory.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockVMSnapshotFactory.java
+@@ -0,0 +1,18 @@
++package org.apache.cloudstack.storage.vmsnapshot;
++
++import static org.mockito.Mockito.when;
++
++import com.cloud.vm.snapshot.VMSnapshot;
++
++import org.mockito.Mockito;
++
++public final class MockVMSnapshotFactory {
++    private MockVMSnapshotFactory() {
++    }
++
++    public static VMSnapshot createMockVMSnapshot(String uuid) {
++        VMSnapshot vmSnapshot = Mockito.mock(VMSnapshot.class);
++        when(vmSnapshot.getUuid()).thenReturn(uuid);
++        return vmSnapshot;
++    }
++}

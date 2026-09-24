@@ -1,0 +1,72 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/snapshot/DefaultSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/snapshot/DefaultSnapshotStrategyTest.java
+@@ -191,7 +191,7 @@
+ 
+     @Test
+     public void deleteSnapshotInfoTestReturnTrueIfCanDeleteTheSnapshotOnPrimaryStorage() throws NoTransitionException {
+-        Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
++        MockSnapshotInfoWithDataStore.configureDataStore(snapshotInfo1Mock, dataStoreMock);
+         Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
+         Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
+         Mockito.when(dataStoreMock.getRole()).thenReturn(DataStoreRole.Primary);
+@@ -202,7 +202,7 @@
+ 
+     @Test
+     public void deleteSnapshotInfoTestReturnTrueIfCanDeleteTheSnapshotChainForSecondaryStorage() throws NoTransitionException {
+-        Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
++        MockSnapshotInfoWithDataStore.configureDataStore(snapshotInfo1Mock, dataStoreMock);
+         Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
+         Mockito.doNothing().when(defaultSnapshotStrategySpy).verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObjectMock);
+         Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
+@@ -215,7 +215,7 @@
+ 
+     @Test
+     public void deleteSnapshotInfoTestReturnTrueIfCannotDeleteTheSnapshotChainForSecondaryStorage() throws NoTransitionException {
+-        Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
++        MockSnapshotInfoWithDataStore.configureDataStore(snapshotInfo1Mock, dataStoreMock);
+         Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
+         Mockito.doNothing().when(defaultSnapshotStrategySpy).verifyIfTheSnapshotIsBeingUsedByAnyVolume(snapshotObjectMock);
+         Mockito.doNothing().when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
+@@ -228,7 +228,7 @@
+ 
+     @Test
+     public void validateDeleteSnapshotInfoSnapshotProcessSnapshotEventThrowsNoTransitionExceptionReturnsFalse() throws NoTransitionException {
+-        Mockito.doReturn(dataStoreMock).when(snapshotInfo1Mock).getDataStore();
++        MockSnapshotInfoWithDataStore.configureDataStore(snapshotInfo1Mock, dataStoreMock);
+         Mockito.doReturn(snapshotObjectMock).when(defaultSnapshotStrategySpy).castSnapshotInfoToSnapshotObject(snapshotInfo1Mock);
+         Mockito.doThrow(NoTransitionException.class).when(snapshotObjectMock).processEvent(Mockito.any(Snapshot.Event.class));
+         Mockito.when(dataStoreMock.getRole()).thenReturn(DataStoreRole.Image);
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/snapshot/SnapshotServiceImplTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/snapshot/SnapshotServiceImplTest.java
+@@ -218,7 +218,7 @@
+         Mockito.doReturn(snapshotInfoMock).when(snapshotResultMock).getSnapshot();
+ 
+         Mockito.doReturn(null).when(snapshotInfoMock).getImageStore();
+-        Mockito.doReturn(dataStoreMock).when(snapshotInfoMock).getDataStore();
++        MockSnapshotInfoWithDataStore.configureDataStore(snapshotInfoMock, dataStoreMock);
+ 
+         Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findByStoreSnapshot(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+ 
+@@ -242,7 +242,7 @@
+         Mockito.doReturn(snapshotInfoMock).when(snapshotResultMock).getSnapshot();
+ 
+         Mockito.doReturn(null).when(snapshotInfoMock).getImageStore();
+-        Mockito.doReturn(dataStoreMock).when(snapshotInfoMock).getDataStore();
++        MockSnapshotInfoWithDataStore.configureDataStore(snapshotInfoMock, dataStoreMock);
+ 
+         Mockito.doReturn(snapshotDataStoreVoMock).when(snapshotDataStoreDaoMock).findByStoreSnapshot(Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
+ 
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/snapshot/MockSnapshotInfoWithDataStore.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/snapshot/MockSnapshotInfoWithDataStore.java
+@@ -0,0 +1,11 @@
++package org.apache.cloudstack.storage.snapshot;
++
++import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
++import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
++import org.mockito.Mockito;
++
++public class MockSnapshotInfoWithDataStore {
++    public static void configureDataStore(SnapshotInfo snapshotInfo, DataStore dataStore) {
++        Mockito.doReturn(dataStore).when(snapshotInfo).getDataStore();
++    }
++}

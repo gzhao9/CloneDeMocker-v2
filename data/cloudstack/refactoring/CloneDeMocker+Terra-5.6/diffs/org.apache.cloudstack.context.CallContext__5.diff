@@ -1,0 +1,62 @@
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/version/KubernetesVersionServiceTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/version/KubernetesVersionServiceTest.java
+@@ -115,6 +115,12 @@
+         f.set(configKey, o);
+     }
+ 
++    private static CallContext createMockCallContext(final Account callingAccount) {
++        CallContext callContextMock = Mockito.mock(CallContext.class);
++        when(callContextMock.getCallingAccount()).thenReturn(callingAccount);
++        return callContextMock;
++    }
++
+     @Before
+     public void setUp() throws Exception {
+         closeable = MockitoAnnotations.openMocks(this);
+@@ -155,11 +161,10 @@
+ 
+     @Test
+     public void listKubernetesSupportedVersionsTest() {
+-        CallContext callContextMock = Mockito.mock(CallContext.class);
++        CallContext callContextMock = createMockCallContext(accountMock);
+         try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+             callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+             final SearchCriteria<KubernetesSupportedVersionVO> versionSearchCriteria = Mockito.mock(SearchCriteria.class);
+-            when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+             ListKubernetesSupportedVersionsCmd cmd = Mockito.mock(ListKubernetesSupportedVersionsCmd.class);
+             List<KubernetesSupportedVersionVO> versionVOs = new ArrayList<>();
+             KubernetesSupportedVersionVO versionVO = Mockito.mock(KubernetesSupportedVersionVO.class);
+@@ -178,7 +183,7 @@
+ 
+     @Test
+     public void listKubernetesSupportedVersionsTestWhenAdmin() {
+-        CallContext callContextMock = Mockito.mock(CallContext.class);
++        CallContext callContextMock = createMockCallContext(accountMock);
+         try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+             callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+             ListKubernetesSupportedVersionsCmd cmd = Mockito.mock(ListKubernetesSupportedVersionsCmd.class);
+@@ -186,7 +191,6 @@
+             KubernetesSupportedVersionVO versionVO = Mockito.mock(KubernetesSupportedVersionVO.class);
+             when(versionVO.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
+             versionVOs.add(versionVO);
+-            when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+             when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(versionVO);
+             when(kubernetesSupportedVersionDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class)))
+                     .thenReturn(new Pair<>(versionVOs, versionVOs.size()));
+@@ -198,7 +202,7 @@
+ 
+     @Test
+     public void listKubernetesSupportedVersionsTestWhenOtherUser() {
+-        CallContext callContextMock = Mockito.mock(CallContext.class);
++        CallContext callContextMock = createMockCallContext(accountMock);
+         try (MockedStatic<CallContext> callContextMockedStatic = Mockito.mockStatic(CallContext.class)) {
+             callContextMockedStatic.when(CallContext::current).thenReturn(callContextMock);
+             ListKubernetesSupportedVersionsCmd cmd = Mockito.mock(ListKubernetesSupportedVersionsCmd.class);
+@@ -206,7 +210,6 @@
+             KubernetesSupportedVersionVO versionVO = Mockito.mock(KubernetesSupportedVersionVO.class);
+             when(versionVO.getSemanticVersion()).thenReturn(KubernetesVersionService.MIN_KUBERNETES_VERSION);
+             versionVOs.add(versionVO);
+-            when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+             when(kubernetesSupportedVersionDao.findById(Mockito.anyLong())).thenReturn(versionVO);
+             when(kubernetesSupportedVersionDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class)))
+                     .thenReturn(new Pair<>(versionVOs, versionVOs.size()));

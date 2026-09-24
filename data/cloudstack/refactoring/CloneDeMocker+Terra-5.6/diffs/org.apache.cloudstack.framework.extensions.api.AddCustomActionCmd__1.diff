@@ -1,0 +1,50 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -1441,10 +1441,8 @@
+ 
+     @Test
+     public void testAddCustomAction_Success() {
+-        AddCustomActionCmd cmd = mock(AddCustomActionCmd.class);
+-        when(cmd.getName()).thenReturn("action1");
++        AddCustomActionCmd cmd = createMockAddCustomActionCmd(1L);
+         when(cmd.getDescription()).thenReturn("desc");
+-        when(cmd.getExtensionId()).thenReturn(1L);
+         when(cmd.getResourceType()).thenReturn("VirtualMachine");
+         when(cmd.getAllowedRoleTypes()).thenReturn(List.of("Admin"));
+         when(cmd.getTimeout()).thenReturn(5);
+@@ -1469,9 +1467,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testAddCustomAction_DuplicateName() {
+-        AddCustomActionCmd cmd = mock(AddCustomActionCmd.class);
+-        when(cmd.getName()).thenReturn("action1");
+-        when(cmd.getExtensionId()).thenReturn(1L);
++        AddCustomActionCmd cmd = createMockAddCustomActionCmd(1L);
+         when(extensionCustomActionDao.findByNameAndExtensionId(1L, "action1")).thenReturn(mock(ExtensionCustomActionVO.class));
+ 
+         extensionsManager.addCustomAction(cmd);
+@@ -1490,9 +1486,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testAddCustomAction_InvalidResourceType() {
+-        AddCustomActionCmd cmd = mock(AddCustomActionCmd.class);
+-        when(cmd.getName()).thenReturn("action1");
+-        when(cmd.getExtensionId()).thenReturn(1L);
++        AddCustomActionCmd cmd = createMockAddCustomActionCmd(1L);
+         when(cmd.getResourceType()).thenReturn("InvalidType");
+         when(extensionCustomActionDao.findByNameAndExtensionId(1L, "action1")).thenReturn(null);
+         ExtensionVO ext = mock(ExtensionVO.class);
+@@ -1565,6 +1559,13 @@
+         when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+     }
+ 
++    private static AddCustomActionCmd createMockAddCustomActionCmd(long extensionId) {
++        AddCustomActionCmd cmd = mock(AddCustomActionCmd.class);
++        when(cmd.getName()).thenReturn("action1");
++        when(cmd.getExtensionId()).thenReturn(extensionId);
++        return cmd;
++    }
++
+     @Test
+     public void testListCustomActions_ReturnsResponses() {
+         ListCustomActionCmd cmd = mock(ListCustomActionCmd.class);

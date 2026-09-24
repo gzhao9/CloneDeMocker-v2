@@ -1,0 +1,72 @@
+--- a/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
++++ b/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
+@@ -138,6 +138,12 @@
+                 new ArrayList<>(), 5, 6, null, FirewallRule.TrafficType.Ingress);
+     }
+ 
++    private static FirewallServiceProvider createMockFirewallServiceProvider(Network.Provider provider) {
++        FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
++        when(fwProvider.getProvider()).thenReturn(provider);
++        return fwProvider;
++    }
++
+     @Ignore("Requires database to be set up")
+     @Test
+     public void testApplyRules() {
+@@ -461,12 +467,11 @@
+     @Test
+     public void testGetFirewallServiceCapabilitiesForVpcNetworkFallsBackToNetworkModelWhenNoProvider() {
+         NetworkVO network = Mockito.mock(NetworkVO.class);
+-        FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> fallbackCaps = new HashMap<>();
+ 
+         when(network.getId()).thenReturn(1L);
+         when(network.getVpcId()).thenReturn(10L);
+-        when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
++        FirewallServiceProvider fwProvider = createMockFirewallServiceProvider(Network.Provider.VPCVirtualRouter);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(false);
+         when(_networkModel.getNetworkServiceCapabilities(1L, Service.Firewall)).thenReturn(fallbackCaps);
+         _firewallMgr._firewallElements = List.of(fwProvider);
+@@ -498,8 +503,7 @@
+ 
+     @Test
+     public void testGetFirewallServiceCapabilitiesForVpcReturnsNullWhenNoProviderSupports() {
+-        FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+-        when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
++        FirewallServiceProvider fwProvider = createMockFirewallServiceProvider(Network.Provider.VPCVirtualRouter);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(false);
+         _firewallMgr._firewallElements = List.of(fwProvider);
+ 
+@@ -666,14 +670,13 @@
+         firewallMgr._vpcMgr = _vpcMgr;
+ 
+         Network network = Mockito.mock(Network.class);
+-        FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         List<FirewallRule> rules = new ArrayList<>();
+         FirewallRuleVO rule = new FirewallRuleVO("rule1", 1L, 80, 80, "tcp", 1L, 2, 3, Purpose.Firewall,
+                 Collections.emptyList(), Collections.emptyList(), null, null, null, FirewallRule.TrafficType.Ingress);
+         rules.add(rule);
+ 
+         when(network.getVpcId()).thenReturn(10L);
+-        when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
++        FirewallServiceProvider fwProvider = createMockFirewallServiceProvider(Network.Provider.VPCVirtualRouter);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+         when(fwProvider.applyFWRules(Mockito.eq(network), Mockito.anyList())).thenReturn(true);
+         firewallMgr._firewallElements = List.of(fwProvider);
+@@ -692,7 +695,6 @@
+         firewallMgr._vpcMgr = _vpcMgr;
+ 
+         Network network = Mockito.mock(Network.class);
+-        FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         List<FirewallRule> rules = new ArrayList<>();
+         FirewallRuleVO rule = new FirewallRuleVO("rule1", 1L, 80, 80, "tcp", 1L, 2, 3, Purpose.Firewall,
+                 Collections.emptyList(), Collections.emptyList(), null, null, null, FirewallRule.TrafficType.Ingress);
+@@ -700,7 +702,7 @@
+ 
+         when(network.getId()).thenReturn(1L);
+         when(network.getVpcId()).thenReturn(null);
+-        when(fwProvider.getProvider()).thenReturn(Network.Provider.VirtualRouter);
++        FirewallServiceProvider fwProvider = createMockFirewallServiceProvider(Network.Provider.VirtualRouter);
+         when(_networkModel.isProviderSupportServiceInNetwork(1L, Service.Firewall, Network.Provider.VirtualRouter)).thenReturn(true);
+         when(fwProvider.applyFWRules(Mockito.eq(network), Mockito.anyList())).thenReturn(true);
+         firewallMgr._firewallElements = List.of(fwProvider);

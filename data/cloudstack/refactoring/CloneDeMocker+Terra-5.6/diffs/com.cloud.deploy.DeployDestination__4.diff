@@ -1,0 +1,96 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
+@@ -150,6 +150,8 @@
+     NicDao nicDao;
+     @Mock
+     AgentManager agentMgr;
++    @Mock
++    private DeployDestination deployDestinationMock;
+ 
+     TungstenGuestNetworkGuru guru;
+ 
+@@ -275,7 +277,6 @@
+     @Test
+     public void testImplementGuestNetwork() {
+         final Network network = mock(Network.class);
+-        final DeployDestination deployDestination = mock(DeployDestination.class);
+         final ReservationContext reservationContext = mock(ReservationContext.class);
+         final IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+ 
+@@ -301,7 +302,7 @@
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+         when(tungstenService.allocateDnsIpAddress(any(Network.class), any(), anyString())).thenReturn(true);
+ 
+-        final Network implemented = guru.implement(network, offering, deployDestination, reservationContext);
++        final Network implemented = guru.implement(network, offering, deployDestinationMock, reservationContext);
+         assertEquals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"), implemented.getBroadcastUri());
+         assertEquals("192.168.1.1", implemented.getGateway());
+         assertEquals("192.168.1.0/24", implemented.getCidr());
+@@ -323,7 +324,6 @@
+     @Test
+     public void testImplementSharedNetwork() {
+         final Network network = mock(Network.class);
+-        final DeployDestination deployDestination = mock(DeployDestination.class);
+         final ReservationContext reservationContext = mock(ReservationContext.class);
+ 
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+@@ -340,7 +340,7 @@
+         when(vlanDao.listVlansByNetworkId(anyLong())).thenReturn(List.of(new VlanVO()));
+         when(tungstenService.createSharedNetwork(any(Network.class), any(VlanVO.class))).thenReturn(true);
+ 
+-        final Network implemented = guru.implement(network, offering, deployDestination, reservationContext);
++        final Network implemented = guru.implement(network, offering, deployDestinationMock, reservationContext);
+         assertEquals(Networks.BroadcastDomainType.TUNGSTEN.toUri("tf"), implemented.getBroadcastUri());
+         assertEquals("192.168.1.1", implemented.getGateway());
+         assertEquals("192.168.1.0/24", implemented.getCidr());
+@@ -356,7 +356,6 @@
+     @Test(expected = CloudRuntimeException.class)
+     public void testImplementWithException() {
+         final Network network = mock(Network.class);
+-        final DeployDestination deployDestination = mock(DeployDestination.class);
+         final ReservationContext reservationContext = mock(ReservationContext.class);
+ 
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+@@ -372,7 +371,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkCommand.class), anyLong())).thenReturn(
+             new TungstenAnswer(new TungstenCommand(), new IOException()));
+ 
+-        guru.implement(network, offering, deployDestination, reservationContext);
++        guru.implement(network, offering, deployDestinationMock, reservationContext);
+     }
+ 
+     @Test
+@@ -380,7 +379,6 @@
+         final NicProfile nic = mock(NicProfile.class);
+         final Network network = mock(Network.class);
+         final VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+-        final DeployDestination dest = mock(DeployDestination.class);
+         final ReservationContext context = mock(ReservationContext.class);
+         final VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         final HostVO host = mock(HostVO.class);
+@@ -391,7 +389,7 @@
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+ 
+-        guru.reserve(nic, network, vm, dest, context);
++        guru.reserve(nic, network, vm, deployDestinationMock, context);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class),
+             anyLong());
+     }
+@@ -474,7 +472,6 @@
+         final NicProfile nic = mock(NicProfile.class);
+         final Network network = mock(Network.class);
+         final VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+-        final DeployDestination dest = mock(DeployDestination.class);
+         final ReservationContext context = mock(ReservationContext.class);
+         final VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         final HostVO hostVO = mock(HostVO.class);
+@@ -486,7 +483,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class),
+             anyLong())).thenReturn(new TungstenAnswer(new TungstenCommand(), true, ""));
+ 
+-        guru.prepareMigration(nic, network, vm, dest, context);
++        guru.prepareMigration(nic, network, vm, deployDestinationMock, context);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class),
+             anyLong());
+     }
