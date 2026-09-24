@@ -1,0 +1,76 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/switchuser/SwitchUserFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/switchuser/SwitchUserFilterTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.authentication.switchuser;
+ 
++import org.mockito.Mock;
+ import java.io.IOException;
+ import java.util.ArrayList;
+ import java.util.List;
+@@ -72,6 +73,8 @@
+  * @author Luke Taylor
+  */
+ public class SwitchUserFilterTests {
++	@Mock
++	private FilterChain chain;
+ 
+ 	private static final List<GrantedAuthority> ROLES_12 = AuthorityUtils.createAuthorityList("ROLE_ONE", "ROLE_TWO");
+ 
+@@ -236,7 +239,6 @@
+ 		filter.setUserDetailsService(new MockUserDetailsService());
+ 		filter.afterPropertiesSet();
+ 		// Check it with no url set (should get a text response)
+-		FilterChain chain = mock(FilterChain.class);
+ 		filter.doFilter(request, response, chain);
+ 		verify(chain, never()).doFilter(request, response);
+ 		assertThat(response.getErrorMessage()).isNotNull();
+@@ -249,7 +251,6 @@
+ 		filter.setSwitchFailureUrl("/switchfailed");
+ 		filter.afterPropertiesSet();
+ 		response = new MockHttpServletResponse();
+-		chain = mock(FilterChain.class);
+ 		filter.doFilter(request, response, chain);
+ 		verify(chain, never()).doFilter(request, response);
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/mywebapp/switchfailed");
+@@ -304,7 +305,6 @@
+ 		filter.setExitUserUrl("/logout/impersonate");
+ 		filter.setSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/webapp/someOtherUrl"));
+ 		// run 'exit'
+-		FilterChain chain = mock(FilterChain.class);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		filter.doFilter(request, response, chain);
+ 		verify(chain, never()).doFilter(request, response);
+@@ -325,7 +325,6 @@
+ 		filter.setUserDetailsService(new MockUserDetailsService());
+ 		filter.setExitUserUrl("/logout/impersonate");
+ 		// run 'exit', expect fail due to no current user
+-		FilterChain chain = mock(FilterChain.class);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		assertThatExceptionOfType(AuthenticationException.class)
+ 			.isThrownBy(() -> filter.doFilter(request, response, chain));
+@@ -342,7 +341,6 @@
+ 		filter.setSwitchUserUrl("/login/impersonate");
+ 		filter.setSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/someOtherUrl"));
+ 		filter.setUserDetailsService(new MockUserDetailsService());
+-		FilterChain chain = mock(FilterChain.class);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		filter.doFilter(request, response, chain);
+ 		verify(chain, never()).doFilter(request, response);
+@@ -368,7 +366,7 @@
+ 		switchSuccessHandler.setRedirectStrategy(contextRelativeRedirector);
+ 		filter.setSuccessHandler(switchSuccessHandler);
+ 		filter.setUserDetailsService(new MockUserDetailsService());
+-		FilterChain chain = mock(FilterChain.class);
++		// removed local mock; replaced with global field `chain`
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		filter.doFilter(request, response, chain);
+ 		verify(chain, never()).doFilter(request, response);
+@@ -392,7 +390,6 @@
+ 		filter.setUserDetailsService(new MockUserDetailsService());
+ 		filter.setSwitchUserUrl("/login/impersonate");
+ 		filter.setSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/webapp/someOtherUrl"));
+-		FilterChain chain = mock(FilterChain.class);
+ 		// test updates user token and context
+ 		filter.doFilter(request, response, chain);
+ 		verify(chain, never()).doFilter(request, response);

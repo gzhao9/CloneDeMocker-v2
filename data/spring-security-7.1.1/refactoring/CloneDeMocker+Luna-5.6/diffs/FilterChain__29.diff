@@ -1,0 +1,83 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/switchuser/SwitchUserFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/switchuser/SwitchUserFilterTests.java
+@@ -75,8 +75,11 @@
+ 
+ 	private static final List<GrantedAuthority> ROLES_12 = AuthorityUtils.createAuthorityList("ROLE_ONE", "ROLE_TWO");
+ 
++	private FilterChain mockChain;
++
+ 	@BeforeEach
+ 	public void authenticateCurrentUser() {
++		this.mockChain = mock(FilterChain.class);
+ 		UsernamePasswordAuthenticationToken auth = UsernamePasswordAuthenticationToken.unauthenticated("dano",
+ 				"hawaii50");
+ 		SecurityContextHolder.getContext().setAuthentication(auth);
+@@ -304,10 +307,9 @@
+ 		filter.setExitUserUrl("/logout/impersonate");
+ 		filter.setSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/webapp/someOtherUrl"));
+ 		// run 'exit'
+-		FilterChain chain = mock(FilterChain.class);
+-		MockHttpServletResponse response = new MockHttpServletResponse();
+-		filter.doFilter(request, response, chain);
+-		verify(chain, never()).doFilter(request, response);
++		MockHttpServletResponse response = new MockHttpServletResponse();
++		filter.doFilter(request, response, mockChain);
++		verify(mockChain, never()).doFilter(request, response);
+ 		// check current user, should be back to original user (dano)
+ 		Authentication targetAuth = SecurityContextHolder.getContext().getAuthentication();
+ 		assertThat(targetAuth).isNotNull();
+@@ -325,11 +327,10 @@
+ 		filter.setUserDetailsService(new MockUserDetailsService());
+ 		filter.setExitUserUrl("/logout/impersonate");
+ 		// run 'exit', expect fail due to no current user
+-		FilterChain chain = mock(FilterChain.class);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+ 		assertThatExceptionOfType(AuthenticationException.class)
+-			.isThrownBy(() -> filter.doFilter(request, response, chain));
+-		verify(chain, never()).doFilter(request, response);
++			.isThrownBy(() -> filter.doFilter(request, response, mockChain));
++		verify(mockChain, never()).doFilter(request, response);
+ 	}
+ 
+ 	@Test
+@@ -342,10 +343,9 @@
+ 		filter.setSwitchUserUrl("/login/impersonate");
+ 		filter.setSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/someOtherUrl"));
+ 		filter.setUserDetailsService(new MockUserDetailsService());
+-		FilterChain chain = mock(FilterChain.class);
+-		MockHttpServletResponse response = new MockHttpServletResponse();
+-		filter.doFilter(request, response, chain);
+-		verify(chain, never()).doFilter(request, response);
++		MockHttpServletResponse response = new MockHttpServletResponse();
++		filter.doFilter(request, response, mockChain);
++		verify(mockChain, never()).doFilter(request, response);
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/webapp/someOtherUrl");
+ 	}
+ 
+@@ -368,10 +368,9 @@
+ 		switchSuccessHandler.setRedirectStrategy(contextRelativeRedirector);
+ 		filter.setSuccessHandler(switchSuccessHandler);
+ 		filter.setUserDetailsService(new MockUserDetailsService());
+-		FilterChain chain = mock(FilterChain.class);
+-		MockHttpServletResponse response = new MockHttpServletResponse();
+-		filter.doFilter(request, response, chain);
+-		verify(chain, never()).doFilter(request, response);
++		MockHttpServletResponse response = new MockHttpServletResponse();
++		filter.doFilter(request, response, mockChain);
++		verify(mockChain, never()).doFilter(request, response);
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/someOtherUrl");
+ 	}
+ 
+@@ -392,10 +391,9 @@
+ 		filter.setUserDetailsService(new MockUserDetailsService());
+ 		filter.setSwitchUserUrl("/login/impersonate");
+ 		filter.setSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/webapp/someOtherUrl"));
+-		FilterChain chain = mock(FilterChain.class);
+ 		// test updates user token and context
+-		filter.doFilter(request, response, chain);
+-		verify(chain, never()).doFilter(request, response);
++		filter.doFilter(request, response, mockChain);
++		verify(mockChain, never()).doFilter(request, response);
+ 		// check current user
+ 		Authentication targetAuth = SecurityContextHolder.getContext().getAuthentication();
+ 		assertThat(targetAuth).isNotNull();

@@ -1,0 +1,37 @@
+--- a/access/src/test/java/org/springframework/security/web/access/channel/SecureChannelProcessorTests.java
++++ b/access/src/test/java/org/springframework/security/web/access/channel/SecureChannelProcessorTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.access.channel;
+ 
++import org.mockito.Mock;
+ import jakarta.servlet.FilterChain;
+ import org.assertj.core.api.Assertions;
+ import org.junit.jupiter.api.Test;
+@@ -37,6 +38,8 @@
+  */
+ @SuppressWarnings("deprecation")
+ public class SecureChannelProcessorTests {
++	@Mock
++	private FilterChain filterChain;
+ 
+ 	@Test
+ 	public void testDecideDetectsAcceptableChannel() throws Exception {
+@@ -45,7 +48,7 @@
+ 			.queryString("info=true")
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterInvocation fi = new FilterInvocation(request, response, mock(FilterChain.class));
++		FilterInvocation fi = new FilterInvocation(request, response, filterChain);
+ 		SecureChannelProcessor processor = new SecureChannelProcessor();
+ 		processor.decide(fi, SecurityConfig.createList("SOME_IGNORED_ATTRIBUTE", "REQUIRES_SECURE_CHANNEL"));
+ 		Assertions.assertThat(fi.getResponse().isCommitted()).isFalse();
+@@ -58,7 +61,7 @@
+ 			.queryString("info=true")
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterInvocation fi = new FilterInvocation(request, response, mock(FilterChain.class));
++		FilterInvocation fi = new FilterInvocation(request, response, filterChain);
+ 		SecureChannelProcessor processor = new SecureChannelProcessor();
+ 		processor.decide(fi,
+ 				SecurityConfig.createList(new String[] { "SOME_IGNORED_ATTRIBUTE", "REQUIRES_SECURE_CHANNEL" }));

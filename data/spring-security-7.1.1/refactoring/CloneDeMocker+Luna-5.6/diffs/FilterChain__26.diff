@@ -1,0 +1,33 @@
+--- a/access/src/test/java/org/springframework/security/web/access/channel/SecureChannelProcessorTests.java
++++ b/access/src/test/java/org/springframework/security/web/access/channel/SecureChannelProcessorTests.java
+@@ -18,6 +18,7 @@
+ 
+ import jakarta.servlet.FilterChain;
+ import org.assertj.core.api.Assertions;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import org.springframework.mock.web.MockHttpServletRequest;
+@@ -38,6 +39,13 @@
+ @SuppressWarnings("deprecation")
+ public class SecureChannelProcessorTests {
+ 
++	private FilterChain filterChain;
++
++	@BeforeEach
++	public void setUp() {
++		this.filterChain = mock(FilterChain.class);
++	}
++
+ 	@Test
+ 	public void testDecideDetectsAcceptableChannel() throws Exception {
+ 		MockHttpServletRequest request = TestMockHttpServletRequests.get("https://localhost:8443")
+@@ -45,7 +53,7 @@
+ 			.queryString("info=true")
+ 			.build();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterInvocation fi = new FilterInvocation(request, response, mock(FilterChain.class));
++		FilterInvocation fi = new FilterInvocation(request, response, filterChain);
+ 		SecureChannelProcessor processor = new SecureChannelProcessor();
+ 		processor.decide(fi, SecurityConfig.createList("SOME_IGNORED_ATTRIBUTE", "REQUIRES_SECURE_CHANNEL"));
+ 		Assertions.assertThat(fi.getResponse().isCommitted()).isFalse();

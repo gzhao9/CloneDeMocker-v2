@@ -1,0 +1,46 @@
+--- a/access/src/test/java/org/springframework/security/web/access/channel/ChannelDecisionManagerImplTests.java
++++ b/access/src/test/java/org/springframework/security/web/access/channel/ChannelDecisionManagerImplTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.access.channel;
+ 
++import org.mockito.Mock;
+ import java.io.IOException;
+ import java.util.Collection;
+ import java.util.Iterator;
+@@ -44,6 +45,8 @@
+  */
+ @SuppressWarnings({ "unchecked", "deprecation" })
+ public class ChannelDecisionManagerImplTests {
++	@Mock
++	private FilterChain filterChain;
+ 
+ 	@Test
+ 	public void testCannotSetEmptyChannelProcessorsList() throws Exception {
+@@ -83,7 +86,7 @@
+ 		cdm.afterPropertiesSet();
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterInvocation fi = new FilterInvocation(request, response, mock(FilterChain.class));
++		FilterInvocation fi = new FilterInvocation(request, response, filterChain);
+ 		List<ConfigAttribute> cad = SecurityConfig.createList("xyz");
+ 		cdm.decide(fi, cad);
+ 		Assertions.assertThat(fi.getResponse().isCommitted()).isTrue();
+@@ -99,7 +102,7 @@
+ 		cdm.afterPropertiesSet();
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterInvocation fi = new FilterInvocation(request, response, mock(FilterChain.class));
++		FilterInvocation fi = new FilterInvocation(request, response, filterChain);
+ 		cdm.decide(fi, SecurityConfig.createList(new String[] { "abc", "ANY_CHANNEL" }));
+ 		Assertions.assertThat(fi.getResponse().isCommitted()).isFalse();
+ 	}
+@@ -116,7 +119,7 @@
+ 		cdm.afterPropertiesSet();
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterInvocation fi = new FilterInvocation(request, response, mock(FilterChain.class));
++		FilterInvocation fi = new FilterInvocation(request, response, filterChain);
+ 		cdm.decide(fi, SecurityConfig.createList("SOME_ATTRIBUTE_NO_PROCESSORS_SUPPORT"));
+ 		Assertions.assertThat(fi.getResponse().isCommitted()).isFalse();
+ 	}

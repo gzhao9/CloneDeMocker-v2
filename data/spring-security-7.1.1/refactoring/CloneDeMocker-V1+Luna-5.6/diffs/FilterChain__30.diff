@@ -1,0 +1,80 @@
+--- a/web/src/test/java/org/springframework/security/web/session/SessionManagementFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/session/SessionManagementFilterTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.session;
+ 
++import org.mockito.Mock;
+ import jakarta.servlet.FilterChain;
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpServletResponse;
+@@ -54,6 +55,8 @@
+  * @author Mark Chesney
+  */
+ public class SessionManagementFilterTests {
++	@Mock
++	private FilterChain fc;
+ 
+ 	@BeforeEach
+ 	@AfterEach
+@@ -120,7 +123,6 @@
+ 		filter.setAuthenticationFailureHandler(failureHandler);
+ 		HttpServletRequest request = new MockHttpServletRequest();
+ 		HttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain fc = mock(FilterChain.class);
+ 		authenticateUser();
+ 		SessionAuthenticationException exception = new SessionAuthenticationException("Failure");
+ 		willThrow(exception).given(strategy)
+@@ -149,7 +151,6 @@
+ 		SimpleRedirectInvalidSessionStrategy iss = new SimpleRedirectInvalidSessionStrategy("/timedOut");
+ 		iss.setCreateNewSession(true);
+ 		filter.setInvalidSessionStrategy(iss);
+-		FilterChain fc = mock(FilterChain.class);
+ 		filter.doFilter(request, response, fc);
+ 		verifyNoMoreInteractions(fc);
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/timedOut");
+@@ -175,7 +176,6 @@
+ 		RequestedUrlRedirectInvalidSessionStrategy iss = new RequestedUrlRedirectInvalidSessionStrategy();
+ 		iss.setCreateNewSession(true);
+ 		filter.setInvalidSessionStrategy(iss);
+-		FilterChain fc = mock(FilterChain.class);
+ 		filter.doFilter(request, response, fc);
+ 		verifyNoMoreInteractions(fc);
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/requested");
+@@ -200,14 +200,14 @@
+ 		request.setRequestedSessionIdValid(false);
+ 		request.setRequestURI("/context/requested");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain chain = mock(FilterChain.class);
+-
++
++		// removed local mock; replaced with global field `fc`
+ 		// when
+-		filter.doFilter(request, response, chain);
+-
++
++		filter.doFilter(request, response, fc);
+ 		// then
+ 		verify(securityContextRepository).containsContext(request);
+-		verifyNoMoreInteractions(securityContextRepository, sessionAuthenticationStrategy, chain);
++		verifyNoMoreInteractions(securityContextRepository, sessionAuthenticationStrategy, fc);
+ 		assertThat(response.isCommitted()).isTrue();
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/context/requested");
+ 		assertThat(response.getStatus()).isEqualTo(302);
+@@ -231,14 +231,13 @@
+ 		request.setRequestedSessionIdValid(false);
+ 		request.setRequestURI("/requested");
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain chain = mock(FilterChain.class);
+ 
+ 		// when
+-		filter.doFilter(request, response, chain);
++		filter.doFilter(request, response, fc);
+ 
+ 		// then
+ 		verify(securityContextRepository).containsContext(request);
+-		verifyNoMoreInteractions(securityContextRepository, sessionAuthenticationStrategy, chain);
++		verifyNoMoreInteractions(securityContextRepository, sessionAuthenticationStrategy, fc);
+ 		assertThat(response.isCommitted()).isTrue();
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/requested");
+ 		assertThat(response.getStatus()).isEqualTo(307);
