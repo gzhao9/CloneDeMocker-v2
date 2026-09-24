@@ -1,0 +1,89 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplHSMTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplHSMTest.java
+@@ -197,7 +197,7 @@
+         when(profile.getProtocol()).thenReturn("database");
+         when(profile.getAccountId()).thenReturn(Account.ACCOUNT_ID_SYSTEM);
+         when(profile.getIsPublic()).thenReturn(true);
+-        when(hsmProfileDao.findById(profileId)).thenReturn(profile);
++        hsmProfileDao = MockHSMProfileDao.createMockHsmProfileDao(profileId, profile);
+ 
+         Account caller = mock(Account.class);
+         when(caller.getId()).thenReturn(2L);
+@@ -226,7 +226,7 @@
+         when(profile.getProtocol()).thenReturn("database");
+         when(profile.getAccountId()).thenReturn(200L);
+         when(profile.getIsPublic()).thenReturn(false);
+-        when(hsmProfileDao.findById(profileId)).thenReturn(profile);
++        hsmProfileDao = MockHSMProfileDao.createMockHsmProfileDao(profileId, profile);
+ 
+         when(kmsKeyDao.countByHsmProfileId(profileId)).thenReturn(0L);
+         when(kmsKekVersionDao.listByHsmProfileId(profileId)).thenReturn(Collections.emptyList());
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyCreationTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyCreationTest.java
+@@ -181,7 +181,7 @@
+ 
+         HSMProfileVO profile = mock(HSMProfileVO.class);
+         when(profile.getProtocol()).thenReturn(testProviderName);
+-        when(hsmProfileDao.findById(hsmProfileId)).thenReturn(profile);
++        hsmProfileDao = MockHSMProfileDao.createMockHsmProfileDao(hsmProfileId, profile);
+ 
+         when(kmsProvider.createKek(any(KeyPurpose.class), anyString(), anyInt(), eq(hsmProfileId)))
+                 .thenReturn("test-kek-label");
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyRotationTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyRotationTest.java
+@@ -125,7 +125,7 @@
+         HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
+         when(hsmProfile.getId()).thenReturn(oldProfileId);
+         when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+-        when(hsmProfileDao.findById(oldProfileId)).thenReturn(hsmProfile);
++        hsmProfileDao = MockHSMProfileDao.createMockHsmProfileDao(oldProfileId, hsmProfile);
+ 
+         // Old version should be marked as Previous
+         KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
+@@ -287,7 +287,7 @@
+         HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
+         when(hsmProfile.getId()).thenReturn(oldProfileId);
+         when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+-        when(hsmProfileDao.findById(oldProfileId)).thenReturn(hsmProfile);
++        hsmProfileDao = MockHSMProfileDao.createMockHsmProfileDao(oldProfileId, hsmProfile);
+ 
+         KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
+         when(oldVersion.getVersionNumber()).thenReturn(1);
+@@ -329,7 +329,7 @@
+         HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
+         when(hsmProfile.getId()).thenReturn(oldProfileId);
+         when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+-        when(hsmProfileDao.findById(oldProfileId)).thenReturn(hsmProfile);
++        hsmProfileDao = MockHSMProfileDao.createMockHsmProfileDao(oldProfileId, hsmProfile);
+ 
+         // Provider throws because the old KEK label doesn't exist in the HSM
+         when(kmsProvider.createKek(any(KeyPurpose.class), eq("new-label"), eq(256), eq(oldProfileId)))
+@@ -358,7 +358,7 @@
+         HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
+         when(hsmProfile.getId()).thenReturn(currentProfileId);
+         when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+-        when(hsmProfileDao.findById(currentProfileId)).thenReturn(hsmProfile);
++        hsmProfileDao = MockHSMProfileDao.createMockHsmProfileDao(currentProfileId, hsmProfile);
+ 
+         KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
+         when(oldVersion.getVersionNumber()).thenReturn(1);
+--- a/server/src/test/java/org/apache/cloudstack/kms/MockHSMProfileDao.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/MockHSMProfileDao.java
+@@ -0,0 +1,17 @@
++package org.apache.cloudstack.kms;
++
++import org.apache.cloudstack.kms.dao.HSMProfileDao;
++
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++public final class MockHSMProfileDao {
++    private MockHSMProfileDao() {
++    }
++
++    public static HSMProfileDao createMockHsmProfileDao(Long profileId, HSMProfileVO profile) {
++        HSMProfileDao hsmProfileDao = mock(HSMProfileDao.class);
++        when(hsmProfileDao.findById(profileId)).thenReturn(profile);
++        return hsmProfileDao;
++    }
++}

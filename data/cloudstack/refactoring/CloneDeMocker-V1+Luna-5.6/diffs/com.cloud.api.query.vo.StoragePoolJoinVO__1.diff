@@ -1,0 +1,60 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/StoreVOToStorageDomainConverterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/StoreVOToStorageDomainConverterTest.java
+@@ -36,15 +36,8 @@
+ 
+     @Test
+     public void testToStorageDomain_FromPrimaryPool() {
+-        final StoragePoolJoinVO pool = mock(StoragePoolJoinVO.class);
+-        when(pool.getUuid()).thenReturn("pool-1");
+-        when(pool.getName()).thenReturn("Primary-1");
+-        when(pool.getCapacityBytes()).thenReturn(1000L);
+-        when(pool.getUsedBytes()).thenReturn(250L);
+-        when(pool.getStatus()).thenReturn(StoragePoolStatus.Up);
+-        when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+-        when(pool.getZoneUuid()).thenReturn("dc-1");
+ 
++        final StoragePoolJoinVO pool = createMockStoragePoolJoinVO("pool-1", "Primary-1", 1000L, 250L, StoragePoolStatus.Up, Storage.StoragePoolType.NetworkFilesystem, "dc-1");
+         final StorageDomain sd = StoreVOToStorageDomainConverter.toStorageDomain(pool);
+ 
+         assertEquals("pool-1", sd.getId());
+@@ -78,15 +71,8 @@
+ 
+     @Test
+     public void testListConverters() {
+-        final StoragePoolJoinVO pool = mock(StoragePoolJoinVO.class);
+-        when(pool.getUuid()).thenReturn("p");
+-        when(pool.getName()).thenReturn("P");
+-        when(pool.getCapacityBytes()).thenReturn(10L);
+-        when(pool.getUsedBytes()).thenReturn(2L);
+-        when(pool.getStatus()).thenReturn(StoragePoolStatus.Up);
+-        when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.Filesystem);
+-        when(pool.getZoneUuid()).thenReturn("z");
+ 
++        final StoragePoolJoinVO pool = createMockStoragePoolJoinVO("p", "P", 10L, 2L, StoragePoolStatus.Up, Storage.StoragePoolType.Filesystem, "z");
+         final ImageStoreJoinVO store = mock(ImageStoreJoinVO.class);
+         when(store.getUuid()).thenReturn("s");
+         when(store.getName()).thenReturn("S");
+@@ -96,4 +82,23 @@
+         assertEquals(1, StoreVOToStorageDomainConverter.toStorageDomainListFromPools(List.of(pool)).size());
+         assertEquals(1, StoreVOToStorageDomainConverter.toStorageDomainListFromStores(List.of(store)).size());
+     }
++
++    private static StoragePoolJoinVO createMockStoragePoolJoinVO(
++            String uuid,
++            String name,
++            long capacityBytes,
++            long usedBytes,
++            StoragePoolStatus status,
++            Storage.StoragePoolType poolType,
++            String zoneUuid) {
++        final StoragePoolJoinVO pool = Mockito.mock(StoragePoolJoinVO.class);
++        when(pool.getUuid()).thenReturn(uuid);
++        when(pool.getName()).thenReturn(name);
++        when(pool.getCapacityBytes()).thenReturn(capacityBytes);
++        when(pool.getUsedBytes()).thenReturn(usedBytes);
++        when(pool.getStatus()).thenReturn(status);
++        when(pool.getPoolType()).thenReturn(poolType);
++        when(pool.getZoneUuid()).thenReturn(zoneUuid);
++        return pool;
++    }
+ }
