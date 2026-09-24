@@ -1,0 +1,51 @@
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpRequestWrapperTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpRequestWrapperTest.java
+@@ -78,9 +78,9 @@
+ 
+     @Test
+     public void testCreateLogicalSwitchCommandWrapper() {
+-        final NiciraNvpApi niciraNvpApi = Mockito.mock(NiciraNvpApi.class);
+         final NiciraNvpUtilities niciraNvpUtilities = Mockito.mock(NiciraNvpUtilities.class);
+         final LogicalSwitch logicalSwitch = Mockito.mock(LogicalSwitch.class);
++        final NiciraNvpApi niciraNvpApi = MockNiciraNvpApi.createMockNiciraNvpApi(logicalSwitch);
+ 
+         final String transportUuid = "d2e05a9e-7120-4487-a5fc-414ab36d9345";
+         final String transportType = "stt";
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpResourceTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpResourceTest.java
+@@ -187,7 +187,7 @@
+ 
+         final LogicalSwitch ls = mock(LogicalSwitch.class);
+         when(ls.getUuid()).thenReturn("cccc").thenReturn("cccc");
+-        when(nvpApi.createLogicalSwitch((LogicalSwitch) any())).thenReturn(ls);
++        nvpApi = MockNiciraNvpApi.createMockNiciraNvpApi(ls);
+ 
+         final CreateLogicalSwitchCommand clsc = new CreateLogicalSwitchCommand((String) parameters.get("guid"), "stt", "loigicalswitch", "owner");
+         final CreateLogicalSwitchAnswer clsa = (CreateLogicalSwitchAnswer) resource.executeRequest(clsc);
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/MockNiciraNvpApi.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/MockNiciraNvpApi.java
+@@ -0,0 +1,24 @@
++package com.cloud.network.resource;
++
++import com.cloud.network.nicira.LogicalSwitch;
++import com.cloud.network.nicira.NiciraNvpApi;
++import com.cloud.network.nicira.NiciraNvpApiException;
++import org.mockito.Mockito;
++
++import static org.mockito.Mockito.any;
++import static org.mockito.Mockito.when;
++
++public final class MockNiciraNvpApi {
++    private MockNiciraNvpApi() {
++    }
++
++    public static NiciraNvpApi createMockNiciraNvpApi(final LogicalSwitch logicalSwitch) {
++        final NiciraNvpApi niciraNvpApi = Mockito.mock(NiciraNvpApi.class);
++        try {
++            when(niciraNvpApi.createLogicalSwitch((LogicalSwitch) any())).thenReturn(logicalSwitch);
++        } catch (final NiciraNvpApiException e) {
++            throw new IllegalStateException(e);
++        }
++        return niciraNvpApi;
++    }
++}

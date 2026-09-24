@@ -1,0 +1,158 @@
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
+@@ -676,7 +676,7 @@
+         BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                 "nfs", "address", "sync", 1024L, null);
+         Mockito.when(backupRepositoryDao.findByBackupOfferingId(offeringId)).thenReturn(repo);
+-        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        MockVMInstanceDao.configure(vmInstanceDao, vmId, vm);
+ 
+         // CHAIN_ID on the parent => not the no-chain fast path.
+         BackupDetailVO chainIdDetail = new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true);
+@@ -759,7 +759,7 @@
+         BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                 "nfs", "address", "sync", 1024L, null);
+         Mockito.when(backupRepositoryDao.findByBackupOfferingId(offeringId)).thenReturn(repo);
+-        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        MockVMInstanceDao.configure(vmInstanceDao, vmId, vm);
+ 
+         // Leaf details. CHAIN_POSITION=1 puts the leaf after the full anchor in the
+         // ordered chain — getChainOrderedLeafToRoot sorts by CHAIN_POSITION descending.
+@@ -855,7 +855,7 @@
+         BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                 "nfs", "address", "sync", 1024L, null);
+         Mockito.when(backupRepositoryDao.findByBackupOfferingId(offeringId)).thenReturn(repo);
+-        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        MockVMInstanceDao.configure(vmInstanceDao, vmId, vm);
+ 
+         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID))
+                 .thenReturn(new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+@@ -928,7 +928,7 @@
+         BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                 "nfs", "address", "sync", 1024L, null);
+         Mockito.when(backupRepositoryDao.findByBackupOfferingId(offeringId)).thenReturn(repo);
+-        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        MockVMInstanceDao.configure(vmInstanceDao, vmId, vm);
+ 
+         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID))
+                 .thenReturn(new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+@@ -999,7 +999,7 @@
+         BackupRepositoryVO repo = new BackupRepositoryVO(1L, "nas", "test-repo",
+                 "nfs", "address", "sync", 1024L, null);
+         Mockito.when(backupRepositoryDao.findByBackupOfferingId(offeringId)).thenReturn(repo);
+-        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        MockVMInstanceDao.configure(vmInstanceDao, vmId, vm);
+ 
+         Mockito.when(backupDetailsDao.findDetail(50L, NASBackupChainKeys.CHAIN_ID))
+                 .thenReturn(new BackupDetailVO(50L, NASBackupChainKeys.CHAIN_ID, "chain-1", true));
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -1285,7 +1285,7 @@
+         when(vm.getDataCenterId()).thenReturn(zoneId);
+         when(vm.getHostName()).thenReturn(vmHostName);
+         when(vm.getUuid()).thenReturn(vmUuid);
+-        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmId, vm);
+         when(vmInstanceDao.update(vmId, vm)).thenReturn(true);
+ 
+         BackupOfferingVO offering = mock(BackupOfferingVO.class);
+@@ -1415,7 +1415,6 @@
+         overrideBackupFrameworkConfigValue();
+ 
+         when(backupDao.findById(backupId)).thenReturn(backup);
+-        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+         when(backupOfferingDao.findByIdIncludingRemoved(offeringId)).thenReturn(offering);
+         when(offering.getProvider()).thenReturn("testbackupprovider");
+         when(backupManager.getBackupProvider("testbackupprovider")).thenReturn(backupProvider);
+@@ -1595,7 +1594,7 @@
+         when(vm.getHostName()).thenReturn(vmHostName);
+         when(vm.getUuid()).thenReturn(vmUuid);
+         when(backupDao.findByIdIncludingRemoved(backupId)).thenReturn(backup);
+-        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmId, vm);
+         when(backupDao.listByVmIdAndOffering(zoneId, vmId, backupOfferingId)).thenReturn(new ArrayList<>());
+ 
+         BackupOfferingVO offering = mock(BackupOfferingVO.class);
+@@ -1630,7 +1629,7 @@
+         when(backupDao.findByIdIncludingRemoved(backupId)).thenReturn(backup);
+ 
+         VMInstanceVO vm = mock(VMInstanceVO.class);
+-        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmId, vm);
+ 
+         overrideBackupFrameworkConfigValue();
+ 
+@@ -1688,7 +1687,7 @@
+         Mockito.when(offering.getUuid()).thenReturn("offering-uuid");
+         Mockito.when(offering.getName()).thenReturn("test-offering");
+ 
+-        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmId, vm);
+         Mockito.when(accountDao.findByIdIncludingRemoved(accountId)).thenReturn(account);
+         Mockito.when(domainDao.findByIdIncludingRemoved(domainId)).thenReturn(domain);
+         Mockito.when(dataCenterDao.findByIdIncludingRemoved(zoneId)).thenReturn(zone);
+@@ -2199,7 +2198,7 @@
+         when(vm.getState()).thenReturn(VirtualMachine.State.Expunging);
+ 
+         when(backupDao.findById(backupId)).thenReturn(backup);
+-        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmId, vm);
+         doNothing().when(backupManager).validateBackupForZone(any());
+ 
+         CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+@@ -2226,7 +2225,7 @@
+         when(vm.getRemoved()).thenReturn(null);
+ 
+         when(backupDao.findById(backupId)).thenReturn(backup);
+-        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmId, vm);
+         doNothing().when(backupManager).validateBackupForZone(any());
+ 
+         CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+@@ -2259,7 +2258,7 @@
+         when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volume));
+ 
+         when(backupDao.findById(backupId)).thenReturn(backup);
+-        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmId, vm);
+         doNothing().when(backupManager).validateBackupForZone(any());
+         doReturn(new BackupOfferingVO()).when(backupOfferingDao).findByIdIncludingRemoved(Mockito.anyLong());
+         doReturn(backupProvider).when(backupManager).getBackupProvider(Mockito.nullable(String.class));
+--- a/server/src/test/java/org/apache/cloudstack/backup/MockVMInstanceDao.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/MockVMInstanceDao.java
+@@ -0,0 +1,17 @@
++package org.apache.cloudstack.backup;
++
++import com.cloud.vm.dao.VMInstanceDao;
++import com.cloud.vm.dao.VMInstanceVO;
++import org.mockito.Mockito;
++
++public final class MockVMInstanceDao {
++
++    private MockVMInstanceDao() {
++    }
++
++    public static VMInstanceDao createMockVmInstanceDao(Long vmId, VMInstanceVO vm) {
++        VMInstanceDao vmInstanceDao = Mockito.mock(VMInstanceDao.class);
++        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++        return vmInstanceDao;
++    }
++}
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/MockVMInstanceDao.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/MockVMInstanceDao.java
+@@ -0,0 +1,15 @@
++package org.apache.cloudstack.backup;
++
++import com.cloud.vm.VMInstanceVO;
++import com.cloud.vm.dao.VMInstanceDao;
++import org.mockito.Mockito;
++
++public final class MockVMInstanceDao {
++
++    private MockVMInstanceDao() {
++    }
++
++    public static void configure(VMInstanceDao vmInstanceDao, Long vmId, VMInstanceVO vm) {
++        Mockito.when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
++    }
++}

@@ -1,0 +1,76 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
+@@ -100,7 +100,6 @@
+     public void setup() {
+         strategy = Mockito.spy(new KvmFileBasedStorageVmSnapshotStrategy());
+         vmSnapshotDetailsDao = mock(VMSnapshotDetailsDao.class);
+-        vmSnapshotDao = mock(VMSnapshotDao.class);
+         vmSnapshotHelper = mock(VMSnapshotHelper.class);
+         agentMgr = mock(AgentManager.class);
+         snapshotDataStoreDao = mock(SnapshotDataStoreDao.class);
+@@ -163,6 +162,8 @@
+         VMSnapshotDetailsVO volumeSnapshotDetail = new VMSnapshotDetailsVO(snapshotId, "kvmFileBasedStorageSnapshot", String.valueOf(snapshotId), true);
+         VMSnapshotDetailsVO nvramDetail = new VMSnapshotDetailsVO(snapshotId, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+ 
++        vmSnapshotDao = MockVMSnapshotDao.createMockVMSnapshotDao(vmId, currentVmSnapshot);
++        strategy.vmSnapshotDao = vmSnapshotDao;
+         when(vmSnapshot.getVmId()).thenReturn(vmId);
+         when(vmSnapshot.getId()).thenReturn(snapshotId);
+         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+@@ -186,7 +187,6 @@
+         when(snapshotDataStoreVO.getDataStoreId()).thenReturn(dataStoreId);
+         when(strategy.snapshotDataFactory.getSnapshot(snapshotId, dataStoreId, DataStoreRole.Primary)).thenReturn(snapshotInfo);
+         when(snapshotInfo.getTO()).thenReturn(snapshotObjectTO);
+-        when(vmSnapshotDao.findCurrentSnapshotByVmId(vmId)).thenReturn(currentVmSnapshot);
+         when(agentMgr.easySend(eq(hostId), any())).thenAnswer(invocation ->
+                 new RevertDiskOnlyVmSnapshotAnswer((RevertDiskOnlyVmSnapshotCommand) invocation.getArgument(1), Collections.emptyList()));
+ 
+@@ -547,4 +547,18 @@
+         when(host.getId()).thenReturn(hostId);
+         when(hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterId, podId, dataCenterId, null)).thenReturn(List.of(host));
+     }
++
++    public final class MockVMSnapshotDao {
++        private MockVMSnapshotDao() {
++        }
++
++        public static com.cloud.vm.snapshot.dao.VMSnapshotDao createMockVMSnapshotDao(
++                long vmId,
++                com.cloud.vm.snapshot.VMSnapshotVO currentSnapshot) {
++            com.cloud.vm.snapshot.dao.VMSnapshotDao vmSnapshotDao =
++                    mock(com.cloud.vm.snapshot.dao.VMSnapshotDao.class);
++            when(vmSnapshotDao.findCurrentSnapshotByVmId(vmId)).thenReturn(currentSnapshot);
++            return vmSnapshotDao;
++        }
++    }
+ }
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/OntapVMSnapshotStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/OntapVMSnapshotStrategyTest.java
+@@ -777,7 +777,7 @@
+ 
+         // Has a current (parent) snapshot
+         VMSnapshotVO currentSnapshot = mock(VMSnapshotVO.class);
+-        when(vmSnapshotDao.findCurrentSnapshotByVmId(VM_ID)).thenReturn(currentSnapshot);
++        vmSnapshotDao = createMockVMSnapshotDao(VM_ID, currentSnapshot);
+         VMSnapshotTO parentTO = mock(VMSnapshotTO.class);
+         when(parentTO.getId()).thenReturn(199L);
+         when(vmSnapshotHelper.getSnapshotWithParents(currentSnapshot)).thenReturn(parentTO);
+@@ -899,4 +899,18 @@
+         when(volumeInfo.getName()).thenReturn("vol-1");
+         when(volumeDataFactory.getVolume(VOLUME_ID_1)).thenReturn(volumeInfo);
+     }
++
++    public final class MockVMSnapshotDao {
++        private MockVMSnapshotDao() {
++        }
++
++        public static com.cloud.vm.snapshot.dao.VMSnapshotDao createMockVMSnapshotDao(
++                long vmId,
++                com.cloud.vm.snapshot.VMSnapshotVO currentSnapshot) {
++            com.cloud.vm.snapshot.dao.VMSnapshotDao vmSnapshotDao =
++                    mock(com.cloud.vm.snapshot.dao.VMSnapshotDao.class);
++            when(vmSnapshotDao.findCurrentSnapshotByVmId(vmId)).thenReturn(currentSnapshot);
++            return vmSnapshotDao;
++        }
++    }
+ }

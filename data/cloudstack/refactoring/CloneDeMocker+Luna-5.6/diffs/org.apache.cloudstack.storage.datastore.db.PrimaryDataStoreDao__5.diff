@@ -1,0 +1,77 @@
+--- a/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
+@@ -337,7 +337,7 @@
+         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Mockito.when(pool.getId()).thenReturn(1L);
+         Mockito.when(pool.getCapacityIops()).thenReturn(1000L);
+-        Mockito.when(storagePoolDao.findById(1L)).thenReturn(pool);
++        storagePoolDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(1L, pool);
+         Mockito.when(capacityManager.getUsedIops(pool)).thenReturn(500L);
+         List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
+         assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, list, pool, true));
+@@ -348,7 +348,7 @@
+         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Mockito.when(pool.getId()).thenReturn(1L);
+         Mockito.when(pool.getCapacityIops()).thenReturn(550L);
+-        Mockito.when(storagePoolDao.findById(1L)).thenReturn(pool);
++        storagePoolDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(1L, pool);
+         Mockito.when(capacityManager.getUsedIops(pool)).thenReturn(500L);
+         List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
+         Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughIops(100L, list, pool, true));
+@@ -427,7 +427,7 @@
+     public void testStoragePoolHasEnoughSpaceCompare() {
+         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Mockito.when(pool.getId()).thenReturn(1L);
+-        Mockito.when(storagePoolDao.findById(1L)).thenReturn(pool);
++        storagePoolDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(1L, pool);
+         Mockito.when(capacityManager.getAllocatedPoolCapacity(pool, null)).thenReturn(2000L);
+         Mockito.doAnswer((Answer<Boolean>) invocationOnMock -> {
+             long total = invocationOnMock.getArgument(1);
+@@ -669,7 +669,7 @@
+ 
+         Mockito.when(accountMgr.isRootAdmin(Mockito.any())).thenReturn(true);
+         Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
+-        Mockito.when(storagePoolDao.findById(1L)).thenReturn(primaryStorage);
++        storagePoolDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(1L, primaryStorage);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -1791,7 +1791,7 @@
+             PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);
+ 
+             Mockito.when(vol.getPassphraseId()).thenReturn(1L);
+-            Mockito.when(primaryDataStoreDaoMock.findById(1L)).thenReturn(srcStoragePoolVOMock);
++            primaryDataStoreDaoMock = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(1L, srcStoragePoolVOMock);
+             Mockito.when(srcStoragePoolVOMock.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
+             Mockito.when(dataStoreMgr.getDataStore(2L, DataStoreRole.Primary)).thenReturn( dataStore);
+             Pair<Boolean, String> checkResult = new Pair<>(true, "success");
+@@ -2220,7 +2220,7 @@
+         when(existingVolume.getPoolId()).thenReturn(1L);
+         StoragePoolVO destPrimaryStorage = Mockito.mock(StoragePoolVO.class);
+         Mockito.when(destPrimaryStorage.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+-        Mockito.when(primaryDataStoreDaoMock.findById(1L)).thenReturn(destPrimaryStorage);
++        primaryDataStoreDaoMock = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(1L, destPrimaryStorage);
+         VolumeInfo newVolumeOnPrimaryStorage = Mockito.mock(VolumeInfo.class);
+         try {
+             Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage, null, null))
+--- a/server/src/test/java/com/cloud/storage/MockPrimaryDataStoreDao.java
++++ b/server/src/test/java/com/cloud/storage/MockPrimaryDataStoreDao.java
+@@ -0,0 +1,16 @@
++package com.cloud.storage;
++
++import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
++import org.mockito.Mockito;
++
++public final class MockPrimaryDataStoreDao {
++
++    private MockPrimaryDataStoreDao() {
++    }
++
++    public static PrimaryDataStoreDao createMockPrimaryDataStoreDao(long storagePoolId, Object storagePool) {
++        PrimaryDataStoreDao storagePoolDao = Mockito.mock(PrimaryDataStoreDao.class);
++        Mockito.doReturn(storagePool).when(storagePoolDao).findById(storagePoolId);
++        return storagePoolDao;
++    }
++}
