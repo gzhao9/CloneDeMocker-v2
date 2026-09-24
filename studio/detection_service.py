@@ -271,15 +271,52 @@ class DetectionService:
         (run_directory / "run.json").write_text(json.dumps(
             {"projectRoot": str(root), "restoredFrom": detection_path.relative_to(self.repository_root).as_posix()},
             ensure_ascii=False, indent=2), encoding="utf-8")
-        shutil.copyfile(detection_path, run_directory / "mock-clone-instances.json")
+        result = self._rebase_paths(json.loads(detection_path.read_text(encoding="utf-8")), root)
+        (run_directory / "mock-clone-instances.json").write_text(json.dumps(result, ensure_ascii=False, indent=2),
+                                                                  encoding="utf-8")
         if (directory / DETECTION_META).is_file():
             shutil.copyfile(directory / DETECTION_META, run_directory / DETECTION_META)
-        result = json.loads(detection_path.read_text(encoding="utf-8"))
         return {
             "runId": run_id,
             "restoredFrom": detection_path.relative_to(self.repository_root).as_posix(),
             "mockCloneInstances": self._indexed_instances(result),
         }
+
+    @staticmethod
+    def _rebase_paths(result: Any, root: Path) -> Any:
+        """
+        把检测结果里另一台机器的绝对路径改到本机的项目根目录下。
+        Rewrites absolute paths recorded on another machine onto this machine's project root.
+
+        A detection saved on Windows (D:\\...\\cloudstack\\server\\...) restored on Linux, or on a
+        machine with the checkout elsewhere, otherwise finds no source files. A path is rebased
+        at its last segment named like the local root, and only when the recorded path does not
+        exist here and the rebased one does, so a restore on the recording machine is unchanged.
+        """
+        cache: dict[str, str] = {}
+
+        def rebase(text: str) -> str:
+            if text in cache:
+                return cache[text]
+            new = text
+            if re.match(r"^(?:[A-Za-z]:[\\/]|/)", text) and not Path(text).exists():
+                parts = re.split(r"[\\/]+", text)
+                hits = [i for i, part in enumerate(parts) if part == root.name]
+                if hits:
+                    candidate = root.joinpath(*parts[hits[-1] + 1:])
+                    if candidate.exists():
+                        new = str(candidate)
+            cache[text] = new
+            return new
+
+        def walk(value: Any) -> Any:
+            if isinstance(value, dict):
+                return {key: walk(item) for key, item in value.items()}
+            if isinstance(value, list):
+                return [walk(item) for item in value]
+            return rebase(value) if isinstance(value, str) else value
+
+        return walk(result)
 
     @staticmethod
     def _indexed_instances(result: dict[str, Any]) -> list[dict[str, Any]]:

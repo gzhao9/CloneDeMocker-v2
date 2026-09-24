@@ -20,6 +20,7 @@ and V2's verdict and timings, under data/<project>/refactoring/Codex+Terra-5.6/.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import shutil
@@ -183,7 +184,9 @@ def run_one(project: str, mci: str, variant: str, model: str, sandbox: str, serv
     _, raw = service.load_raw_detection(run_id)
     instance = next(i for i in service._indexed_instances(raw) if i["id"] == mci)
     safe = canonical_store.safe_mci_filename(mci).removesuffix(".diff") + ("" if variant == "neutral" else f"-{variant}")
-    tree = WORK / f"{project}-{safe}"
+    # Long generic MCI ids push files deep in the worktree past MAX_PATH; name those by hash.
+    short = safe if len(safe) <= 60 else "h" + hashlib.sha1(safe.encode("utf-8")).hexdigest()[:12]
+    tree = WORK / f"{project}-{short}"
     WORK.mkdir(parents=True, exist_ok=True)
     if tree.exists():
         subprocess.run(["git", "-C", str(project_root), "worktree", "remove", "--force", str(tree)], capture_output=True)
