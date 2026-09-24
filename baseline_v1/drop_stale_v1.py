@@ -32,7 +32,7 @@ def main(project: str) -> None:
              if STALE.search(f"{v.get('validationReason') or ''} {v.get('declineReason') or ''}")]
     for key in stale:
         del data["results"][key]
-        (directory / "diffs" / f"{safe_mci_filename(key)}.diff").unlink(missing_ok=True)
+        (directory / "diffs" / safe_mci_filename(key)).unlink(missing_ok=True)
     data["totalMcis"] = len(data["results"])
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8", newline="\n")
     table = directory / "refactoring-results.csv"
