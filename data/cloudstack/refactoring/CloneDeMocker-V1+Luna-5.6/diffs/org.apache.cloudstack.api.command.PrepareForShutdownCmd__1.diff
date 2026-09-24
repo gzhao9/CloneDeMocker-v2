@@ -1,0 +1,79 @@
+--- a/plugins/maintenance/src/test/java/org/apache/cloudstack/maintenance/ManagementServerMaintenanceManagerImplTest.java
++++ b/plugins/maintenance/src/test/java/org/apache/cloudstack/maintenance/ManagementServerMaintenanceManagerImplTest.java
+@@ -133,9 +133,8 @@
+     @Test
+     public void prepareForShutdownCmdNoMsHost() {
+         Mockito.when(msHostDao.findById(1L)).thenReturn(null);
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
+-
++
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+             spy.prepareForShutdown(cmd);
+         });
+@@ -146,9 +145,8 @@
+         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+         Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.Maintenance);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
+-
++
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+             spy.prepareForShutdown(cmd);
+         });
+@@ -163,9 +161,8 @@
+         msHostList.add(msHost2);
+         Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
+-
++
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+             spy.prepareForShutdown(cmd);
+         });
+@@ -178,8 +175,7 @@
+         List<ManagementServerHostVO> msHostList = new ArrayList<>();
+         Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn(null);
+ 
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+@@ -194,8 +190,7 @@
+         List<ManagementServerHostVO> msHostList = new ArrayList<>();
+         Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn("Failed");
+ 
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+@@ -210,8 +205,7 @@
+         Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(new ArrayList<>());
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
+         Mockito.when(hostDao.listByMs(anyLong())).thenReturn(new ArrayList<>());
+-        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        PrepareForShutdownCmd cmd = createMockPrepareForShutdownCmd();
+         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn("Success");
+ 
+         spy.prepareForShutdown(cmd);
+@@ -568,4 +562,10 @@
+         spy.cancelMaintenance(cmd);
+         Mockito.verify(clusterManagerMock, Mockito.times(1)).execute(anyString(), anyLong(), anyString(), anyBoolean());
+     }
++
++    private static PrepareForShutdownCmd createMockPrepareForShutdownCmd() {
++        PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
++        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        return cmd;
++    }
+ }

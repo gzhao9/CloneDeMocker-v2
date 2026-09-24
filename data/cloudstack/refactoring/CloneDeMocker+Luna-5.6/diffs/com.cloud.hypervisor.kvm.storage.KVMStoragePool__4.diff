@@ -1,0 +1,48 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckAndRepairVolumeCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckAndRepairVolumeCommandWrapperTest.java
+@@ -67,13 +67,13 @@
+ 
+         KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+-        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
++        KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
++        KVMStoragePool pool = createMockKvmStoragePool("cbac516a-0f1f-4559-921c-1a7c6c408ccf", vol);
+         when(spool.getType()).thenReturn(Storage.StoragePoolType.PowerFlex);
+         when(spool.getUuid()).thenReturn("b6be258b-42b8-49a4-ad51-3634ef8ff76a");
+         when(storagePoolMgr.getStoragePool(Storage.StoragePoolType.PowerFlex, "b6be258b-42b8-49a4-ad51-3634ef8ff76a")).thenReturn(pool);
+ 
+-        KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+-        when(pool.getPhysicalDisk("cbac516a-0f1f-4559-921c-1a7c6c408ccf")).thenReturn(vol);
++        
+         Mockito.when(vol.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.QCOW2);
+ 
+         String checkResult = "{\n" +
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtGetVolumesOnStorageCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtGetVolumesOnStorageCommandWrapperTest.java
+@@ -130,8 +130,9 @@
+         Mockito.when(disk.getPath()).thenReturn(volumePath);
+         Mockito.when(disk.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.QCOW2);
+         Mockito.when(disk.getQemuEncryptFormat()).thenReturn(QemuObject.EncryptFormat.LUKS);
+-        Mockito.when(storagePool.getPhysicalDisk(volumePath)).thenReturn(disk);
++        storagePool = createMockKvmStoragePool(volumePath, disk);
+         Mockito.when(storagePool.getType()).thenReturn(poolType);
++        Mockito.when(storagePoolMgr.getStoragePool(poolType, poolUuid, true, true)).thenReturn(storagePool);
+ 
+         Mockito.when(qemuImgInfo.get(QemuImg.BACKING_FILE)).thenReturn(backingFilePath);
+         Mockito.when(qemuImgInfo.get(QemuImg.BACKING_FILE_FORMAT)).thenReturn(backingFileFormat);
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockKVMStoragePool.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockKVMStoragePool.java
+@@ -0,0 +1,13 @@
++package com.cloud.hypervisor.kvm.resource.wrapper;
++
++import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
++import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
++import org.mockito.Mockito;
++
++public class MockKVMStoragePool {
++    public static KVMStoragePool createMockKvmStoragePool(String physicalDiskPath, KVMPhysicalDisk physicalDisk) {
++        KVMStoragePool pool = Mockito.mock(KVMStoragePool.class);
++        Mockito.when(pool.getPhysicalDisk(physicalDiskPath)).thenReturn(physicalDisk);
++        return pool;
++    }
++}

@@ -1,0 +1,91 @@
+--- a/plugins/acl/project-role-based/src/test/java/org/apache/cloudstack/acl/ProjectRoleBasedApiAccessCheckerTest.java
++++ b/plugins/acl/project-role-based/src/test/java/org/apache/cloudstack/acl/ProjectRoleBasedApiAccessCheckerTest.java
+@@ -117,8 +117,8 @@
+     public void getApisAllowedToUserTestProjectAccountHasAdminRoleReturnsUnchangedApiList() {
+ 
+         Mockito.doReturn(getTestProject()).when(callContextMock).getProject();
++        projectAccountVOMock = MockProjectAccountVO.createProjectAccountVOMock(ProjectAccount.Role.Admin);
+         Mockito.doReturn(projectAccountVOMock).when(projectAccountDaoMock).findByProjectIdUserId(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
+-        Mockito.doReturn(ProjectAccount.Role.Admin).when(projectAccountVOMock).getAccountRole();
+ 
+         List<String> apisReceived = projectRoleBasedApiAccessCheckerSpy.getApisAllowedToUser(null, getTestUser(), apiNames);
+         Assert.assertEquals(1, apisReceived.size());
+@@ -128,8 +128,7 @@
+     public void getApisAllowedToUserTestProjectAccountNotPermittedForTheApiListShouldReturnEmptyList() {
+ 
+         Mockito.doReturn(getTestProject()).when(callContextMock).getProject();
+-        Mockito.doReturn(projectAccountVOMock).when(projectAccountDaoMock).findByProjectIdUserId(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
+-        Mockito.doReturn(ProjectAccount.Role.Regular).when(projectAccountVOMock).getAccountRole();
++        ProjectAccountVO projectAccountVOMock = MockProjectAccountVO.createProjectAccountVOMock(ProjectAccount.Role.Regular);
+         Mockito.doReturn(false).when(projectRoleBasedApiAccessCheckerSpy).isPermitted(Mockito.any(Project.class), Mockito.any(ProjectAccount.class), Mockito.anyString());
+ 
+ 
+@@ -141,12 +140,25 @@
+     public void getApisAllowedToUserTestProjectAccountPermittedForTheApiListShouldReturnTheSameList() {
+ 
+         Mockito.doReturn(getTestProject()).when(callContextMock).getProject();
++        projectAccountVOMock = MockProjectAccountVO.createProjectAccountVOMock(ProjectAccount.Role.Regular);
+         Mockito.doReturn(projectAccountVOMock).when(projectAccountDaoMock).findByProjectIdUserId(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
+-        Mockito.doReturn(ProjectAccount.Role.Regular).when(projectAccountVOMock).getAccountRole();
+         Mockito.doReturn(true).when(projectRoleBasedApiAccessCheckerSpy).isPermitted(Mockito.any(Project.class), Mockito.any(ProjectAccount.class), Mockito.anyString());
+ 
+ 
+         List<String> apisReceived = projectRoleBasedApiAccessCheckerSpy.getApisAllowedToUser(null, getTestUser(), apiNames);
+         Assert.assertEquals(1, apisReceived.size());
+     }
++
++    public final class MockProjectAccountVO {
++        private MockProjectAccountVO() {
++        }
++
++        public static com.cloud.projects.ProjectAccountVO createProjectAccountVOMock(
++                com.cloud.projects.ProjectAccount.Role accountRole) {
++            com.cloud.projects.ProjectAccountVO projectAccountVOMock =
++                    Mockito.mock(com.cloud.projects.ProjectAccountVO.class);
++            Mockito.doReturn(accountRole).when(projectAccountVOMock).getAccountRole();
++            return projectAccountVOMock;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/acl/ProjectRoleManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/acl/ProjectRoleManagerImplTest.java
+@@ -157,9 +157,9 @@
+ 
+     @Test
+     public void projectAdminMemberIsAllowed() {
++        projectAccountMock = MockProjectAccountVO.createProjectAccountVOMock(ProjectAccount.Role.Admin);
+         Mockito.doReturn(projectAccountMock).when(projAccDaoMock)
+                 .findByProjectIdUserId(PROJECT_ID, CALLER_ACCOUNT_ID, CALLER_USER_ID);
+-        Mockito.doReturn(ProjectAccount.Role.Admin).when(projectAccountMock).getAccountRole();
+ 
+         List<ProjectRole> roles = listRoles();
+ 
+@@ -168,9 +168,9 @@
+ 
+     @Test(expected = PermissionDeniedException.class)
+     public void projectMemberWithoutAdminRoleIsDenied() {
++        projectAccountMock = MockProjectAccountVO.createProjectAccountVOMock(ProjectAccount.Role.Regular);
+         Mockito.doReturn(projectAccountMock).when(projAccDaoMock)
+                 .findByProjectIdUserId(PROJECT_ID, CALLER_ACCOUNT_ID, CALLER_USER_ID);
+-        Mockito.doReturn(ProjectAccount.Role.Regular).when(projectAccountMock).getAccountRole();
+ 
+         listRoles();
+     }
+@@ -242,4 +242,17 @@
+ 
+         projectRoleManagerImpl.createProjectRolePermission(createProjectRolePermissionCmdMock);
+     }
++
++    public final class MockProjectAccountVO {
++        private MockProjectAccountVO() {
++        }
++
++        public static com.cloud.projects.ProjectAccountVO createProjectAccountVOMock(
++                com.cloud.projects.ProjectAccount.Role accountRole) {
++            com.cloud.projects.ProjectAccountVO projectAccountVOMock =
++                    Mockito.mock(com.cloud.projects.ProjectAccountVO.class);
++            Mockito.doReturn(accountRole).when(projectAccountVOMock).getAccountRole();
++            return projectAccountVOMock;
++        }
++    }
+ }

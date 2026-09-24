@@ -1,0 +1,114 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -1574,7 +1574,7 @@
+         UserVmVO userVmVO = mock(UserVmVO.class);
+         when(updatedTO.getVncPassword()).thenReturn("newPassword");
+         when(vmTO.getVncPassword()).thenReturn("oldPassword");
+-        when(userVmDaoMock.findById(anyLong())).thenReturn(userVmVO);
++        userVmDaoMock = MockUserVmDao.createUserVmDao(userVmVO);
+         virtualMachineManagerImpl.updateExternalVmDataFromPrepareAnswer(vmTO, updatedTO);
+         verify(userVmVO).setVncPassword("newPassword");
+         verify(vmTO).setVncPassword("newPassword");
+@@ -2241,4 +2241,16 @@
+         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
+     }
+ 
++
++    public final class MockUserVmDao {
++
++        private MockUserVmDao() {
++        }
++
++        public static UserVmDao createUserVmDao(UserVmVO userVmVO) {
++            UserVmDao userVmDaoMock = Mockito.mock(UserVmDao.class);
++            when(userVmDaoMock.findById(anyLong())).thenReturn(userVmVO);
++            return userVmDaoMock;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerTest.java
+@@ -427,8 +427,8 @@
+ 
+         doReturn(true).when(_itMgr).upgradeVmDb(anyLong(), so1, so2);
+ 
+-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
+-
++
++        _vmDao = MockUserVmDao.createUserVmDao(_vmMock);
+         Account account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, UUID.randomUUID().toString());
+         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+         CallContext.register(user, account);
+@@ -517,8 +517,8 @@
+ 
+         UserVmVO vm = new UserVmVO(10L, "test", "test", 1L, HypervisorType.Any, 1L, false, false, 1L, 1L, 1, 5L, "test", null, null, "test");
+         vm.setState(VirtualMachine.State.Stopped);
+-        when(_vmDao.findById(anyLong())).thenReturn(vm);
+-
++
++        _vmDao = MockUserVmDao.createUserVmDao(vm);
+         when(_accountService.getActiveAccountById(anyLong())).thenReturn(oldAccount);
+ 
+         when(_accountMgr.finalizeOwner(nullable(Account.class), nullable(String.class), nullable(Long.class), nullable(Long.class))).thenReturn(newAccount);
+@@ -551,7 +551,7 @@
+ 
+         NicVO nic = new NicVO("nic", 1L, 2L, VirtualMachine.Type.User);
+         when(_nicDao.findById(anyLong())).thenReturn(nic);
+-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
++        _vmDao = MockUserVmDao.createUserVmDao(_vmMock);
+         when(_networkDao.findById(anyLong())).thenReturn(_networkMock);
+         doReturn(9L).when(_networkMock).getNetworkOfferingId();
+         when(_networkOfferingDao.findByIdIncludingRemoved(anyLong())).thenReturn(_networkOfferingMock);
+@@ -599,7 +599,7 @@
+         NicVO nic = new NicVO("nic", 1L, 2L, VirtualMachine.Type.User);
+         when(_nicDao.findById(anyLong())).thenReturn(nic);
+         nic.setIPv4Address("10.10.10.9");
+-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
++        _vmDao = MockUserVmDao.createUserVmDao(_vmMock);
+         when(_networkDao.findById(anyLong())).thenReturn(_networkMock);
+         doReturn(9L).when(_networkMock).getNetworkOfferingId();
+         when(_networkOfferingDao.findByIdIncludingRemoved(anyLong())).thenReturn(_networkOfferingMock);
+@@ -656,7 +656,7 @@
+ 
+         NicVO nic = new NicVO("nic", 1L, 2L, VirtualMachine.Type.User);
+         when(_nicDao.findById(anyLong())).thenReturn(nic);
+-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
++        _vmDao = MockUserVmDao.createUserVmDao(_vmMock);
+         when(_networkDao.findById(anyLong())).thenReturn(_networkMock);
+         when(_networkMock.getState()).thenReturn(Network.State.Implemented);
+         doReturn(9L).when(_networkMock).getNetworkOfferingId();
+@@ -694,7 +694,7 @@
+ 
+         NicVO nic = new NicVO("nic", 1L, 2L, VirtualMachine.Type.User);
+         when(_nicDao.findById(anyLong())).thenReturn(nic);
+-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
++        _vmDao = MockUserVmDao.createUserVmDao(_vmMock);
+         when(_networkDao.findById(anyLong())).thenReturn(_networkMock);
+         doReturn(9L).when(_networkMock).getNetworkOfferingId();
+         when(_networkOfferingDao.findByIdIncludingRemoved(anyLong())).thenReturn(_networkOfferingMock);
+@@ -741,7 +741,7 @@
+ 
+         NicVO nic = new NicVO("nic", 1L, 2L, VirtualMachine.Type.User);
+         when(_nicDao.findById(anyLong())).thenReturn(nic);
+-        when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
++        _vmDao = MockUserVmDao.createUserVmDao(_vmMock);
+         when(_networkDao.findById(anyLong())).thenReturn(_networkMock);
+         doReturn(9L).when(_networkMock).getNetworkOfferingId();
+         when(_networkOfferingDao.findByIdIncludingRemoved(anyLong())).thenReturn(_networkOfferingMock);
+@@ -839,4 +839,16 @@
+         _userVmMgr.persistDeviceBusInfo(_vmMock, "lsilogic");
+         verify(_vmDao, times(1)).saveDetails(any(UserVmVO.class));
+     }
++
++    public final class MockUserVmDao {
++
++        private MockUserVmDao() {
++        }
++
++        public static UserVmDao createUserVmDao(UserVmVO userVmVO) {
++            UserVmDao userVmDaoMock = Mockito.mock(UserVmDao.class);
++            when(userVmDaoMock.findById(anyLong())).thenReturn(userVmVO);
++            return userVmDaoMock;
++        }
++    }
+ }

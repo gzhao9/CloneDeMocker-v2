@@ -1,0 +1,58 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/utils/ResponseWriterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/utils/ResponseWriterTest.java
+@@ -50,9 +50,8 @@
+     @Test
+     public void testWrite_JsonBodyWritesPayloadAndHeaders() throws Exception {
+         final ResponseWriter responseWriter = new ResponseWriter(new Mapper());
+-        final HttpServletResponse response = mock(HttpServletResponse.class);
+         final StringWriter sink = new StringWriter();
+-        when(response.getWriter()).thenReturn(new PrintWriter(sink));
++        final HttpServletResponse response = createMockHttpServletResponse(new PrintWriter(sink));
+ 
+         responseWriter.write(response, 200, new Payload("item-1"), Negotiation.OutFormat.JSON);
+ 
+@@ -64,9 +63,8 @@
+     @Test
+     public void testWrite_XmlBodyWritesPayloadAndHeaders() throws Exception {
+         final ResponseWriter responseWriter = new ResponseWriter(new Mapper());
+-        final HttpServletResponse response = mock(HttpServletResponse.class);
+         final StringWriter sink = new StringWriter();
+-        when(response.getWriter()).thenReturn(new PrintWriter(sink));
++        final HttpServletResponse response = createMockHttpServletResponse(new PrintWriter(sink));
+ 
+         responseWriter.write(response, 200, new Payload("item-2"), Negotiation.OutFormat.XML);
+ 
+@@ -80,9 +78,8 @@
+         doThrow(new RuntimeException("boom")).when(mapper).toJson(org.mockito.ArgumentMatchers.any());
+ 
+         final ResponseWriter responseWriter = new ResponseWriter(mapper);
+-        final HttpServletResponse response = mock(HttpServletResponse.class);
+         final StringWriter sink = new StringWriter();
+-        when(response.getWriter()).thenReturn(new PrintWriter(sink));
++        final HttpServletResponse response = createMockHttpServletResponse(new PrintWriter(sink));
+ 
+         responseWriter.write(response, 200, new Payload("ignored"), Negotiation.OutFormat.JSON);
+ 
+@@ -95,15 +92,20 @@
+     @Test
+     public void testWriteFault_JsonWritesFaultStructure() throws Exception {
+         final ResponseWriter responseWriter = new ResponseWriter(new Mapper());
+-        final HttpServletResponse response = mock(HttpServletResponse.class);
+         final StringWriter sink = new StringWriter();
+-        when(response.getWriter()).thenReturn(new PrintWriter(sink));
++        final HttpServletResponse response = createMockHttpServletResponse(new PrintWriter(sink));
+ 
+         responseWriter.writeFault(response, 404, "Not Found", "missing vm", Negotiation.OutFormat.JSON);
+ 
+         verify(response).setStatus(404);
+         assertTrue(sink.toString().contains("\"reason\":\"Not Found\""));
+         assertTrue(sink.toString().contains("\"detail\":\"missing vm\""));
++    }
++
++    private static HttpServletResponse createMockHttpServletResponse(final PrintWriter writer) {
++        final HttpServletResponse response = mock(HttpServletResponse.class);
++        when(response.getWriter()).thenReturn(writer);
++        return response;
+     }
+ 
+     static class Payload {

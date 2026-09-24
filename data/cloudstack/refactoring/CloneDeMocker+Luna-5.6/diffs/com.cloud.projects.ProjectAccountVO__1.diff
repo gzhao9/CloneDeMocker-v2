@@ -1,0 +1,86 @@
+--- a/plugins/acl/project-role-based/src/test/java/org/apache/cloudstack/acl/ProjectRoleBasedApiAccessCheckerTest.java
++++ b/plugins/acl/project-role-based/src/test/java/org/apache/cloudstack/acl/ProjectRoleBasedApiAccessCheckerTest.java
+@@ -117,8 +117,8 @@
+     public void getApisAllowedToUserTestProjectAccountHasAdminRoleReturnsUnchangedApiList() {
+ 
+         Mockito.doReturn(getTestProject()).when(callContextMock).getProject();
++        projectAccountVOMock = MockProjectAccountVO.createMockProjectAccountVO(ProjectAccount.Role.Admin);
+         Mockito.doReturn(projectAccountVOMock).when(projectAccountDaoMock).findByProjectIdUserId(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
+-        Mockito.doReturn(ProjectAccount.Role.Admin).when(projectAccountVOMock).getAccountRole();
+ 
+         List<String> apisReceived = projectRoleBasedApiAccessCheckerSpy.getApisAllowedToUser(null, getTestUser(), apiNames);
+         Assert.assertEquals(1, apisReceived.size());
+@@ -128,8 +128,8 @@
+     public void getApisAllowedToUserTestProjectAccountNotPermittedForTheApiListShouldReturnEmptyList() {
+ 
+         Mockito.doReturn(getTestProject()).when(callContextMock).getProject();
++        projectAccountVOMock = MockProjectAccountVO.createMockProjectAccountVO(ProjectAccount.Role.Regular);
+         Mockito.doReturn(projectAccountVOMock).when(projectAccountDaoMock).findByProjectIdUserId(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
+-        Mockito.doReturn(ProjectAccount.Role.Regular).when(projectAccountVOMock).getAccountRole();
+         Mockito.doReturn(false).when(projectRoleBasedApiAccessCheckerSpy).isPermitted(Mockito.any(Project.class), Mockito.any(ProjectAccount.class), Mockito.anyString());
+ 
+ 
+@@ -141,8 +141,8 @@
+     public void getApisAllowedToUserTestProjectAccountPermittedForTheApiListShouldReturnTheSameList() {
+ 
+         Mockito.doReturn(getTestProject()).when(callContextMock).getProject();
++        projectAccountVOMock = MockProjectAccountVO.createMockProjectAccountVO(ProjectAccount.Role.Regular);
+         Mockito.doReturn(projectAccountVOMock).when(projectAccountDaoMock).findByProjectIdUserId(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
+-        Mockito.doReturn(ProjectAccount.Role.Regular).when(projectAccountVOMock).getAccountRole();
+         Mockito.doReturn(true).when(projectRoleBasedApiAccessCheckerSpy).isPermitted(Mockito.any(Project.class), Mockito.any(ProjectAccount.class), Mockito.anyString());
+ 
+ 
+--- a/server/src/test/java/org/apache/cloudstack/acl/ProjectRoleManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/acl/ProjectRoleManagerImplTest.java
+@@ -159,7 +159,7 @@
+     public void projectAdminMemberIsAllowed() {
+         Mockito.doReturn(projectAccountMock).when(projAccDaoMock)
+                 .findByProjectIdUserId(PROJECT_ID, CALLER_ACCOUNT_ID, CALLER_USER_ID);
+-        Mockito.doReturn(ProjectAccount.Role.Admin).when(projectAccountMock).getAccountRole();
++        projectAccountMock = MockProjectAccountVO.createMockProjectAccountVO(ProjectAccount.Role.Admin);
+ 
+         List<ProjectRole> roles = listRoles();
+ 
+@@ -168,9 +168,9 @@
+ 
+     @Test(expected = PermissionDeniedException.class)
+     public void projectMemberWithoutAdminRoleIsDenied() {
++        projectAccountMock = MockProjectAccountVO.createMockProjectAccountVO(ProjectAccount.Role.Regular);
+         Mockito.doReturn(projectAccountMock).when(projAccDaoMock)
+                 .findByProjectIdUserId(PROJECT_ID, CALLER_ACCOUNT_ID, CALLER_USER_ID);
+-        Mockito.doReturn(ProjectAccount.Role.Regular).when(projectAccountMock).getAccountRole();
+ 
+         listRoles();
+     }
+--- a/plugins/acl/project-role-based/src/test/java/org/apache/cloudstack/acl/MockProjectAccountVO.java
++++ b/plugins/acl/project-role-based/src/test/java/org/apache/cloudstack/acl/MockProjectAccountVO.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.acl;
++
++import com.cloud.projects.ProjectAccount;
++import com.cloud.projects.ProjectAccountVO;
++import org.mockito.Mockito;
++
++public class MockProjectAccountVO {
++    public static ProjectAccountVO createMockProjectAccountVO(ProjectAccount.Role accountRole) {
++        ProjectAccountVO projectAccountVOMock = Mockito.mock(ProjectAccountVO.class);
++        Mockito.doReturn(accountRole).when(projectAccountVOMock).getAccountRole();
++        return projectAccountVOMock;
++    }
++}
+--- a/server/src/test/java/org/apache/cloudstack/acl/MockProjectAccountVO.java
++++ b/server/src/test/java/org/apache/cloudstack/acl/MockProjectAccountVO.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.acl;
++
++import com.cloud.projects.ProjectAccount;
++import com.cloud.projects.ProjectAccountVO;
++import org.mockito.Mockito;
++
++public class MockProjectAccountVO {
++    public static ProjectAccountVO createMockProjectAccountVO(ProjectAccount.Role accountRole) {
++        ProjectAccountVO projectAccountVOMock = Mockito.mock(ProjectAccountVO.class);
++        Mockito.doReturn(accountRole).when(projectAccountVOMock).getAccountRole();
++        return projectAccountVOMock;
++    }
++}

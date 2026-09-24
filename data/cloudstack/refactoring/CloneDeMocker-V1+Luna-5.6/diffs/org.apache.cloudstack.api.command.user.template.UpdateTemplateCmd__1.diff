@@ -1,0 +1,50 @@
+--- a/server/src/test/java/com/cloud/template/TemplateManagerImplTest.java
++++ b/server/src/test/java/com/cloud/template/TemplateManagerImplTest.java
+@@ -759,8 +759,7 @@
+ 
+     @Test
+     public void testUpdateTemplateWithTemplateType() {
+-        UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
+-        when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
++        UpdateTemplateCmd cmd = createMockUpdateTemplateCmd(Storage.TemplateType.SYSTEM.toString());
+         Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.XenServer);
+         Assert.assertEquals(Storage.TemplateType.SYSTEM, type);
+     }
+@@ -774,23 +773,20 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testUpdateTemplateWithInvalidTemplateType() {
+-        UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
+-        when(cmd.getTemplateType()).thenReturn("invalidtype");
++        UpdateTemplateCmd cmd = createMockUpdateTemplateCmd("invalidtype");
+         Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.VMware);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testUpdateTemplateWithInvalidTemplateTypeForRouting() {
+-        UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
+-        when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.USER.toString());
++        UpdateTemplateCmd cmd = createMockUpdateTemplateCmd(Storage.TemplateType.USER.toString());
+         when(cmd.isRoutingType()).thenReturn(true);
+         Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, true, Hypervisor.HypervisorType.KVM);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testUpdateTemplateWithInvalidCrossZonesForSystem() {
+-        UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
+-        when(cmd.getTemplateType()).thenReturn(Storage.TemplateType.SYSTEM.toString());
++        UpdateTemplateCmd cmd = createMockUpdateTemplateCmd(Storage.TemplateType.SYSTEM.toString());
+         Storage.TemplateType type = templateManager.validateTemplateType(cmd, true, false, Hypervisor.HypervisorType.KVM);
+     }
+ 
+@@ -1312,4 +1308,10 @@
+             }
+         }
+     }
++
++    private static UpdateTemplateCmd createMockUpdateTemplateCmd(String templateType) {
++        UpdateTemplateCmd cmd = Mockito.mock(UpdateTemplateCmd.class);
++        when(cmd.getTemplateType()).thenReturn(templateType);
++        return cmd;
++    }
+ }
