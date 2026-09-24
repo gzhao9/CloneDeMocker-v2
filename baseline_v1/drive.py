@@ -175,7 +175,7 @@ def make_should_run(project: str):
 
     --round1-failures skip: leave MCIs whose round-1 verdict is not SUCCESS to C (A and B).
     --round1-failures only: run only those (C). An MCI round 1 has not graded yet counts as
-    not-failed, so exactly one side takes it. Any MCI the remote already has in both pair
+    not-failed... no longer: round 1 is complete, so a missing verdict goes to C. Any MCI the remote already has in both pair
     datasets was done by another machine and is skipped.
     """
     def refresh() -> None:
@@ -198,7 +198,9 @@ def make_should_run(project: str):
         if mci_id in _remote_cache.get("v2", {}) and mci_id in _remote_cache.get("v1", {}):
             return False
         verdict = (_remote_cache.get("round1", {}).get(mci_id) or {}).get("classification")
-        failed = verdict is not None and verdict != "SUCCESS"
+        # Round 1 is complete, so an MCI without a verdict was never gradable there (e.g.
+        # Volume::4 crashed B's interpreter six times): it goes to C, not to A and B.
+        failed = verdict != "SUCCESS"
         if ROUTE["round1"] == "skip":
             return not failed
         if ROUTE["round1"] == "only":
