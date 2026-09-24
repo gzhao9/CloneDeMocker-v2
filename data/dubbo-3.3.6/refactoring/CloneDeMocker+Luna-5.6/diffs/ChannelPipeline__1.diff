@@ -1,0 +1,70 @@
+--- a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/QosProcessHandlerTest.java
++++ b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/QosProcessHandlerTest.java
+@@ -31,6 +31,7 @@
+ import io.netty.handler.codec.http.HttpServerCodec;
+ import io.netty.handler.codec.string.StringDecoder;
+ import io.netty.handler.codec.string.StringEncoder;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.Mockito;
+ 
+@@ -38,12 +39,17 @@
+ import static org.mockito.Mockito.verify;
+ 
+ class QosProcessHandlerTest {
++    private ChannelPipeline pipelineMock;
++
++    @BeforeEach
++    void setUp() {
++        pipelineMock = Mockito.mock(ChannelPipeline.class);
++    }
+     @Test
+     void testDecodeHttp() throws Exception {
+         ByteBuf buf = Unpooled.wrappedBuffer(new byte[] {'G'});
+         ChannelHandlerContext context = Mockito.mock(ChannelHandlerContext.class);
+-        ChannelPipeline pipeline = Mockito.mock(ChannelPipeline.class);
+-        Mockito.when(context.pipeline()).thenReturn(pipeline);
++        Mockito.when(context.pipeline()).thenReturn(pipelineMock);
+         QosProcessHandler handler = new QosProcessHandler(
+                 FrameworkModel.defaultModel(),
+                 QosConfiguration.builder()
+@@ -52,18 +58,17 @@
+                         .acceptForeignIpWhitelist(StringUtils.EMPTY_STRING)
+                         .build());
+         handler.decode(context, buf, Collections.emptyList());
+-        verify(pipeline).addLast(any(HttpServerCodec.class));
+-        verify(pipeline).addLast(any(HttpObjectAggregator.class));
+-        verify(pipeline).addLast(any(HttpProcessHandler.class));
+-        verify(pipeline).remove(handler);
++        verify(pipelineMock).addLast(any(HttpServerCodec.class));
++        verify(pipelineMock).addLast(any(HttpObjectAggregator.class));
++        verify(pipelineMock).addLast(any(HttpProcessHandler.class));
++        verify(pipelineMock).remove(handler);
+     }
+ 
+     @Test
+     void testDecodeTelnet() throws Exception {
+         ByteBuf buf = Unpooled.wrappedBuffer(new byte[] {'A'});
+         ChannelHandlerContext context = Mockito.mock(ChannelHandlerContext.class);
+-        ChannelPipeline pipeline = Mockito.mock(ChannelPipeline.class);
+-        Mockito.when(context.pipeline()).thenReturn(pipeline);
++        Mockito.when(context.pipeline()).thenReturn(pipelineMock);
+         QosProcessHandler handler = new QosProcessHandler(
+                 FrameworkModel.defaultModel(),
+                 QosConfiguration.builder()
+@@ -72,10 +77,10 @@
+                         .acceptForeignIpWhitelist(StringUtils.EMPTY_STRING)
+                         .build());
+         handler.decode(context, buf, Collections.emptyList());
+-        verify(pipeline).addLast(any(LineBasedFrameDecoder.class));
+-        verify(pipeline).addLast(any(StringDecoder.class));
+-        verify(pipeline).addLast(any(StringEncoder.class));
+-        verify(pipeline).addLast(any(TelnetProcessHandler.class));
+-        verify(pipeline).remove(handler);
++        verify(pipelineMock).addLast(any(LineBasedFrameDecoder.class));
++        verify(pipelineMock).addLast(any(StringDecoder.class));
++        verify(pipelineMock).addLast(any(StringEncoder.class));
++        verify(pipelineMock).addLast(any(TelnetProcessHandler.class));
++        verify(pipelineMock).remove(handler);
+     }
+ }
