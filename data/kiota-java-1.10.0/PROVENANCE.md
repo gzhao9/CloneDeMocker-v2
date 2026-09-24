@@ -12,7 +12,7 @@ detected as `data/kiota-java` and was merged here on 2026-09-24 (its old directo
 - Caveat: round 1's exact checkout was not recorded. Every detected statement and test
   method matches both v1.9.3 and v1.10.0 source (whitespace-normalised); four of the eight
   affected test files differ between those versions, but not in the detected methods.
-- Round-1 rows here are cache replays (`cacheHit=true`) from the PIT re-run; their original
-  generation timings have to be recovered from the proposal cache.
+- Round 1 ran with PIT (4 checks). 13 of its 14 rows carry their own tokens and generation
+  time; one (`Response::1`) is a cache replay from the PIT re-run and has no timing of its own.
 
 `CloneDeMocker+Luna-5.6` and `CloneDeMocker-V1+Luna-5.6` (rounds 2 and 3) were run on v1.10.0.
