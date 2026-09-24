@@ -1,0 +1,42 @@
+--- a/engine/orchestration/src/test/java/com/cloud/agent/manager/ClusteredAgentManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/agent/manager/ClusteredAgentManagerImplTest.java
+@@ -93,8 +93,7 @@
+         List hosts = new ArrayList<>();
+         hosts.add(hostVO);
+         when(_hostDao.findAndUpdateDirectAgentToLoad(anyLong(), anyLong(), anyLong())).thenReturn(hosts);
+-        AgentAttache agentAttache = mock(AgentAttache.class);
+-        when(agentAttache.forForward()).thenReturn(Boolean.TRUE);
++        AgentAttache agentAttache = createMockAgentAttache(Boolean.TRUE);
+         when(clusteredAgentManagerImpl.findAttache(1L)).thenReturn(agentAttache);
+ 
+         clusteredAgentManagerImpl.scanDirectAgentToLoad();
+@@ -115,8 +114,7 @@
+         hosts.add(hostVO);
+         when(_hostDao.findAndUpdateDirectAgentToLoad(anyLong(), anyLong(), anyLong())).thenReturn(hosts);
+ 
+-        AgentAttache agentAttache = mock(AgentAttache.class);
+-        when(agentAttache.forForward()).thenReturn(Boolean.FALSE);
++        AgentAttache agentAttache = createMockAgentAttache(Boolean.FALSE);
+         when(clusteredAgentManagerImpl.findAttache(0L)).thenReturn(agentAttache);
+         doReturn(Boolean.TRUE).when(clusteredAgentManagerImpl).agentStatusTransitTo(hostVO, Status.Event.Ping, clusteredAgentManagerImpl._nodeId);
+         doReturn(Status.Up).when(clusteredAgentManagerImpl).investigate(agentAttache);
+@@ -139,12 +137,17 @@
+         List hosts = new ArrayList<>();
+         hosts.add(hostVO);
+         when(_hostDao.findAndUpdateDirectAgentToLoad(anyLong(), anyLong(), anyLong())).thenReturn(hosts);
+-        AgentAttache agentAttache = mock(AgentAttache.class);
+-        when(agentAttache.forForward()).thenReturn(Boolean.FALSE);
++        AgentAttache agentAttache = createMockAgentAttache(Boolean.FALSE);
+         when(clusteredAgentManagerImpl.findAttache(0L)).thenReturn(agentAttache);
+         doReturn(Boolean.TRUE).when(clusteredAgentManagerImpl).loadDirectlyConnectedHost(hostVO, false);
+         clusteredAgentManagerImpl.scanDirectAgentToLoad();
+         verify(clusteredAgentManagerImpl).investigate(agentAttache);
+         verify(clusteredAgentManagerImpl).loadDirectlyConnectedHost(hostVO, false);
+     }
++
++    private static AgentAttache createMockAgentAttache(Boolean forForward) {
++        AgentAttache agentAttache = Mockito.mock(AgentAttache.class);
++        when(agentAttache.forForward()).thenReturn(forForward);
++        return agentAttache;
++    }
+ }
