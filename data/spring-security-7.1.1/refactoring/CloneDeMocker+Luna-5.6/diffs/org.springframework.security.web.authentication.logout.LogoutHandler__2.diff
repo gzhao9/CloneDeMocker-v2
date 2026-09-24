@@ -1,0 +1,54 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/logout/CompositeLogoutHandlerTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/logout/CompositeLogoutHandlerTests.java
+@@ -21,6 +21,7 @@
+ 
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpServletResponse;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.InOrder;
+ 
+@@ -42,6 +43,13 @@
+  */
+ public class CompositeLogoutHandlerTests {
+ 
++	private LogoutHandler csrfLogoutHandlerMock;
++
++	@BeforeEach
++	public void setup() {
++		this.csrfLogoutHandlerMock = mock(SecurityContextLogoutHandler.class);
++	}
++
+ 	@Test
+ 	public void buildEmptyCompositeLogoutHandlerThrowsException() {
+ 		assertThatIllegalArgumentException().isThrownBy(() -> new CompositeLogoutHandler())
+@@ -51,25 +59,23 @@
+ 	@Test
+ 	public void callLogoutHandlersSuccessfullyWithArray() {
+ 		LogoutHandler securityContextLogoutHandler = mock(SecurityContextLogoutHandler.class);
+-		LogoutHandler csrfLogoutHandler = mock(SecurityContextLogoutHandler.class);
+-		LogoutHandler handler = new CompositeLogoutHandler(securityContextLogoutHandler, csrfLogoutHandler);
++		LogoutHandler handler = new CompositeLogoutHandler(securityContextLogoutHandler, csrfLogoutHandlerMock);
+ 		handler.logout(mock(HttpServletRequest.class), mock(HttpServletResponse.class), mock(Authentication.class));
+ 		verify(securityContextLogoutHandler, times(1)).logout(any(HttpServletRequest.class),
+ 				any(HttpServletResponse.class), any(Authentication.class));
+-		verify(csrfLogoutHandler, times(1)).logout(any(HttpServletRequest.class), any(HttpServletResponse.class),
++		verify(csrfLogoutHandlerMock, times(1)).logout(any(HttpServletRequest.class), any(HttpServletResponse.class),
+ 				any(Authentication.class));
+ 	}
+ 
+ 	@Test
+ 	public void callLogoutHandlersSuccessfully() {
+ 		LogoutHandler securityContextLogoutHandler = mock(SecurityContextLogoutHandler.class);
+-		LogoutHandler csrfLogoutHandler = mock(SecurityContextLogoutHandler.class);
+-		List<LogoutHandler> logoutHandlers = Arrays.asList(securityContextLogoutHandler, csrfLogoutHandler);
++		List<LogoutHandler> logoutHandlers = Arrays.asList(securityContextLogoutHandler, csrfLogoutHandlerMock);
+ 		LogoutHandler handler = new CompositeLogoutHandler(logoutHandlers);
+ 		handler.logout(mock(HttpServletRequest.class), mock(HttpServletResponse.class), mock(Authentication.class));
+ 		verify(securityContextLogoutHandler, times(1)).logout(any(HttpServletRequest.class),
+ 				any(HttpServletResponse.class), any(Authentication.class));
+-		verify(csrfLogoutHandler, times(1)).logout(any(HttpServletRequest.class), any(HttpServletResponse.class),
++		verify(csrfLogoutHandlerMock, times(1)).logout(any(HttpServletRequest.class), any(HttpServletResponse.class),
+ 				any(Authentication.class));
+ 	}
+ 

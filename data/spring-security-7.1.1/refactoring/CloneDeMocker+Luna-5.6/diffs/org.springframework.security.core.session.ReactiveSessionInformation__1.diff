@@ -1,0 +1,63 @@
+--- a/web/src/test/java/org/springframework/security/web/server/authentication/session/InvalidateLeastUsedServerMaximumSessionsExceededHandlerTests.java
++++ b/web/src/test/java/org/springframework/security/web/server/authentication/session/InvalidateLeastUsedServerMaximumSessionsExceededHandlerTests.java
+@@ -57,11 +57,9 @@
+ 
+ 	@Test
+ 	void handleWhenInvokedThenInvalidatesLeastRecentlyUsedSessions() {
+-		ReactiveSessionInformation session1 = mock(ReactiveSessionInformation.class);
+-		ReactiveSessionInformation session2 = mock(ReactiveSessionInformation.class);
+-		given(session1.getLastAccessTime()).willReturn(Instant.ofEpochMilli(1700827760010L));
++		ReactiveSessionInformation session1 = createMockReactiveSessionInformation();
++		ReactiveSessionInformation session2 = createMockReactiveSessionInformation();
+ 		given(session2.getLastAccessTime()).willReturn(Instant.ofEpochMilli(1700827760000L));
+-		given(session1.getSessionId()).willReturn("session1");
+ 		given(session2.getSessionId()).willReturn("session2");
+ 		given(session2.invalidate()).willReturn(Mono.empty());
+ 
+@@ -85,15 +83,13 @@
+ 
+ 	@Test
+ 	void handleWhenMoreThanOneSessionToInvalidateThenInvalidatesAllOfThem() {
+-		ReactiveSessionInformation session1 = mock(ReactiveSessionInformation.class);
+-		ReactiveSessionInformation session2 = mock(ReactiveSessionInformation.class);
+-		ReactiveSessionInformation session3 = mock(ReactiveSessionInformation.class);
+-		given(session1.getLastAccessTime()).willReturn(Instant.ofEpochMilli(1700827760010L));
++		ReactiveSessionInformation session1 = createMockReactiveSessionInformation();
++		ReactiveSessionInformation session2 = createMockReactiveSessionInformation();
++		ReactiveSessionInformation session3 = createMockReactiveSessionInformation();
+ 		given(session2.getLastAccessTime()).willReturn(Instant.ofEpochMilli(1700827760020L));
+ 		given(session3.getLastAccessTime()).willReturn(Instant.ofEpochMilli(1700827760030L));
+ 		given(session1.invalidate()).willReturn(Mono.empty());
+ 		given(session2.invalidate()).willReturn(Mono.empty());
+-		given(session1.getSessionId()).willReturn("session1");
+ 		given(session2.getSessionId()).willReturn("session2");
+ 		given(session3.getSessionId()).willReturn("session3");
+ 
+@@ -121,12 +117,10 @@
+ 
+ 	@Test
+ 	void handleWhenCurrentSessionIsRegisteredThenDoNotInvalidateCurrentSession() {
+-		ReactiveSessionInformation session1 = mock(ReactiveSessionInformation.class);
++		ReactiveSessionInformation session1 = createMockReactiveSessionInformation();
+ 		ReactiveSessionInformation session2 = mock(ReactiveSessionInformation.class);
+ 		MockWebSession currentSession = createWebSession();
+-		given(session1.getLastAccessTime()).willReturn(Instant.ofEpochMilli(1700827760010L));
+ 		given(session2.getLastAccessTime()).willReturn(Instant.ofEpochMilli(1700827760000L));
+-		given(session1.getSessionId()).willReturn("session1");
+ 		given(session2.getSessionId()).willReturn(currentSession.getId());
+ 		given(session1.invalidate()).willReturn(Mono.empty());
+ 
+@@ -144,6 +138,13 @@
+ 		verifyNoMoreInteractions(session1);
+ 	}
+ 
++	private static ReactiveSessionInformation createMockReactiveSessionInformation() {
++		ReactiveSessionInformation session1 = mock(ReactiveSessionInformation.class);
++		given(session1.getLastAccessTime()).willReturn(Instant.ofEpochMilli(1700827760010L));
++		given(session1.getSessionId()).willReturn("session1");
++		return session1;
++	}
++
+ 	private MockWebSession createWebSession() {
+ 		return new MockWebSession();
+ 	}

@@ -1,0 +1,41 @@
+--- a/access/src/test/java/org/springframework/security/access/intercept/aopalliance/MethodSecurityInterceptorTests.java
++++ b/access/src/test/java/org/springframework/security/access/intercept/aopalliance/MethodSecurityInterceptorTests.java
+@@ -268,12 +268,11 @@
+ 		SecurityContext ctx = SecurityContextHolder.getContext();
+ 		ctx.setAuthentication(this.token);
+ 		this.token.setAuthenticated(true);
+-		final RunAsManager runAs = mock(RunAsManager.class);
+ 		final RunAsUserToken runAsToken = new RunAsUserToken("key", "someone", "creds", this.token.getAuthorities(),
+ 				TestingAuthenticationToken.class);
++		 final RunAsManager runAs = createRunAsManager(this.token, runAsToken);
+ 		this.interceptor.setRunAsManager(runAs);
+ 		mdsReturnsUserRole();
+-		given(runAs.buildRunAs(eq(this.token), any(MethodInvocation.class), any(List.class))).willReturn(runAsToken);
+ 		String result = this.advisedTarget.makeUpperCase("hello");
+ 		assertThat(result).isEqualTo("HELLO org.springframework.security.access.intercept.RunAsUserToken true");
+ 		// Check we've changed back
+@@ -289,12 +288,11 @@
+ 		SecurityContext ctx = SecurityContextHolder.getContext();
+ 		ctx.setAuthentication(this.token);
+ 		this.token.setAuthenticated(true);
+-		final RunAsManager runAs = mock(RunAsManager.class);
+ 		final RunAsUserToken runAsToken = new RunAsUserToken("key", "someone", "creds", this.token.getAuthorities(),
+ 				TestingAuthenticationToken.class);
++		final RunAsManager runAs = createRunAsManager(this.token, runAsToken);
+ 		this.interceptor.setRunAsManager(runAs);
+ 		mdsReturnsUserRole();
+-		given(runAs.buildRunAs(eq(this.token), any(MethodInvocation.class), any(List.class))).willReturn(runAsToken);
+ 		assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> this.advisedTarget.makeUpperCase("hello"));
+ 		// Check we've changed back
+ 		assertThat(SecurityContextHolder.getContext()).isSameAs(ctx);
+@@ -329,4 +327,10 @@
+ 		given(this.mds.getAttributes(any(MethodInvocation.class))).willReturn(SecurityConfig.createList("ROLE_USER"));
+ 	}
+ 
++
++	private static RunAsManager createRunAsManager(Authentication token, RunAsUserToken runAsToken) {
++		final RunAsManager runAs = mock(RunAsManager.class);
++		given(runAs.buildRunAs(eq(token), any(MethodInvocation.class), any(List.class))).willReturn(runAsToken);
++		return runAs;
++	}
+ }

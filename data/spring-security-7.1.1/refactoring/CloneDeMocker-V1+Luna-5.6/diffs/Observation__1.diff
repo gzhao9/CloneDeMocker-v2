@@ -1,0 +1,68 @@
+--- a/core/src/test/java/org/springframework/security/core/context/ObservationSecurityContextChangedListenerTests.java
++++ b/core/src/test/java/org/springframework/security/core/context/ObservationSecurityContextChangedListenerTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.core.context;
+ 
++import org.mockito.Mock;
+ import java.util.function.Supplier;
+ 
+ import io.micrometer.observation.Observation;
+@@ -36,6 +37,8 @@
+  * Tests for {@link ObservationSecurityContextChangedListener}
+  */
+ public class ObservationSecurityContextChangedListenerTests {
++	@Mock
++	private Observation observation;
+ 
+ 	private SecurityContext one = new SecurityContextImpl(new TestingAuthenticationToken("user", "pass"));
+ 
+@@ -59,7 +62,6 @@
+ 
+ 	@Test
+ 	void securityContextChangedWhenClearedEventThenAddsClearEventToObservation() {
+-		Observation observation = mock(Observation.class);
+ 		given(this.observationRegistry.getCurrentObservation()).willReturn(observation);
+ 		Supplier<SecurityContext> one = mock(Supplier.class);
+ 		this.tested
+@@ -73,7 +75,7 @@
+ 
+ 	@Test
+ 	void securityContextChangedWhenNoChangeThenNoEventAddedToObservation() {
+-		Observation observation = mock(Observation.class);
++		// removed local mock; replaced with global field `observation`
+ 		given(this.observationRegistry.getCurrentObservation()).willReturn(observation);
+ 		this.tested.securityContextChanged(new SecurityContextChangedEvent(this.one, this.one));
+ 		verifyNoInteractions(observation);
+@@ -81,7 +83,6 @@
+ 
+ 	@Test
+ 	void securityContextChangedWhenChangedEventThenAddsChangeEventToObservation() {
+-		Observation observation = mock(Observation.class);
+ 		given(this.observationRegistry.getCurrentObservation()).willReturn(observation);
+ 		this.tested.securityContextChanged(new SecurityContextChangedEvent(this.one, this.two));
+ 		ArgumentCaptor<Observation.Event> event = ArgumentCaptor.forClass(Observation.Event.class);
+@@ -92,7 +93,6 @@
+ 
+ 	@Test
+ 	void securityContextChangedWhenCreatedEventThenAddsCreatedEventToObservation() {
+-		Observation observation = mock(Observation.class);
+ 		given(this.observationRegistry.getCurrentObservation()).willReturn(observation);
+ 		this.tested.securityContextChanged(new SecurityContextChangedEvent(null, this.one));
+ 		ArgumentCaptor<Observation.Event> event = ArgumentCaptor.forClass(Observation.Event.class);
+@@ -103,7 +103,6 @@
+ 
+ 	@Test
+ 	void securityContextChangedWhenClearedEventThenAddsClearedEventToObservation() {
+-		Observation observation = mock(Observation.class);
+ 		given(this.observationRegistry.getCurrentObservation()).willReturn(observation);
+ 		this.tested.securityContextChanged(new SecurityContextChangedEvent(this.one, new SecurityContextImpl()));
+ 		ArgumentCaptor<Observation.Event> event = ArgumentCaptor.forClass(Observation.Event.class);
+@@ -114,7 +113,6 @@
+ 
+ 	@Test
+ 	void securityContextChangedWhenBothNullThenNoNullPointerException() {
+-		Observation observation = mock(Observation.class);
+ 		given(this.observationRegistry.getCurrentObservation()).willReturn(observation);
+ 		this.tested.securityContextChanged(
+ 				new SecurityContextChangedEvent(new SecurityContextImpl(), new SecurityContextImpl()));
