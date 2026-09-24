@@ -1,0 +1,73 @@
+--- a/processing/src/test/java/org/apache/druid/query/filter/InDimFilterTest.java
++++ b/processing/src/test/java/org/apache/druid/query/filter/InDimFilterTest.java
+@@ -776,7 +776,7 @@
+     final Filter inFilter = new InDimFilter("dim0", ImmutableSet.of("v1", "v2")).toFilter();
+ 
+     final ColumnIndexSelector indexSelector = Mockito.mock(ColumnIndexSelector.class);
+-    final ColumnIndexSupplier indexSupplier = Mockito.mock(ColumnIndexSupplier.class);
++    final ColumnIndexSupplier indexSupplier = MockColumnIndexSupplier.createColumnIndexSupplier(valueIndex);
+     final StringValueSetIndexes valueIndex = Mockito.mock(StringValueSetIndexes.class);
+     final BitmapColumnIndex bitmapColumnIndex = Mockito.mock(BitmapColumnIndex.class);
+ 
+@@ -785,10 +785,24 @@
+ 
+     Mockito.when(indexSelector.getIndexSupplier("dim0")).thenReturn(indexSupplier);
+     Mockito.when(indexSupplier.as(Utf8ValueSetIndexes.class)).thenReturn(null); // Will check for UTF-8 first.
+-    Mockito.when(indexSupplier.as(StringValueSetIndexes.class)).thenReturn(valueIndex);
+     Mockito.when(valueIndex.forSortedValues(expectedValuesSet)).thenReturn(bitmapColumnIndex);
+ 
+     final BitmapColumnIndex retVal = inFilter.getBitmapColumnIndex(indexSelector);
+     Assert.assertSame("inFilter returns the intended bitmapColumnIndex", bitmapColumnIndex, retVal);
+   }
++
++    public final class MockColumnIndexSupplier {
++        private MockColumnIndexSupplier() {
++            // Utility class.
++        }
++
++        public static org.apache.druid.segment.column.ColumnIndexSupplier createColumnIndexSupplier(
++                org.apache.druid.segment.index.semantic.StringValueSetIndexes valueIndex) {
++            final org.apache.druid.segment.column.ColumnIndexSupplier indexSupplier =
++                    Mockito.mock(org.apache.druid.segment.column.ColumnIndexSupplier.class);
++            Mockito.when(indexSupplier.as(org.apache.druid.segment.index.semantic.StringValueSetIndexes.class))
++                    .thenReturn(valueIndex);
++            return indexSupplier;
++        }
++    }
+ }
+--- a/processing/src/test/java/org/apache/druid/query/filter/LikeDimFilterTest.java
++++ b/processing/src/test/java/org/apache/druid/query/filter/LikeDimFilterTest.java
+@@ -135,12 +135,11 @@
+     final Filter likeFilter = new LikeDimFilter("dim0", "f", null, null, null).toFilter();
+ 
+     final ColumnIndexSelector indexSelector = Mockito.mock(ColumnIndexSelector.class);
+-    final ColumnIndexSupplier indexSupplier = Mockito.mock(ColumnIndexSupplier.class);
++    final ColumnIndexSupplier indexSupplier = MockColumnIndexSupplier.createColumnIndexSupplier(valueIndex);
+     final StringValueSetIndexes valueIndex = Mockito.mock(StringValueSetIndexes.class);
+     final BitmapColumnIndex bitmapColumnIndex = Mockito.mock(BitmapColumnIndex.class);
+ 
+     Mockito.when(indexSelector.getIndexSupplier("dim0")).thenReturn(indexSupplier);
+-    Mockito.when(indexSupplier.as(StringValueSetIndexes.class)).thenReturn(valueIndex);
+     Mockito.when(valueIndex.forValue("f")).thenReturn(bitmapColumnIndex);
+ 
+     final BitmapColumnIndex retVal = likeFilter.getBitmapColumnIndex(indexSelector);
+@@ -333,4 +332,19 @@
+     LikeDimFilter.LikeMatcher matcher = LikeDimFilter.LikeMatcher.from(pattern, '\\');
+     Assert.assertEquals(matcher + " matches " + value, expected, matcher.matches(value));
+   }
++
++    public final class MockColumnIndexSupplier {
++        private MockColumnIndexSupplier() {
++            // Utility class.
++        }
++
++        public static org.apache.druid.segment.column.ColumnIndexSupplier createColumnIndexSupplier(
++                org.apache.druid.segment.index.semantic.StringValueSetIndexes valueIndex) {
++            final org.apache.druid.segment.column.ColumnIndexSupplier indexSupplier =
++                    Mockito.mock(org.apache.druid.segment.column.ColumnIndexSupplier.class);
++            Mockito.when(indexSupplier.as(org.apache.druid.segment.index.semantic.StringValueSetIndexes.class))
++                    .thenReturn(valueIndex);
++            return indexSupplier;
++        }
++    }
+ }

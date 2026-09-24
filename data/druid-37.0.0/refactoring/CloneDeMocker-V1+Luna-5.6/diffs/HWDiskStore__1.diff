@@ -1,0 +1,51 @@
+--- a/processing/src/test/java/org/apache/druid/java/util/metrics/OshiSysMonitorTest.java
++++ b/processing/src/test/java/org/apache/druid/java/util/metrics/OshiSysMonitorTest.java
+@@ -262,22 +262,8 @@
+   public void testDiskStats()
+   {
+     StubServiceEmitter emitter = new StubServiceEmitter("dev/monitor-test", "localhost:0000");
+-    HWDiskStore disk1 = Mockito.mock(HWDiskStore.class);
+-    HWDiskStore disk2 = Mockito.mock(HWDiskStore.class);
+-    Mockito.when(disk1.getReadBytes()).thenReturn(300L);
+-    Mockito.when(disk1.getReads()).thenReturn(200L);
+-    Mockito.when(disk1.getWriteBytes()).thenReturn(400L);
+-    Mockito.when(disk1.getWrites()).thenReturn(500L);
+-    Mockito.when(disk1.getCurrentQueueLength()).thenReturn(100L);
+-    Mockito.when(disk1.getTransferTime()).thenReturn(150L);
+-    Mockito.when(disk1.getName()).thenReturn("disk1");
+-    Mockito.when(disk2.getReadBytes()).thenReturn(2000L);
+-    Mockito.when(disk2.getReads()).thenReturn(3000L);
+-    Mockito.when(disk2.getWriteBytes()).thenReturn(1000L);
+-    Mockito.when(disk2.getWrites()).thenReturn(4000L);
+-    Mockito.when(disk2.getCurrentQueueLength()).thenReturn(750L);
+-    Mockito.when(disk2.getTransferTime()).thenReturn(800L);
+-    Mockito.when(disk2.getName()).thenReturn("disk2");
++    HWDiskStore disk1 = createMockHWDiskStore("disk1", 100L, 300L, 200L, 150L, 400L, 500L);
++    HWDiskStore disk2 = createMockHWDiskStore("disk2", 750L, 2000L, 3000L, 800L, 1000L, 4000L);
+     List<HWDiskStore> hwDiskStores = ImmutableList.of(disk1, disk2);
+     Mockito.when(hal.getDiskStores()).thenReturn(hwDiskStores);
+ 
+@@ -649,4 +635,23 @@
+   {
+     return new OshiSysMonitor(new OshiSysMonitorConfig(categories), si);
+   }
++
++    private static HWDiskStore createMockHWDiskStore(
++            String name,
++            long currentQueueLength,
++            long readBytes,
++            long reads,
++            long transferTime,
++            long writeBytes,
++            long writes) {
++        HWDiskStore disk = Mockito.mock(HWDiskStore.class);
++        Mockito.when(disk.getCurrentQueueLength()).thenReturn(currentQueueLength);
++        Mockito.when(disk.getName()).thenReturn(name);
++        Mockito.when(disk.getReadBytes()).thenReturn(readBytes);
++        Mockito.when(disk.getReads()).thenReturn(reads);
++        Mockito.when(disk.getTransferTime()).thenReturn(transferTime);
++        Mockito.when(disk.getWriteBytes()).thenReturn(writeBytes);
++        Mockito.when(disk.getWrites()).thenReturn(writes);
++        return disk;
++    }
+ }

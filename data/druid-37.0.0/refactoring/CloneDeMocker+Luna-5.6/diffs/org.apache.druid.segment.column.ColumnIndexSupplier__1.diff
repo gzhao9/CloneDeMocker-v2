@@ -1,0 +1,54 @@
+--- a/processing/src/test/java/org/apache/druid/query/filter/InDimFilterTest.java
++++ b/processing/src/test/java/org/apache/druid/query/filter/InDimFilterTest.java
+@@ -776,16 +776,15 @@
+     final Filter inFilter = new InDimFilter("dim0", ImmutableSet.of("v1", "v2")).toFilter();
+ 
+     final ColumnIndexSelector indexSelector = Mockito.mock(ColumnIndexSelector.class);
+-    final ColumnIndexSupplier indexSupplier = Mockito.mock(ColumnIndexSupplier.class);
+     final StringValueSetIndexes valueIndex = Mockito.mock(StringValueSetIndexes.class);
+     final BitmapColumnIndex bitmapColumnIndex = Mockito.mock(BitmapColumnIndex.class);
+ 
+     final InDimFilter.ValuesSet expectedValuesSet = new InDimFilter.ValuesSet();
+     expectedValuesSet.addAll(Arrays.asList("v1", "v2"));
+ 
++    final ColumnIndexSupplier indexSupplier = createMockColumnIndexSupplier(valueIndex);
+     Mockito.when(indexSelector.getIndexSupplier("dim0")).thenReturn(indexSupplier);
+     Mockito.when(indexSupplier.as(Utf8ValueSetIndexes.class)).thenReturn(null); // Will check for UTF-8 first.
+-    Mockito.when(indexSupplier.as(StringValueSetIndexes.class)).thenReturn(valueIndex);
+     Mockito.when(valueIndex.forSortedValues(expectedValuesSet)).thenReturn(bitmapColumnIndex);
+ 
+     final BitmapColumnIndex retVal = inFilter.getBitmapColumnIndex(indexSelector);
+--- a/processing/src/test/java/org/apache/druid/query/filter/LikeDimFilterTest.java
++++ b/processing/src/test/java/org/apache/druid/query/filter/LikeDimFilterTest.java
+@@ -135,12 +135,11 @@
+     final Filter likeFilter = new LikeDimFilter("dim0", "f", null, null, null).toFilter();
+ 
+     final ColumnIndexSelector indexSelector = Mockito.mock(ColumnIndexSelector.class);
+-    final ColumnIndexSupplier indexSupplier = Mockito.mock(ColumnIndexSupplier.class);
+     final StringValueSetIndexes valueIndex = Mockito.mock(StringValueSetIndexes.class);
+     final BitmapColumnIndex bitmapColumnIndex = Mockito.mock(BitmapColumnIndex.class);
+ 
+     Mockito.when(indexSelector.getIndexSupplier("dim0")).thenReturn(indexSupplier);
+-    Mockito.when(indexSupplier.as(StringValueSetIndexes.class)).thenReturn(valueIndex);
++    final ColumnIndexSupplier indexSupplier = createMockColumnIndexSupplier(valueIndex);
+     Mockito.when(valueIndex.forValue("f")).thenReturn(bitmapColumnIndex);
+ 
+     final BitmapColumnIndex retVal = likeFilter.getBitmapColumnIndex(indexSelector);
+--- a/processing/src/test/java/org/apache/druid/query/filter/MockColumnIndexSupplier.java
++++ b/processing/src/test/java/org/apache/druid/query/filter/MockColumnIndexSupplier.java
+@@ -0,0 +1,15 @@
++package org.apache.druid.query.filter;
++
++import org.apache.druid.segment.column.ColumnIndexSupplier;
++import org.apache.druid.segment.index.semantic.StringValueSetIndexes;
++import org.mockito.Mockito;
++
++public class MockColumnIndexSupplier
++{
++  public static ColumnIndexSupplier createMockColumnIndexSupplier(StringValueSetIndexes valueIndex)
++  {
++    final ColumnIndexSupplier indexSupplier = Mockito.mock(ColumnIndexSupplier.class);
++    Mockito.when(indexSupplier.as(StringValueSetIndexes.class)).thenReturn(valueIndex);
++    return indexSupplier;
++  }
++}
