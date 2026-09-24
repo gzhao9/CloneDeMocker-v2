@@ -52,6 +52,7 @@ def load_env() -> None:
 
 EXPECTED_MODEL = "gpt-5.6-terra"
 models: dict[str, str | None] = {}
+fromcache: dict[str, str] = {}
 
 
 def collect() -> dict[str, list[dict]]:
@@ -66,6 +67,26 @@ def collect() -> dict[str, list[dict]]:
         pid = proposal.get("proposalId") or Path(path).parent.name
         models[pid] = proposal.get("model")
         calls, seen = [], set()
+        source = proposal
+        cache = proposal.get("cache") or {}
+        if cache.get("hit") and cache.get("key"):
+            # A cache replay made no calls of its own; its answer came from the run that first
+            # produced it. That run's calls are stored in the cache entry, so time those.
+            original = None
+            for folder in sorted((REPO / ".clonedemocker").glob("proposal-cache*")):
+                entry = folder / f"{cache['key']}.json"
+                if entry.is_file():
+                    try:
+                        original = json.loads(entry.read_text(encoding="utf-8")).get("response") or {}
+                    except (OSError, json.JSONDecodeError):
+                        original = None
+                    break
+            if not original:
+                continue
+            source = original
+            models[pid] = original.get("model") or models[pid]
+            fromcache[pid] = cache["key"]
+        proposal = source
         for step in proposal.get("stageLog") or []:
             rid = step.get("responseId")
             if rid and rid.startswith("resp_") and rid not in seen:
@@ -154,6 +175,7 @@ def main() -> None:
         excluded = models.get(pid) != EXPECTED_MODEL
         complete = not missing and not excluded
         result[pid] = {"model": models.get(pid), "excluded": excluded, "calls": out,
+                       "fromCacheKey": fromcache.get(pid),
                        "phaseSeconds": round(phase, 2) if complete else None,
                        "repairSeconds": round(repair, 2) if complete else None,
                        "missing": missing}
