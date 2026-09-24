@@ -1,0 +1,106 @@
+--- a/server/src/test/java/org/apache/cloudstack/schedule/vm/VMScheduleWorkerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/schedule/vm/VMScheduleWorkerTest.java
+@@ -171,12 +171,8 @@
+         Date expectedScheduledTime = DateUtils.round(DateUtils.addMinutes(startDate, 1), Calendar.MINUTE);
+         UserVm vm = Mockito.mock(UserVm.class);
+ 
+-        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
+-        Mockito.when(schedule.getEnabled()).thenReturn(true);
+-        Mockito.when(schedule.getSchedule()).thenReturn("* * * * *");
+-        Mockito.when(schedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("UTC").toZoneId());
++        ResourceScheduleVO schedule = createMockResourceSchedule("* * * * *", TimeZone.getTimeZone("UTC").toZoneId());
+         Mockito.when(schedule.getStartDate()).thenReturn(startDate);
+-        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+         Mockito.when(schedule.getActionName()).thenReturn(VMScheduleAction.START.name());
+         Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
+         Mockito.when(resourceScheduledJobDao.persist(Mockito.any())).thenThrow(EntityExistsException.class);
+@@ -192,12 +188,8 @@
+         Date expectedScheduledTime = DateUtils.round(DateUtils.addMinutes(startDate, 1), Calendar.MINUTE);
+         UserVm vm = Mockito.mock(UserVm.class);
+ 
+-        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
+-        Mockito.when(schedule.getEnabled()).thenReturn(true);
+-        Mockito.when(schedule.getSchedule()).thenReturn("* * * * *");
+-        Mockito.when(schedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("UTC").toZoneId());
++        ResourceScheduleVO schedule = createMockResourceSchedule("* * * * *", TimeZone.getTimeZone("UTC").toZoneId());
+         Mockito.when(schedule.getStartDate()).thenReturn(startDate);
+-        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+         Mockito.when(schedule.getActionName()).thenReturn(VMScheduleAction.START.name());
+         Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
+         Date actualScheduledTime = vmScheduleWorker.scheduleNextJob(schedule, new Date());
+@@ -212,12 +204,8 @@
+         Date startDate = DateUtils.addDays(now, 1);
+         UserVm vm = Mockito.mock(UserVm.class);
+ 
+-        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
+-        Mockito.when(schedule.getEnabled()).thenReturn(true);
+-        Mockito.when(schedule.getSchedule()).thenReturn(cron);
+-        Mockito.when(schedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("EST").toZoneId());
++        ResourceScheduleVO schedule = createMockResourceSchedule(cron, TimeZone.getTimeZone("EST").toZoneId());
+         Mockito.when(schedule.getStartDate()).thenReturn(startDate);
+-        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+         Mockito.when(schedule.getActionName()).thenReturn(VMScheduleAction.START.name());
+         Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
+ 
+@@ -257,12 +245,8 @@
+         Date now = DateUtils.setSeconds(new Date(), 0);
+         UserVm vm = Mockito.mock(UserVm.class);
+ 
+-        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
+-        Mockito.when(schedule.getEnabled()).thenReturn(true);
+-        Mockito.when(schedule.getSchedule()).thenReturn(cron);
+-        Mockito.when(schedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("EST").toZoneId());
++        ResourceScheduleVO schedule = createMockResourceSchedule(cron, TimeZone.getTimeZone("EST").toZoneId());
+         Mockito.when(schedule.getStartDate()).thenReturn(DateUtils.addDays(now, -1));
+-        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+         Mockito.when(schedule.getActionName()).thenReturn(VMScheduleAction.START.name());
+         Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(vm);
+ 
+@@ -280,13 +264,9 @@
+     @Test
+     public void testScheduleNextJobScheduleExpired() {
+         Date now = DateUtils.setSeconds(new Date(), 0);
+-        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
+-        Mockito.when(schedule.getEnabled()).thenReturn(true);
+-        Mockito.when(schedule.getSchedule()).thenReturn("* * * * *");
+-        Mockito.when(schedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("UTC").toZoneId());
++        ResourceScheduleVO schedule = createMockResourceSchedule("* * * * *", TimeZone.getTimeZone("UTC").toZoneId());
+         Mockito.when(schedule.getStartDate()).thenReturn(DateUtils.addDays(now, -1));
+         Mockito.when(schedule.getEndDate()).thenReturn(DateUtils.addMinutes(now, -5));
+-        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+         Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(Mockito.mock(UserVm.class));
+         Date actualDate = vmScheduleWorker.scheduleNextJob(schedule, new Date());
+         Assert.assertNull(actualDate);
+@@ -295,17 +275,13 @@
+     @Test
+     public void testScheduleNextJobNextOccurrenceAfterEndDate() {
+         Date now = DateUtils.setSeconds(new Date(), 0);
+-        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
+-        Mockito.when(schedule.getEnabled()).thenReturn(true);
+-        Mockito.when(schedule.getSchedule()).thenReturn("* * * * *");
+-        Mockito.when(schedule.getTimeZoneId()).thenReturn(TimeZone.getTimeZone("UTC").toZoneId());
++        ResourceScheduleVO schedule = createMockResourceSchedule("* * * * *", TimeZone.getTimeZone("UTC").toZoneId());
+         // endDate is in the future (now < endDate), but the first occurrence (>= startDate)
+         // falls after endDate, so no further jobs can ever be scheduled. The schedule's
+         // declared lifetime hasn't ended yet though, so it must remain enabled until
+         // endDate actually passes (handled separately by the "end time has passed" branch).
+         Mockito.when(schedule.getStartDate()).thenReturn(DateUtils.addDays(now, 10));
+         Mockito.when(schedule.getEndDate()).thenReturn(DateUtils.addDays(now, 5));
+-        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+         Mockito.when(userVmManager.getUserVm(Mockito.anyLong())).thenReturn(Mockito.mock(UserVm.class));
+ 
+         Date actualDate = vmScheduleWorker.scheduleNextJob(schedule, new Date());
+@@ -395,4 +371,13 @@
+     public void parseActionThrowsOnUnknown() {
+         vmScheduleWorker.parseAction("BOGUS");
+     }
++
++    private static ResourceScheduleVO createMockResourceSchedule(String scheduleReturn, java.time.ZoneId timeZoneId) {
++        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
++        Mockito.when(schedule.getEnabled()).thenReturn(true);
++        Mockito.when(schedule.getResourceId()).thenReturn(1L);
++        Mockito.when(schedule.getSchedule()).thenReturn(scheduleReturn);
++        Mockito.when(schedule.getTimeZoneId()).thenReturn(timeZoneId);
++        return schedule;
++    }
+ }

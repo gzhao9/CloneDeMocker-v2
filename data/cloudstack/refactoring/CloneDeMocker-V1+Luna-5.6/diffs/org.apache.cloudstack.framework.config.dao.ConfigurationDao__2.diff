@@ -1,0 +1,69 @@
+--- a/framework/config/src/test/java/org/apache/cloudstack/framework/config/impl/ConfigDepotAdminTest.java
++++ b/framework/config/src/test/java/org/apache/cloudstack/framework/config/impl/ConfigDepotAdminTest.java
+@@ -112,7 +112,7 @@
+ 
+         when(_configurable.getConfigComponentName()).thenReturn("UnitTestComponent");
+         when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK, TestCK});
+-        when(_configDao.findById(StaticIntCK.key())).thenReturn(null);
++        _configDao = MockConfigurationDao.createMockConfigurationDao(StaticIntCK.key(), null);
+         when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
+         when(_configDao.findById(TestCK.key())).thenReturn(testCV);
+         when(_configDao.persist(any(ConfigurationVO.class))).thenReturn(dynamicIntCV);
+@@ -164,4 +164,18 @@
+         Assert.assertEquals(5L, configGroupAndSubGroup.first().longValue());
+         Assert.assertEquals(1L, configGroupAndSubGroup.second().longValue());
+     }
++
++    public final class MockConfigurationDao {
++        private MockConfigurationDao() {
++        }
++
++        public static org.apache.cloudstack.framework.config.dao.ConfigurationDao createMockConfigurationDao(
++                String key,
++                org.apache.cloudstack.framework.config.impl.ConfigurationVO configurationVO) {
++            org.apache.cloudstack.framework.config.dao.ConfigurationDao configurationDao =
++                    Mockito.mock(org.apache.cloudstack.framework.config.dao.ConfigurationDao.class);
++            when(configurationDao.findById(key)).thenReturn(configurationVO);
++            return configurationDao;
++        }
++    }
+ }
+--- a/framework/config/src/test/java/org/apache/cloudstack/framework/config/impl/ConfigDepotImplTest.java
++++ b/framework/config/src/test/java/org/apache/cloudstack/framework/config/impl/ConfigDepotImplTest.java
+@@ -104,7 +104,7 @@
+     private void runTestGetConfigStringValue(String key, String value) {
+         ConfigurationVO configurationVO = Mockito.mock(ConfigurationVO.class);
+         Mockito.when(configurationVO.getValue()).thenReturn(value);
+-        Mockito.when(_configDao.findById(key)).thenReturn(configurationVO);
++        _configDao = MockConfigurationDao.createMockConfigurationDao(key, configurationVO);
+         String result = configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Global, null);
+         Assert.assertEquals(value, result);
+     }
+@@ -193,7 +193,7 @@
+         ConfigurationVO configurationVO = new ConfigurationVO(StorageDisableThreshold.category(), "DEFAULT", "component",
+                 StorageDisableThreshold.key(), StorageDisableThreshold.defaultValue(), StorageDisableThreshold.description(),
+                 StorageDisableThreshold.displayText(), StorageDisableThreshold.parent(), 1L, 10L);
+-        Mockito.when(_configDao.findById("pool.storage.capacity.disablethreshold")).thenReturn(configurationVO);
++        _configDao = MockConfigurationDao.createMockConfigurationDao("pool.storage.capacity.disablethreshold", configurationVO);
+         configDepotImpl.populateConfigurations();
+ 
+         Mockito.verify(_configDao, Mockito.times(1)).persist(configurationVO);
+@@ -217,4 +217,18 @@
+         Assert.assertEquals(parentScope, result.first());
+         Assert.assertEquals(parentId, result.second());
+     }
++
++    public final class MockConfigurationDao {
++        private MockConfigurationDao() {
++        }
++
++        public static org.apache.cloudstack.framework.config.dao.ConfigurationDao createMockConfigurationDao(
++                String key,
++                org.apache.cloudstack.framework.config.impl.ConfigurationVO configurationVO) {
++            org.apache.cloudstack.framework.config.dao.ConfigurationDao configurationDao =
++                    Mockito.mock(org.apache.cloudstack.framework.config.dao.ConfigurationDao.class);
++            when(configurationDao.findById(key)).thenReturn(configurationVO);
++            return configurationDao;
++        }
++    }
+ }

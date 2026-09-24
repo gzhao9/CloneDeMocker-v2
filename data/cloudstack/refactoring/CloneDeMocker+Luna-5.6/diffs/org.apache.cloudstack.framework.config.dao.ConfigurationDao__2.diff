@@ -1,0 +1,60 @@
+--- a/framework/config/src/test/java/org/apache/cloudstack/framework/config/impl/ConfigDepotAdminTest.java
++++ b/framework/config/src/test/java/org/apache/cloudstack/framework/config/impl/ConfigDepotAdminTest.java
+@@ -109,12 +109,14 @@
+         ConfigurationVO testCV = new ConfigurationVO("UnitTestComponent", TestCK);
+         ConfigurationGroupVO groupVO = new ConfigurationGroupVO();
+         ConfigurationSubGroupVO subGroupVO = new ConfigurationSubGroupVO();
++        java.util.Map<String, ConfigurationVO> configurationsByKey = new java.util.HashMap<>();
++        configurationsByKey.put(StaticIntCK.key(), null);
++        configurationsByKey.put(DynamicIntCK.key(), dynamicIntCV);
++        configurationsByKey.put(TestCK.key(), testCV);
+ 
++        MockConfigurationDao.configureMockConfigurationDao(_configDao, configurationsByKey);
+         when(_configurable.getConfigComponentName()).thenReturn("UnitTestComponent");
+         when(_configurable.getConfigKeys()).thenReturn(new ConfigKey<?>[] {DynamicIntCK, StaticIntCK, TestCK});
+-        when(_configDao.findById(StaticIntCK.key())).thenReturn(null);
+-        when(_configDao.findById(DynamicIntCK.key())).thenReturn(dynamicIntCV);
+-        when(_configDao.findById(TestCK.key())).thenReturn(testCV);
+         when(_configDao.persist(any(ConfigurationVO.class))).thenReturn(dynamicIntCV);
+         when(_configGroupDao.persist(any(ConfigurationGroupVO.class))).thenReturn(groupVO);
+         when(_configSubGroupDao.persist(any(ConfigurationSubGroupVO.class))).thenReturn(subGroupVO);
+--- a/framework/config/src/test/java/org/apache/cloudstack/framework/config/impl/ConfigDepotImplTest.java
++++ b/framework/config/src/test/java/org/apache/cloudstack/framework/config/impl/ConfigDepotImplTest.java
+@@ -104,7 +104,7 @@
+     private void runTestGetConfigStringValue(String key, String value) {
+         ConfigurationVO configurationVO = Mockito.mock(ConfigurationVO.class);
+         Mockito.when(configurationVO.getValue()).thenReturn(value);
+-        Mockito.when(_configDao.findById(key)).thenReturn(configurationVO);
++        MockConfigurationDao.configureMockConfigurationDao(_configDao, java.util.Map.of(key, configurationVO));
+         String result = configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Global, null);
+         Assert.assertEquals(value, result);
+     }
+@@ -193,7 +193,7 @@
+         ConfigurationVO configurationVO = new ConfigurationVO(StorageDisableThreshold.category(), "DEFAULT", "component",
+                 StorageDisableThreshold.key(), StorageDisableThreshold.defaultValue(), StorageDisableThreshold.description(),
+                 StorageDisableThreshold.displayText(), StorageDisableThreshold.parent(), 1L, 10L);
+-        Mockito.when(_configDao.findById("pool.storage.capacity.disablethreshold")).thenReturn(configurationVO);
++        MockConfigurationDao.configureMockConfigurationDao(_configDao, java.util.Map.of("pool.storage.capacity.disablethreshold", configurationVO));
+         configDepotImpl.populateConfigurations();
+ 
+         Mockito.verify(_configDao, Mockito.times(1)).persist(configurationVO);
+--- a/framework/config/src/test/java/org/apache/cloudstack/framework/config/impl/MockConfigurationDao.java
++++ b/framework/config/src/test/java/org/apache/cloudstack/framework/config/impl/MockConfigurationDao.java
+@@ -0,0 +1,17 @@
++package org.apache.cloudstack.framework.config.impl;
++
++import java.util.Map;
++
++import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
++import org.apache.cloudstack.framework.config.dao.ConfigurationVO;
++import org.mockito.Mockito;
++
++public final class MockConfigurationDao {
++    private MockConfigurationDao() {
++    }
++
++    public static void configureMockConfigurationDao(ConfigurationDao configDao, Map<String, ConfigurationVO> configurationsByKey) {
++        configurationsByKey.forEach((key, configuration) ->
++                Mockito.when(configDao.findById(key)).thenReturn(configuration));
++    }
++}

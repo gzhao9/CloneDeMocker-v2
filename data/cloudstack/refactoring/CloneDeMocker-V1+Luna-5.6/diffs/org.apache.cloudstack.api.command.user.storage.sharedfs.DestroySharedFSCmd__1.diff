@@ -1,0 +1,38 @@
+--- a/server/src/test/java/org/apache/cloudstack/storage/sharedfs/SharedFSServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/storage/sharedfs/SharedFSServiceImplTest.java
+@@ -506,10 +506,8 @@
+ 
+     @Test
+     public void testDestroySharedFS() throws NoTransitionException {
+-        DestroySharedFSCmd cmd = mock(DestroySharedFSCmd.class);
+-        when(cmd.getId()).thenReturn(s_sharedFSId);
+-        when(cmd.isExpunge()).thenReturn(false);
+-
++
++        DestroySharedFSCmd cmd = createDestroySharedFSCmd();
+         SharedFSVO sharedFS = getMockSharedFS();
+         when(sharedFSDao.findById(s_sharedFSId)).thenReturn(sharedFS);
+         ReflectionTestUtils.setField(sharedFS, "state", SharedFS.State.Stopped);
+@@ -521,9 +519,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testDestroySharedFSInvalidState() {
+-        DestroySharedFSCmd cmd = mock(DestroySharedFSCmd.class);
+-        when(cmd.getId()).thenReturn(s_sharedFSId);
+-        when(cmd.isExpunge()).thenReturn(false);
++        DestroySharedFSCmd cmd = createDestroySharedFSCmd();
+         when(cmd.isForced()).thenReturn(false);
+ 
+         SharedFSVO sharedFS = getMockSharedFS();
+@@ -662,4 +658,11 @@
+             verify(_stateMachine, times(1)).transitTo(sharedFS, SharedFS.Event.OperationFailed, null, sharedFSDao);
+         }
+     }
++
++    private static DestroySharedFSCmd createDestroySharedFSCmd() {
++        DestroySharedFSCmd cmd = mock(DestroySharedFSCmd.class);
++        when(cmd.getId()).thenReturn(s_sharedFSId);
++        when(cmd.isExpunge()).thenReturn(false);
++        return cmd;
++    }
+ }

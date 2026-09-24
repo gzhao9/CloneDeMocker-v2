@@ -1,0 +1,42 @@
+--- a/plugins/ca/root-ca/src/test/java/org/apache/cloudstack/ca/provider/RootCAProviderTest.java
++++ b/plugins/ca/root-ca/src/test/java/org/apache/cloudstack/ca/provider/RootCAProviderTest.java
+@@ -221,12 +221,11 @@
+     public void testIsManagementCertificateNoMatch() throws Exception {
+         addField(provider, "managementCertificateCustomSAN", "cloudstack");
+         try {
+-            X509Certificate certificate = Mockito.mock(X509Certificate.class);
+             List<List<?>> altNames = new ArrayList<>();
+             altNames.add(List.of(GeneralName.dNSName, UUID.randomUUID().toString()));
+             altNames.add(List.of(GeneralName.dNSName, UUID.randomUUID().toString()));
+             Collection<List<?>> collection = new ArrayList<>(altNames);
+-            Mockito.when(certificate.getSubjectAlternativeNames()).thenReturn(collection);
++            X509Certificate certificate = createMockX509Certificate(collection);
+             Assert.assertFalse(provider.isManagementCertificate(certificate));
+         } catch (CertificateParsingException e) {
+             Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+@@ -238,12 +237,11 @@
+         String customSAN = "cloudstack";
+         addField(provider, "managementCertificateCustomSAN", customSAN);
+         try {
+-            X509Certificate certificate = Mockito.mock(X509Certificate.class);
+             List<List<?>> altNames = new ArrayList<>();
+             altNames.add(List.of(GeneralName.dNSName, customSAN));
+             altNames.add(List.of(GeneralName.dNSName, UUID.randomUUID().toString()));
+             Collection<List<?>> collection = new ArrayList<>(altNames);
+-            Mockito.when(certificate.getSubjectAlternativeNames()).thenReturn(collection);
++            X509Certificate certificate = createMockX509Certificate(collection);
+             Assert.assertTrue(provider.isManagementCertificate(certificate));
+         } catch (CertificateParsingException e) {
+             Assert.fail(String.format("Exception occurred: %s", e.getMessage()));
+@@ -303,4 +301,11 @@
+             Assert.assertTrue(e.getMessage().contains("is not a valid PEM certificate"));
+         }
+     }
++
++    private static X509Certificate createMockX509Certificate(Collection<List<?>> collection) {
++        X509Certificate certificate = Mockito.mock(X509Certificate.class);
++        Mockito.when(certificate.getSubjectAlternativeNames())
++                .thenReturn((Collection<List<?>>) collection);
++        return certificate;
++    }
+ }
