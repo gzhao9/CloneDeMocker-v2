@@ -1,0 +1,69 @@
+--- a/web/src/test/java/org/springframework/security/web/authentication/rememberme/RememberMeAuthenticationFilterTests.java
++++ b/web/src/test/java/org/springframework/security/web/authentication/rememberme/RememberMeAuthenticationFilterTests.java
+@@ -16,6 +16,7 @@
+ 
+ package org.springframework.security.web.authentication.rememberme;
+ 
++import org.mockito.Mock;
+ import jakarta.servlet.FilterChain;
+ import jakarta.servlet.http.HttpServletRequest;
+ import jakarta.servlet.http.HttpServletResponse;
+@@ -53,6 +54,8 @@
+  * @author Ben Alex
+  */
+ public class RememberMeAuthenticationFilterTests {
++	@Mock
++	private FilterChain fc;
+ 
+ 	Authentication remembered = new TestingAuthenticationToken("remembered", "password", "ROLE_REMEMBERED");
+ 
+@@ -89,7 +92,7 @@
+ 		filter.afterPropertiesSet();
+ 		// Test
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+-		FilterChain fc = mock(FilterChain.class);
++		// removed local mock; replaced with global field `fc`
+ 		request.setRequestURI("x");
+ 		filter.doFilter(request, new MockHttpServletResponse(), fc);
+ 		// Ensure filter didn't change our original object
+@@ -105,7 +108,6 @@
+ 				new MockRememberMeServices(this.remembered));
+ 		filter.afterPropertiesSet();
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+-		FilterChain fc = mock(FilterChain.class);
+ 		request.setRequestURI("x");
+ 		filter.doFilter(request, new MockHttpServletResponse(), fc);
+ 		// Ensure filter setup with our remembered authentication object
+@@ -130,7 +132,6 @@
+ 		filter.setApplicationEventPublisher(mock(ApplicationEventPublisher.class));
+ 		filter.afterPropertiesSet();
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+-		FilterChain fc = mock(FilterChain.class);
+ 		request.setRequestURI("x");
+ 		filter.doFilter(request, new MockHttpServletResponse(), fc);
+ 		assertThat(SecurityContextHolder.getContext().getAuthentication()).isSameAs(failedAuth);
+@@ -146,7 +147,6 @@
+ 		filter.setAuthenticationSuccessHandler(new SimpleUrlAuthenticationSuccessHandler("/target"));
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain fc = mock(FilterChain.class);
+ 		request.setRequestURI("x");
+ 		filter.doFilter(request, response, fc);
+ 		assertThat(response.getRedirectedUrl()).isEqualTo("/target");
+@@ -165,7 +165,7 @@
+ 		filter.setSecurityContextRepository(securityContextRepository);
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain fc = mock(FilterChain.class);
++		// removed local mock; replaced with global field `fc`
+ 		request.setRequestURI("x");
+ 		filter.doFilter(request, response, fc);
+ 		verify(securityContextRepository).saveContext(any(), eq(request), eq(response));
+@@ -182,7 +182,6 @@
+ 		filter.setSessionAuthenticationStrategy(sessionAuthenticationStrategy);
+ 		MockHttpServletRequest request = new MockHttpServletRequest();
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain fc = mock(FilterChain.class);
+ 		request.setRequestURI("x");
+ 		filter.doFilter(request, response, fc);
+ 		verify(sessionAuthenticationStrategy).onAuthentication(any(), eq(request), eq(response));

@@ -1,0 +1,105 @@
+--- a/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2TokenIntrospectionEndpointFilterTests.java
++++ b/oauth2/oauth2-authorization-server/src/test/java/org/springframework/security/oauth2/server/authorization/web/OAuth2TokenIntrospectionEndpointFilterTests.java
+@@ -79,6 +79,8 @@
+ 
+ 	private OAuth2TokenIntrospectionEndpointFilter filter;
+ 
++	private FilterChain mockFilterChain;
++
+ 	private final HttpMessageConverter<OAuth2TokenIntrospection> tokenIntrospectionHttpResponseConverter = new OAuth2TokenIntrospectionHttpMessageConverter();
+ 
+ 	private final HttpMessageConverter<OAuth2Error> errorHttpResponseConverter = new OAuth2ErrorHttpMessageConverter();
+@@ -86,6 +88,7 @@
+ 	@BeforeEach
+ 	public void setUp() {
+ 		this.authenticationManager = mock(AuthenticationManager.class);
++		this.mockFilterChain = mock(FilterChain.class);
+ 		this.filter = new OAuth2TokenIntrospectionEndpointFilter(this.authenticationManager);
+ 	}
+ 
+@@ -135,11 +138,10 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest("POST", requestUri);
+ 		request.setServletPath(requestUri);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
++
++		this.filter.doFilter(request, response, mockFilterChain);
++
++		verify(mockFilterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+ 
+ 	@Test
+@@ -148,11 +150,10 @@
+ 		MockHttpServletRequest request = new MockHttpServletRequest("GET", requestUri);
+ 		request.setServletPath(requestUri);
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
+-
+-		verify(filterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
++
++		this.filter.doFilter(request, response, mockFilterChain);
++
++		verify(mockFilterChain).doFilter(any(HttpServletRequest.class), any(HttpServletResponse.class));
+ 	}
+ 
+ 	@Test
+@@ -223,14 +224,13 @@
+ 		request.addParameter("custom-param-2", "custom-value-1", "custom-value-2");
+ 
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, mockFilterChain);
+ 
+ 		ArgumentCaptor<OAuth2TokenIntrospectionAuthenticationToken> tokenIntrospectionAuthentication = ArgumentCaptor
+ 			.forClass(OAuth2TokenIntrospectionAuthenticationToken.class);
+ 
+-		verifyNoInteractions(filterChain);
++		verifyNoInteractions(mockFilterChain);
+ 		verify(this.authenticationManager).authenticate(tokenIntrospectionAuthentication.capture());
+ 
+ 		assertThat(response.getStatus()).isEqualTo(HttpStatus.OK.value());
+@@ -281,9 +281,8 @@
+ 		MockHttpServletRequest request = createTokenIntrospectionRequest(accessToken.getTokenValue(),
+ 				OAuth2TokenType.ACCESS_TOKEN.getValue());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, mockFilterChain);
+ 
+ 		verify(authenticationConverter).convert(any());
+ 	}
+@@ -311,9 +310,8 @@
+ 		MockHttpServletRequest request = createTokenIntrospectionRequest(accessToken.getTokenValue(),
+ 				OAuth2TokenType.ACCESS_TOKEN.getValue());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, mockFilterChain);
+ 
+ 		verify(authenticationSuccessHandler).onAuthenticationSuccess(any(), any(), any());
+ 	}
+@@ -339,9 +337,8 @@
+ 		MockHttpServletRequest request = createTokenIntrospectionRequest(accessToken.getTokenValue(),
+ 				OAuth2TokenType.ACCESS_TOKEN.getValue());
+ 		MockHttpServletResponse response = new MockHttpServletResponse();
+-		FilterChain filterChain = mock(FilterChain.class);
+-
+-		this.filter.doFilter(request, response, filterChain);
++
++		this.filter.doFilter(request, response, mockFilterChain);
+ 
+ 		verify(authenticationFailureHandler).onAuthenticationFailure(any(), any(), any());
+ 	}
