@@ -1,0 +1,37 @@
+--- a/server/src/test/java/com/cloud/capacity/CapacityManagerTest.java
++++ b/server/src/test/java/com/cloud/capacity/CapacityManagerTest.java
+@@ -44,7 +44,7 @@
+     private CapacityVO cvoRam = mock(CapacityVO.class);
+     private VirtualMachine vm = mock(VirtualMachine.class);
+     private ClusterDetailsVO clusterDetailCpu = mock(ClusterDetailsVO.class);
+-    private ClusterDetailsVO clusterDetailRam = mock(ClusterDetailsVO.class);
++    private ClusterDetailsVO clusterDetailRam = createMockClusterDetailRam();
+ 
+     public CapacityManagerImpl setUp() {
+         CapacityManagerImpl capMgr = new CapacityManagerImpl();
+@@ -56,6 +56,7 @@
+ 
+     @Test
+     public void allocateCapacityTest() {
++        clusterDetailRam = createMockClusterDetailRam();
+         capMgr = setUp();
+         when(vm.getHostId()).thenReturn(1l);
+         when(vm.getServiceOfferingId()).thenReturn(2l);
+@@ -70,11 +71,16 @@
+         when(svo.getRamSize()).thenReturn(512);
+         when(cvoCpu.getReservedCapacity()).thenReturn(0l);
+         when(cvoRam.getReservedCapacity()).thenReturn(0l);
+-        when(clusterDetailRam.getValue()).thenReturn("1.5");
+         when(clusterDetailCpu.getValue()).thenReturn("2");
+         when(CDao.update(anyLong(), isA(CapacityVO.class))).thenReturn(true);
+         boolean hasCapacity = capMgr.checkIfHostHasCapacity(host, 500, 1024 * 1024 * 1024, false, 2, 2, false);
+         Assert.assertTrue(hasCapacity);
+ 
+     }
++
++    private static ClusterDetailsVO createMockClusterDetailRam() {
++        ClusterDetailsVO clusterDetailRam = mock(ClusterDetailsVO.class);
++        when(clusterDetailRam.getValue()).thenReturn("1.5");
++        return clusterDetailRam;
++    }
+ }

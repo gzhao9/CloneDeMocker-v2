@@ -1,0 +1,47 @@
+--- a/server/src/test/java/com/cloud/network/vpc/NetworkACLServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/vpc/NetworkACLServiceImplTest.java
+@@ -162,7 +162,7 @@
+ 
+         Mockito.when(aclRuleBeingMovedMock.getAclId()).thenReturn(networkAclMockId);
+ 
+-        Mockito.when(networkAclMock.getVpcId()).thenReturn(networkMockVpcMockId);
++        networkAclMock = createMockNetworkACLVO();
+     }
+ 
+     @After
+@@ -969,7 +969,8 @@
+         Mockito.when(updateNetworkACLListCmdMock.getCustomId()).thenReturn(customId);
+         Mockito.when(updateNetworkACLListCmdMock.getId()).thenReturn(networkAclListId);
+         Mockito.when(updateNetworkACLListCmdMock.getDisplay()).thenReturn(false);
+-        Mockito.when(networkACLVOMock.getVpcId()).thenReturn(networkMockVpcMockId);
++        networkACLVOMock = createMockNetworkACLVO();
++        Mockito.when(networkAclDaoMock.findById(networkAclListId)).thenReturn(networkACLVOMock);
+         Mockito.doReturn(vpcVOMock).when(vpcDaoMock).findById(networkMockVpcMockId);
+         Mockito.doNothing().when(accountManagerMock).checkAccess(Mockito.any(Account.class),
+         Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
+@@ -1167,12 +1168,13 @@
+ 
+     @Test
+     public void updateNetworkACLTestParametersWithNullValues() {
++        networkACLVOMock = createMockNetworkACLVO();
++        Mockito.when(networkAclDaoMock.findById(networkAclListId)).thenReturn(networkACLVOMock);
+         Mockito.when(updateNetworkACLListCmdMock.getName()).thenReturn(null);
+         Mockito.when(updateNetworkACLListCmdMock.getDescription()).thenReturn(null);
+         Mockito.when(updateNetworkACLListCmdMock.getCustomId()).thenReturn(null);
+         Mockito.when(updateNetworkACLListCmdMock.getId()).thenReturn(networkAclListId);
+         Mockito.when(updateNetworkACLListCmdMock.getDisplay()).thenReturn(null);
+-        Mockito.when(networkACLVOMock.getVpcId()).thenReturn(networkMockVpcMockId);
+         Mockito.doReturn(vpcVOMock).when(vpcDaoMock).findById(networkMockVpcMockId);
+         Mockito.doNothing().when(accountManagerMock).checkAccess(Mockito.any(Account.class),
+         Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
+@@ -1506,4 +1508,10 @@
+ 
+         networkAclServiceImpl.validateAclAssociatedToVpc(networkMockVpcMockId, accountMock, SOME_UUID);
+     }
++
++    private static NetworkACLVO createMockNetworkACLVO() {
++        NetworkACLVO networkACLVO = Mockito.mock(NetworkACLVO.class);
++        Mockito.when(networkACLVO.getVpcId()).thenReturn(networkMockVpcMockId);
++        return networkACLVO;
++    }
+ }

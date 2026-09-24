@@ -1,0 +1,112 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
+@@ -116,11 +116,9 @@
+     public void testValidateNvramRevertStateFailsForLegacySnapshotsOnUefiVms() throws Exception {
+         LibvirtRevertDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtRevertDiskOnlyVMSnapshotCommandWrapper();
+         LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
+-        RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
+ 
+         Path activeNvram = Files.createTempFile("active-", ".fd");
+-        when(command.getVmUuid()).thenReturn("vm-uuid");
+-        when(command.getVmName()).thenReturn("vm-name");
++        RevertDiskOnlyVmSnapshotCommand command = createRevertDiskOnlyVmSnapshotCommand();
+         when(command.isUefiEnabled()).thenReturn(true);
+         when(command.getNvramSnapshotPath()).thenReturn(null);
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(activeNvram.toString());
+@@ -132,10 +130,8 @@
+     public void testValidateNvramRevertStateFailsForLegacySnapshotsOnFallbackHostsForUefiVms() throws Exception {
+         LibvirtRevertDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtRevertDiskOnlyVMSnapshotCommandWrapper();
+         LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
+-        RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
+-
+-        when(command.getVmUuid()).thenReturn("vm-uuid");
+-        when(command.getVmName()).thenReturn("vm-name");
++
++        RevertDiskOnlyVmSnapshotCommand command = createRevertDiskOnlyVmSnapshotCommand();
+         when(command.isUefiEnabled()).thenReturn(true);
+         when(command.getNvramSnapshotPath()).thenReturn(null);
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(Path.of("/tmp", UUID.randomUUID() + ".fd").toString());
+@@ -150,7 +146,6 @@
+         LibvirtUtilitiesHelper libvirtUtilitiesHelper = mock(LibvirtUtilitiesHelper.class);
+         KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+-        RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
+         SnapshotObjectTO rootSnapshot = mock(SnapshotObjectTO.class);
+ 
+         Path poolDirectory = Files.createTempDirectory("pool-");
+@@ -158,8 +153,7 @@
+         Files.createDirectories(snapshotNvram.getParent());
+         Files.writeString(snapshotNvram, "snapshot");
+ 
+-        when(command.getVmUuid()).thenReturn("vm-uuid");
+-        when(command.getVmName()).thenReturn("vm-name");
++        RevertDiskOnlyVmSnapshotCommand command = createRevertDiskOnlyVmSnapshotCommand();
+         when(command.isUefiEnabled()).thenReturn(true);
+         when(command.getNvramSnapshotPath()).thenReturn("nvram/42.fd");
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(poolDirectory.resolve("missing").resolve("vm-uuid.fd").toString());
+@@ -177,7 +171,7 @@
+         LibvirtUtilitiesHelper libvirtUtilitiesHelper = mock(LibvirtUtilitiesHelper.class);
+         KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+-        RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
++        RevertDiskOnlyVmSnapshotCommand command = createRevertDiskOnlyVmSnapshotCommand();
+         SnapshotObjectTO rootSnapshot = mock(SnapshotObjectTO.class);
+ 
+         Path activeNvram = Files.createTempFile("active-", ".fd");
+@@ -187,8 +181,6 @@
+         Files.createDirectories(snapshotNvram.getParent());
+         Files.writeString(snapshotNvram, "snapshot");
+ 
+-        when(command.getVmUuid()).thenReturn("vm-uuid");
+-        when(command.getVmName()).thenReturn("vm-name");
+         when(command.getNvramSnapshotPath()).thenReturn("nvram/42.fd");
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(activeNvram.toString());
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+@@ -207,7 +199,7 @@
+         LibvirtUtilitiesHelper libvirtUtilitiesHelper = mock(LibvirtUtilitiesHelper.class);
+         KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+-        RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
++        RevertDiskOnlyVmSnapshotCommand command = createRevertDiskOnlyVmSnapshotCommand();
+         SnapshotObjectTO rootSnapshot = mock(SnapshotObjectTO.class);
+ 
+         Path poolDirectory = Files.createTempDirectory("pool-");
+@@ -216,8 +208,6 @@
+         Files.createDirectories(snapshotNvram.getParent());
+         Files.writeString(snapshotNvram, "snapshot");
+ 
+-        when(command.getVmUuid()).thenReturn("vm-uuid");
+-        when(command.getVmName()).thenReturn("vm-name");
+         when(command.getNvramSnapshotPath()).thenReturn("nvram/42.fd");
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(activeNvram.toString());
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+@@ -242,7 +232,7 @@
+         LibvirtUtilitiesHelper libvirtUtilitiesHelper = mock(LibvirtUtilitiesHelper.class);
+         KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+-        RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
++        RevertDiskOnlyVmSnapshotCommand command = createRevertDiskOnlyVmSnapshotCommand();
+         SnapshotObjectTO rootSnapshot = mock(SnapshotObjectTO.class);
+ 
+         Path activeNvram = Files.createTempFile("active-", ".fd");
+@@ -252,8 +242,6 @@
+         Files.createDirectories(snapshotNvram.getParent());
+         Files.writeString(snapshotNvram, "snapshot");
+ 
+-        when(command.getVmUuid()).thenReturn("vm-uuid");
+-        when(command.getVmName()).thenReturn("vm-name");
+         when(command.getNvramSnapshotPath()).thenReturn("nvram/42.fd");
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(activeNvram.toString());
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+@@ -818,4 +806,11 @@
+ 
+         assertFalse(answer.getResult());
+     }
++
++    private static RevertDiskOnlyVmSnapshotCommand createRevertDiskOnlyVmSnapshotCommand() {
++        RevertDiskOnlyVmSnapshotCommand command = mock(RevertDiskOnlyVmSnapshotCommand.class);
++        when(command.getVmUuid()).thenReturn("vm-uuid");
++        when(command.getVmName()).thenReturn("vm-name");
++        return command;
++    }
+ }

@@ -1,0 +1,110 @@
+--- a/server/src/test/java/org/apache/cloudstack/schedule/ResourceScheduleManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/schedule/ResourceScheduleManagerImplTest.java
+@@ -123,6 +123,15 @@
+         Assert.assertEquals(schedule.getEndDate(), ReflectionTestUtils.getField(response, "endDate"));
+     }
+ 
++    private static ResourceScheduleVO createMockResourceScheduleVO(String actionName, long resourceId,
++            ApiCommandResourceType resourceType) {
++        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
++        Mockito.when(schedule.getActionName()).thenReturn(actionName);
++        Mockito.when(schedule.getResourceId()).thenReturn(resourceId);
++        Mockito.when(schedule.getResourceType()).thenReturn(resourceType);
++        return schedule;
++    }
++
+     @Test
+     public void createSchedule() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+@@ -155,13 +164,10 @@
+ 
+     @Test
+     public void createResponse() {
+-        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+ 
+         Mockito.when(vm.getUuid()).thenReturn(UUID.randomUUID().toString());
+-        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+-        Mockito.when(schedule.getResourceType()).thenReturn(ApiCommandResourceType.VirtualMachine);
+-        Mockito.when(schedule.getActionName()).thenReturn("START");
++        ResourceScheduleVO schedule = createMockResourceScheduleVO("START", 1L, ApiCommandResourceType.VirtualMachine);
+         Mockito.when(vmScheduleWorker.parseAction("START")).thenReturn(VMScheduleAction.START);
+         Mockito.when(entityManager.findById(VirtualMachine.class, 1L)).thenReturn(vm);
+ 
+@@ -211,16 +217,13 @@
+ 
+     @Test
+     public void updateSchedule() {
+-        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
++        ResourceScheduleVO schedule = createMockResourceScheduleVO("START", 1L, ApiCommandResourceType.VirtualMachine);
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+ 
+         Mockito.when(vm.getUuid()).thenReturn(UUID.randomUUID().toString());
+         Mockito.when(resourceScheduleDao.findById(Mockito.anyLong())).thenReturn(schedule);
+         Mockito.when(resourceScheduleDao.update(Mockito.eq(1L), Mockito.any(ResourceScheduleVO.class))).thenReturn(true);
+-        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+-        Mockito.when(schedule.getResourceType()).thenReturn(ApiCommandResourceType.VirtualMachine);
+         Mockito.when(schedule.getStartDate()).thenReturn(DateUtils.addDays(new Date(), 1));
+-        Mockito.when(schedule.getActionName()).thenReturn("START");
+         Mockito.when(vmScheduleWorker.getEntityOwnerId(1L)).thenReturn(2L);
+         Mockito.when(vmScheduleWorker.parseAction("START")).thenReturn(VMScheduleAction.START);
+         Mockito.when(accountManager.getAccount(2L)).thenReturn(Mockito.mock(Account.class));
+@@ -236,16 +239,14 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void updateScheduleEnableWithPastEndDateThrows() {
+-        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
++        ResourceScheduleVO schedule = createMockResourceScheduleVO("START", 1L,
++                ApiCommandResourceType.VirtualMachine);
+ 
+         Mockito.when(resourceScheduleDao.findById(1L)).thenReturn(schedule);
+-        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+-        Mockito.when(schedule.getResourceType()).thenReturn(ApiCommandResourceType.VirtualMachine);
+         Mockito.when(schedule.getSchedule()).thenReturn("0 0 * * *");
+         Mockito.when(schedule.getStartDate()).thenReturn(DateUtils.addDays(new Date(), 1));
+         Mockito.when(schedule.getEndDate()).thenReturn(DateUtils.addDays(new Date(), -1));
+         Mockito.when(schedule.getTimeZone()).thenReturn("UTC");
+-        Mockito.when(schedule.getActionName()).thenReturn("START");
+         Mockito.when(vmScheduleWorker.getEntityOwnerId(1L)).thenReturn(2L);
+         Mockito.when(vmScheduleWorker.parseAction("START")).thenReturn(VMScheduleAction.START);
+         Mockito.when(accountManager.getAccount(2L)).thenReturn(Mockito.mock(Account.class));
+@@ -255,19 +256,16 @@
+ 
+     @Test
+     public void updateScheduleEnableWithFutureEndDateSucceeds() {
+-        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
++        ResourceScheduleVO schedule = createMockResourceScheduleVO("START", 1L, ApiCommandResourceType.VirtualMachine);
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+ 
+         Mockito.when(vm.getUuid()).thenReturn(UUID.randomUUID().toString());
+         Mockito.when(resourceScheduleDao.findById(1L)).thenReturn(schedule);
+         Mockito.when(resourceScheduleDao.update(Mockito.eq(1L), Mockito.any(ResourceScheduleVO.class))).thenReturn(true);
+-        Mockito.when(schedule.getResourceId()).thenReturn(1L);
+-        Mockito.when(schedule.getResourceType()).thenReturn(ApiCommandResourceType.VirtualMachine);
+         Mockito.when(schedule.getSchedule()).thenReturn("0 0 * * *");
+         Mockito.when(schedule.getStartDate()).thenReturn(DateUtils.addDays(new Date(), 1));
+         Mockito.when(schedule.getEndDate()).thenReturn(DateUtils.addDays(new Date(), 2));
+         Mockito.when(schedule.getTimeZone()).thenReturn("UTC");
+-        Mockito.when(schedule.getActionName()).thenReturn("START");
+         Mockito.when(vmScheduleWorker.getEntityOwnerId(1L)).thenReturn(2L);
+         Mockito.when(vmScheduleWorker.parseAction("START")).thenReturn(VMScheduleAction.START);
+         Mockito.when(accountManager.getAccount(2L)).thenReturn(Mockito.mock(Account.class));
+@@ -282,7 +280,7 @@
+     @Test
+     public void createScheduleAutoScale() {
+         AutoScaleVmGroup group = Mockito.mock(AutoScaleVmGroup.class);
+-        ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
++        ResourceScheduleVO schedule = createMockResourceScheduleVO("UPDATE", 21L, ApiCommandResourceType.AutoScaleVmGroup);
+         Account ownerAccount = Mockito.mock(Account.class);
+         Map<String, String> details = new HashMap<>();
+         details.put("minmembers", "2");
+@@ -297,9 +295,6 @@
+         Mockito.when(accountManager.getAccount(2L)).thenReturn(ownerAccount);
+         Mockito.when(resourceScheduleDao.persist(Mockito.any(ResourceScheduleVO.class))).thenReturn(schedule);
+         Mockito.when(schedule.getId()).thenReturn(99L);
+-        Mockito.when(schedule.getResourceType()).thenReturn(ApiCommandResourceType.AutoScaleVmGroup);
+-        Mockito.when(schedule.getResourceId()).thenReturn(21L);
+-        Mockito.when(schedule.getActionName()).thenReturn("UPDATE");
+         Mockito.when(autoScaleScheduleWorker.parseAction("UPDATE")).thenReturn(AutoScaleScheduleAction.UPDATE);
+         Mockito.when(entityManager.findById(AutoScaleVmGroup.class, 21L)).thenReturn(group);
+ 
