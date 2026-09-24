@@ -1,0 +1,43 @@
+--- a/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
+@@ -314,12 +314,11 @@
+     @Test (expected = InvalidParameterValueException.class)
+     public void deleteUserTestIfUserIdIsEqualToCallerIdShouldThrowException() {
+         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+-            DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
++            DeleteUserCmd cmd = createMockDeleteUserCmd();
+             CallContext callContextMock = Mockito.mock(CallContext.class);
+             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+ 
+             Mockito.doReturn(userVoMock).when(callContextMock).getCallingUser();
+-            Mockito.doReturn(1L).when(cmd).getId();
+             Mockito.doReturn(userVoMock).when(accountManagerImpl).getValidUserVO(Mockito.anyLong());
+             Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+             Mockito.doReturn(domainVoMock).when(_domainDao).findById(Mockito.anyLong());
+@@ -332,12 +331,11 @@
+     @Test
+     public void deleteUserTestIfUserIdIsNotEqualToCallerIdShouldNotThrowException() {
+         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+-            DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
++            DeleteUserCmd cmd = createMockDeleteUserCmd();
+             CallContext callContextMock = Mockito.mock(CallContext.class);
+             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+ 
+             Mockito.doReturn(userVoMock).when(callContextMock).getCallingUser();
+-            Mockito.doReturn(1L).when(cmd).getId();
+             Mockito.doReturn(userVoMock).when(accountManagerImpl).getValidUserVO(Mockito.anyLong());
+             Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+             Mockito.doReturn(2L).when(userVoMock).getId();
+@@ -498,6 +496,12 @@
+         Mockito.when(userVoMock.getState()).thenReturn(State.ENABLED);
+         Mockito.when(accountMock.getState()).thenReturn(State.ENABLED);
+         updateUserPwdChange();
++    }
++
++    private static DeleteUserCmd createMockDeleteUserCmd() {
++        DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
++        Mockito.doReturn(1L).when(cmd).getId();
++        return cmd;
+     }
+ 
+     private void updateUserPwdChange() {

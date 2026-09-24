@@ -1,0 +1,65 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ApiAccessInterceptorTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ApiAccessInterceptorTest.java
+@@ -76,9 +76,8 @@
+     @Test
+     public void testInvokePassesThroughWhenMethodHasNoApiAccessAnnotation() throws Throwable {
+         final TestServerAdapter adapter = new TestServerAdapter(serviceUserAccount());
+-        final MethodInvocation invocation = mock(MethodInvocation.class);
+-        when(invocation.getThis()).thenReturn(adapter);
+-        when(invocation.getMethod()).thenReturn(TestServerAdapter.class.getMethod("noApiAccess"));
++        final MethodInvocation invocation = createMockMethodInvocation(adapter,
++                TestServerAdapter.class.getMethod("noApiAccess"));
+         when(invocation.proceed()).thenReturn("done");
+ 
+         final Object result = interceptor.invoke(invocation);
+@@ -93,9 +92,8 @@
+         registerBaseContext();
+ 
+         final TestServerAdapter adapter = new TestServerAdapter(serviceUserAccount());
+-        final MethodInvocation invocation = mock(MethodInvocation.class);
+-        when(invocation.getThis()).thenReturn(adapter);
+-        when(invocation.getMethod()).thenReturn(TestServerAdapter.class.getMethod("classAnnotated"));
++        final MethodInvocation invocation = createMockMethodInvocation(adapter,
++                TestServerAdapter.class.getMethod("classAnnotated"));
+         when(invocation.proceed()).thenAnswer(i -> {
+             assertEquals(SERVICE_USER_ID, CallContext.current().getCallingUserId());
+             assertEquals(SERVICE_ACCOUNT_ID, CallContext.current().getCallingAccountId());
+@@ -117,9 +115,7 @@
+ 
+         final TestServerAdapter adapter = new TestServerAdapter(serviceUserAccount());
+         final Method interfaceMethod = ApiContract.class.getMethod("implAnnotatedThroughInterface");
+-        final MethodInvocation invocation = mock(MethodInvocation.class);
+-        when(invocation.getThis()).thenReturn(adapter);
+-        when(invocation.getMethod()).thenReturn(interfaceMethod);
++        final MethodInvocation invocation = createMockMethodInvocation(adapter, interfaceMethod);
+         when(invocation.proceed()).thenReturn("ok");
+ 
+         final Object result = interceptor.invoke(invocation);
+@@ -136,10 +132,9 @@
+         registerBaseContext();
+ 
+         final TestServerAdapter adapter = new TestServerAdapter(serviceUserAccount());
+-        final MethodInvocation invocation = mock(MethodInvocation.class);
+         final RuntimeException expected = new RuntimeException("boom");
+-        when(invocation.getThis()).thenReturn(adapter);
+-        when(invocation.getMethod()).thenReturn(TestServerAdapter.class.getMethod("classAnnotated"));
++        final MethodInvocation invocation = createMockMethodInvocation(adapter,
++                TestServerAdapter.class.getMethod("classAnnotated"));
+         when(invocation.proceed()).thenThrow(expected);
+ 
+         try {
+@@ -152,6 +147,14 @@
+                 BaseCmd.getCommandNameByClass(ListZonesCmd.class));
+         assertEquals(BASE_USER_ID, CallContext.current().getCallingUserId());
+         assertEquals(BASE_ACCOUNT_ID, CallContext.current().getCallingAccountId());
++    }
++
++    private static MethodInvocation createMockMethodInvocation(final TestServerAdapter adapter,
++            final Method method) {
++        final MethodInvocation invocation = mock(MethodInvocation.class);
++        when(invocation.getThis()).thenReturn(adapter);
++        when(invocation.getMethod()).thenReturn(method);
++        return invocation;
+     }
+ 
+     private static void registerBaseContext() {

@@ -1,0 +1,48 @@
+--- a/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/LinkAccountToLdapCmdTest.java
++++ b/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/LinkAccountToLdapCmdTest.java
+@@ -80,8 +80,8 @@
+ 
+         LinkAccountToLdapResponse response = new LinkAccountToLdapResponse(String.valueOf(domainId), type, ldapDomain, accountType.ordinal(), username, accountName);
+         when(ldapManager.linkAccountToLdap(linkAccountToLdapCmd)).thenReturn(response);
+-        when(ldapManager.getUser(username, type, ldapDomain, 1L))
+-                .thenReturn(new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", ldapDomain, "ccp", false, null));
++        ldapManager = createMockLdapManager();
++        setHiddenField(linkAccountToLdapCmd, "_ldapManager", ldapManager);
+ 
+         when(accountService.getActiveAccountByName(username, domainId)).thenReturn(null);
+         UserAccountVO userAccount =  new UserAccountVO();
+--- a/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/LinkDomainToLdapCmdTest.java
++++ b/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/LinkDomainToLdapCmdTest.java
+@@ -71,6 +71,7 @@
+         Account.Type accountType = Account.Type.DOMAIN_ADMIN;
+         String username = "admin";
+         long accountId = 24;
++        ldapManager = createMockLdapManager();
+         setHiddenField(linkDomainToLdapCmd, "ldapDomain", ldapDomain);
+         setHiddenField(linkDomainToLdapCmd, "admin", username);
+         setHiddenField(linkDomainToLdapCmd, "type", type);
+@@ -79,7 +80,6 @@
+ 
+         LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId.toString(), type, ldapDomain, accountType.ordinal());
+         when(ldapManager.linkDomainToLdap(linkDomainToLdapCmd)).thenReturn(response);
+-        when(ldapManager.getUser(username, type, ldapDomain, 1L)).thenReturn(new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", ldapDomain, "ccp", false, null));
+ 
+         when(accountService.getActiveAccountByName(username, domainId)).thenReturn(null);
+         UserAccountVO userAccount =  new UserAccountVO();
+--- a/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/MockLdapManager.java
++++ b/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/MockLdapManager.java
+@@ -0,0 +1,14 @@
++package org.apache.cloudstack.api.command;
++
++import org.apache.cloudstack.ldap.LdapManager;
++import org.apache.cloudstack.ldap.LdapUser;
++import org.mockito.Mockito;
++
++public class MockLdapManager {
++    public static LdapManager createMockLdapManager() {
++        LdapManager ldapManager = Mockito.mock(LdapManager.class);
++        Mockito.when(ldapManager.getUser("admin", "GROUP", "CN=test,DC=ccp,DC=Citrix,DC=com", 1L))
++                .thenReturn(new LdapUser("admin", "admin@ccp.citrix.com", "Admin", "Admin", "CN=test,DC=ccp,DC=Citrix,DC=com", "ccp", false, null));
++        return ldapManager;
++    }
++}

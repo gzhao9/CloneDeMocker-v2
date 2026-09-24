@@ -1,0 +1,82 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -2568,8 +2568,8 @@
+         doReturn("delete failed").when(failedOtherBackupAnswer).getDetails();
+ 
+         BackupVO failedBackup = Mockito.mock(BackupVO.class);
+-        doReturn(failedBackup).when(backupDaoMock).findByIdIncludingRemoved(200L);
+-
++
++        backupDaoMock = MockBackupDao.createBackupDaoMock(failedBackup, 200L);
+         List<Long> removedBackupIds = new ArrayList<>(List.of(backupId, 200L));
+ 
+         boolean result = kbossBackupProviderSpy.processRemoveBackupFailures(false, new Answer[]{failedOtherBackupAnswer}, removedBackupIds, internalBackupJoinVoMock);
+@@ -3113,4 +3113,19 @@
+         verify(kbossBackupProviderSpy).releaseBackup(backupId);
+     }
+ 
++
++    public final class MockBackupDao {
++
++        private MockBackupDao() {
++        }
++
++        public static org.apache.cloudstack.backup.dao.BackupDao createBackupDaoMock(
++                org.apache.cloudstack.backup.BackupVO backupVo,
++                long backupId) {
++            org.apache.cloudstack.backup.dao.BackupDao backupDaoMock =
++                    Mockito.mock(org.apache.cloudstack.backup.dao.BackupDao.class);
++            doReturn(backupVo).when(backupDaoMock).findByIdIncludingRemoved(backupId);
++            return backupDaoMock;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupCompressionServiceJobControllerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupCompressionServiceJobControllerTest.java
+@@ -170,7 +170,7 @@
+     @Test
+     public void processJobResultTestFailedJobAndRemovedBackup() {
+         doReturn(backupId).when(internalBackupServiceJobVoMock).getBackupId();
+-        doReturn(backupVoMock).when(backupDaoMock).findByIdIncludingRemoved(backupId);
++        backupDaoMock = MockBackupDao.createBackupDaoMock(backupVoMock, backupId);
+         doReturn(new Date()).when(backupVoMock).getRemoved();
+ 
+         backupCompressionServiceJobControllerSpy.processJobResult(internalBackupServiceJobVoMock, false);
+@@ -183,7 +183,7 @@
+     @Test
+     public void processJobResultTestFailedJobAndReachedMaxAttempts() {
+         doReturn(backupId).when(internalBackupServiceJobVoMock).getBackupId();
+-        doReturn(backupVoMock).when(backupDaoMock).findByIdIncludingRemoved(backupId);
++        backupDaoMock = MockBackupDao.createBackupDaoMock(backupVoMock, backupId);
+         doReturn(1).when(backupCompressionServiceJobControllerSpy).getMaxAttempts(internalBackupServiceJobVoMock);
+         doReturn(1).when(internalBackupServiceJobVoMock).getAttempts();
+ 
+@@ -198,7 +198,7 @@
+     @Test
+     public void processJobResultTestFailedJob() {
+         doReturn(backupId).when(internalBackupServiceJobVoMock).getBackupId();
+-        doReturn(backupVoMock).when(backupDaoMock).findByIdIncludingRemoved(backupId);
++        backupDaoMock = MockBackupDao.createBackupDaoMock(backupVoMock, backupId);
+         doReturn(2).when(backupCompressionServiceJobControllerSpy).getMaxAttempts(internalBackupServiceJobVoMock);
+         doReturn(1).when(internalBackupServiceJobVoMock).getAttempts();
+         doReturn(60).when(backupCompressionServiceJobControllerSpy).getRetryInterval(internalBackupServiceJobVoMock);
+@@ -525,4 +525,19 @@
+         verify(internalBackupServiceJobDaoMock).unlockFromLockTable("compression_lock");
+         verify(internalBackupServiceJobDaoMock).listExecutingJobsByZoneIdAndJobType(eq(datacenterId), eq(InternalBackupServiceJobType.StartCompression));
+     }
++
++    public final class MockBackupDao {
++
++        private MockBackupDao() {
++        }
++
++        public static org.apache.cloudstack.backup.dao.BackupDao createBackupDaoMock(
++                org.apache.cloudstack.backup.BackupVO backupVo,
++                long backupId) {
++            org.apache.cloudstack.backup.dao.BackupDao backupDaoMock =
++                    Mockito.mock(org.apache.cloudstack.backup.dao.BackupDao.class);
++            doReturn(backupVo).when(backupDaoMock).findByIdIncludingRemoved(backupId);
++            return backupDaoMock;
++        }
++    }
+ }
