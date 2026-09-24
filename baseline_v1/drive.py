@@ -233,6 +233,14 @@ def make_should_run(project: str):
         if ROUTE["round1"] == "skip":
             return not failed
         if ROUTE["round1"] == "only":
+            if verdict == "ENVIRONMENT_NOT_READY" and ROUTE.get("inherit_env"):
+                # User decision 2026-09-24: an MCI whose untouched baseline could not be
+                # established in round 1 keeps that verdict for V2 and V1 instead of paying up to
+                # 3600 s per baseline again. Written as rows flagged inheritedFromRound1.
+                from baseline_v1 import run_pair
+                run_pair.inherit_round1(project, mci_id, _remote_cache["round1"][mci_id], run_pair.HARNESS_V2)
+                run_pair.inherit_round1(project, mci_id, _remote_cache["round1"][mci_id], run_pair.HARNESS_V1)
+                return False
             return failed
         return True
 
@@ -284,7 +292,8 @@ def supervise(lane: str, projects: list[str]) -> None:
     restarts: list[float] = []
     while True:
         roots = [a for name in projects if name in PROJECT_ROOTS for a in ("--root", f"{name}={PROJECT_ROOTS[name]}")]
-        route = (["--reverse"] if ROUTE["reverse"] else []) + (["--round1-failures", ROUTE["round1"]] if ROUTE["round1"] else [])
+        route = ((["--reverse"] if ROUTE["reverse"] else []) + (["--round1-failures", ROUTE["round1"]] if ROUTE["round1"] else [])
+                 + (["--inherit-round1-env"] if ROUTE.get("inherit_env") else []))
         child = subprocess.Popen([sys.executable, __file__, "--lane", lane, "--worker", *roots, *route, *projects],
                                  cwd=REPO, stdout=log, stderr=subprocess.STDOUT)
         code = child.wait()
@@ -308,10 +317,14 @@ if __name__ == "__main__":
     parser.add_argument("--reverse", action="store_true", help="walk the MCI list from the end")
     parser.add_argument("--round1-failures", choices=("skip", "only"), default=None,
                         help="skip: leave round-1 failures to C; only: run just those (C)")
+    parser.add_argument("--inherit-round1-env", action="store_true",
+                        help="with --round1-failures only: MCIs round 1 graded ENVIRONMENT_NOT_READY "
+                             "keep that verdict for V2 and V1 (flagged inheritedFromRound1), not re-run")
     parser.add_argument("projects", nargs="+")
     args = parser.parse_args()
     ROUTE["reverse"] = args.reverse
     ROUTE["round1"] = args.round1_failures
+    ROUTE["inherit_env"] = args.inherit_round1_env
     for pair in args.root:
         name, _, path = pair.partition("=")
         PROJECT_ROOTS[name] = path

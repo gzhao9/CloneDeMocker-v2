@@ -167,6 +167,29 @@ def record(project: str, mci_id: str, result: dict, run_id: str, model: str, har
     return entry["classification"]
 
 
+def inherit_round1(project: str, mci_id: str, round1_row: dict, harness: str, model: str = "gpt-5.6-luna") -> None:
+    """Record round 1's ENVIRONMENT_NOT_READY for this setup without running it.
+
+    The verdict comes from the untouched project's baseline, before any model call, so it does
+    not depend on the model or harness under test. No tokens, no time: the row says so."""
+    if mci_id in done_ids(project, model, harness):
+        return
+    entry = {
+        "mciId": mci_id, "classification": "ENVIRONMENT_NOT_READY", "repairRounds": 0,
+        "goalAchieved": None, "mutationRegressed": None, "aiAuditRisk": None, "mutationScoreDelta": None,
+        "proposalId": None, "model": model, "useMock": False, "modelCalls": 0,
+        "usage": {}, "totalTokens": 0, "timings": {}, "totalSeconds": None, "generationSeconds": None,
+        "verificationReused": {}, "scope": round1_row.get("scope"), "cacheHit": False,
+        "validationReason": round1_row.get("validationReason", ""), "changedFiles": [],
+        "harness": {"baseline": (round1_row.get("harness") or {}).get("baseline"), "candidate": None},
+        "inheritedFromRound1": "round-1 baseline could not be established; verdict kept, not re-run",
+        "host": socket.gethostname(),
+    }
+    canonical_store.merge(project=project, repository_root=REPO, entries=[entry], detection_source=None,
+                          diff_lookup={}, model=model, harness=harness, use_mock=False)
+    log(f"  {'V2' if harness == HARNESS_V2 else 'V1'} {mci_id}: ENVIRONMENT_NOT_READY inherited from round 1")
+
+
 def done_ids(project: str, model: str, harness: str) -> set[str]:
     label = canonical_store.setup_label(harness, model)
     path = canonical_store.setup_directory(REPO, project, label) / "refactoring-results.json"
