@@ -1,0 +1,97 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/api/command/UpdateTungstenFabricLBHealthMonitorCmdTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/api/command/UpdateTungstenFabricLBHealthMonitorCmdTest.java
+@@ -45,6 +45,8 @@
+     @Mock
+     TungstenService tungstenService;
+ 
++    private TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorMock;
++
+     UpdateTungstenFabricLBHealthMonitorCmd updateTungstenFabricLBHealthMonitorCmd;
+ 
+     AutoCloseable closeable;
+@@ -52,6 +54,7 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
++        tungstenFabricLBHealthMonitorMock = Mockito.mock(TungstenFabricLBHealthMonitorVO.class);
+         updateTungstenFabricLBHealthMonitorCmd = new UpdateTungstenFabricLBHealthMonitorCmd();
+         updateTungstenFabricLBHealthMonitorCmd.tungstenService = tungstenService;
+         updateTungstenFabricLBHealthMonitorCmd._entityMgr = entityManager;
+@@ -72,39 +75,35 @@
+ 
+     @Test
+     public void createTest() throws ResourceAllocationException {
+-        TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO =
+-                Mockito.mock(TungstenFabricLBHealthMonitorVO.class);
+         Mockito.when(tungstenService.updateTungstenFabricLBHealthMonitor(ArgumentMatchers.anyLong(),
+                 ArgumentMatchers.anyString(),
+                 ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt(),
+-                ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(tungstenFabricLBHealthMonitorVO);
++                ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(tungstenFabricLBHealthMonitorMock);
+         updateTungstenFabricLBHealthMonitorCmd.create();
+-        Assert.assertEquals(Optional.of(tungstenFabricLBHealthMonitorVO.getId()),
++        Assert.assertEquals(Optional.of(tungstenFabricLBHealthMonitorMock.getId()),
+                 Optional.ofNullable(updateTungstenFabricLBHealthMonitorCmd.getEntityId()));
+-        Assert.assertEquals(tungstenFabricLBHealthMonitorVO.getUuid(),
++        Assert.assertEquals(tungstenFabricLBHealthMonitorMock.getUuid(),
+                 updateTungstenFabricLBHealthMonitorCmd.getEntityUuid());
+     }
+ 
+     @Test
+     public void executeTest() throws Exception {
+         updateTungstenFabricLBHealthMonitorCmd.setEntityId(1L);
+-        TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO =
+-                Mockito.mock(TungstenFabricLBHealthMonitorVO.class);
+-        tungstenFabricLBHealthMonitorVO.setType("test");
+-        ReflectionTestUtils.setField(tungstenFabricLBHealthMonitorVO, "id", 1L);
+-        ReflectionTestUtils.setField(tungstenFabricLBHealthMonitorVO, "uuid", "test");
+-        tungstenFabricLBHealthMonitorVO.setRetry(1);
+-        tungstenFabricLBHealthMonitorVO.setTimeout(1);
+-        tungstenFabricLBHealthMonitorVO.setInterval(1);
+-        tungstenFabricLBHealthMonitorVO.setHttpMethod("test");
+-        tungstenFabricLBHealthMonitorVO.setExpectedCode("test");
+-        tungstenFabricLBHealthMonitorVO.setUrlPath("test");
++        tungstenFabricLBHealthMonitorMock.setType("test");
++        ReflectionTestUtils.setField(tungstenFabricLBHealthMonitorMock, "id", 1L);
++        ReflectionTestUtils.setField(tungstenFabricLBHealthMonitorMock, "uuid", "test");
++        tungstenFabricLBHealthMonitorMock.setRetry(1);
++        tungstenFabricLBHealthMonitorMock.setTimeout(1);
++        tungstenFabricLBHealthMonitorMock.setInterval(1);
++        tungstenFabricLBHealthMonitorMock.setHttpMethod("test");
++        tungstenFabricLBHealthMonitorMock.setExpectedCode("test");
++        tungstenFabricLBHealthMonitorMock.setUrlPath("test");
+         LoadBalancer loadBalancer = Mockito.mock(LoadBalancer.class);
+         Network network = Mockito.mock(Network.class);
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+ 
+         Mockito.when(entityManager.findById(ArgumentMatchers.eq(TungstenFabricLBHealthMonitorVO.class),
+-                ArgumentMatchers.anyLong())).thenReturn(tungstenFabricLBHealthMonitorVO);
++                ArgumentMatchers.anyLong())).thenReturn(tungstenFabricLBHealthMonitorMock);
+         Mockito.when(entityManager.findById(ArgumentMatchers.eq(LoadBalancer.class), ArgumentMatchers.anyLong())).thenReturn(loadBalancer);
+         Mockito.when(entityManager.findById(ArgumentMatchers.eq(Network.class), ArgumentMatchers.anyLong())).thenReturn(network);
+         Mockito.when(entityManager.findById(ArgumentMatchers.eq(DataCenter.class), ArgumentMatchers.anyLong())).thenReturn(dataCenter);
+@@ -113,15 +112,15 @@
+         TungstenFabricLBHealthMonitorResponse tungstenFabricLBHealthMonitorResponse =
+                 (TungstenFabricLBHealthMonitorResponse) updateTungstenFabricLBHealthMonitorCmd.getResponseObject();
+ 
+-        Assert.assertEquals(tungstenFabricLBHealthMonitorVO.getType(), tungstenFabricLBHealthMonitorResponse.getType());
+-        Assert.assertEquals(tungstenFabricLBHealthMonitorVO.getId(), tungstenFabricLBHealthMonitorResponse.getId());
+-        Assert.assertEquals(tungstenFabricLBHealthMonitorVO.getUuid(), tungstenFabricLBHealthMonitorResponse.getUuid());
+-        Assert.assertEquals(tungstenFabricLBHealthMonitorVO.getRetry(), tungstenFabricLBHealthMonitorResponse.getRetry());
+-        Assert.assertEquals(tungstenFabricLBHealthMonitorVO.getTimeout(), tungstenFabricLBHealthMonitorResponse.getTimeout());
+-        Assert.assertEquals(tungstenFabricLBHealthMonitorVO.getInterval(), tungstenFabricLBHealthMonitorResponse.getInterval());
+-        Assert.assertEquals(tungstenFabricLBHealthMonitorVO.getHttpMethod(), tungstenFabricLBHealthMonitorResponse.getHttpMethod());
+-        Assert.assertEquals(tungstenFabricLBHealthMonitorVO.getExpectedCode(), tungstenFabricLBHealthMonitorResponse.getExpectedCode());
+-        Assert.assertEquals(tungstenFabricLBHealthMonitorVO.getUrlPath(), tungstenFabricLBHealthMonitorResponse.getUrlPath());
++        Assert.assertEquals(tungstenFabricLBHealthMonitorMock.getType(), tungstenFabricLBHealthMonitorResponse.getType());
++        Assert.assertEquals(tungstenFabricLBHealthMonitorMock.getId(), tungstenFabricLBHealthMonitorResponse.getId());
++        Assert.assertEquals(tungstenFabricLBHealthMonitorMock.getUuid(), tungstenFabricLBHealthMonitorResponse.getUuid());
++        Assert.assertEquals(tungstenFabricLBHealthMonitorMock.getRetry(), tungstenFabricLBHealthMonitorResponse.getRetry());
++        Assert.assertEquals(tungstenFabricLBHealthMonitorMock.getTimeout(), tungstenFabricLBHealthMonitorResponse.getTimeout());
++        Assert.assertEquals(tungstenFabricLBHealthMonitorMock.getInterval(), tungstenFabricLBHealthMonitorResponse.getInterval());
++        Assert.assertEquals(tungstenFabricLBHealthMonitorMock.getHttpMethod(), tungstenFabricLBHealthMonitorResponse.getHttpMethod());
++        Assert.assertEquals(tungstenFabricLBHealthMonitorMock.getExpectedCode(), tungstenFabricLBHealthMonitorResponse.getExpectedCode());
++        Assert.assertEquals(tungstenFabricLBHealthMonitorMock.getUrlPath(), tungstenFabricLBHealthMonitorResponse.getUrlPath());
+ 
+         Assert.assertEquals(dataCenter.getId(), tungstenFabricLBHealthMonitorResponse.getZoneId());
+         Assert.assertEquals(dataCenter.getName(), tungstenFabricLBHealthMonitorResponse.getZoneName());

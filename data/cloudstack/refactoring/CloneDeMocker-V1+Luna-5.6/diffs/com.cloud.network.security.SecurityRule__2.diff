@@ -1,0 +1,46 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -772,7 +772,6 @@
+ 
+     @Test
+     public void removeTungstenSecurityGroupEgressRuleTest() {
+-        SecurityRule securityRule = mock(SecurityRule.class);
+         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
+@@ -782,7 +781,7 @@
+ 
+         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
+         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
+-        when(securityRule.getRuleType()).thenReturn(SecurityRule.SecurityRuleType.EgressRule);
++        SecurityRule securityRule = createSecurityRule(SecurityRule.SecurityRuleType.EgressRule);
+         when(securityRule.getType()).thenReturn("egress");
+         when(tungstenSecurityGroupRuleDao.persist(any(TungstenSecurityGroupRuleVO.class))).thenReturn(tungstenSecurityGroupRuleVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(addTungstenSecurityGroupRuleAnswer);
+@@ -802,14 +801,13 @@
+ 
+     @Test
+     public void removeTungstenSecurityGroupIngressRuleTest() {
+-        SecurityRule securityRule = mock(SecurityRule.class);
++        SecurityRule securityRule = createSecurityRule(SecurityRule.SecurityRuleType.IngressRule);
+         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         TungstenAnswer removeTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
+         when(securityGroupDao.findById(anyLong())).thenReturn(securityGroupVO);
+-        when(securityRule.getRuleType()).thenReturn(SecurityRule.SecurityRuleType.IngressRule);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenSecurityGroupRuleCommand.class), anyLong())).thenReturn(removeTungstenSecurityGroupRuleAnswer);
+         when(securityRule.getAllowedNetworkId()).thenReturn(null);
+ 
+@@ -1668,4 +1666,10 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    private static SecurityRule createSecurityRule(SecurityRule.SecurityRuleType ruleType) {
++        SecurityRule securityRule = mock(SecurityRule.class);
++        when(securityRule.getRuleType()).thenReturn(ruleType);
++        return securityRule;
++    }
+ }

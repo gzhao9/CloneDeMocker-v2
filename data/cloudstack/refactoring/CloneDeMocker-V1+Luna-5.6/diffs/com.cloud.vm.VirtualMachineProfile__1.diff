@@ -1,0 +1,44 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
+@@ -241,13 +241,12 @@
+     public void testAllocateForUserVM() throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+         Network network = Mockito.mock(Network.class);
+         NicProfile nicProfile = Mockito.mock(NicProfile.class);
+-        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
++        VirtualMachineProfile vmProfile = createMockVirtualMachineProfile(virtualMachine);
+         VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
+         Pair<String, String> dns = new Pair<>("10.1.5.1", "8.8.8.8");
+         String macAddress = "00:00:00:11:1D:1E:CD";
+ 
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+-        when(vmProfile.getVirtualMachine()).thenReturn(virtualMachine);
+         when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+         when(networkModel.getNetworkIp4Dns(any(Network.class), nullable(DataCenter.class))).thenReturn(dns);
+         when(nicProfile.getMacAddress()).thenReturn(macAddress);
+@@ -261,14 +260,13 @@
+     public void testAllocateForDomainRouter() throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+         Network network = Mockito.mock(Network.class);
+         NicProfile nicProfile = Mockito.mock(NicProfile.class);
+-        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+         VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
+         Pair<String, String> dns = new Pair<>("10.1.5.1", "8.8.8.8");
+         String macAddress = "00:00:00:11:1D:1E:CD";
+ 
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
++        VirtualMachineProfile vmProfile = createMockVirtualMachineProfile(virtualMachine);
+         when(vmProfile.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+-        when(vmProfile.getVirtualMachine()).thenReturn(virtualMachine);
+         when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+         when(network.getId()).thenReturn(2L);
+         when(nicProfile.getMacAddress()).thenReturn(macAddress);
+@@ -326,4 +324,10 @@
+         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class),
+                 anyLong());
+     }
++
++    private static VirtualMachineProfile createMockVirtualMachineProfile(VirtualMachine virtualMachine) {
++        VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
++        when(vmProfile.getVirtualMachine()).thenReturn(virtualMachine);
++        return vmProfile;
++    }
+ }
