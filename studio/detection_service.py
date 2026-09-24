@@ -290,22 +290,30 @@ class DetectionService:
 
         A detection saved on Windows (D:\\...\\cloudstack\\server\\...) restored on Linux, or on a
         machine with the checkout elsewhere, otherwise finds no source files. A path is rebased
-        at its last segment named like the local root, and only when the recorded path does not
+        at the outermost segment named like the local root that yields a real file, and only when the recorded path does not
         exist here and the rebased one does, so a restore on the recording machine is unchanged.
         """
         cache: dict[str, str] = {}
+
+        def exists(path: Path) -> bool:
+            try:
+                return path.exists()
+            except OSError:   # e.g. a code line starting with // read as a UNC path on Windows
+                return False
 
         def rebase(text: str) -> str:
             if text in cache:
                 return cache[text]
             new = text
-            if re.match(r"^(?:[A-Za-z]:[\\/]|/)", text) and not Path(text).exists():
+            if (re.match(r"^(?:[A-Za-z]:[\\/]|/(?!/))", text) and "\n" not in text
+                    and not exists(Path(text))):
                 parts = re.split(r"[\\/]+", text)
+                # The root's name can recur inside the tree (…\java\org\apache\cloudstack\…),
+                # so try every occurrence, outermost first, and keep the first that exists.
                 hits = [i for i, part in enumerate(parts) if part == root.name]
-                if hits:
-                    candidate = root.joinpath(*parts[hits[-1] + 1:])
-                    if candidate.exists():
-                        new = str(candidate)
+                candidate = next((c for i in hits if exists(c := root.joinpath(*parts[i + 1:]))), None)
+                if candidate is not None:
+                    new = str(candidate)
             cache[text] = new
             return new
 
