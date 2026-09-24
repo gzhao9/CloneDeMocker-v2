@@ -1,0 +1,90 @@
+--- a/server/src/test/java/com/cloud/acl/DomainCheckerTest.java
++++ b/server/src/test/java/com/cloud/acl/DomainCheckerTest.java
+@@ -65,10 +65,15 @@
+         return entity;
+     }
+ 
++    private static Account createMockAccount(long id) {
++        Account account = Mockito.mock(Account.class);
++        Mockito.when(account.getId()).thenReturn(id);
++        return account;
++    }
++
+     @Test
+     public void testRootAdminHasAccess() {
+-        Account rootAdmin = Mockito.mock(Account.class);
+-        Mockito.when(rootAdmin.getId()).thenReturn(1L);
++        Account rootAdmin = createMockAccount(1L);
+         ControlledEntity entity = getMockedEntity(2L);
+         Mockito.when(_accountService.isRootAdmin(rootAdmin.getId())).thenReturn(true);
+ 
+@@ -77,8 +82,7 @@
+ 
+     @Test
+     public void testCallerIsOwner() {
+-        Account caller = Mockito.mock(Account.class);
+-        Mockito.when(caller.getId()).thenReturn(1L);
++        Account caller = createMockAccount(1L);
+         ControlledEntity entity = getMockedEntity(1L);
+ 
+         domainChecker.validateCallerHasAccessToEntityOwner(caller, entity, SecurityChecker.AccessType.ModifyProject);
+@@ -86,8 +90,7 @@
+ 
+     @Test(expected = PermissionDeniedException.class)
+     public void testOwnerNotFound() {
+-        Account caller = Mockito.mock(Account.class);
+-        Mockito.when(caller.getId()).thenReturn(1L);
++        Account caller = createMockAccount(1L);
+         ControlledEntity entity = getMockedEntity(2L);
+         Mockito.when(_accountDao.findByIdIncludingRemoved(entity.getAccountId())).thenReturn(null);
+ 
+@@ -96,8 +99,7 @@
+ 
+     @Test
+     public void testDomainAdminHasAccess() {
+-        Account caller = Mockito.mock(Account.class);
+-        Mockito.when(caller.getId()).thenReturn(1L);
++        Account caller = createMockAccount(1L);
+         Mockito.when(caller.getDomainId()).thenReturn(100L);
+         Mockito.when(caller.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+         ControlledEntity entity = getMockedEntity(2L);
+@@ -111,8 +113,7 @@
+ 
+     @Test
+     public void testDomainAdminHasAccessToRemovedOwner() {
+-        Account caller = Mockito.mock(Account.class);
+-        Mockito.when(caller.getId()).thenReturn(1L);
++        Account caller = createMockAccount(1L);
+         Mockito.when(caller.getDomainId()).thenReturn(100L);
+         Mockito.when(caller.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+         ControlledEntity entity = getMockedEntity(2L);
+@@ -187,8 +188,7 @@
+ 
+     @Test
+     public void testBackupOfferingAccessRootAdmin() {
+-        Account rootAdmin = Mockito.mock(Account.class);
+-        Mockito.when(rootAdmin.getId()).thenReturn(1L);
++        Account rootAdmin = createMockAccount(1L);
+         BackupOfferingVO backupOfferingVO = Mockito.mock(BackupOfferingVO.class);
+         Mockito.when(_accountService.isRootAdmin(rootAdmin.getId())).thenReturn(true);
+ 
+@@ -198,8 +198,7 @@
+ 
+     @Test
+     public void testBackupOfferingAccessDomainAdmin() {
+-        Account domainAdmin = Mockito.mock(Account.class);
+-        Mockito.when(domainAdmin.getId()).thenReturn(2L);
++        Account domainAdmin = createMockAccount(2L);
+         BackupOfferingVO backupOfferingVO = Mockito.mock(BackupOfferingVO.class);
+         AccountVO owner = Mockito.mock(AccountVO.class);
+         Mockito.when(_accountService.isDomainAdmin(domainAdmin.getId())).thenReturn(true);
+@@ -213,8 +212,7 @@
+ 
+     @Test
+     public void testBackupOfferingAccessNoAccess() {
+-        Account normalUser = Mockito.mock(Account.class);
+-        Mockito.when(normalUser.getId()).thenReturn(3L);
++        Account normalUser = createMockAccount(3L);
+         BackupOfferingVO backupOfferingVO = Mockito.mock(BackupOfferingVO.class);
+         Mockito.when(_accountService.isRootAdmin(normalUser.getId())).thenReturn(false);
+         Mockito.when(_accountService.isDomainAdmin(normalUser.getId())).thenReturn(false);

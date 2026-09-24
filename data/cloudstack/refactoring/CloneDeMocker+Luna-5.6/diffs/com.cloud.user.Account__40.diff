@@ -1,0 +1,63 @@
+--- a/server/src/test/java/com/cloud/api/query/QueryManagerImplTest.java
++++ b/server/src/test/java/com/cloud/api/query/QueryManagerImplTest.java
+@@ -229,6 +229,12 @@
+         return cmd;
+     }
+ 
++    private static Account createMockAccount(Account.Type accountType) {
++        Account account = mock(Account.class);
++        Mockito.when(account.getType()).thenReturn(accountType);
++        return account;
++    }
++
+     @Test
+     public void searchForEventsSuccess() {
+         ListEventsCmd cmd = setupMockListEventsCmd();
+@@ -336,7 +342,7 @@
+ 
+     @Test
+     public void applyPublicTemplateRestrictionsTestDoesNotApplyRestrictionsWhenCallerIsRootAdmin() {
+-        Mockito.when(accountMock.getType()).thenReturn(Account.Type.ADMIN);
++        accountMock = createMockAccount(Account.Type.ADMIN);
+ 
+         queryManagerImplSpy.applyPublicTemplateSharingRestrictions(searchCriteriaMock, accountMock);
+ 
+@@ -349,7 +355,7 @@
+         long sharableDomainId = 2L;
+         long unsharableDomainId = 3L;
+ 
+-        Mockito.when(accountMock.getType()).thenReturn(Account.Type.NORMAL);
++        accountMock = createMockAccount(Account.Type.NORMAL);
+ 
+         Mockito.when(accountMock.getDomainId()).thenReturn(callerDomainId);
+         TemplateJoinVO templateMock1 = mock(TemplateJoinVO.class);
+@@ -447,8 +453,7 @@
+     @Test(expected = PermissionDeniedException.class)
+     public void testGetHostTagsForServiceOfferingsListingNoAccess() {
+         long templateId = 1L;
+-        Account account = mock(Account.class);
+-        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
++        Account account = createMockAccount(Account.Type.NORMAL);
+         VMTemplateVO template = mock(VMTemplateVO.class);
+         Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+         Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(account, null, false, template);
+@@ -458,8 +463,7 @@
+     @Test
+     public void testGetHostTagsFromTemplateForServiceOfferingsListingAdmin() {
+         long templateId = 1L;
+-        Account account = mock(Account.class);
+-        Mockito.when(account.getType()).thenReturn(Account.Type.ADMIN);
++        Account account = createMockAccount(Account.Type.ADMIN);
+         VMTemplateVO template = mock(VMTemplateVO.class);
+         Mockito.when(template.getTemplateTag()).thenReturn("tag");
+         Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+@@ -471,8 +475,7 @@
+     @Test
+     public void testGetHostTagsForServiceOfferingsListingSuccess() {
+         long templateId = 1L;
+-        Account account = mock(Account.class);
+-        Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
++        Account account = createMockAccount(Account.Type.NORMAL);
+         VMTemplateVO template = mock(VMTemplateVO.class);
+         Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+         Mockito.lenient().doNothing().when(accountManager).checkAccess(account, null, false, template);
