@@ -1,0 +1,54 @@
+--- a/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/lifecycle/ScaleIOPrimaryDataStoreLifeCycleTest.java
++++ b/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/lifecycle/ScaleIOPrimaryDataStoreLifeCycleTest.java
+@@ -77,6 +77,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class ScaleIOPrimaryDataStoreLifeCycleTest {
++    @Mock
++    private final DataStore dataStore;
+ 
+     @Mock
+     private PrimaryDataStoreDao primaryDataStoreDao;
+@@ -168,39 +170,35 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testAttachZone_UnsupportedHypervisor() throws Exception {
+-        final DataStore dataStore = mock(DataStore.class);
+         final ZoneScope scope = new ZoneScope(1L);
+         scaleIOPrimaryDataStoreLifeCycleTest.attachZone(dataStore, scope, Hypervisor.HypervisorType.VMware);
+     }
+ 
+     @Test
+     public void testMaintain() {
+-        final DataStore store = mock(DataStore.class);
++        // removed local mock; replaced with global field `dataStore`
+         when(storagePoolAutomation.maintain(any(DataStore.class), anyMap())).thenReturn(true);
+         when(dataStoreHelper.maintain(any(DataStore.class))).thenReturn(true);
+-        final boolean result = scaleIOPrimaryDataStoreLifeCycleTest.maintain(store);
++        final boolean result = scaleIOPrimaryDataStoreLifeCycleTest.maintain(dataStore);
+         assertThat(result).isTrue();
+     }
+ 
+     @Test
+     public void testCancelMaintain() {
+-        final DataStore store = mock(DataStore.class);
+         when(dataStoreHelper.cancelMaintain(any(DataStore.class))).thenReturn(true);
+         when(storagePoolAutomation.cancelMaintain(any(DataStore.class), anyMap())).thenReturn(true);
+-        final boolean result = scaleIOPrimaryDataStoreLifeCycleTest.cancelMaintain(store);
++        final boolean result = scaleIOPrimaryDataStoreLifeCycleTest.cancelMaintain(dataStore);
+         assertThat(result).isTrue();
+     }
+ 
+     @Test
+     public void testEnableStoragePool() {
+-        final DataStore dataStore = mock(DataStore.class);
+         when(dataStoreHelper.enable(any(DataStore.class))).thenReturn(true);
+         scaleIOPrimaryDataStoreLifeCycleTest.enableStoragePool(dataStore);
+     }
+ 
+     @Test
+     public void testDisableStoragePool() {
+-        final DataStore dataStore = mock(DataStore.class);
+         when(dataStoreHelper.disable(any(DataStore.class))).thenReturn(true);
+         scaleIOPrimaryDataStoreLifeCycleTest.disableStoragePool(dataStore);
+     }

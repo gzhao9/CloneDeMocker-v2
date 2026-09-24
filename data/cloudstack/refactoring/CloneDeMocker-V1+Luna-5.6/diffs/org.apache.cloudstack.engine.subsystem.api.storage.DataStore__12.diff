@@ -1,0 +1,114 @@
+--- a/plugins/storage/volume/linstor/src/test/java/org/apache/cloudstack/storage/datastore/driver/LinstorPrimaryDataStoreDriverImplTest.java
++++ b/plugins/storage/volume/linstor/src/test/java/org/apache/cloudstack/storage/datastore/driver/LinstorPrimaryDataStoreDriverImplTest.java
+@@ -111,9 +111,8 @@
+ 
+     @Test
+     public void testCanCopySnapshotToVolumeOnSamePrimary() {
+-        DataStore primaryStore = mock(DataStore.class);
++        DataStore primaryStore = createMockDataStore(1L);
+         when(primaryStore.getRole()).thenReturn(DataStoreRole.Primary);
+-        when(primaryStore.getId()).thenReturn(1L);
+ 
+         SnapshotInfo snapshot = mock(SnapshotInfo.class);
+         when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
+@@ -133,9 +132,8 @@
+ 
+     @Test
+     public void testCanCopySnapshotToVolumeRejectsNonLinstor() {
+-        DataStore primaryStore = mock(DataStore.class);
++        DataStore primaryStore = createMockDataStore(1L);
+         when(primaryStore.getRole()).thenReturn(DataStoreRole.Primary);
+-        when(primaryStore.getId()).thenReturn(1L);
+ 
+         SnapshotInfo snapshot = mock(SnapshotInfo.class);
+         when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
+@@ -155,13 +153,11 @@
+ 
+     @Test
+     public void testCanCopySnapshotToVolumeRejectsCrossPrimary() {
+-        DataStore srcStore = mock(DataStore.class);
++        DataStore srcStore = MockDataStore.createMockDataStore(1L);
+         when(srcStore.getRole()).thenReturn(DataStoreRole.Primary);
+-        when(srcStore.getId()).thenReturn(1L);
+-
+-        DataStore destStore = mock(DataStore.class);
++
++        DataStore destStore = MockDataStore.createMockDataStore(2L);
+         when(destStore.getRole()).thenReturn(DataStoreRole.Primary);
+-        when(destStore.getId()).thenReturn(2L);
+ 
+         SnapshotInfo snapshot = mock(SnapshotInfo.class);
+         when(snapshot.getType()).thenReturn(DataObjectType.SNAPSHOT);
+@@ -194,4 +190,15 @@
+         Assert.assertFalse("canCopy should return false when destination is Image store",
+                 linstorPrimaryDataStoreDriver.canCopy(snapshot, volume));
+     }
++
++    public final class MockDataStore {
++        private MockDataStore() {
++        }
++
++        public static DataStore createMockDataStore(long id) {
++            DataStore dataStore = mock(DataStore.class);
++            when(dataStore.getId()).thenReturn(id);
++            return dataStore;
++        }
++    }
+ }
+--- a/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/ScaleIOPrimaryDataStoreDriverTest.java
++++ b/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/ScaleIOPrimaryDataStoreDriverTest.java
+@@ -124,10 +124,8 @@
+ 
+     @Test
+     public void testSameScaleIOStorageInstance() {
+-        DataStore srcStore = Mockito.mock(DataStore.class);
+-        DataStore destStore = Mockito.mock(DataStore.class);
+-        when(srcStore.getId()).thenReturn(1L);
+-        when(destStore.getId()).thenReturn(2L);
++        DataStore destStore = MockDataStore.createMockDataStore(2L);
++        DataStore srcStore = MockDataStore.createMockDataStore(1L);
+ 
+         StoragePoolDetailVO srcPoolSystemIdDetail = Mockito.mock(StoragePoolDetailVO.class);
+         String srcPoolSystemId = "610204d03e3ad60f";
+@@ -147,10 +145,8 @@
+ 
+     @Test
+     public void testDifferentScaleIOStorageInstance() {
+-        DataStore srcStore = Mockito.mock(DataStore.class);
+-        DataStore destStore = Mockito.mock(DataStore.class);
+-        when(srcStore.getId()).thenReturn(1L);
+-        when(destStore.getId()).thenReturn(2L);
++        DataStore srcStore = MockDataStore.createMockDataStore(1L);
++        DataStore destStore = MockDataStore.createMockDataStore(2L);
+ 
+         StoragePoolDetailVO srcPoolSystemIdDetail = Mockito.mock(StoragePoolDetailVO.class);
+         String srcPoolSystemId = "610204d03e3ad60f";
+@@ -170,10 +166,8 @@
+ 
+     @Test (expected = CloudRuntimeException.class)
+     public void testCheckVolumeOnDifferentScaleIOStorageInstanceSystemIdShouldNotBeNull() {
+-        DataStore srcStore = Mockito.mock(DataStore.class);
+-        DataStore destStore = Mockito.mock(DataStore.class);
+-        when(srcStore.getId()).thenReturn(1L);
+-        when(destStore.getId()).thenReturn(2L);
++        DataStore destStore = MockDataStore.createMockDataStore(2L);
++        DataStore srcStore = MockDataStore.createMockDataStore(1L);
+ 
+         StoragePoolDetailVO srcPoolSystemIdDetail = Mockito.mock(StoragePoolDetailVO.class);
+         String srcPoolSystemId = "610204d03e3ad60f";
+@@ -597,4 +591,15 @@
+                         16L * (1024 * 1024 * 1024),
+                         true));
+     }
++
++    public final class MockDataStore {
++        private MockDataStore() {
++        }
++
++        public static DataStore createMockDataStore(long id) {
++            DataStore dataStore = mock(DataStore.class);
++            when(dataStore.getId()).thenReturn(id);
++            return dataStore;
++        }
++    }
+ }

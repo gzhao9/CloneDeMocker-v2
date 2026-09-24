@@ -1,0 +1,99 @@
+--- a/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/AncientDataMotionStrategyTest.java
++++ b/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/AncientDataMotionStrategyTest.java
+@@ -80,11 +80,14 @@
+     @Mock
+     ConfigurationDao configDao;
+ 
++    private DataStore dataStoreMock;
++
+     private static final long POOL_ID = 1l;
+     private static final Boolean FULL_CLONE_FLAG = true;
+ 
+     @Before
+     public void setup() throws Exception {
++        dataStoreMock = Mockito.mock(DataStore.class, Mockito.withSettings().extraInterfaces(StoragePool.class));
+         overrideDefaultConfigValue(StorageManager.VmwareCreateCloneFull, String.valueOf(FULL_CLONE_FLAG));
+ 
+         when(dataTO.getHypervisorType()).thenReturn(HypervisorType.VMware);
+@@ -334,7 +337,6 @@
+ 
+         EndPoint endPoint = Mockito.mock(EndPoint.class);
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+-        DataStore dataStore = Mockito.mock(DataStore.class, Mockito.withSettings().extraInterfaces(StoragePool.class));
+         ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+ 
+         Long hostId = 123L;
+@@ -342,11 +344,11 @@
+         String volumeUuid = "test-volume-uuid";
+ 
+         Mockito.when(endPoint.getId()).thenReturn(hostId);
+-        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
++        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStoreMock);
+         Mockito.when(volumeInfo.getId()).thenReturn(volumeId);
+         Mockito.when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+         Mockito.when(volumeInfo.getPath()).thenReturn("test-volume-path");
+-        Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
++        Mockito.when(((StoragePool) dataStoreMock).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+         Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(volumeId), Mockito.eq(volumeUuid),
+                 Mockito.anyString(), Mockito.any(StoragePool.class), Mockito.eq(true))).thenReturn(null);
+ 
+@@ -365,7 +367,6 @@
+ 
+         EndPoint endPoint = Mockito.mock(EndPoint.class);
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+-        DataStore dataStore = Mockito.mock(DataStore.class, Mockito.withSettings().extraInterfaces(StoragePool.class));
+         ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+ 
+         Long hostId = 789L;
+@@ -373,11 +374,11 @@
+         String volumeUuid = "test-clvm-ng-volume-uuid";
+ 
+         Mockito.when(endPoint.getId()).thenReturn(hostId);
+-        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
++        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStoreMock);
+         Mockito.when(volumeInfo.getId()).thenReturn(volumeId);
+         Mockito.when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+         Mockito.when(volumeInfo.getPath()).thenReturn("test-clvm-ng-volume-path");
+-        Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
++        Mockito.when(((StoragePool) dataStoreMock).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM_NG);
+         Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(volumeId), Mockito.eq(volumeUuid),
+                 Mockito.anyString(), Mockito.any(StoragePool.class), Mockito.eq(true))).thenReturn(null);
+ 
+@@ -402,11 +403,10 @@
+         EndPoint endPoint = Mockito.mock(EndPoint.class);
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         // Create mock that implements both DataStore and StoragePool interfaces
+-        DataStore dataStore = Mockito.mock(DataStore.class, Mockito.withSettings().extraInterfaces(StoragePool.class));
+-        ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+-
+-        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
+-        Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
++
++        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStoreMock);
++        Mockito.when(((StoragePool) dataStoreMock).getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+ 
+         method.invoke(strategy, endPoint, volumeInfo);
+ 
+@@ -425,7 +425,6 @@
+ 
+         EndPoint endPoint = Mockito.mock(EndPoint.class);
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+-        DataStore dataStore = Mockito.mock(DataStore.class, Mockito.withSettings().extraInterfaces(StoragePool.class));
+         ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+ 
+         Long hostId = 555L;
+@@ -434,11 +433,11 @@
+         String volumeUuid = "existing-lock-volume-uuid";
+ 
+         Mockito.when(endPoint.getId()).thenReturn(hostId);
+-        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
++        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStoreMock);
+         Mockito.when(volumeInfo.getId()).thenReturn(volumeId);
+         Mockito.when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+         Mockito.when(volumeInfo.getPath()).thenReturn("existing-lock-volume-path");
+-        Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
++        Mockito.when(((StoragePool) dataStoreMock).getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+         Mockito.when(clvmPoolManager.getClvmLockHostId(Mockito.eq(volumeId), Mockito.eq(volumeUuid),
+                 Mockito.anyString(), Mockito.any(StoragePool.class), Mockito.eq(true))).thenReturn(existingHostId);
+ 
