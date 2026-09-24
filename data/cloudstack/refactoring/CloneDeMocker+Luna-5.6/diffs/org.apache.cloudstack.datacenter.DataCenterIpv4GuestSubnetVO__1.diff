@@ -1,0 +1,100 @@
+--- a/server/src/test/java/org/apache/cloudstack/network/RoutedIpv4ManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/network/RoutedIpv4ManagerImplTest.java
+@@ -159,8 +159,7 @@
+ 
+     static MockedStatic<ApiDBUtils> apiDBUtilsMocked;
+ 
+-    @Mock
+-    DataCenterIpv4GuestSubnetVO subnetVO;
++
+     @Mock
+     DomainVO domain;
+     @Mock
+@@ -258,6 +257,12 @@
+         f.set(configKey, o);
+     }
+ 
++    private static DataCenterIpv4GuestSubnetVO createMockDataCenterIpv4GuestSubnetVO(final Long zoneSubnetId) {
++        DataCenterIpv4GuestSubnetVO subnetVO = Mockito.mock(DataCenterIpv4GuestSubnetVO.class);
++        when(subnetVO.getId()).thenReturn(zoneSubnetId);
++        return subnetVO;
++    }
++
+     @Test
+     public void testCreateDataCenterIpv4GuestSubnet() {
+         CreateIpv4SubnetForZoneCmd cmd = new CreateIpv4SubnetForZoneCmd();
+@@ -324,8 +329,7 @@
+ 
+     @Test
+     public void testCheckConflicts3() {
+-        DataCenterIpv4GuestSubnetVO existingSubnet = Mockito.mock(DataCenterIpv4GuestSubnetVO.class);
+-        when(existingSubnet.getId()).thenReturn(zoneSubnetId);
++        DataCenterIpv4GuestSubnetVO existingSubnet = createMockDataCenterIpv4GuestSubnetVO(zoneSubnetId);
+         List<DataCenterIpv4GuestSubnetVO> existingSubnets = Arrays.asList(existingSubnet);
+         routedIpv4Manager.checkConflicts(existingSubnets, subnet, zoneSubnetId);
+     }
+@@ -561,7 +565,7 @@
+ 
+     @Test
+     public void testGetOrCreateIpv4SubnetForGuestNetworkOrVpcInternalByCidrAndParentSubnet2() {
+-        when(subnetVO.getId()).thenReturn(zoneSubnetId);
++        subnetVO = createMockDataCenterIpv4GuestSubnetVO(zoneSubnetId);
+         when(ipv4GuestSubnetNetworkMapDao.findFirstAvailable(zoneSubnetId, cidrSize)).thenReturn(ipv4GuestSubnetNetworkMap);
+ 
+         Ipv4GuestSubnetNetworkMap result = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetworkOrVpcInternal(cidrSize, subnetVO);
+@@ -570,7 +574,7 @@
+ 
+     @Test
+     public void testGetOrCreateIpv4SubnetForGuestNetworkOrVpcInternalByCidrAndParentSubnet3() {
+-        when(subnetVO.getId()).thenReturn(zoneSubnetId);
++        DataCenterIpv4GuestSubnetVO subnetVO = createMockDataCenterIpv4GuestSubnetVO(zoneSubnetId);
+         when(ipv4GuestSubnetNetworkMapDao.findFirstAvailable(zoneSubnetId, cidrSize)).thenReturn(null);
+         doReturn(ipv4GuestSubnetNetworkMap).when(routedIpv4Manager).createIpv4SubnetFromParentSubnet(subnetVO, cidrSize);
+ 
+@@ -580,7 +584,7 @@
+ 
+     @Test
+     public void testGetParentOfNetworkCidr() {
+-        when(subnetVO.getId()).thenReturn(zoneSubnetId);
++        subnetVO = createMockDataCenterIpv4GuestSubnetVO(zoneSubnetId);
+         when(subnetVO.getSubnet()).thenReturn(subnet);
+         when(dataCenterIpv4GuestSubnetDao.listByDataCenterId(zoneId)).thenReturn(Arrays.asList(subnetVO));
+         when(ipv4GuestSubnetNetworkMapDao.listByParent(zoneSubnetId)).thenReturn(Arrays.asList(ipv4GuestSubnetNetworkMap));
+@@ -606,8 +610,8 @@
+ 
+     @Test
+     public void testCreateIpv4SubnetFromParentSubnetByCidr() {
++        subnetVO = createMockDataCenterIpv4GuestSubnetVO(zoneSubnetId);
+         when(subnetVO.getSubnet()).thenReturn(subnet);
+-        when(subnetVO.getId()).thenReturn(zoneSubnetId);
+ 
+         try {
+             routedIpv4Manager.createIpv4SubnetFromParentSubnet(subnetVO, newSubnetForNetworkTooBig);
+@@ -626,7 +630,7 @@
+ 
+     @Test
+     public void testCreateIpv4SubnetFromParentSubnetByCidrSize() {
+-        when(subnetVO.getId()).thenReturn(zoneSubnetId);
++        DataCenterIpv4GuestSubnetVO subnetVO = createMockDataCenterIpv4GuestSubnetVO(zoneSubnetId);
+         when(dataCenterIpv4GuestSubnetDao.findById(zoneSubnetId)).thenReturn(subnetVO);
+ 
+         Ipv4GuestSubnetNetworkMapVO ipv4GuestSubnetNetworkMap1 = new Ipv4GuestSubnetNetworkMapVO(zoneSubnetId, "172.16.1.0/28", null, Ipv4GuestSubnetNetworkMap.State.Free);
+@@ -1196,7 +1200,7 @@
+     @Test
+     public void testRemoveIpv4SubnetsForZoneByAccountId() {
+         when(dataCenterIpv4GuestSubnetDao.listByAccountId(accountId)).thenReturn(Arrays.asList(subnetVO));
+-        when(subnetVO.getId()).thenReturn(zoneSubnetId);
++        subnetVO = createMockDataCenterIpv4GuestSubnetVO(zoneSubnetId);
+ 
+         routedIpv4Manager.removeIpv4SubnetsForZoneByAccountId(accountId);
+ 
+@@ -1206,8 +1210,8 @@
+ 
+     @Test
+     public void testRemoveIpv4SubnetsForZoneByDomainId() {
++        subnetVO = createMockDataCenterIpv4GuestSubnetVO(zoneSubnetId);
+         when(dataCenterIpv4GuestSubnetDao.listByDomainId(domainId)).thenReturn(Arrays.asList(subnetVO));
+-        when(subnetVO.getId()).thenReturn(zoneSubnetId);
+ 
+         routedIpv4Manager.removeIpv4SubnetsForZoneByDomainId(domainId);
+ 

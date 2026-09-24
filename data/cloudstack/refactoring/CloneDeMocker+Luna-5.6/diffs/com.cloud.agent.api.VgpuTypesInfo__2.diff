@@ -1,0 +1,60 @@
+--- a/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
+@@ -810,13 +810,9 @@
+ 
+     @Test
+     public void testAddGpuDevicesToHost_NewDevice() {
+-        VgpuTypesInfo deviceInfo = mock(VgpuTypesInfo.class);
+-        when(deviceInfo.getBusAddress()).thenReturn(GPU_BUS_ADDRESS_2);
+-        when(deviceInfo.getDeviceId()).thenReturn(GPU_DEVICE_ID);
+-        when(deviceInfo.getVendorId()).thenReturn(GPU_VENDOR_ID);
++        VgpuTypesInfo deviceInfo = createMockVgpuTypesInfo(GPU_BUS_ADDRESS_2);
+         when(deviceInfo.getDeviceName()).thenReturn(GPU_DEVICE_NAME);
+         when(deviceInfo.getVendorName()).thenReturn(GPU_VENDOR_NAME);
+-        when(deviceInfo.getModelName()).thenReturn(PASSTHROUGH_PROFILE);
+ 
+         List<VgpuTypesInfo> newDevices = List.of(deviceInfo);
+         when(gpuDeviceDao.listByHostId(HOST_ID)).thenReturn(new ArrayList<>());
+@@ -840,11 +836,7 @@
+ 
+     @Test
+     public void testAddGpuDevicesToHost_ExistingDevice() {
+-        VgpuTypesInfo deviceInfo = mock(VgpuTypesInfo.class);
+-        when(deviceInfo.getBusAddress()).thenReturn(GPU_BUS_ADDRESS);
+-        when(deviceInfo.getDeviceId()).thenReturn(GPU_DEVICE_ID);
+-        when(deviceInfo.getVendorId()).thenReturn(GPU_VENDOR_ID);
+-        when(deviceInfo.getModelName()).thenReturn(PASSTHROUGH_PROFILE);
++        VgpuTypesInfo deviceInfo = createMockVgpuTypesInfo(GPU_BUS_ADDRESS);
+ 
+         List<VgpuTypesInfo> newDevices = List.of(deviceInfo);
+         List<GpuDeviceVO> existingDevices = List.of(mockGpuDevice);
+@@ -866,12 +858,8 @@
+ 
+     @Test
+     public void testAddGpuDevicesToHost_WithVmName() {
+-        VgpuTypesInfo deviceInfo = mock(VgpuTypesInfo.class);
+-        when(deviceInfo.getBusAddress()).thenReturn(GPU_BUS_ADDRESS_2);
++        VgpuTypesInfo deviceInfo = createMockVgpuTypesInfo(GPU_BUS_ADDRESS_2);
+         when(deviceInfo.getVmName()).thenReturn(VM_NAME);
+-        when(deviceInfo.getDeviceId()).thenReturn(GPU_DEVICE_ID);
+-        when(deviceInfo.getVendorId()).thenReturn(GPU_VENDOR_ID);
+-        when(deviceInfo.getModelName()).thenReturn(PASSTHROUGH_PROFILE);
+ 
+         VMInstanceVO vm = mock(VMInstanceVO.class);
+         when(vm.getId()).thenReturn(VM_ID_100);
+@@ -1144,6 +1132,15 @@
+         // Should select first 2 devices (sorted by ID)
+         assertEquals(GPU_DEVICE_ID_LONG.longValue(), result.get(0).getId());
+         assertEquals(GPU_DEVICE_ID_2.longValue(), result.get(1).getId());
++    }
++
++    private static VgpuTypesInfo createMockVgpuTypesInfo(String busAddress) {
++        VgpuTypesInfo deviceInfo = mock(VgpuTypesInfo.class);
++        when(deviceInfo.getBusAddress()).thenReturn(busAddress);
++        when(deviceInfo.getDeviceId()).thenReturn(GPU_DEVICE_ID);
++        when(deviceInfo.getModelName()).thenReturn(PASSTHROUGH_PROFILE);
++        when(deviceInfo.getVendorId()).thenReturn(GPU_VENDOR_ID);
++        return deviceInfo;
+     }
+ 
+     // Helper methods for creating mock GPU devices
