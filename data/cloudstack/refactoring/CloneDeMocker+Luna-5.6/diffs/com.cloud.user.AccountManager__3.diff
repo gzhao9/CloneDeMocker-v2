@@ -1,0 +1,96 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
+@@ -218,7 +218,7 @@
+ 
+         Account caller = mock(Account.class);
+         when(caller.getId()).thenReturn(1L);
+-        when(accountManager.isRootAdmin(1L)).thenReturn(false);
++        accountManager = createMockAccountManager(1L, false);
+ 
+         kmsManager.checkHSMProfileAccess(caller, profile, true);
+     }
+@@ -230,7 +230,7 @@
+ 
+         Account caller = mock(Account.class);
+         when(caller.getId()).thenReturn(1L);
+-        when(accountManager.isRootAdmin(1L)).thenReturn(true);
++        accountManager = createMockAccountManager(1L, true);
+ 
+         kmsManager.checkHSMProfileAccess(caller, profile, true);
+     }
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplHSMTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplHSMTest.java
+@@ -201,7 +201,7 @@
+ 
+         Account caller = mock(Account.class);
+         when(caller.getId()).thenReturn(2L);
+-        when(accountManager.isRootAdmin(2L)).thenReturn(true);
++        accountManager = createMockAccountManager(2L, true);
+ 
+         DeleteHSMProfileCmd cmd = mock(DeleteHSMProfileCmd.class);
+         when(cmd.getId()).thenReturn(profileId);
+@@ -271,7 +271,7 @@
+         Account caller = mock(Account.class);
+         when(caller.getId()).thenReturn(2L);
+         when(caller.getDomainId()).thenReturn(5L);
+-        when(accountManager.isRootAdmin(2L)).thenReturn(false);
++        accountManager = createMockAccountManager(2L, false);
+ 
+         kmsManager.checkHSMProfileAccess(caller, profile, false);
+ 
+@@ -288,7 +288,7 @@
+         Account caller = mock(Account.class);
+         when(caller.getId()).thenReturn(2L);
+         when(caller.getDomainId()).thenReturn(7L);
+-        when(accountManager.isRootAdmin(2L)).thenReturn(false);
++        accountManager = createMockAccountManager(2L, false);
+ 
+         kmsManager.checkHSMProfileAccess(caller, profile, false);
+     }
+@@ -302,7 +302,7 @@
+ 
+         Account caller = mock(Account.class);
+         when(caller.getId()).thenReturn(2L);
+-        when(accountManager.isRootAdmin(2L)).thenReturn(true);
++        accountManager = createMockAccountManager(2L, true);
+ 
+         kmsManager.checkHSMProfileAccess(caller, profile, false);
+     }
+@@ -316,7 +316,7 @@
+ 
+         Account caller = mock(Account.class);
+         when(caller.getId()).thenReturn(2L);
+-        when(accountManager.isRootAdmin(2L)).thenReturn(false);
++        accountManager = createMockAccountManager(2L, false);
+ 
+         kmsManager.checkHSMProfileAccess(caller, profile, true);
+     }
+@@ -330,7 +330,7 @@
+ 
+         Account caller = mock(Account.class);
+         when(caller.getId()).thenReturn(2L);
+-        when(accountManager.isRootAdmin(2L)).thenReturn(true);
++        accountManager = createMockAccountManager(2L, true);
+ 
+         kmsManager.checkHSMProfileAccess(caller, profile, true);
+     }
+--- a/server/src/test/java/org/apache/cloudstack/kms/MockAccountManager.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/MockAccountManager.java
+@@ -0,0 +1,17 @@
++package org.apache.cloudstack.kms;
++
++import com.cloud.user.AccountManager;
++import org.mockito.Mockito;
++
++import static org.mockito.Mockito.when;
++
++public final class MockAccountManager {
++    private MockAccountManager() {
++    }
++
++    public static AccountManager createMockAccountManager(long accountId, boolean rootAdmin) {
++        AccountManager accountManager = Mockito.mock(AccountManager.class);
++        when(accountManager.isRootAdmin(accountId)).thenReturn(rootAdmin);
++        return accountManager;
++    }
++}
