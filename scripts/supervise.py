@@ -78,7 +78,12 @@ def start() -> int:
         process = subprocess.Popen(
             [str(PYTHON), "-u", str(RUNNER), "--board-every", "25"],
             cwd=str(REPO), stdout=out, stderr=err,
-            creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS)
+            # CREATE_NO_WINDOW alone. These two flags are mutually exclusive on Windows:
+            # DETACHED_PROCESS gives the child its own console, and a console it allocates
+            # itself is visible no matter how the parent was hidden -- which is why a
+            # window popped up on every restart once the supervisor was relaunched from a
+            # hidden shell. The child is already independent of our console without it.
+            creationflags=subprocess.CREATE_NO_WINDOW)
     PID_FILE.write_text(str(process.pid))
     return process.pid
 
@@ -115,6 +120,12 @@ def main() -> None:
 
         new_pid = start()
         log(f"runner was gone; restarted as {new_pid} (restart {len(restarts)})")
+        # Only the first restart of a burst is worth a message. During one crash loop this
+        # posted B-051..B-054 into A's and C's inboxes within six minutes -- four notices
+        # about the same fault, which is noise in someone else's mailbox, not information.
+        # A sustained loop is still reported, by the give-up branch above.
+        if len(restarts) > 1:
+            continue
         try:
             board.post_note(
                 f"B's batch runner exited unexpectedly and was restarted automatically as pid "
