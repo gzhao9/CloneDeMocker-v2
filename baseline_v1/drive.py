@@ -144,6 +144,10 @@ def sync(lane: str, project: str, note: str) -> bool:
                                     env={**os.environ, "CLONEDEMOCKER_ALLOW_PUSH": "1"})
             if pushed.returncode == 0:
                 index.unlink(missing_ok=True)
+                # Move local main (and the default index) onto what was just pushed. Without
+                # this, local main fell 351 commits behind and every published file showed as a
+                # pending change in the IDE. A mixed reset never writes the working tree.
+                subprocess.run(["git", "reset", "-q", commit], cwd=REPO, capture_output=True)
                 return True
             time.sleep(3 * attempt)
         index.unlink(missing_ok=True)
