@@ -1,0 +1,40 @@
+--- a/server/src/test/java/com/cloud/resourcelimit/ResourceLimitManagerImplTest.java
++++ b/server/src/test/java/com/cloud/resourcelimit/ResourceLimitManagerImplTest.java
+@@ -115,6 +115,7 @@
+     ResourceLimitDao resourceLimitDao;
+     @Mock
+     DomainDao domainDao;
++    private DomainVO parentDomainMock;
+     @Mock
+     ProjectDao projectDao;
+     @Mock
+@@ -151,6 +152,7 @@
+ 
+     @Before
+     public void setUp() throws Exception {
++        parentDomainMock = Mockito.mock(DomainVO.class);
+         overrideDefaultConfigValue(ResourceLimitService.ResourceLimitHostTags, "_defaultValue", StringUtils.join(hostTags, ","));
+         overrideDefaultConfigValue(ResourceLimitService.ResourceLimitStorageTags, "_defaultValue", StringUtils.join(storageTags, ","));
+ 
+@@ -467,9 +469,8 @@
+         Assert.assertEquals(100L, result);
+ 
+         Mockito.when(domain.getId()).thenReturn(3L);
+-        DomainVO parentDomain = Mockito.mock(DomainVO.class);
+         Mockito.when(domain.getParent()).thenReturn(5L);
+-        Mockito.when(domainDao.findById(5L)).thenReturn(parentDomain);
++        Mockito.when(domainDao.findById(5L)).thenReturn(parentDomainMock);
+         limit = new ResourceLimitVO();
+         limit.setMax(200L);
+         Mockito.when(resourceLimitDao.findByOwnerIdAndTypeAndTag(3L, Resource.ResourceOwnerType.Domain, Resource.ResourceType.cpu, hostTags.get(0))).thenReturn(null);
+@@ -515,9 +516,8 @@
+             DomainVO domain = Mockito.mock(DomainVO.class);
+             Mockito.when(domain.getId()).thenReturn(3L);
+ 
+-            DomainVO parentDomain = Mockito.mock(DomainVO.class);
+             Mockito.when(domain.getParent()).thenReturn(5L);
+-            Mockito.when(domainDao.findById(5L)).thenReturn(parentDomain);
++            Mockito.when(domainDao.findById(5L)).thenReturn(parentDomainMock);
+ 
+             ResourceLimitVO limit = new ResourceLimitVO();
+             limit.setMax(200L);

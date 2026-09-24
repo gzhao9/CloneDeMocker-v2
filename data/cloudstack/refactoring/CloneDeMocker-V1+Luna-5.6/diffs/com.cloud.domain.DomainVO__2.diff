@@ -1,0 +1,73 @@
+--- a/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/CloudianHyperStoreObjectStoreDriverImplTest.java
++++ b/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/CloudianHyperStoreObjectStoreDriverImplTest.java
+@@ -266,10 +266,8 @@
+         final String hsGroupId2 = "domain2";
+ 
+         // Setup both domains d1 and d2 with uuids that will become hsGroupId
+-        DomainVO d1 = mock(DomainVO.class);
+-        when(d1.getUuid()).thenReturn(hsGroupId1);
+-        DomainVO d2 = mock(DomainVO.class);
+-        when(d2.getUuid()).thenReturn(hsGroupId2);
++        DomainVO d1 = createMockDomain(hsGroupId1);
++        DomainVO d2 = createMockDomain(hsGroupId2);
+         when(domainDao.findById(1L)).thenReturn(d1);
+         when(domainDao.findById(2L)).thenReturn(d2);
+ 
+@@ -332,8 +330,8 @@
+         when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+         when(account.getDomainId()).thenReturn(TEST_DOMAIN_ID);
+         when(account.getUuid()).thenReturn(hsUserId);
++         domain = createMockDomain(hsGroupId);
+         when(domainDao.findById(TEST_DOMAIN_ID)).thenReturn(domain);
+-        when(domain.getUuid()).thenReturn(hsGroupId);
+ 
+         doReturn(cloudianClient).when(cloudianHyperStoreObjectStoreDriverImpl).getCloudianClientByStoreId(TEST_STORE_ID);
+ 
+@@ -405,11 +403,11 @@
+     public void testCreateUserExists() {
+         String hsUserId = "user1";
+         String hsGroupId = "group1";
++        domain = createMockDomain(hsGroupId);
+         when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+         when(account.getDomainId()).thenReturn(TEST_DOMAIN_ID);
+         when(account.getUuid()).thenReturn(hsUserId);
+         when(domainDao.findById(TEST_DOMAIN_ID)).thenReturn(domain);
+-        when(domain.getUuid()).thenReturn(hsGroupId);
+ 
+         doReturn(cloudianClient).when(cloudianHyperStoreObjectStoreDriverImpl).getCloudianClientByStoreId(TEST_STORE_ID);
+ 
+@@ -471,11 +469,11 @@
+     public void testCreateUserDisabledUserExists() {
+         String hsUserId = "user1";
+         String hsGroupId = "group1";
++         domain = createMockDomain(hsGroupId);
+         when(accountDao.findById(TEST_ACCOUNT_ID)).thenReturn(account);
+         when(account.getDomainId()).thenReturn(TEST_DOMAIN_ID);
+         when(account.getUuid()).thenReturn(hsUserId);
+         when(domainDao.findById(TEST_DOMAIN_ID)).thenReturn(domain);
+-        when(domain.getUuid()).thenReturn(hsGroupId);
+ 
+         doReturn(cloudianClient).when(cloudianHyperStoreObjectStoreDriverImpl).getCloudianClientByStoreId(TEST_STORE_ID);
+ 
+@@ -497,8 +495,8 @@
+         when(account.getDomainId()).thenReturn(TEST_DOMAIN_ID);
+         when(account.getUuid()).thenReturn(hsUserId);
+         when(domainDao.findById(TEST_DOMAIN_ID)).thenReturn(domain);
+-        when(domain.getUuid()).thenReturn(hsGroupId);
+-
++
++        domain = createMockDomain(hsGroupId);
+         doReturn(cloudianClient).when(cloudianHyperStoreObjectStoreDriverImpl).getCloudianClientByStoreId(TEST_STORE_ID);
+ 
+         // Setup the user to not be found so that we check for a group
+@@ -683,4 +681,10 @@
+         CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> cloudianHyperStoreObjectStoreDriverImpl.getS3ClientByBucketAndStore(bucket, TEST_STORE_ID));
+         assertTrue(thrown.getMessage().contains("not found"));
+     }
++
++    private static DomainVO createMockDomain(String uuid) {
++        DomainVO domain = mock(DomainVO.class);
++        when(domain.getUuid()).thenReturn(uuid);
++        return domain;
++    }
+ }

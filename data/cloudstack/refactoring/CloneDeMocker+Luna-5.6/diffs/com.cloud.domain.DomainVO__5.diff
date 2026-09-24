@@ -1,0 +1,50 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -277,6 +277,8 @@
+     @Mock
+     private DomainVO domainVOMock;
+ 
++    private DomainVO domainMockForOffering;
++
+     private Gson gson;
+ 
+     private String[] hostPossibleValues = {"127.0.0.1", "hostname"};
+@@ -291,6 +293,7 @@
+     @Before
+     public void setup() throws Exception {
+         gson = new Gson();
++        domainMockForOffering = Mockito.mock(DomainVO.class);
+ 
+         closeable = MockitoAnnotations.openMocks(this);
+         when(backupOfferingDao.findById(null)).thenReturn(null);
+@@ -2324,8 +2327,7 @@
+         when(cmd.getId()).thenReturn(id);
+         when(cmd.getDomainIds()).thenReturn(List.of(domainId));
+ 
+-        DomainVO domain = Mockito.mock(DomainVO.class);
+-        when(domainDao.findById(domainId)).thenReturn(domain);
++        when(domainDao.findById(domainId)).thenReturn(domainMockForOffering);
+ 
+         when(domainHelper.filterChildSubDomains(List.of(domainId))).thenReturn(new ArrayList<>(List.of(domainId)));
+         when(backupOfferingDetailsDao.findDomainIds(id)).thenReturn(new ArrayList<>());
+@@ -2659,8 +2661,7 @@
+         when(savedOffering.getId()).thenReturn(savedOfferingId);
+         when(backupOfferingDao.persist(any(BackupOfferingVO.class))).thenReturn(savedOffering);
+ 
+-        DomainVO domain = Mockito.mock(DomainVO.class);
+-        when(domainDao.findById(11L)).thenReturn(domain);
++        when(domainDao.findById(11L)).thenReturn(domainMockForOffering);
+ 
+         overrideBackupFrameworkConfigValue();
+ 
+@@ -2708,9 +2709,8 @@
+         when(backupOfferingDao.persist(any(BackupOfferingVO.class))).thenReturn(savedOffering);
+ 
+         // domain handling
+-        DomainVO domain21 = Mockito.mock(DomainVO.class);
+         DomainVO domain22 = Mockito.mock(DomainVO.class);
+-        when(domainDao.findById(21L)).thenReturn(domain21);
++        when(domainDao.findById(21L)).thenReturn(domainMockForOffering);
+         when(domainDao.findById(22L)).thenReturn(domain22);
+         when(domainHelper.filterChildSubDomains(sourceDomainIds)).thenReturn(new ArrayList<>(sourceDomainIds));
+ 

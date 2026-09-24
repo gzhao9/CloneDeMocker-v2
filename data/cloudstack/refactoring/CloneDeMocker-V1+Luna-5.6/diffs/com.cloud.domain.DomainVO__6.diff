@@ -1,0 +1,103 @@
+--- a/server/src/test/java/com/cloud/api/query/QueryManagerImplTest.java
++++ b/server/src/test/java/com/cloud/api/query/QueryManagerImplTest.java
+@@ -569,8 +569,7 @@
+     @Test
+     public void getDedicatedHostIdsForDomainReturnsEmptyWhenNoDedications() {
+         AccountVO caller = createAccount("domain-admin", 5L, 100L);
+-        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+-        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
++        DomainVO callerDomain = createMockDomainVO("/Acme/");
+         Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+         Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+         Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(new ArrayList<>());
+@@ -583,8 +582,7 @@
+     @Test
+     public void getDedicatedHostIdsForDomainIncludesHostDedicatedToOwnDomain() {
+         AccountVO caller = createAccount("domain-admin", 5L, 100L);
+-        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+-        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
++        DomainVO callerDomain = createMockDomainVO("/Acme/");
+         Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+         Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+         Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(
+@@ -600,8 +598,7 @@
+         // dedications narrowed to a specific account (not the caller's own) within the caller's
+         // domain should still be visible to the domain admin
+         AccountVO caller = createAccount("domain-admin", 5L, 100L);
+-        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+-        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
++        DomainVO callerDomain = createMockDomainVO("/Acme/");
+         Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+         Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+         Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(
+@@ -615,8 +612,7 @@
+     @Test
+     public void getDedicatedHostIdsForDomainResolvesClusterPodAndZoneDedicationsToMemberHosts() {
+         AccountVO caller = createAccount("domain-admin", 5L, 100L);
+-        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+-        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
++        DomainVO callerDomain = createMockDomainVO("/Acme/");
+         Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+         Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+         Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(List.of(
+@@ -639,8 +635,7 @@
+     public void getDedicatedHostIdsForDomainIncludesSubDomainDedications() {
+         // domain admin of the parent domain "Acme" should see a host dedicated to its sub-domain "Acme/EU"
+         AccountVO caller = createAccount("acme-admin", 5L, 100L);
+-        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+-        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
++        DomainVO callerDomain = createMockDomainVO("/Acme/");
+         Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+         Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L, 6L)));
+         Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(new ArrayList<>());
+@@ -656,8 +651,7 @@
+     public void getDedicatedHostIdsForDomainExcludesParentDomainDedications() {
+         // domain admin of the sub-domain "Acme/EU" must NOT see a host dedicated to its parent domain "Acme"
+         AccountVO caller = createAccount("eu-admin", 6L, 100L);
+-        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+-        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/EU/");
++        DomainVO callerDomain = createMockDomainVO("/Acme/EU/");
+         Mockito.when(domainDao.findById(6L)).thenReturn(callerDomain);
+         Mockito.when(domainManager.getDomainChildrenIds("/Acme/EU/")).thenReturn(new HashSet<>(List.of(6L)));
+         Mockito.when(dedicatedResourceDao.listAllByDomainId(6L)).thenReturn(new ArrayList<>());
+@@ -671,8 +665,7 @@
+     @Test
+     public void getDedicatedHostIdsForDomainDeduplicatesHostIds() {
+         AccountVO caller = createAccount("domain-admin", 5L, 100L);
+-        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+-        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
++        DomainVO callerDomain = createMockDomainVO("/Acme/");
+         Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+         Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+         // host 40 is dedicated directly, and also belongs to a cluster that is separately dedicated
+@@ -709,8 +702,7 @@
+     public void searchForHostTagsNonRootAdminWithNoDedicatedHostsReturnsEmptyWithoutQuerying() {
+         account.setDomainId(5L);
+         Mockito.when(accountManager.isRootAdmin(account.getId())).thenReturn(false);
+-        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+-        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
++        DomainVO callerDomain = createMockDomainVO("/Acme/");
+         Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+         Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+         Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(new ArrayList<>());
+@@ -730,8 +722,7 @@
+     public void searchForHostTagsNonRootAdminRestrictsQueryToDedicatedHostIds() {
+         account.setDomainId(5L);
+         Mockito.when(accountManager.isRootAdmin(account.getId())).thenReturn(false);
+-        DomainVO callerDomain = Mockito.mock(DomainVO.class);
+-        Mockito.when(callerDomain.getPath()).thenReturn("/Acme/");
++        DomainVO callerDomain = createMockDomainVO("/Acme/");
+         Mockito.when(domainDao.findById(5L)).thenReturn(callerDomain);
+         Mockito.when(domainManager.getDomainChildrenIds("/Acme/")).thenReturn(new HashSet<>(List.of(5L)));
+         Mockito.when(dedicatedResourceDao.listAllByDomainId(5L)).thenReturn(
+@@ -891,4 +882,10 @@
+         assertEquals(1, hostTags.size());
+         assertTrue(hostTags.contains(tag1));
+     }
++
++    private static DomainVO createMockDomainVO(String path) {
++        DomainVO callerDomain = Mockito.mock(DomainVO.class);
++        Mockito.when(callerDomain.getPath()).thenReturn(path);
++        return callerDomain;
++    }
+ }
