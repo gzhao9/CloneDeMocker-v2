@@ -1,0 +1,70 @@
+--- a/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/AncientDataMotionStrategyTest.java
++++ b/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/AncientDataMotionStrategyTest.java
+@@ -400,12 +400,11 @@
+         method.setAccessible(true);
+ 
+         EndPoint endPoint = Mockito.mock(EndPoint.class);
+-        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
++        VolumeInfo volumeInfo = MockVolumeInfo.createMockVolumeInfo(dataStore);
+         // Create mock that implements both DataStore and StoragePool interfaces
+         DataStore dataStore = Mockito.mock(DataStore.class, Mockito.withSettings().extraInterfaces(StoragePool.class));
+         ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+ 
+-        Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
+         Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+ 
+         method.invoke(strategy, endPoint, volumeInfo);
+@@ -504,4 +503,17 @@
+         Mockito.verify(clvmPoolManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
+                 any(String.class), any(StoragePool.class), Mockito.anyBoolean());
+     }
++
++    public final class MockVolumeInfo {
++        private MockVolumeInfo() {
++        }
++
++        public static org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo createMockVolumeInfo(
++                org.apache.cloudstack.engine.subsystem.api.storage.DataStore dataStore) {
++            org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo volumeInfo =
++                    Mockito.mock(org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo.class);
++            Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
++            return volumeInfo;
++        }
++    }
+ }
+--- a/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/KvmNonManagedStorageSystemDataMotionTest.java
++++ b/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/KvmNonManagedStorageSystemDataMotionTest.java
+@@ -404,6 +404,7 @@
+     @Before
+     public void setUp() {
+         migrationMap = new HashMap<>();
++        volumeInfo1 = MockVolumeInfo.createMockVolumeInfo(dataStore1);
+         migrationMap.put(volumeInfo1, dataStore2);
+         migrationMap.put(volumeInfo2, dataStore2);
+ 
+@@ -413,7 +414,6 @@
+         when(dataStore2.getId()).thenReturn(POOL_2_ID);
+         when(primaryDataStoreDao.findById(POOL_2_ID)).thenReturn(pool2);
+         when(pool2.isManaged()).thenReturn(true);
+-        when(volumeInfo1.getDataStore()).thenReturn(dataStore1);
+ 
+         when(volumeInfo2.getPoolId()).thenReturn(POOL_1_ID);
+         lenient().when(volumeInfo2.getDataStore()).thenReturn(dataStore1);
+@@ -520,4 +520,17 @@
+         }
+     }
+ 
++
++    public final class MockVolumeInfo {
++        private MockVolumeInfo() {
++        }
++
++        public static org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo createMockVolumeInfo(
++                org.apache.cloudstack.engine.subsystem.api.storage.DataStore dataStore) {
++            org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo volumeInfo =
++                    Mockito.mock(org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo.class);
++            Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
++            return volumeInfo;
++        }
++    }
+ }
