@@ -1,0 +1,39 @@
+--- a/server/src/test/java/com/cloud/storage/ClvmPoolManagerTest.java
++++ b/server/src/test/java/com/cloud/storage/ClvmPoolManagerTest.java
+@@ -262,11 +262,9 @@
+ 
+     @Test
+     public void testQueryCurrentLockHolder_ZoneScopedPool() throws AgentUnavailableException, OperationTimedoutException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO pool = createMockStoragePool("zone-pool");
+         when(pool.getClusterId()).thenReturn(null);
+         when(pool.getDataCenterId()).thenReturn(1L);
+-        Mockito.lenient().when(pool.getName()).thenReturn("zone-pool");
+-        when(pool.getPath()).thenReturn(VG_NAME);
+ 
+         when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
+ 
+@@ -457,10 +455,8 @@
+ 
+     @Test
+     public void testQueryCurrentLockHolder_UpdateDatabase_MatchingValue() throws AgentUnavailableException, OperationTimedoutException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO pool = createMockStoragePool("cluster-pool");
+         Mockito.lenient().when(pool.getClusterId()).thenReturn(10L);
+-        Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
+-        when(pool.getPath()).thenReturn(VG_NAME);
+ 
+         HostVO host = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+         Mockito.lenient().when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.singletonList(host));
+@@ -933,4 +929,11 @@
+         Mockito.lenient().when(host.getHypervisorType()).thenReturn(hypervisor);
+         return host;
+     }
++
++    private static StoragePoolVO createMockStoragePool(String name) {
++        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
++        Mockito.lenient().when(pool.getName()).thenReturn(name);
++        when(pool.getPath()).thenReturn(VG_NAME);
++        return pool;
++    }
+ }

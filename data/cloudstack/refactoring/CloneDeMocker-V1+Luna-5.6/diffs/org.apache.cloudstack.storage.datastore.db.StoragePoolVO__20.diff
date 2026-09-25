@@ -1,0 +1,53 @@
+--- a/server/src/test/java/com/cloud/storage/ClvmPoolManagerTest.java
++++ b/server/src/test/java/com/cloud/storage/ClvmPoolManagerTest.java
+@@ -244,11 +244,9 @@
+ 
+     @Test
+     public void testQueryCurrentLockHolder_NoHostsInCluster() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        when(pool.getClusterId()).thenReturn(10L);
++        StoragePoolVO pool = createStoragePoolVO();
+         when(pool.getDataCenterId()).thenReturn(1L);
+         when(pool.getName()).thenReturn("test-pool");
+-        when(pool.getPath()).thenReturn(VG_NAME);
+         when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(null);
+         when(hostDao.findByClusterId(10L, Host.Type.Routing)).thenReturn(Collections.emptyList());
+         lenient().when(hostDao.findByDataCenterId(1L)).thenReturn(Collections.emptyList());
+@@ -678,10 +676,8 @@
+      */
+     @Test
+     public void testQueryCurrentLockHolder_FastPath_MissDbHost_FanOutFindsOther() throws AgentUnavailableException, OperationTimedoutException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        when(pool.getClusterId()).thenReturn(10L);
+-        when(pool.getPath()).thenReturn(VG_NAME);
+-
++
++        StoragePoolVO pool = createStoragePoolVO();
+         VolumeDetailVO detail = new VolumeDetailVO();
+         detail.setValue(String.valueOf(HOST_ID_1));
+         when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+@@ -711,10 +707,8 @@
+      */
+     @Test
+     public void testQueryCurrentLockHolder_FastPath_DbHostDown_FanOut() throws AgentUnavailableException, OperationTimedoutException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        when(pool.getClusterId()).thenReturn(10L);
+-        when(pool.getPath()).thenReturn(VG_NAME);
+-
++
++        StoragePoolVO pool = createStoragePoolVO();
+         VolumeDetailVO detail = new VolumeDetailVO();
+         detail.setValue(String.valueOf(HOST_ID_1));
+         when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+@@ -933,4 +927,11 @@
+         Mockito.lenient().when(host.getHypervisorType()).thenReturn(hypervisor);
+         return host;
+     }
++
++    private static StoragePoolVO createStoragePoolVO() {
++        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
++        when(pool.getClusterId()).thenReturn(10L);
++        when(pool.getPath()).thenReturn(VG_NAME);
++        return pool;
++    }
+ }
