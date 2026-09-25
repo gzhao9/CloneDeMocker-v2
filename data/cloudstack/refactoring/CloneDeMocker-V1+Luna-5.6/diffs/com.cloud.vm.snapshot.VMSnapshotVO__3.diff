@@ -1,0 +1,199 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
+@@ -193,10 +193,9 @@
+         String hypervisorVersion = "default";
+         String guestOsName = "Other";
+         List<VolumeObjectTO> volumeObjectTOs = new ArrayList<VolumeObjectTO>();
+-        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
+         UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
+         Mockito.when(userVmVO.getGuestOSId()).thenReturn(guestOsId);
+-        Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
++        VMSnapshotVO vmSnapshot = MockVMSnapshotVO.createMockVMSnapshotVO(vmId);
+         Mockito.when(vmSnapshotHelper.pickRunningHost(ArgumentMatchers.anyLong())).thenReturn(hostId);
+         Mockito.when(vmSnapshotHelper.getVolumeTOList(ArgumentMatchers.anyLong())).thenReturn(volumeObjectTOs);
+         Mockito.when(userVmDao.findById(ArgumentMatchers.anyLong())).thenReturn(userVmVO);
+@@ -209,8 +208,6 @@
+         VMSnapshotTO vmSnapshotTO = Mockito.mock(VMSnapshotTO.class);
+         Mockito.when(vmSnapshotHelper.getSnapshotWithParents(ArgumentMatchers.any(VMSnapshotVO.class))).thenReturn(vmSnapshotTO);
+         Mockito.when(vmSnapshotDao.findById(ArgumentMatchers.anyLong())).thenReturn(vmSnapshot);
+-        Mockito.when(vmSnapshot.getId()).thenReturn(1L);
+-        Mockito.when(vmSnapshot.getCreated()).thenReturn(new Date());
+         HostVO hostVO = Mockito.mock(HostVO.class);
+         Mockito.when(hostDao.findById(ArgumentMatchers.anyLong())).thenReturn(hostVO);
+         Mockito.when(hostVO.getHypervisorType()).thenReturn(hypervisorType);
+@@ -270,10 +267,9 @@
+         String hypervisorVersion = "default";
+         String guestOsName = "Other";
+         List<VolumeObjectTO> volumeObjectTOs = new ArrayList<VolumeObjectTO>();
+-        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
++        VMSnapshotVO vmSnapshot = MockVMSnapshotVO.createMockVMSnapshotVO(vmId);
+         UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
+         Mockito.when(userVmVO.getGuestOSId()).thenReturn(guestOsId);
+-        Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
+         Mockito.when(vmSnapshotHelper.pickRunningHost(ArgumentMatchers.anyLong())).thenReturn(hostId);
+         Mockito.when(vmSnapshotHelper.getVolumeTOList(ArgumentMatchers.anyLong())).thenReturn(volumeObjectTOs);
+         Mockito.when(userVmDao.findById(ArgumentMatchers.anyLong())).thenReturn(userVmVO);
+@@ -286,8 +282,6 @@
+         VMSnapshotTO vmSnapshotTO = Mockito.mock(VMSnapshotTO.class);
+         Mockito.when(vmSnapshotHelper.getSnapshotWithParents(ArgumentMatchers.any(VMSnapshotVO.class))).thenReturn(vmSnapshotTO);
+         Mockito.when(vmSnapshotDao.findById(ArgumentMatchers.anyLong())).thenReturn(vmSnapshot);
+-        Mockito.when(vmSnapshot.getId()).thenReturn(1L);
+-        Mockito.when(vmSnapshot.getCreated()).thenReturn(new Date());
+         HostVO hostVO = Mockito.mock(HostVO.class);
+         Mockito.when(hostDao.findById(ArgumentMatchers.anyLong())).thenReturn(hostVO);
+         Mockito.when(hostVO.getHypervisorType()).thenReturn(hypervisorType);
+@@ -449,4 +443,19 @@
+             return Mockito.mock(SnapshotDataStoreDao.class);
+         }
+     }
++
++    public final class MockVMSnapshotVO {
++
++        private MockVMSnapshotVO() {
++        }
++
++        public static com.cloud.vm.snapshot.VMSnapshotVO createMockVMSnapshotVO(Long vmId) {
++            com.cloud.vm.snapshot.VMSnapshotVO vmSnapshot =
++                    org.mockito.Mockito.mock(com.cloud.vm.snapshot.VMSnapshotVO.class);
++            org.mockito.Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
++            org.mockito.Mockito.when(vmSnapshot.getId()).thenReturn(1L);
++            org.mockito.Mockito.when(vmSnapshot.getCreated()).thenReturn(new java.util.Date());
++            return vmSnapshot;
++        }
++    }
+ }
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyTest.java
+@@ -159,9 +159,54 @@
+         String hypervisorVersion = "default";
+         String guestOsName = "Other";
+         List<VolumeObjectTO> volumeObjectTOs = new ArrayList<VolumeObjectTO>();
+-        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
+         UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
+         Mockito.when(userVmVO.getGuestOSId()).thenReturn(guestOsId);
++        VMSnapshotVO vmSnapshot = MockVMSnapshotVO.createMockVMSnapshotVO(vmId);
++        Mockito.when(vmSnapshotHelper.pickRunningHost(ArgumentMatchers.anyLong())).thenReturn(hostId);
++        Mockito.when(vmSnapshotHelper.getVolumeTOList(ArgumentMatchers.anyLong())).thenReturn(volumeObjectTOs);
++        Mockito.when(userVmDao.findById(ArgumentMatchers.anyLong())).thenReturn(userVmVO);
++        GuestOSVO guestOSVO = Mockito.mock(GuestOSVO.class);
++        Mockito.when(guestOSDao.findById(ArgumentMatchers.anyLong())).thenReturn(guestOSVO);
++        GuestOSHypervisorVO guestOSHypervisorVO = Mockito.mock(GuestOSHypervisorVO.class);
++        Mockito.when(guestOSHypervisorVO.getGuestOsName()).thenReturn(guestOsName);
++        Mockito.when(guestOsHypervisorDao.findById(ArgumentMatchers.anyLong())).thenReturn(guestOSHypervisorVO);
++        Mockito.when(guestOsHypervisorDao.findByOsIdAndHypervisor(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(guestOSHypervisorVO);
++        VMSnapshotTO vmSnapshotTO = Mockito.mock(VMSnapshotTO.class);
++        Mockito.when(vmSnapshotHelper.getSnapshotWithParents(ArgumentMatchers.any(VMSnapshotVO.class))).thenReturn(vmSnapshotTO);
++        Mockito.when(vmSnapshotDao.findById(ArgumentMatchers.anyLong())).thenReturn(vmSnapshot);
++        Mockito.when(agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Command.class))).thenReturn(null);
++        HostVO hostVO = Mockito.mock(HostVO.class);
++        Mockito.when(hostDao.findById(ArgumentMatchers.anyLong())).thenReturn(hostVO);
++        Mockito.when(hostVO.getHypervisorType()).thenReturn(hypervisorType);
++        Mockito.when(hostVO.getHypervisorVersion()).thenReturn(hypervisorVersion);
++        Exception e = null;
++        try {
++            vmSnapshotStrategy.revertVMSnapshot(vmSnapshot);
++        } catch (CloudRuntimeException e1) {
++            e = e1;
++        }
++
++        assertNotNull(e);
++
++        RevertToVMSnapshotAnswer answer = Mockito.mock(RevertToVMSnapshotAnswer.class);
++        Mockito.when(answer.getResult()).thenReturn(Boolean.TRUE);
++        Mockito.when(agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Command.class))).thenReturn(answer);
++        boolean result = vmSnapshotStrategy.revertVMSnapshot(vmSnapshot);
++        assertTrue(result);
++    }
++
++    @Test
++    public void testDeleteVMSnapshot() throws AgentUnavailableException, OperationTimedoutException {
++        Long hostId = 1L;
++        Long vmId = 1L;
++        Long guestOsId = 1L;
++        HypervisorType hypervisorType = HypervisorType.Any;
++        String hypervisorVersion = "default";
++        String guestOsName = "Other";
++        List<VolumeObjectTO> volumeObjectTOs = new ArrayList<VolumeObjectTO>();
++        UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
++        Mockito.when(userVmVO.getGuestOSId()).thenReturn(guestOsId);
++         MockVMSnapshotVO.createMockVMSnapshotVO(vmId);
+         Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
+         Mockito.when(vmSnapshotHelper.pickRunningHost(ArgumentMatchers.anyLong())).thenReturn(hostId);
+         Mockito.when(vmSnapshotHelper.getVolumeTOList(ArgumentMatchers.anyLong())).thenReturn(volumeObjectTOs);
+@@ -175,56 +220,6 @@
+         VMSnapshotTO vmSnapshotTO = Mockito.mock(VMSnapshotTO.class);
+         Mockito.when(vmSnapshotHelper.getSnapshotWithParents(ArgumentMatchers.any(VMSnapshotVO.class))).thenReturn(vmSnapshotTO);
+         Mockito.when(vmSnapshotDao.findById(ArgumentMatchers.anyLong())).thenReturn(vmSnapshot);
+-        Mockito.when(vmSnapshot.getId()).thenReturn(1L);
+-        Mockito.when(vmSnapshot.getCreated()).thenReturn(new Date());
+-        Mockito.when(agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Command.class))).thenReturn(null);
+-        HostVO hostVO = Mockito.mock(HostVO.class);
+-        Mockito.when(hostDao.findById(ArgumentMatchers.anyLong())).thenReturn(hostVO);
+-        Mockito.when(hostVO.getHypervisorType()).thenReturn(hypervisorType);
+-        Mockito.when(hostVO.getHypervisorVersion()).thenReturn(hypervisorVersion);
+-        Exception e = null;
+-        try {
+-            vmSnapshotStrategy.revertVMSnapshot(vmSnapshot);
+-        } catch (CloudRuntimeException e1) {
+-            e = e1;
+-        }
+-
+-        assertNotNull(e);
+-
+-        RevertToVMSnapshotAnswer answer = Mockito.mock(RevertToVMSnapshotAnswer.class);
+-        Mockito.when(answer.getResult()).thenReturn(Boolean.TRUE);
+-        Mockito.when(agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Command.class))).thenReturn(answer);
+-        boolean result = vmSnapshotStrategy.revertVMSnapshot(vmSnapshot);
+-        assertTrue(result);
+-    }
+-
+-    @Test
+-    public void testDeleteVMSnapshot() throws AgentUnavailableException, OperationTimedoutException {
+-        Long hostId = 1L;
+-        Long vmId = 1L;
+-        Long guestOsId = 1L;
+-        HypervisorType hypervisorType = HypervisorType.Any;
+-        String hypervisorVersion = "default";
+-        String guestOsName = "Other";
+-        List<VolumeObjectTO> volumeObjectTOs = new ArrayList<VolumeObjectTO>();
+-        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
+-        UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
+-        Mockito.when(userVmVO.getGuestOSId()).thenReturn(guestOsId);
+-        Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
+-        Mockito.when(vmSnapshotHelper.pickRunningHost(ArgumentMatchers.anyLong())).thenReturn(hostId);
+-        Mockito.when(vmSnapshotHelper.getVolumeTOList(ArgumentMatchers.anyLong())).thenReturn(volumeObjectTOs);
+-        Mockito.when(userVmDao.findById(ArgumentMatchers.anyLong())).thenReturn(userVmVO);
+-        GuestOSVO guestOSVO = Mockito.mock(GuestOSVO.class);
+-        Mockito.when(guestOSDao.findById(ArgumentMatchers.anyLong())).thenReturn(guestOSVO);
+-        GuestOSHypervisorVO guestOSHypervisorVO = Mockito.mock(GuestOSHypervisorVO.class);
+-        Mockito.when(guestOSHypervisorVO.getGuestOsName()).thenReturn(guestOsName);
+-        Mockito.when(guestOsHypervisorDao.findById(ArgumentMatchers.anyLong())).thenReturn(guestOSHypervisorVO);
+-        Mockito.when(guestOsHypervisorDao.findByOsIdAndHypervisor(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(guestOSHypervisorVO);
+-        VMSnapshotTO vmSnapshotTO = Mockito.mock(VMSnapshotTO.class);
+-        Mockito.when(vmSnapshotHelper.getSnapshotWithParents(ArgumentMatchers.any(VMSnapshotVO.class))).thenReturn(vmSnapshotTO);
+-        Mockito.when(vmSnapshotDao.findById(ArgumentMatchers.anyLong())).thenReturn(vmSnapshot);
+-        Mockito.when(vmSnapshot.getId()).thenReturn(1L);
+-        Mockito.when(vmSnapshot.getCreated()).thenReturn(new Date());
+         Mockito.when(agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Command.class))).thenReturn(null);
+         HostVO hostVO = Mockito.mock(HostVO.class);
+         Mockito.when(hostDao.findById(ArgumentMatchers.anyLong())).thenReturn(hostVO);
+@@ -342,4 +337,19 @@
+             return Mockito.mock(BackupManager.class);
+         }
+     }
++
++    public final class MockVMSnapshotVO {
++
++        private MockVMSnapshotVO() {
++        }
++
++        public static com.cloud.vm.snapshot.VMSnapshotVO createMockVMSnapshotVO(Long vmId) {
++            com.cloud.vm.snapshot.VMSnapshotVO vmSnapshot =
++                    org.mockito.Mockito.mock(com.cloud.vm.snapshot.VMSnapshotVO.class);
++            org.mockito.Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
++            org.mockito.Mockito.when(vmSnapshot.getId()).thenReturn(1L);
++            org.mockito.Mockito.when(vmSnapshot.getCreated()).thenReturn(new java.util.Date());
++            return vmSnapshot;
++        }
++    }
+ }
