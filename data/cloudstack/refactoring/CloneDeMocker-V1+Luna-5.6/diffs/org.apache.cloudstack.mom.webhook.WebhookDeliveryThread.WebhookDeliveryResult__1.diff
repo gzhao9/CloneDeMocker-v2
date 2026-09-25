@@ -1,0 +1,67 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
+@@ -482,15 +482,11 @@
+ 
+     @Test
+     public void deliveryCompleteCallbackPersistsDeliveryVO() {
+-        WebhookDeliveryThread.WebhookDeliveryResult result = Mockito.mock(WebhookDeliveryThread.WebhookDeliveryResult.class);
+         WebhookDeliveryThread.WebhookDeliveryContext<Webhook> context = Mockito.mock(WebhookDeliveryThread.WebhookDeliveryContext.class);
+ 
+         Mockito.when(context.getEventId()).thenReturn(123L);
+         Mockito.when(context.getRuleId()).thenReturn(456L);
+-        Mockito.when(result.getHeaders()).thenReturn("headers");
+-        Mockito.when(result.getPayload()).thenReturn("payload");
+-        Mockito.when(result.isSuccess()).thenReturn(true);
+-        Mockito.when(result.getResult()).thenReturn("result");
++        WebhookDeliveryThread.WebhookDeliveryResult result = createMockWebhookDeliveryResult();
+ 
+         AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback = Mockito.mock(AsyncCallbackDispatcher.class);
+         Mockito.when(callback.getResult()).thenReturn(result);
+@@ -588,14 +584,10 @@
+     public void executeWebhookDeliveryPersistsDeliveryWhenDeliveryExists() {
+         WebhookDelivery delivery = Mockito.mock(WebhookDelivery.class);
+         Webhook webhook = Mockito.mock(Webhook.class);
+-        WebhookDeliveryThread.WebhookDeliveryResult result = Mockito.mock(WebhookDeliveryThread.WebhookDeliveryResult.class);
++        WebhookDeliveryThread.WebhookDeliveryResult result = createMockWebhookDeliveryResult();
+ 
+         Mockito.when(delivery.getEventId()).thenReturn(123L);
+         Mockito.when(delivery.getWebhookId()).thenReturn(456L);
+-        Mockito.when(result.getHeaders()).thenReturn("headers");
+-        Mockito.when(result.getPayload()).thenReturn("payload");
+-        Mockito.when(result.isSuccess()).thenReturn(true);
+-        Mockito.when(result.getResult()).thenReturn("result");
+         Mockito.when(result.getStarTime()).thenReturn(new Date(System.currentTimeMillis() - (2 * 1000L)));
+         Mockito.when(result.getEndTime()).thenReturn(new Date(System.currentTimeMillis()));
+         Mockito.when(eventJoinDao.findById(123L)).thenReturn(Mockito.mock(EventJoinVO.class));
+@@ -620,16 +612,11 @@
+     @Test
+     public void executeWebhookDeliveryCreatesAndReturnsNewDeliveryWhenDeliveryIsNull() {
+         Webhook webhook = Mockito.mock(Webhook.class);
+-        WebhookDeliveryThread.WebhookDeliveryResult result =
+-                Mockito.mock(WebhookDeliveryThread.WebhookDeliveryResult.class);
+         Account account = Mockito.mock(Account.class);
+ 
+         Mockito.when(webhook.getAccountId()).thenReturn(2L);
+         Mockito.when(accountManager.getAccount(Mockito.anyLong())).thenReturn(account);
+-        Mockito.when(result.getHeaders()).thenReturn("headers");
+-        Mockito.when(result.getPayload()).thenReturn("payload");
+-        Mockito.when(result.isSuccess()).thenReturn(true);
+-        Mockito.when(result.getResult()).thenReturn("result");
++        WebhookDeliveryThread.WebhookDeliveryResult result = createMockWebhookDeliveryResult();
+         Mockito.when(result.getStarTime()).thenReturn(new Date(System.currentTimeMillis() - (2 * 1000L)));
+         Mockito.when(result.getEndTime()).thenReturn(new Date(System.currentTimeMillis()));
+         ExecutorService executorService = Mockito.mock(ExecutorService.class);
+@@ -670,4 +657,13 @@
+ 
+         Mockito.verify(cache, Mockito.times(1)).invalidate(123L);
+     }
++
++    private static WebhookDeliveryThread.WebhookDeliveryResult createMockWebhookDeliveryResult() {
++        WebhookDeliveryThread.WebhookDeliveryResult result = Mockito.mock(WebhookDeliveryThread.WebhookDeliveryResult.class);
++        Mockito.when(result.getHeaders()).thenReturn("headers");
++        Mockito.when(result.getPayload()).thenReturn("payload");
++        Mockito.when(result.getResult()).thenReturn("result");
++        Mockito.when(result.isSuccess()).thenReturn(true);
++        return result;
++    }
+ }

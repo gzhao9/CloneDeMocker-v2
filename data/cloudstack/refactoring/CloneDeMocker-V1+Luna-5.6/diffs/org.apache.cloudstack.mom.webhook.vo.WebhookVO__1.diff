@@ -1,0 +1,42 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
+@@ -977,12 +977,11 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void updateWebhookThrowsExceptionForInvalidScope() {
+         UpdateWebhookCmd cmd = Mockito.mock(UpdateWebhookCmd.class);
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+         Mockito.when(cmd.getScope()).thenReturn("InvalidScope");
++        WebhookVO webhook = createMockWebhookVO();
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+-        Mockito.when(webhook.getAccountId()).thenReturn(1L);
+         Mockito.when(accountManager.getAccount(1L)).thenReturn(caller);
+ 
+         webhookApiServiceImpl.updateWebhook(cmd);
+@@ -991,13 +990,12 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void updateWebhookThrowsExceptionForNonHttpsWithSslVerification() {
+         UpdateWebhookCmd cmd = Mockito.mock(UpdateWebhookCmd.class);
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
++        WebhookVO webhook = createMockWebhookVO();
+         Mockito.when(webhook.getPayloadUrl()).thenReturn("http://abc.xyz");
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+         Mockito.when(cmd.getPayloadUrl()).thenReturn("http://cloudstack.apache.org/");
+         Mockito.when(cmd.isSslVerification()).thenReturn(true);
+-        Mockito.when(webhook.getAccountId()).thenReturn(1L);
+         Mockito.when(accountManager.getAccount(1L)).thenReturn(caller);
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+ 
+@@ -1491,4 +1489,10 @@
+         Assert.assertNotNull(result);
+         Assert.assertEquals(managementServerHostVO, result);
+     }
++
++    private static WebhookVO createMockWebhookVO() {
++        WebhookVO webhook = Mockito.mock(WebhookVO.class);
++        Mockito.when(webhook.getAccountId()).thenReturn(1L);
++        return webhook;
++    }
+ }

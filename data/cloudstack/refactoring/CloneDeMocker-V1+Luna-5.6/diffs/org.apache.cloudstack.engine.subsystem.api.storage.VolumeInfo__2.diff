@@ -1,0 +1,64 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -2140,7 +2140,7 @@
+ 
+     @Test
+     public void testGetPoolForAllocatedOrUploadedVolumeForAttach_Success() {
+-        VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
++        VolumeInfo volumeToAttach = createMockVolumeInfo();
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+         ClusterVO cluster = Mockito.mock(ClusterVO.class);
+         HostPodVO pod = Mockito.mock(HostPodVO.class);
+@@ -2152,7 +2152,6 @@
+         when(clusterDao.findById(1L)).thenReturn(cluster);
+         when(cluster.getPodId()).thenReturn(1L);
+         when(podDao.findById(1L)).thenReturn(pod);
+-        when(volumeToAttach.getDiskOfferingId()).thenReturn(1L);
+         when(volumeOrchestrationService.findStoragePool(any(DiskProfile.class), eq(zone), eq(pod), eq(1L), eq(2L), eq(vm), eq(Collections.emptySet())))
+                 .thenReturn(pool);
+         StoragePool result = volumeApiServiceImpl.getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+@@ -2162,7 +2161,6 @@
+ 
+     @Test
+     public void testGetPoolForAllocatedOrUploadedVolumeForAttach_NoSuitablePoolFound_ReturnsNull() {
+-        VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+         DataCenterVO zone = mockZone();
+         Pair<Long, Long> clusterHostId = new Pair<>(1L, 2L);
+@@ -2173,7 +2171,7 @@
+         when(clusterDao.findById(1L)).thenReturn(cluster);
+         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(clusterHostId);
+         when(podDao.findById(anyLong())).thenReturn(pod);
+-        when(volumeToAttach.getDiskOfferingId()).thenReturn(1L);
++        VolumeInfo volumeToAttach = createMockVolumeInfo();
+         when(volumeOrchestrationService.findStoragePool(any(DiskProfile.class), eq(zone), eq(pod), eq(1L), eq(2L), eq(vm), eq(Collections.emptySet())))
+                 .thenReturn(null);
+         Assert.assertNull(volumeApiServiceImpl.getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm));
+@@ -2181,7 +2179,7 @@
+ 
+     @Test
+     public void testGetSuitablePoolForAllocatedOrUploadedVolumeForAttach_NoCluster() {
+-        VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
++        VolumeInfo volumeToAttach = createMockVolumeInfo();
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+         DataCenterVO zone = mockZone();
+         HostPodVO pod = Mockito.mock(HostPodVO.class);
+@@ -2191,7 +2189,6 @@
+         when(vm.getPodIdToDeployIn()).thenReturn(2L);
+         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(null, 2L));
+         when(podDao.findById(2L)).thenReturn(pod);
+-        when(volumeToAttach.getDiskOfferingId()).thenReturn(1L);
+         when(volumeOrchestrationService.findStoragePool(any(DiskProfile.class), eq(zone), eq(pod), eq(null), eq(2L), eq(vm), eq(Collections.emptySet())))
+                 .thenReturn(pool);
+         StoragePool result = volumeApiServiceImpl.getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+@@ -2896,4 +2893,10 @@
+                     e.getMessage() != null && e.getMessage().contains("VM should be in"));
+         }
+     }
++
++    private static VolumeInfo createMockVolumeInfo() {
++        VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
++        when(volumeToAttach.getDiskOfferingId()).thenReturn(1L);
++        return volumeToAttach;
++    }
+ }

@@ -1,0 +1,76 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -155,6 +155,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class VolumeApiServiceImplTest {
++    @Mock
++    private VolumeInfo volumeInfo;
+ 
+     @Spy
+     @InjectMocks
+@@ -1922,7 +1924,6 @@
+         when(volume.getId()).thenReturn(1L);
+         when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.KVM);
+ 
+-        VolumeInfo volumeInfo = mock(VolumeInfo.class);
+         when(volumeDataFactoryMock.getVolume(1L)).thenReturn(volumeInfo);
+ 
+         String checkResult = "{\n" +
+@@ -1984,10 +1985,9 @@
+         when(volumeVoMock.getVolumeType()).thenReturn(Type.DATADISK);
+         when(newDiskOfferingMock.getDiskSize()).thenReturn(newVolumeSizeMock);
+ 
+-        VolumeInfo volInfo = Mockito.mock(VolumeInfo.class);
++        when((volumeInfo.getDataStore())).thenReturn(dataStore);
+         when(volumeDataFactoryMock.getVolume(volumeMockId)).thenReturn(volInfo);
+         DataStore dataStore = Mockito.mock(DataStore.class);
+-        when((volInfo.getDataStore())).thenReturn(dataStore);
+ 
+         when(volumeVoMock.getPoolId()).thenReturn(poolId);
+         StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+@@ -2221,15 +2221,13 @@
+         StoragePoolVO destPrimaryStorage = Mockito.mock(StoragePoolVO.class);
+         Mockito.when(destPrimaryStorage.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         Mockito.when(primaryDataStoreDaoMock.findById(1L)).thenReturn(destPrimaryStorage);
+-        VolumeInfo newVolumeOnPrimaryStorage = Mockito.mock(VolumeInfo.class);
+         try {
+-            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage, null, null))
+-                    .thenReturn(newVolumeOnPrimaryStorage);
++            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage, null, null)).thenReturn(volumeInfo);
+         } catch (NoTransitionException nte) {
+             Assert.fail(nte.getMessage());
+         }
+         VolumeInfo result = volumeApiServiceImpl.createVolumeOnPrimaryForAttachIfNeeded(volumeToAttach, vm, existingVolume);
+-        Assert.assertSame(newVolumeOnPrimaryStorage, result);
++        Assert.assertSame(volumeInfo, result);
+         Mockito.verify(primaryDataStoreDaoMock).findById(1L);
+     }
+ 
+@@ -2241,16 +2239,13 @@
+         StoragePool destPrimaryStorage = Mockito.mock(StoragePool.class);
+         Mockito.doReturn(destPrimaryStorage).when(volumeApiServiceImpl)
+                 .getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+-        VolumeInfo newVolumeOnPrimaryStorage = Mockito.mock(VolumeInfo.class);
+         try {
+-            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(
+-                    vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage, null, null))
+-                .thenReturn(newVolumeOnPrimaryStorage);
++            Mockito.when(volumeOrchestrationService.createVolumeOnPrimaryStorage(vm, volumeToAttach, vm.getHypervisorType(), destPrimaryStorage, null, null)).thenReturn(volumeInfo);
+         } catch (NoTransitionException nte) {
+             Assert.fail(nte.getMessage());
+         }
+         VolumeInfo result = volumeApiServiceImpl.createVolumeOnPrimaryForAttachIfNeeded(volumeToAttach, vm, null);
+-        Assert.assertSame(newVolumeOnPrimaryStorage, result);
++        Assert.assertSame(volumeInfo, result);
+         verify(volumeApiServiceImpl).getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+     }
+ 
+@@ -2658,7 +2653,6 @@
+ 
+     @Test
+     public void testIsClvmLockTransferRequired_NullVM() {
+-        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+ 
+         boolean result = invokePrivateMethod("isClvmLockTransferRequired",

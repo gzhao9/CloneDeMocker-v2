@@ -1,0 +1,37 @@
+--- a/plugins/user-authenticators/oauth2/src/test/java/org/apache/cloudstack/oauth2/api/command/OauthLoginAPIAuthenticatorCmdTest.java
++++ b/plugins/user-authenticators/oauth2/src/test/java/org/apache/cloudstack/oauth2/api/command/OauthLoginAPIAuthenticatorCmdTest.java
+@@ -112,10 +112,8 @@
+         String responseType = "json";
+         Map<String, Object[]> params = new HashMap<>();
+         params.put(ApiConstants.DOMAIN_ID, new String[]{"1234"});
+-        ApiServer apiServer = mock(ApiServer.class);
++        ApiServer apiServer = createMockApiServer("1234", 5678L, params);
+         cmd._apiServer = apiServer;
+-        when(apiServer.fetchDomainId("1234")).thenReturn(5678L);
+-        when(apiServer.getDomainId(params)).thenCallRealMethod();
+ 
+         Long domainId = cmd.getDomainIdFromParams(params, auditTrailSb, responseType);
+ 
+@@ -130,14 +128,19 @@
+         Map<String, Object[]> params = new HashMap<>();
+         params.put(ApiConstants.DOMAIN_ID, null);
+         params.put(ApiConstants.DOMAIN__ID, new String[]{"5678"});
+-        ApiServer apiServer = mock(ApiServer.class);
++        ApiServer apiServer = createMockApiServer("5678", 1234L, params);
+         cmd._apiServer = apiServer;
+-        when(apiServer.fetchDomainId("5678")).thenReturn(1234L);
+-        when(apiServer.getDomainId(params)).thenCallRealMethod();
+ 
+         Long domainId = cmd.getDomainIdFromParams(params, auditTrailSb, responseType);
+ 
+         assertEquals(Long.valueOf(1234), domainId);
+         assertEquals(" domainid=1234", auditTrailSb.toString());
+     }
++
++    private static ApiServer createMockApiServer(String fetchDomainIdArgument, long fetchDomainIdReturn, Map<String, Object[]> params) {
++        ApiServer apiServer = mock(ApiServer.class);
++        when(apiServer.fetchDomainId(fetchDomainIdArgument)).thenReturn(fetchDomainIdReturn);
++        when(apiServer.getDomainId(params)).thenCallRealMethod();
++        return apiServer;
++    }
+ }

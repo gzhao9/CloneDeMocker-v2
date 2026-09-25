@@ -1,0 +1,33 @@
+--- a/plugins/ca/root-ca/src/test/java/org/apache/cloudstack/ca/provider/RootCAProviderTest.java
++++ b/plugins/ca/root-ca/src/test/java/org/apache/cloudstack/ca/provider/RootCAProviderTest.java
+@@ -256,8 +256,7 @@
+         X509Certificate mismatchedCert = CertUtils.generateV3Certificate(null, otherKeyPair, otherKeyPair.getPublic(), "CN=other", "SHA256withRSA", 365, null, null);
+         String mismatchedPem = CertUtils.x509CertificateToPem(mismatchedCert);
+ 
+-        ConfigKey<String> mockCertKey = Mockito.mock(ConfigKey.class);
+-        Mockito.when(mockCertKey.value()).thenReturn(mismatchedPem);
++        ConfigKey<String> mockCertKey = createMockConfigKey(mismatchedPem);
+         addField(provider, "rootCACertificate", mockCertKey);
+ 
+         addField(provider, "caCertificate", null);
+@@ -278,8 +277,7 @@
+         Mockito.when(mockCertKey.category()).thenReturn("Hidden");
+         addField(provider, "rootCACertificate", mockCertKey);
+ 
+-        ConfigKey<String> mockIssuerKey = Mockito.mock(ConfigKey.class);
+-        Mockito.when(mockIssuerKey.value()).thenReturn("CN=ca.cloudstack.apache.org");
++        ConfigKey<String> mockIssuerKey = createMockConfigKey("CN=ca.cloudstack.apache.org");
+         addField(provider, "rootCAIssuerDN", mockIssuerKey);
+ 
+         addField(provider, "caCertificate", null);
+@@ -303,4 +301,10 @@
+             Assert.assertTrue(e.getMessage().contains("is not a valid PEM certificate"));
+         }
+     }
++
++    private static ConfigKey<String> createMockConfigKey(String value) {
++        ConfigKey<String> mockConfigKey = Mockito.mock(ConfigKey.class);
++        Mockito.when(mockConfigKey.value()).thenReturn(value);
++        return mockConfigKey;
++    }
+ }

@@ -1,0 +1,148 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
+@@ -848,7 +848,6 @@
+     @Test
+     public void createWebhookCreatesWebhookSuccessfully() {
+         CreateWebhookCmd cmd = Mockito.mock(CreateWebhookCmd.class);
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+         WebhookJoinVO webhookJoinVO = Mockito.mock(WebhookJoinVO.class);
+         Mockito.when(webhookJoinVO.getState()).thenReturn(Webhook.State.Enabled);
+         Mockito.when(webhookJoinVO.getScope()).thenReturn(Webhook.Scope.Local);
+@@ -861,8 +860,8 @@
+         Mockito.when(cmd.getScope()).thenReturn("Local");
+         Mockito.when(cmd.getState()).thenReturn("Enabled");
+         Mockito.when(caller.getDomainId()).thenReturn(1L);
++        WebhookVO webhook = MockWebhook.createMockWebhook(1L);
+         Mockito.when(webhookDao.persist(Mockito.any(WebhookVO.class))).thenReturn(webhook);
+-        Mockito.when(webhook.getId()).thenReturn(1L);
+         Mockito.when(webhookJoinDao.findById(1L)).thenReturn(webhookJoinVO);
+         Mockito.doReturn(caller).when(webhookApiServiceImpl).getOwner(cmd);
+ 
+@@ -929,8 +928,7 @@
+     @Test
+     public void updateWebhookUpdatesAllFieldsSuccessfully() {
+         UpdateWebhookCmd cmd = Mockito.mock(UpdateWebhookCmd.class);
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+-        Mockito.when(webhook.getId()).thenReturn(1L);
++        WebhookVO webhook = MockWebhook.createMockWebhook(1L);
+         Mockito.when(webhook.getPayloadUrl()).thenReturn("http://abc.xyz");
+         String updatedUrl = "https://cloudstack.apache.org/";
+ 
+@@ -1007,8 +1005,7 @@
+     @Test
+     public void updateWebhookDoesNotUpdateUnchangedFields() {
+         UpdateWebhookCmd cmd = Mockito.mock(UpdateWebhookCmd.class);
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+-        Mockito.when(webhook.getId()).thenReturn(1L);
++        WebhookVO webhook = MockWebhook.createMockWebhook(1L);
+         Mockito.when(webhook.getPayloadUrl()).thenReturn("http://abc.xyz");
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+@@ -1373,13 +1370,12 @@
+     @Test
+     public void addWebhookFilterAddsFilterSuccessfullyEvenWithExisting() {
+         AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
++        WebhookVO webhook = MockWebhook.createMockWebhook(1L);
+         WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+         WebhookFilterVO newFilter = Mockito.mock(WebhookFilterVO.class);
+         WebhookFilterResponse filterResponse = Mockito.mock(WebhookFilterResponse.class);
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+-        Mockito.when(webhook.getId()).thenReturn(1L);
+         Mockito.when(filter.getType()).thenReturn(WebhookFilter.Type.EventType);
+         Mockito.when(filter.getMode()).thenReturn(WebhookFilter.Mode.Exclude);
+         Mockito.when(filter.getMatchType()).thenReturn(WebhookFilter.MatchType.Prefix);
+@@ -1402,10 +1398,9 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void addWebhookFilterConflictsWithExisting() {
+         AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
++        WebhookVO webhook = MockWebhook.createMockWebhook(1L);
+         WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+ 
+-        Mockito.when(webhook.getId()).thenReturn(1L);
+         Mockito.when(filter.getType()).thenReturn(WebhookFilter.Type.EventType);
+         Mockito.when(filter.getMode()).thenReturn(WebhookFilter.Mode.Exclude);
+         Mockito.when(filter.getMatchType()).thenReturn(WebhookFilter.MatchType.Prefix);
+@@ -1424,10 +1419,9 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void addWebhookFilterSameEventConflictsWithExisting() {
+         AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
++        WebhookVO webhook = MockWebhook.createMockWebhook(1L);
+         WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+ 
+-        Mockito.when(webhook.getId()).thenReturn(1L);
+         Mockito.when(filter.getType()).thenReturn(WebhookFilter.Type.EventType);
+         Mockito.when(filter.getMode()).thenReturn(WebhookFilter.Mode.Include);
+         Mockito.when(filter.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
+@@ -346,8 +346,7 @@
+         Mockito.when(event.getResourceDomainId()).thenReturn(2L);
+         Mockito.when(domainDao.getDomainParentIds(2L)).thenReturn(Set.of(3L));
+ 
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+-        Mockito.when(webhook.getId()).thenReturn(1L);
++        WebhookVO webhook = MockWebhook.createMockWebhook(1L);
+ 
+         Mockito.when(webhookDao.listByEnabledForDelivery(Mockito.anyLong(), Mockito.anyList())).thenReturn(List.of(webhook));
+         Mockito.when(webhookFilterDao.listByWebhook(Mockito.anyLong())).thenReturn(List.of());
+@@ -366,8 +365,7 @@
+         Mockito.when(event.getResourceDomainId()).thenReturn(2L);
+         Mockito.when(domainDao.getDomainParentIds(2L)).thenReturn(Set.of(3L));
+ 
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+-        Mockito.when(webhook.getId()).thenReturn(1L);
++        WebhookVO webhook = MockWebhook.createMockWebhook(1L);
+         Mockito.when(webhook.getDomainId()).thenReturn(2L);
+ 
+         Mockito.when(webhookDao.listByEnabledForDelivery(Mockito.anyLong(), Mockito.anyList())).thenReturn(List.of(webhook));
+@@ -388,12 +386,10 @@
+         Mockito.when(event.getResourceDomainId()).thenReturn(2L);
+         Mockito.when(domainDao.getDomainParentIds(2L)).thenReturn(Set.of(3L));
+ 
+-        WebhookVO webhook1 = Mockito.mock(WebhookVO.class);
+-        Mockito.when(webhook1.getId()).thenReturn(1L);
++        WebhookVO webhook1 = MockWebhook.createMockWebhook(1L);
+         Mockito.when(webhook1.getDomainId()).thenReturn(2L);
+ 
+-        WebhookVO webhook2 = Mockito.mock(WebhookVO.class);
+-        Mockito.when(webhook2.getId()).thenReturn(2L);
++        WebhookVO webhook2 = MockWebhook.createMockWebhook(2L);
+         Mockito.when(webhook2.getDomainId()).thenReturn(2L);
+ 
+         Mockito.when(webhookDao.listByEnabledForDelivery(Mockito.anyLong(), Mockito.anyList())).thenReturn(List.of(webhook1, webhook2));
+@@ -517,11 +513,8 @@
+ 
+     @Test
+     public void cleanupOldWebhookDeliveriesProcessesAllWebhooks() {
+-        WebhookVO webhook1 = Mockito.mock(WebhookVO.class);
+-        WebhookVO webhook2 = Mockito.mock(WebhookVO.class);
+-
+-        Mockito.when(webhook1.getId()).thenReturn(1L);
+-        Mockito.when(webhook2.getId()).thenReturn(2L);
++        WebhookVO webhook1 = MockWebhook.createMockWebhook(1L);
++        WebhookVO webhook2 = MockWebhook.createMockWebhook(2L);
+ 
+         List<WebhookVO> webhooks = List.of(webhook1, webhook2);
+         Pair<List<WebhookVO>, Integer> webhooksAndCount = new Pair<>(webhooks, 2);
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/MockWebhook.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/MockWebhook.java
+@@ -0,0 +1,15 @@
++package org.apache.cloudstack.mom.webhook;
++
++import org.apache.cloudstack.mom.webhook.vo.WebhookVO;
++import org.mockito.Mockito;
++
++public class MockWebhook {
++    private MockWebhook() {
++    }
++
++    public static WebhookVO createMockWebhook(long id) {
++        WebhookVO webhook = Mockito.mock(WebhookVO.class);
++        Mockito.when(webhook.getId()).thenReturn(id);
++        return webhook;
++    }
++}

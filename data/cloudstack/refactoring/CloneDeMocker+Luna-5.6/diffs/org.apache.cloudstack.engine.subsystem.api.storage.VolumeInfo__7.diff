@@ -1,0 +1,56 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -1208,7 +1208,7 @@
+         doReturn(new Pair<BackupDeltaTO, VolumeObjectTO>(null, null)).when(kbossBackupProviderSpy).generateBackupAndVolumePairForSingleNewVolume(any(), any(), any());
+         doReturn(Set.of()).when(kbossBackupProviderSpy).getParentSecondaryStorageUrls(backupVoMock);
+         doReturn(true).when(kbossBackupProviderSpy).processRestoreAnswers(any(), any(), anyBoolean());
+-        doReturn(volumeVoMock).when(volumeInfoMock).getVolume();
++        volumeInfoMock = createMockVolumeInfo(volumeVoMock);
+         doReturn(volumeVoMock).when(volumeApiServiceMock).attachVolumeToVM(anyLong(), anyLong(), any(), anyBoolean(), anyBoolean());
+         doReturn(true).when(kbossBackupProviderSpy).finalizeQuickRestore(any(), anyList(), anyLong());
+ 
+@@ -1909,14 +1909,12 @@
+     public void getVolumesToConsolidateTestSameVmAsBackupFalse() {
+         VolumeObjectTO volumeObjectTO1 = Mockito.mock(VolumeObjectTO.class);
+         doReturn(11L).when(volumeObjectTO1).getVolumeId();
+-        VolumeInfo volumeInfo1 = Mockito.mock(VolumeInfo.class);
+-        doReturn(volumeVoMock).when(volumeInfo1).getVolume();
+-        doReturn(volumeInfo1).when(volumeDataFactoryMock).getVolume(11L);
++        VolumeInfo volumeInfo1 = createMockVolumeInfo(volumeVoMock);
++        stubVolume(11L, volumeInfo1);
+ 
+         VolumeObjectTO volumeObjectTO2 = Mockito.mock(VolumeObjectTO.class);
+         doReturn(22L).when(volumeObjectTO2).getVolumeId();
+-        VolumeInfo volumeInfo2 = Mockito.mock(VolumeInfo.class);
+-        doReturn(Mockito.mock(VolumeVO.class)).when(volumeInfo2).getVolume();
++        VolumeInfo volumeInfo2 = createMockVolumeInfo(Mockito.mock(VolumeVO.class));
+         doReturn(volumeInfo2).when(volumeDataFactoryMock).getVolume(22L);
+ 
+         doNothing().when(kbossBackupProviderSpy).transitVmState(any(), any(), anyLong());
+@@ -1935,9 +1933,8 @@
+     public void getVolumesToConsolidateTestSameVmAsBackupTrueFiltersBySecondaryDeltas() {
+         VolumeObjectTO volumeObjectTO1 = Mockito.mock(VolumeObjectTO.class);
+         doReturn(11L).when(volumeObjectTO1).getVolumeId();
+-        VolumeInfo volumeInfo1 = Mockito.mock(VolumeInfo.class);
+-        doReturn(volumeVoMock).when(volumeInfo1).getVolume();
+-        doReturn(volumeInfo1).when(volumeDataFactoryMock).getVolume(11L);
++        VolumeInfo volumeInfo1 = createMockVolumeInfo(volumeVoMock);
++        stubVolume(11L, volumeInfo1);
+ 
+         VolumeObjectTO volumeObjectTO2 = Mockito.mock(VolumeObjectTO.class);
+         doReturn(22L).when(volumeObjectTO2).getVolumeId();
+@@ -3113,4 +3110,14 @@
+         verify(kbossBackupProviderSpy).releaseBackup(backupId);
+     }
+ 
++    private static VolumeInfo createMockVolumeInfo(VolumeVO volumeVo) {
++        VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
++        doReturn(volumeVo).when(volumeInfo).getVolume();
++        return volumeInfo;
++    }
++
++    private void stubVolume(long volumeId, VolumeInfo volumeInfo) {
++        doReturn(volumeInfo).when(volumeDataFactoryMock).getVolume(volumeId);
++    }
++
+ }

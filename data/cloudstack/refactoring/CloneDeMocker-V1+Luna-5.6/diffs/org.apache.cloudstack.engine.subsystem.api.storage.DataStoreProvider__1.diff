@@ -1,0 +1,39 @@
+--- a/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
+@@ -1636,11 +1636,11 @@
+         objectStoreVO.setProviderName(providerName);
+         objectStoreVO.setTotalSize(size);
+ 
+-        DataStoreProvider storeProvider = Mockito.mock(DataStoreProvider.class);
+         DataStoreLifeCycle lifeCycle = Mockito.mock(DataStoreLifeCycle.class);
+         DataStore store = Mockito.mock(DataStore.class);
+         ObjectStore objectStore = Mockito.mock(ObjectStore.class);
+ 
++        DataStoreProvider storeProvider = createMockDataStoreProvider(lifeCycle);
+         Mockito.when(dataStoreProviderMgr.getDataStoreProvider(providerName)).thenReturn(storeProvider);
+         Mockito.when(storeProvider.getDataStoreLifeCycle()).thenReturn(lifeCycle);
+         Mockito.when(lifeCycle.initialize(Mockito.any())).thenReturn(store);
+@@ -1707,11 +1707,10 @@
+         String providerName = "test-provider";
+         Map<String, String> details = new HashMap<>();
+ 
+-        DataStoreProvider storeProvider = Mockito.mock(DataStoreProvider.class);
+         DataStoreLifeCycle lifeCycle = Mockito.mock(DataStoreLifeCycle.class);
+ 
++        DataStoreProvider storeProvider = createMockDataStoreProvider(lifeCycle);
+         Mockito.when(dataStoreProviderMgr.getDataStoreProvider(providerName)).thenReturn(storeProvider);
+-        Mockito.when(storeProvider.getDataStoreLifeCycle()).thenReturn(lifeCycle);
+         Mockito.when(lifeCycle.initialize(Mockito.any())).thenThrow(new RuntimeException("Initialization failed"));
+ 
+         storageManagerImpl.discoverObjectStore(name, url, size, providerName, details);
+@@ -1727,4 +1726,10 @@
+ 
+         Assert.assertFalse(result);
+     }
++
++    private static DataStoreProvider createMockDataStoreProvider(DataStoreLifeCycle lifeCycle) {
++        DataStoreProvider storeProvider = Mockito.mock(DataStoreProvider.class);
++        Mockito.when(storeProvider.getDataStoreLifeCycle()).thenReturn(lifeCycle);
++        return storeProvider;
++    }
+ }

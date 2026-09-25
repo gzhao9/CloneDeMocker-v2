@@ -1,0 +1,74 @@
+--- a/server/src/test/java/com/cloud/ha/dao/HighAvailabilityDaoImplTest.java
++++ b/server/src/test/java/com/cloud/ha/dao/HighAvailabilityDaoImplTest.java
+@@ -20,6 +20,7 @@
+ import java.util.List;
+ 
+ import org.junit.Assert;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.mockito.MockedStatic;
+@@ -41,6 +42,13 @@
+ 
+     @Spy
+     HighAvailabilityDaoImpl highAvailabilityDaoImpl = new HighAvailabilityDaoImpl();
++
++    private UpdateBuilder sharedMockUpdateBuilder;
++
++    @Before
++    public void setUp() {
++        sharedMockUpdateBuilder = Mockito.mock(UpdateBuilder.class);
++    }
+ 
+     @Test
+     public void testExpungeByVmListNoVms() {
+@@ -76,7 +84,6 @@
+         SearchBuilder<HaWorkVO> mockTBASearch = Mockito.mock(SearchBuilder.class);
+         highAvailabilityDaoImpl.TBASearch = mockTBASearch;
+         SearchCriteria<HaWorkVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
+-        UpdateBuilder mockUpdateBuilder = Mockito.mock(UpdateBuilder.class);
+         Mockito.when(mockTBASearch.create()).thenReturn(mockSearchCriteria);
+         Mockito.doNothing().when(mockSearchCriteria).setParameters(Mockito.eq("time"), Mockito.anyLong());
+         Mockito.doNothing().when(mockSearchCriteria).setParameters(Mockito.eq("step"), Mockito.eq(HighAvailabilityManager.Step.Done), Mockito.eq(HighAvailabilityManager.Step.Cancelled));
+@@ -85,14 +92,14 @@
+                 HighAvailabilityManager.ReasonType.HostMaintenance);
+         Mockito.when(highAvailabilityDaoImpl.createForUpdate()).thenReturn(haWorkVO);
+         try(MockedStatic<GenericDaoBase> genericDaoBaseMockedStatic = Mockito.mockStatic(GenericDaoBase.class)) {
+-            genericDaoBaseMockedStatic.when(() -> GenericDaoBase.getUpdateBuilder(Mockito.any())).thenReturn(mockUpdateBuilder);
++            genericDaoBaseMockedStatic.when(() -> GenericDaoBase.getUpdateBuilder(Mockito.any())).thenReturn(sharedMockUpdateBuilder);
+             Mockito.doReturn(5).when(highAvailabilityDaoImpl).update(Mockito.any(UpdateBuilder.class), Mockito.any(), Mockito.nullable(Integer.class));
+             highAvailabilityDaoImpl.markPendingWorksAsInvestigating();
+             Mockito.verify(mockTBASearch).create();
+             Mockito.verify(mockSearchCriteria).setParameters(Mockito.eq("time"), Mockito.anyLong());
+             Mockito.verify(mockSearchCriteria).setParameters(Mockito.eq("step"), Mockito.eq(HighAvailabilityManager.Step.Done), Mockito.eq(HighAvailabilityManager.Step.Cancelled));
+             Assert.assertEquals(HighAvailabilityManager.Step.Investigating, haWorkVO.getStep()); // Ensure the step is set correctly
+-            Mockito.verify(highAvailabilityDaoImpl).update(Mockito.eq(mockUpdateBuilder), Mockito.eq(mockSearchCriteria), Mockito.isNull());
++            Mockito.verify(highAvailabilityDaoImpl).update(Mockito.eq(sharedMockUpdateBuilder), Mockito.eq(mockSearchCriteria), Mockito.isNull());
+         }
+     }
+ 
+@@ -102,7 +109,6 @@
+         Mockito.doReturn(Mockito.mock(HaWorkVO.class)).when(mockSearch).entity();
+         Mockito.doReturn(mockSearch).when(highAvailabilityDaoImpl).createSearchBuilder();
+         SearchCriteria<HaWorkVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
+-        UpdateBuilder mockUpdateBuilder = Mockito.mock(UpdateBuilder.class);
+         Mockito.when(mockSearch.create()).thenReturn(mockSearchCriteria);
+         Mockito.doNothing().when(mockSearchCriteria).setParameters(Mockito.eq("server"), Mockito.eq(1L));
+         Mockito.doNothing().when(mockSearchCriteria).setParameters(Mockito.eq("step"), Mockito.eq(HighAvailabilityManager.Step.Done), Mockito.eq(HighAvailabilityManager.Step.Cancelled));
+@@ -112,14 +118,14 @@
+         Mockito.when(highAvailabilityDaoImpl.createForUpdate()).thenReturn(haWorkVO);
+         Mockito.when(highAvailabilityDaoImpl.createForUpdate()).thenReturn(haWorkVO);
+         try(MockedStatic<GenericDaoBase> genericDaoBaseMockedStatic = Mockito.mockStatic(GenericDaoBase.class)) {
+-            genericDaoBaseMockedStatic.when(() -> GenericDaoBase.getUpdateBuilder(Mockito.any())).thenReturn(mockUpdateBuilder);
++            genericDaoBaseMockedStatic.when(() -> GenericDaoBase.getUpdateBuilder(Mockito.any())).thenReturn(sharedMockUpdateBuilder);
+             Mockito.doReturn(5).when(highAvailabilityDaoImpl).update(Mockito.any(UpdateBuilder.class), Mockito.any(), Mockito.nullable(Integer.class));
+             highAvailabilityDaoImpl.markServerPendingWorksAsInvestigating(1L);
+             Mockito.verify(mockSearch).create();
+             Mockito.verify(mockSearchCriteria).setParameters(Mockito.eq("server"), Mockito.eq(1L));
+             Mockito.verify(mockSearchCriteria).setParameters(Mockito.eq("step"), Mockito.eq(HighAvailabilityManager.Step.Done), Mockito.eq(HighAvailabilityManager.Step.Cancelled));
+             Assert.assertEquals(HighAvailabilityManager.Step.Investigating, haWorkVO.getStep()); // Ensure the step is set correctly
+-            Mockito.verify(highAvailabilityDaoImpl).update(Mockito.eq(mockUpdateBuilder), Mockito.eq(mockSearchCriteria), Mockito.isNull());
++            Mockito.verify(highAvailabilityDaoImpl).update(Mockito.eq(sharedMockUpdateBuilder), Mockito.eq(mockSearchCriteria), Mockito.isNull());
+         }
+     }
+ }
