@@ -1,0 +1,86 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
+@@ -320,10 +320,9 @@
+ 
+     @Test
+     public void testGetRootVolumePrimaryDataStoreForCleanupReturnsNullWhenRootVolumeIsMissing() {
+-        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
++        VMSnapshotVO vmSnapshot = MockVMSnapshotVO.createMockVMSnapshot("vm-snapshot");
+         VolumeObjectTO dataVolume = mock(VolumeObjectTO.class);
+ 
+-        when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+         when(dataVolume.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+ 
+         PrimaryDataStoreTO primaryDataStore = strategy.getRootVolumePrimaryDataStoreForCleanup(vmSnapshot, List.of(dataVolume));
+@@ -514,14 +513,13 @@
+     public void testNotifyGuestRecoveryIssueIfNeededSendsAlert() {
+         CreateDiskOnlyVmSnapshotAnswer answer = mock(CreateDiskOnlyVmSnapshotAnswer.class);
+         UserVm userVm = mock(UserVm.class);
+-        VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+ 
+         when(answer.getDetails()).thenReturn("VM could not be thawed");
+         when(userVm.getUuid()).thenReturn("vm-uuid");
+         when(userVm.getDataCenterId()).thenReturn(1L);
+         when(userVm.getPodIdToDeployIn()).thenReturn(2L);
+-        when(vmSnapshot.getUuid()).thenReturn("snapshot-uuid");
+-
++
++        VMSnapshotVO vmSnapshot = MockVMSnapshotVO.createMockVMSnapshot("snapshot-uuid");
+         strategy.notifyGuestRecoveryIssueIfNeeded(answer, userVm, vmSnapshot);
+ 
+         verify(strategy.alertManager).sendAlert(eq(AlertManager.AlertType.ALERT_TYPE_VM_SNAPSHOT), eq(1L), eq(2L), anyString(), anyString());
+@@ -547,4 +545,17 @@
+         when(host.getId()).thenReturn(hostId);
+         when(hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterId, podId, dataCenterId, null)).thenReturn(List.of(host));
+     }
++
++    public final class MockVMSnapshotVO {
++
++        private MockVMSnapshotVO() {
++            // Utility class
++        }
++
++        public static VMSnapshotVO createMockVMSnapshot(String uuid) {
++            VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
++            when(vmSnapshot.getUuid()).thenReturn(uuid);
++            return vmSnapshot;
++        }
++    }
+ }
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
+@@ -155,7 +155,6 @@
+ 
+     @Test
+     public void testCreateDiskSnapshotBasedOnStrategy() throws Exception {
+-        VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
+         List<SnapshotInfo> snapshotsForRollback = new ArrayList<>();
+         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
+         SnapshotInfo snapshotInfo = Mockito.mock(SnapshotInfo.class);
+@@ -166,7 +165,7 @@
+         SnapshotVO snapshot = new SnapshotVO(vol.getDataCenterId(), vol.getAccountId(), vol.getDomainId(),
+                                vol.getId(),vol.getDiskOfferingId(), vmUuid + "_" + volUuid,(short) SnapshotVO.MANUAL_POLICY_ID,
+                                "MANUAL",vol.getSize(),vol.getMinIops(),vol.getMaxIops(), Hypervisor.HypervisorType.KVM, null);
+-        when(vmSnapshot.getOptions()).thenReturn(new VMSnapshotOptions(true));
++        VMSnapshotVO vmSnapshot = MockVMSnapshotVO.createMockVMSnapshot(vmUuid);
+         when(vmSnapshot.getUuid()).thenReturn(vmUuid);
+         when(vol.getUuid()).thenReturn(volUuid);
+         when(_snapshotDao.persist(any())).thenReturn(snapshot);
+@@ -449,4 +448,17 @@
+             return Mockito.mock(SnapshotDataStoreDao.class);
+         }
+     }
++
++    public final class MockVMSnapshotVO {
++
++        private MockVMSnapshotVO() {
++            // Utility class
++        }
++
++        public static VMSnapshotVO createMockVMSnapshot(String uuid) {
++            VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
++            when(vmSnapshot.getUuid()).thenReturn(uuid);
++            return vmSnapshot;
++        }
++    }
+ }
