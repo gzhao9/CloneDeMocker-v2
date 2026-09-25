@@ -1,0 +1,154 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -2299,7 +2299,7 @@
+         doReturn(dataStoreMock).when(dataStoreManagerMock).getDataStore(anyLong(), eq(DataStoreRole.Primary));
+         doReturn("parent-path").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+         doReturn("child-path").when(internalBackupStoragePoolVoMock).getBackupDeltaPath();
+-        doReturn(volumeId).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, volumeId);
+         doReturn("snapshot-grandchild").when(snapshotRefMock).getInstallPath();
+ 
+         doReturn(Map.of(volumeId, List.of(snapshotRefMock))).when(kbossBackupProviderSpy).gatherSnapshotReferencesOfChildrenSnapshot(List.of(volumeObjectToMock), vmSnapshotVoMock);
+@@ -2336,7 +2336,7 @@
+         doReturn(dataStoreMock).when(dataStoreManagerMock).getDataStore(77L, DataStoreRole.Image);
+         doReturn(10L).when(internalBackupDataStoreVoMock).getVolumeId();
+         doReturn("delta-path").when(internalBackupDataStoreVoMock).getBackupPath();
+-        doReturn(10L).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, 10L);
+ 
+         Set<Pair<BackupDeltaTO, VolumeObjectTO>> result = kbossBackupProviderSpy.generateBackupAndVolumePairsToRestore(List.of(internalBackupDataStoreVoMock),
+                 List.of(volumeObjectToMock), internalBackupJoinVoMock, true);
+@@ -2381,7 +2381,7 @@
+         doReturn(11L).when(internalBackupStoragePoolVoMock).getStoragePoolId();
+         doReturn("delta-path").when(internalBackupStoragePoolVoMock).getBackupDeltaPath();
+         doReturn("parent-path").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+-        doReturn(10L).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, 10L);
+ 
+         Set<BackupDeltaTO> deltasToRemove = new java.util.HashSet<>();
+ 
+@@ -2397,7 +2397,7 @@
+     @Test
+     public void populateDeltasToRemoveAndToMergeAndUpdateVolumePathsTestVolumeIsPartOfBackupCreatesMergeTree() {
+         doReturn(volumeId).when(internalBackupStoragePoolVoMock).getVolumeId();
+-        doReturn(volumeId).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, volumeId);
+ 
+         Set<BackupDeltaTO> deltasToRemove = new java.util.HashSet<>();
+ 
+@@ -2424,7 +2424,7 @@
+         doReturn("old-path").when(volumeVoMock).getPath();
+         doReturn(5L).when(volumeVoMock).getDeviceId();
+         doReturn(100L).when(volumeVoMock).getSize();
+-        doReturn(volumeId).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, volumeId);
+         doReturn("new-path").when(volumeObjectToMock).getPath();
+         doReturn(150L).when(backupVolumeInfoMock).getSize();
+         doReturn(5L).when(backupVolumeInfoMock).getDeviceId();
+@@ -2445,7 +2445,7 @@
+         doReturn(100L).when(volumeVoMock).getSize();
+         doReturn("same-path").when(volumeObjectToMock).getPath();
+         doReturn(volumeId).when(volumeObjectToMock).getId();
+-        doReturn(volumeId).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, volumeId);
+         doReturn(150L).when(backupVolumeInfoMock).getSize();
+         doReturn(5L).when(backupVolumeInfoMock).getDeviceId();
+         doReturn(volumeObjectToMock).when(deltaMergeTreeToMock).getChild();
+@@ -2468,7 +2468,7 @@
+         doReturn("same-path").when(volumeVoMock).getPath();
+         doReturn(5L).when(volumeVoMock).getDeviceId();
+         doReturn(100L).when(volumeVoMock).getSize();
+-        doReturn(volumeId).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, volumeId);
+         doReturn("same-path").when(volumeObjectToMock).getPath();
+         doReturn(100L).when(backupVolumeInfoMock).getSize();
+         doReturn(5L).when(backupVolumeInfoMock).getDeviceId();
+@@ -2487,7 +2487,7 @@
+         doReturn("same-path").when(volumeVoMock).getPath();
+         doReturn("vm-uuid").when(volumeVoMock).getUuid();
+         doReturn(100L).when(volumeVoMock).getSize();
+-        doReturn(volumeId).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, volumeId);
+         doReturn("same-path").when(volumeObjectToMock).getPath();
+         doReturn("vm-uuid").when(backupVolumeInfoMock).getUuid();
+         doReturn(120L).when(backupVolumeInfoMock).getSize();
+--- a/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
+@@ -149,7 +149,7 @@
+ 
+     @Test
+     public void configureChainInfoTestVolumeWithoutBackupDeltaReturnsImmediately() {
+-        doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, VOLUME_ID);
+         doReturn(null).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
+ 
+         internalBackupServiceImplSpy.configureChainInfo(volumeObjectToMock, mock(Command.class));
+@@ -160,7 +160,7 @@
+ 
+     @Test
+     public void configureChainInfoTestSetsChainInfoForGenericCommand() {
+-        doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, VOLUME_ID);
+         doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
+         doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+@@ -174,7 +174,7 @@
+ 
+     @Test
+     public void configureChainInfoTestSetsDeleteChainForDeleteCommand() {
+-        doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, VOLUME_ID);
+         doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
+         doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+@@ -188,7 +188,7 @@
+ 
+     @Test
+     public void configureChainInfoTestSetsDeleteChainForRevertSnapshotCommand() {
+-        doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
++        volumeObjectToMock = MockVolumeObjectTO.createMockVolumeObjectTO(volumeObjectToMock, VOLUME_ID);
+         doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
+         doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/MockVolumeObjectTO.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/MockVolumeObjectTO.java
+@@ -0,0 +1,18 @@
++package org.apache.cloudstack.backup;
++
++import org.apache.cloudstack.storage.to.VolumeObjectTO;
++import org.mockito.Mockito;
++
++import static org.mockito.Mockito.doReturn;
++
++public class MockVolumeObjectTO {
++    public static VolumeObjectTO createMockVolumeObjectTO(long volumeId) {
++        VolumeObjectTO volumeObjectToMock = Mockito.mock(VolumeObjectTO.class);
++        return createMockVolumeObjectTO(volumeObjectToMock, volumeId);
++    }
++
++    public static VolumeObjectTO createMockVolumeObjectTO(VolumeObjectTO volumeObjectToMock, long volumeId) {
++        doReturn(volumeId).when(volumeObjectToMock).getVolumeId();
++        return volumeObjectToMock;
++    }
++}
+--- a/server/src/test/java/org/apache/cloudstack/backup/MockVolumeObjectTO.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/MockVolumeObjectTO.java
+@@ -0,0 +1,18 @@
++package org.apache.cloudstack.backup;
++
++import org.apache.cloudstack.storage.to.VolumeObjectTO;
++import org.mockito.Mockito;
++
++import static org.mockito.Mockito.doReturn;
++
++public class MockVolumeObjectTO {
++    public static VolumeObjectTO createMockVolumeObjectTO(long volumeId) {
++        VolumeObjectTO volumeObjectToMock = Mockito.mock(VolumeObjectTO.class);
++        return createMockVolumeObjectTO(volumeObjectToMock, volumeId);
++    }
++
++    public static VolumeObjectTO createMockVolumeObjectTO(VolumeObjectTO volumeObjectToMock, long volumeId) {
++        doReturn(volumeId).when(volumeObjectToMock).getVolumeId();
++        return volumeObjectToMock;
++    }
++}

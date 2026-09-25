@@ -1,0 +1,91 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirTakeKbossBackupCommandWrapperTest.java
+@@ -205,14 +205,14 @@
+ 
+     @Test
+     public void cleanupVmTestEndOfChain() {
++        String path1 = "path1";
++        volumeObjectToMock1 = createMockVolumeObjectTO(path1);
++        String path2 = "path2";
++        volumeObjectToMock2 = createMockVolumeObjectTO(path2);
+         setupKbossTos();
+         Map<String, String> mapVolumeUUidToNewVolumePath = new HashMap<>();
+-        String path1 = "path1";
+-        String path2 = "path2";
+         String path3 = "path3";
+         String vmName = "ttt";
+-        doReturn(path1).when(volumeObjectToMock1).getPath();
+-        doReturn(path2).when(volumeObjectToMock2).getPath();
+         doReturn(deltaPath1).when(kbossTO1).getDeltaPathOnPrimary();
+         doReturn(deltaPath2).when(kbossTO2).getDeltaPathOnPrimary();
+         doReturn(deltaMergeTreeToMock).when(kbossTO1).getDeltaMergeTreeTO();
+@@ -262,8 +262,8 @@
+         String randomPath1 = "random";
+         String backupDeltaFullPathOnPrimary2 = "backupDeltaFullPathOnPrimary2";
+ 
++        volumeObjectToMock1 = createMockVolumeObjectTO(volumePath);
+         doReturn(volumeObjectToMock1).when(kbossTO1).getVolumeObjectTO();
+-        doReturn(volumePath).when(volumeObjectToMock1).getPath();
+         doReturn(volUuid1).when(volumeObjectToMock1).getUuid();
+         doReturn(parentPath).when(kbossTO1).getPathBackupParentOnSecondary();
+         doReturn(new ArrayList<>(List.of(deltaPath2))).when(kbossTO1).getVmSnapshotDeltaPaths();
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateVolumeCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateVolumeCommandWrapperTest.java
+@@ -261,17 +261,14 @@
+ 
+     @Test
+     public void testMigratePowerFlexVolume() throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
+-        VolumeObjectTO srcVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
++        VolumeObjectTO srcVolumeObjectTO = createMockVolumeObjectTO("bec108c400000018:vol-60-7acb-9e22");
+         Mockito.doReturn(srcVolumeObjectTO).when(command).getSrcData();
+-        String srcPath = "bec108c400000018:vol-60-7acb-9e22";
+-        Mockito.doReturn(srcPath).when(srcVolumeObjectTO).getPath();
+         String vmName = "i-2-27-VM";
+         Mockito.doReturn(vmName).when(srcVolumeObjectTO).getVmName();
+ 
+-        VolumeObjectTO destVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
++        String destPath = "01b381820000001c:vol-60-ec76-b7dc";
++        VolumeObjectTO destVolumeObjectTO = createMockVolumeObjectTO(destPath);
+         Mockito.doReturn(destVolumeObjectTO).when(command).getDestData();
+-        String destPath = "01b381820000001c:vol-60-ec76-b7dc";
+-        Mockito.doReturn(destPath).when(destVolumeObjectTO).getPath();
+         Map<String, String> destDetails = new HashMap<>();
+         destDetails.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, "610204d03e3ad60f");
+ 
+@@ -308,17 +305,15 @@
+ 
+     @Test
+     public void testMigratePowerFlexVolumeFailure() throws LibvirtException, ParserConfigurationException, IOException, TransformerException, SAXException {
+-        VolumeObjectTO srcVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
++        String srcPath = "bec108c400000018:vol-60-7acb-9e22";
++        VolumeObjectTO srcVolumeObjectTO = createMockVolumeObjectTO(srcPath);
+         Mockito.doReturn(srcVolumeObjectTO).when(command).getSrcData();
+-        String srcPath = "bec108c400000018:vol-60-7acb-9e22";
+-        Mockito.doReturn(srcPath).when(srcVolumeObjectTO).getPath();
+         String vmName = "i-2-27-VM";
+         Mockito.doReturn(vmName).when(srcVolumeObjectTO).getVmName();
+ 
+-        VolumeObjectTO destVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
++        String destPath = "01b381820000001c:vol-60-ec76-b7dc";
++        VolumeObjectTO destVolumeObjectTO = createMockVolumeObjectTO(destPath);
+         Mockito.doReturn(destVolumeObjectTO).when(command).getDestData();
+-        String destPath = "01b381820000001c:vol-60-ec76-b7dc";
+-        Mockito.doReturn(destPath).when(destVolumeObjectTO).getPath();
+         Map<String, String> destDetails = new HashMap<>();
+         destDetails.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, "610204d03e3ad60f");
+ 
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockVolumeObjectTOWithPath.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockVolumeObjectTOWithPath.java
+@@ -0,0 +1,12 @@
++package com.cloud.hypervisor.kvm.resource.wrapper;
++
++import org.apache.cloudstack.storage.to.VolumeObjectTO;
++import org.mockito.Mockito;
++
++public class MockVolumeObjectTOWithPath {
++    public static VolumeObjectTO createMockVolumeObjectTO(String path) {
++        VolumeObjectTO volumeObjectTO = Mockito.mock(VolumeObjectTO.class);
++        Mockito.doReturn(path).when(volumeObjectTO).getPath();
++        return volumeObjectTO;
++    }
++}

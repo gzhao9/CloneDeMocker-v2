@@ -1,0 +1,66 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateVolumeCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateVolumeCommandWrapperTest.java
+@@ -221,11 +221,10 @@
+ 
+     @Test
+     public void testPowerFlexMigrateVolumeMethod() {
+-        VolumeObjectTO srcVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
++        PrimaryDataStoreTO srcPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
++        VolumeObjectTO srcVolumeObjectTO = MockVolumeObjectTO.createMockVolumeObjectTO(srcPrimaryDataStore);
+         Mockito.doReturn(srcVolumeObjectTO).when(command).getSrcData();
+ 
+-        PrimaryDataStoreTO srcPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+-        Mockito.doReturn(srcPrimaryDataStore).when(srcVolumeObjectTO).getDataStore();
+         Mockito.doReturn(Storage.StoragePoolType.PowerFlex).when(srcPrimaryDataStore).getPoolType();
+ 
+         MigrateVolumeAnswer powerFlexAnswer = Mockito.mock(MigrateVolumeAnswer.class);
+@@ -241,11 +240,9 @@
+ 
+     @Test
+     public void testRegularMigrateVolumeMethod() {
+-        VolumeObjectTO srcVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
++        PrimaryDataStoreTO srcPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
++        VolumeObjectTO srcVolumeObjectTO = MockVolumeObjectTO.createMockVolumeObjectTO(srcPrimaryDataStore);
+         Mockito.doReturn(srcVolumeObjectTO).when(command).getSrcData();
+-
+-        PrimaryDataStoreTO srcPrimaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+-        Mockito.doReturn(srcPrimaryDataStore).when(srcVolumeObjectTO).getDataStore();
+         Mockito.doReturn(Storage.StoragePoolType.NetworkFilesystem).when(srcPrimaryDataStore).getPoolType();
+ 
+         MigrateVolumeAnswer powerFlexAnswer = Mockito.mock(MigrateVolumeAnswer.class);
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtRestoreKbossBackupCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtRestoreKbossBackupCommandWrapperTest.java
+@@ -154,7 +154,7 @@
+ 
+     @Test
+     public void restoreVolumesTestQuickRestore() throws LibvirtException, QemuImgException {
+-        doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
++        volumeObjectToMock1 = MockVolumeObjectTO.createMockVolumeObjectTO(primaryDataStoreToMock);
+         doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
+         doReturn("p2").when(kvmStoragePool2).getLocalPathFor(any());
+         doReturn(qemuImgMock).when(libvirtRestoreKbossBackupCommandWrapperSpy).getQemuImg(anyInt());
+@@ -167,7 +167,7 @@
+ 
+     @Test
+     public void restoreVolumesTestNormalRestore() throws LibvirtException, QemuImgException {
+-        doReturn(primaryDataStoreToMock).when(volumeObjectToMock1).getDataStore();
++        volumeObjectToMock1 = MockVolumeObjectTO.createMockVolumeObjectTO(primaryDataStoreToMock);
+         doReturn(kvmStoragePool2).when(kvmStoragePoolManagerMock).getStoragePool(any(), any());
+         doReturn("p2").when(kvmStoragePool2).getLocalPathFor(any());
+         doReturn(qemuImgMock).when(libvirtRestoreKbossBackupCommandWrapperSpy).getQemuImg(anyInt());
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockVolumeObjectTO.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/MockVolumeObjectTO.java
+@@ -0,0 +1,13 @@
++package com.cloud.hypervisor.kvm.resource.wrapper;
++
++import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
++import org.apache.cloudstack.storage.to.VolumeObjectTO;
++import org.mockito.Mockito;
++
++public class MockVolumeObjectTO {
++    public static VolumeObjectTO createMockVolumeObjectTO(PrimaryDataStoreTO dataStore) {
++        VolumeObjectTO volumeObjectTO = Mockito.mock(VolumeObjectTO.class);
++        Mockito.doReturn(dataStore).when(volumeObjectTO).getDataStore();
++        return volumeObjectTO;
++    }
++}
