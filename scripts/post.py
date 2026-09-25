@@ -87,8 +87,9 @@ def a_owns(rel: str) -> bool:
     """
     if rel.startswith("archive/board-retired-"):
         return True
-    if rel in ("collab/README.md", f"collab/status/{ME}.md",
-               f"collab/status/{ME}-session.md"):
+    if rel == "collab/README.md":           # one owner, or a stale copy on any host overwrites it
+        return ME == "A"
+    if rel in (f"collab/status/{ME}.md", f"collab/status/{ME}-session.md"):
         return True
     return rel.startswith(f"collab/inbox/{ME}/")       # this agent's own mailbox
 
@@ -172,7 +173,11 @@ def _publish_attempt(entry_id, git, repo, extra) -> bool:
         on_disk = set(paths)
         upstream = git("ls-tree", "-r", "--name-only", head).stdout
         for rel in (x.strip() for x in upstream.splitlines()):
-            if rel and rel not in on_disk and a_owns(rel):
+            # Only a letter filed on disk (unread/X gone, read/X present) is removed upstream.
+            # Anything else missing locally is mail that arrived after this host last pulled,
+            # and removing it would delete a letter nobody has read.
+            if (rel and rel not in on_disk and a_owns(rel) and "/unread/" in rel
+                    and rel.replace("/unread/", "/read/") in on_disk):
                 git("update-index", "--force-remove", rel, env=env)
         tree = git("write-tree", env=env).stdout.strip()
         if not tree:
