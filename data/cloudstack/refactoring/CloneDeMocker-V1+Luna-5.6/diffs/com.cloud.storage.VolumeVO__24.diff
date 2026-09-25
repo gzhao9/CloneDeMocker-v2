@@ -1,0 +1,59 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/VolumeOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/VolumeOrchestratorTest.java
+@@ -86,6 +86,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class VolumeOrchestratorTest {
++    @Mock
++    private VolumeVO volumeVO;
+ 
+     @Mock
+     protected ResourceLimitService resourceLimitMgr;
+@@ -241,7 +243,7 @@
+         MockedConstruction<VolumeVO> volumeVOMockedConstructionConstruction = Mockito.mockConstruction(VolumeVO.class, (mock, context) -> {
+         });
+ 
+-        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
++        // removed local mock; replaced with global field `volumeVO`
+         Mockito.when(volumeDao.persist(Mockito.any(VolumeVO.class))).thenReturn(volumeVO);
+ 
+         volumeOrchestrator.importVolume(volumeType, name, diskOffering, sizeInBytes, null, null,
+@@ -282,8 +284,7 @@
+         Mockito.when(oldVol.getPassphraseId()).thenReturn(null); // no encryption
+         Mockito.when(oldVol.getKmsKeyId()).thenReturn(null); // no encryption
+ 
+-        VolumeVO persistedVol = Mockito.mock(VolumeVO.class);
+-        Mockito.when(volumeDao.persist(Mockito.any(VolumeVO.class))).thenReturn(persistedVol);
++        Mockito.when(volumeDao.persist(Mockito.any(VolumeVO.class))).thenReturn(volumeVO);
+ 
+         VolumeVO result = volumeOrchestrator.allocateDuplicateVolumeVO(oldVol, null, null);
+         assertNotNull(result);
+@@ -316,9 +317,9 @@
+         Mockito.when(passphrase.getId()).thenReturn(999L);
+         Mockito.when(passphraseDao.persist(Mockito.any())).thenReturn(passphrase);
+ 
+-        VolumeVO persistedVol = Mockito.mock(VolumeVO.class);
+         Mockito.when(volumeDao.persist(Mockito.any())).thenReturn(persistedVol);
+ 
++        Mockito.when(volumeDao.persist(Mockito.any())).thenReturn(volumeVO);
+         VolumeVO result = volumeOrchestrator.allocateDuplicateVolumeVO(oldVol, null, null);
+         assertNotNull(result);
+         Mockito.verify(passphraseDao).persist(Mockito.any(PassphraseVO.class));
+@@ -340,7 +341,6 @@
+         Mockito.when(oldVol.getMaxIops()).thenReturn(250L);
+         Mockito.when(oldVol.get_iScsiName()).thenReturn("iqn.tmpl");
+ 
+-        VolumeVO persistedVol = Mockito.mock(VolumeVO.class);
+         Mockito.when(volumeDao.persist(Mockito.any())).thenReturn(persistedVol);
+ 
+         VolumeVO result = volumeOrchestrator.allocateDuplicateVolumeVO(oldVol, null, 222L);
+@@ -370,8 +370,7 @@
+         DiskOffering diskOffering = Mockito.mock(DiskOffering.class);
+         Mockito.when(diskOffering.getEncrypt()).thenReturn(false); // explicitly disables encryption
+ 
+-        VolumeVO persistedVol = Mockito.mock(VolumeVO.class);
+-        Mockito.when(volumeDao.persist(Mockito.any())).thenReturn(persistedVol);
++        Mockito.when(volumeDao.persist(Mockito.any())).thenReturn(volumeVO);
+ 
+         VolumeVO result = volumeOrchestrator.allocateDuplicateVolumeVO(oldVol, diskOffering, null);
+         assertNotNull(result);
