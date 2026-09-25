@@ -1,0 +1,85 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -2425,8 +2425,7 @@
+         when(extension.getState()).thenReturn(Extension.State.Enabled);
+         when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+         VirtualMachine vm = mock(VirtualMachine.class);
+-        Host host = mock(Host.class);
+-        when(host.getClusterId()).thenReturn(1L);
++        Host host = createMockHost();
+         Answer expectedAnswer = mock(Answer.class);
+         when(virtualMachineManager.toVmTO(any())).thenReturn(mock(VirtualMachineTO.class));
+         when(agentMgr.easySend(anyLong(), any())).thenReturn(expectedAnswer);
+@@ -2439,8 +2438,7 @@
+     public void getInstanceConsole_whenNullExtension() {
+         when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(null);
+         VirtualMachine vm = mock(VirtualMachine.class);
+-        Host host = mock(Host.class);
+-        when(host.getClusterId()).thenReturn(1L);
++        Host host = createMockHost();
+         Answer result = extensionsManager.getInstanceConsole(vm, host);
+         assertNotNull(result);
+         assertFalse(result.getResult());
+@@ -2451,8 +2449,7 @@
+         Extension extension = mock(Extension.class);
+         when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+         VirtualMachine vm = mock(VirtualMachine.class);
+-        Host host = mock(Host.class);
+-        when(host.getClusterId()).thenReturn(1L);
++        Host host = createMockHost();
+         Answer result = extensionsManager.getInstanceConsole(vm, host);
+         assertNotNull(result);
+         assertFalse(result.getResult());
+@@ -2465,8 +2462,7 @@
+         when(extension.getState()).thenReturn(Extension.State.Disabled);
+         when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+         VirtualMachine vm = mock(VirtualMachine.class);
+-        Host host = mock(Host.class);
+-        when(host.getClusterId()).thenReturn(1L);
++        Host host = createMockHost();
+         Answer result = extensionsManager.getInstanceConsole(vm, host);
+         assertNotNull(result);
+         assertFalse(result.getResult());
+@@ -2479,8 +2475,7 @@
+         when(extension.getState()).thenReturn(Extension.State.Enabled);
+         when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+         VirtualMachine vm = mock(VirtualMachine.class);
+-        Host host = mock(Host.class);
+-        when(host.getClusterId()).thenReturn(1L);
++        Host host = createMockHost();
+         when(virtualMachineManager.toVmTO(any())).thenReturn(mock(VirtualMachineTO.class));
+         when(agentMgr.easySend(anyLong(), any())).thenReturn(null);
+         Answer result = extensionsManager.getInstanceConsole(vm, host);
+@@ -2489,9 +2484,8 @@
+ 
+     @Test
+     public void getExternalAccessDetailsReturnsExpectedDetails() {
+-        Host host = mock(Host.class);
++        Host host = createMockHost();
+         when(host.getId()).thenReturn(100L);
+-        when(host.getClusterId()).thenReturn(1L);
+         Map<String, String> vmDetails = Map.of("key1", "value1", "key2", "value2");
+         ExtensionResourceMapVO resourceMapVO = mock(ExtensionResourceMapVO.class);
+         when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster))
+@@ -2505,9 +2499,8 @@
+ 
+     @Test
+     public void getExternalAccessDetailsReturnsExpectedNullDetails() {
+-        Host host = mock(Host.class);
++        Host host = createMockHost();
+         when(host.getId()).thenReturn(101L);
+-        when(host.getClusterId()).thenReturn(1L);
+         Map<String, String> vmDetails = null;
+         ExtensionResourceMapVO resourceMapVO = mock(ExtensionResourceMapVO.class);
+         when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster))
+@@ -3062,4 +3055,10 @@
+         assertTrue(resp.getResult().get(ApiConstants.DETAILS).contains("Action failed"));
+     }
+ 
++
++    private static Host createMockHost() {
++        Host host = mock(Host.class);
++        when(host.getClusterId()).thenReturn(1L);
++        return host;
++    }
+ }

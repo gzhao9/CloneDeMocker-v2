@@ -1,0 +1,50 @@
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
+@@ -309,7 +309,6 @@
+     // Test createAccessGroup - Failed to Create Policy
+     @Test
+     public void testCreateAccessGroup_FailedToCreatePolicy() {
+-        AccessGroup accessGroup = mock(AccessGroup.class);
+         Map<String, String> details = new HashMap<>();
+         details.put(OntapStorageConstants.SVM_NAME, "svm1");
+         details.put(OntapStorageConstants.VOLUME_UUID, "vol-uuid-123");
+@@ -319,10 +318,10 @@
+         HostVO host1 = mock(HostVO.class);
+         when(host1.getStorageIpAddress()).thenReturn("10.0.0.1");
+         hosts.add(host1);
++        AccessGroup accessGroup = createMockAccessGroup(hosts);
+ 
+         // Removed primaryDataStoreInfo mock - using storage pool ID directly
+         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+-        when(accessGroup.getHostsToConnect()).thenReturn(hosts);
+         doThrow(new RuntimeException("Failed to create policy")).when(nasFeignClient)
+             .createExportPolicy(anyString(), any(ExportPolicy.class));
+ 
+@@ -334,7 +333,6 @@
+     // Test createAccessGroup - Failed to Verify Policy
+     @Test
+     public void testCreateAccessGroup_FailedToVerifyPolicy() {
+-        AccessGroup accessGroup = mock(AccessGroup.class);
+         Map<String, String> details = new HashMap<>();
+         details.put(OntapStorageConstants.SVM_NAME, "svm1");
+         details.put(OntapStorageConstants.VOLUME_UUID, "vol-uuid-123");
+@@ -350,7 +348,7 @@
+ 
+         // Removed primaryDataStoreInfo mock - using storage pool ID directly
+         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+-        when(accessGroup.getHostsToConnect()).thenReturn(hosts);
++        AccessGroup accessGroup = createMockAccessGroup(hosts);
+         doNothing().when(nasFeignClient).createExportPolicy(anyString(), any(ExportPolicy.class));
+         when(nasFeignClient.getExportPolicyResponse(anyString(), anyMap())).thenReturn(emptyResponse);
+ 
+@@ -582,4 +580,10 @@
+             strategy.deleteCloudStackVolume(cloudStackVolume);
+         });
+     }
++
++    private static AccessGroup createMockAccessGroup(List<HostVO> hosts) {
++        AccessGroup accessGroup = mock(AccessGroup.class);
++        when(accessGroup.getHostsToConnect()).thenReturn(hosts);
++        return accessGroup;
++    }
+ }
