@@ -1,0 +1,142 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -593,7 +593,7 @@
+ 
+         nicProfile.setIPv4Address("192.168.100.100");
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+-        when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(createTungstenVMAnswer);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+@@ -620,7 +620,7 @@
+ 
+         nicProfile.setIPv4Address("192.168.100.100");
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Management);
+-        when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(createTungstenVMAnswer);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+@@ -640,12 +640,12 @@
+         DeployDestination deployDestination = mock(DeployDestination.class);
+         ReservationContext reservationContext = mock(ReservationContext.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
++         vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmInstanceVO);
+         HostVO host = mock(HostVO.class);
+         TungstenAnswer createTungstenVMAnswer = mock(TungstenAnswer.class);
+ 
+         nicProfile.setIPv4Address("192.168.100.100");
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Management);
+-        when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(createTungstenVMAnswer);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+@@ -669,7 +669,7 @@
+ 
+         when(nicProfile.getIPv4Address()).thenReturn("192.168.100.100");
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+-        when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+@@ -694,7 +694,7 @@
+         TungstenAnswer deleteVmAnswer = mock(TungstenAnswer.class);
+ 
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Management);
+-        when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswer);
+@@ -716,7 +716,7 @@
+         TungstenAnswer deleteVmiAnswer = mock(TungstenAnswer.class);
+ 
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Management);
+-        when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(virtualMachineProfile.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(deleteTungstenVRouterPortAnswer);
+@@ -915,12 +915,12 @@
+         DeployDestination dest = mock(DeployDestination.class);
+         ReservationContext context = mock(ReservationContext.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
++         VMInstanceDao vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmInstanceVO);
+         HostVO hostVO = mock(HostVO.class);
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         when(vm.getType()).thenReturn(VirtualMachine.Type.ConsoleProxy);
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+-        when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(tungstenAnswer);
+ 
+@@ -962,4 +962,15 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    public final class MockVMInstanceDao {
++        private MockVMInstanceDao() {
++        }
++
++        public static VMInstanceDao createMockVmInstanceDao(VMInstanceVO vmInstanceVO) {
++            VMInstanceDao vmInstanceDao = Mockito.mock(VMInstanceDao.class);
++            when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
++            return vmInstanceDao;
++        }
++    }
+ }
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
+@@ -388,7 +388,7 @@
+         when(nic.getReservationStrategy()).thenReturn(Nic.ReservationStrategy.Start);
+         when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+-        when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(host);
+ 
+         guru.reserve(nic, network, vm, dest, context);
+@@ -402,13 +402,13 @@
+         final VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+         final IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         final VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
++        vmInstanceDao = createMockVmInstanceDao(vmInstanceVO);
+         final HostVO host = mock(HostVO.class);
+ 
+         when(hostDao.findById(anyLong())).thenReturn(host);
+         when(
+             tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(
+             new TungstenAnswer(new TungstenCommand(), true, ""));
+-        when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+ 
+         guru.release(nic, vm, "test");
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class),
+@@ -481,7 +481,7 @@
+ 
+         when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+-        when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
++        vmInstanceDao = createMockVmInstanceDao(vmInstanceVO);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class),
+             anyLong())).thenReturn(new TungstenAnswer(new TungstenCommand(), true, ""));
+@@ -526,4 +526,15 @@
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class),
+             anyLong());
+     }
++
++    public final class MockVMInstanceDao {
++        private MockVMInstanceDao() {
++        }
++
++        public static VMInstanceDao createMockVmInstanceDao(VMInstanceVO vmInstanceVO) {
++            VMInstanceDao vmInstanceDao = Mockito.mock(VMInstanceDao.class);
++            when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
++            return vmInstanceDao;
++        }
++    }
+ }

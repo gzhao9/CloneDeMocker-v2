@@ -1,0 +1,53 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
+@@ -185,6 +185,8 @@
+ 
+     TungstenResource tungstenResource;
+ 
++    private LoadbalancerMember loadbalancerMember2Mock;
++
+     MockedStatic<TungstenVRouterApi> tungstenVRouterApiMocked;
+ 
+     AutoCloseable closeable;
+@@ -192,6 +194,7 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
++        loadbalancerMember2Mock = mock(LoadbalancerMember.class);
+         tungstenResource = new TungstenResource();
+         tungstenResource.tungstenApi = tungstenApi;
+         ReflectionTestUtils.setField(tungstenResource, "vrouterPort", "9091");
+@@ -649,7 +652,6 @@
+         LoadbalancerHealthmonitor loadbalancerHealthmonitor = mock(LoadbalancerHealthmonitor.class);
+         LoadbalancerPool loadbalancerPool = mock(LoadbalancerPool.class);
+         LoadbalancerMember member1 = mock(LoadbalancerMember.class);
+-        LoadbalancerMember member2 = mock(LoadbalancerMember.class);
+ 
+         when(virtualNetwork.getUuid()).thenReturn("ac617be6-bf80-4086-9d6a-c05ff78e2264");
+         when(virtualMachineInterface.getUuid()).thenReturn("d069ad89-b4d0-43fb-b75f-179ab3bfb03c");
+@@ -674,7 +676,7 @@
+         when(tungstenApi.createTungstenLoadbalancerPool(anyString(), anyString(), anyString(), anyString(), anyString(),
+             anyString())).thenReturn(loadbalancerPool);
+         when(tungstenApi.createTungstenLoadbalancerMember(anyString(), anyString(), anyString(), anyString(), anyInt(),
+-            anyInt())).thenReturn(member1).thenReturn(member2);
++            anyInt())).thenReturn(member1).thenReturn(loadbalancerMember2Mock);
+ 
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+@@ -700,7 +702,6 @@
+         LoadbalancerListener loadbalancerListener = mock(LoadbalancerListener.class);
+         LoadbalancerPool loadbalancerPool = mock(LoadbalancerPool.class);
+         LoadbalancerMember loadbalancerMember1 = mock(LoadbalancerMember.class);
+-        LoadbalancerMember loadbalancerMember2 = mock(LoadbalancerMember.class);
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         ObjectReference<ApiPropertyBase> listerner = mock(ObjectReference.class);
+         ObjectReference<ApiPropertyBase> pool = mock(ObjectReference.class);
+@@ -721,7 +722,7 @@
+             loadbalancerListener);
+         when(tungstenApi.getTungstenObject(eq(LoadbalancerPool.class), anyString())).thenReturn(loadbalancerPool);
+         when(tungstenApi.getTungstenObject(eq(LoadbalancerMember.class), anyString())).thenReturn(loadbalancerMember1)
+-            .thenReturn(loadbalancerMember2);
++            .thenReturn(loadbalancerMember2Mock);
+         when(tungstenApi.deleteTungstenObject(any())).thenReturn(true);
+         when(tungstenApi.releaseTungstenFloatingIp(anyString(), anyString(), anyString())).thenReturn(true);
+         when(tungstenApi.deleteTungstenVmInterface(any(VirtualMachineInterface.class))).thenReturn(true);
