@@ -1,0 +1,36 @@
+--- a/engine/userdata/src/test/java/org/apache/cloudstack/userdata/UserDataManagerImplTest.java
++++ b/engine/userdata/src/test/java/org/apache/cloudstack/userdata/UserDataManagerImplTest.java
+@@ -106,9 +106,7 @@
+     public void testValidateAndGetUserDataForSystemVMInvalidAccount() throws IOException {
+         // Test with userDataVo that doesn't belong to ADMIN account
+         String testUuid = "test-uuid-123";
+-        UserDataVO userDataVo = Mockito.mock(UserDataVO.class);
+-        when(userDataVo.getDomainId()).thenReturn(Domain.ROOT_DOMAIN);
+-        when(userDataVo.getAccountId()).thenReturn(3L);
++        UserDataVO userDataVo = createMockUserDataVo(3L);
+         userDataVo.setUserData("dGVzdCBkYXRh"); // "test data" in base64
+ 
+         when(userDataDao.findByUuid(testUuid)).thenReturn(userDataVo);
+@@ -122,9 +120,7 @@
+         String originalText = "#!/bin/bash\necho 'Hello World'";
+         String base64EncodedUserData = Base64.getEncoder().encodeToString(originalText.getBytes());
+ 
+-        UserDataVO userDataVo = Mockito.mock(UserDataVO.class);
+-        when(userDataVo.getDomainId()).thenReturn(Domain.ROOT_DOMAIN);
+-        when(userDataVo.getAccountId()).thenReturn(User.UID_ADMIN);
++        UserDataVO userDataVo = createMockUserDataVo(User.UID_ADMIN);
+         when(userDataVo.getUserData()).thenReturn(base64EncodedUserData);
+ 
+         when(userDataDao.findByUuid(testUuid)).thenReturn(userDataVo);
+@@ -146,4 +142,11 @@
+         assertNotEquals("compressed result should be different from original", result, base64EncodedUserData);
+     }
+ 
++    private static UserDataVO createMockUserDataVo(long accountIdReturn) {
++        UserDataVO userDataVo = Mockito.mock(UserDataVO.class);
++        when(userDataVo.getDomainId()).thenReturn(Domain.ROOT_DOMAIN);
++        when(userDataVo.getAccountId()).thenReturn(accountIdReturn);
++        return userDataVo;
++    }
++
+ }

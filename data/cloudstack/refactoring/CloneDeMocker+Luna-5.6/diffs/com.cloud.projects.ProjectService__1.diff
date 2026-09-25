@@ -1,0 +1,56 @@
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/ActivateProjectCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/ActivateProjectCmdTest.java
+@@ -71,12 +71,10 @@
+     public void testGetEntityOwnerIdForProject() {
+         Project project = Mockito.mock(Project.class);
+         Mockito.when(project.getId()).thenReturn(2L);
+-        ProjectService projectService = Mockito.mock(ProjectService.class);
+         Account account = Mockito.mock(Account.class);
+         Mockito.when(account.getId()).thenReturn(2L);
+-        Mockito.when(projectService.getProject(ArgumentMatchers.anyLong())).thenReturn(project);
++        ProjectService projectService = MockProjectService.createMockProjectService(project, account);
+ 
+-        Mockito.when(projectService.getProjectOwner(ArgumentMatchers.anyLong())).thenReturn(account);
+         activateProjectCmd._projectService = projectService;
+ 
+         Assert.assertEquals(2L, activateProjectCmd.getEntityOwnerId());
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/AddAccountToProjectCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/AddAccountToProjectCmdTest.java
+@@ -98,13 +98,11 @@
+         Project project = Mockito.mock(Project.class);
+         Mockito.when(project.getId()).thenReturn(2L);
+ 
+-        ProjectService projectService = Mockito.mock(ProjectService.class);
+         Account account = Mockito.mock(Account.class);
+ 
+         Mockito.when(account.getId()).thenReturn(2L);
+-        Mockito.when(projectService.getProject(ArgumentMatchers.anyLong())).thenReturn(project);
++        ProjectService projectService = MockProjectService.createMockProjectService(project, account);
+ 
+-        Mockito.when(projectService.getProjectOwner(ArgumentMatchers.anyLong())).thenReturn(account);
+         addAccountToProjectCmd._projectService = projectService;
+ 
+         Assert.assertEquals(2L, addAccountToProjectCmd.getEntityOwnerId());
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/MockProjectService.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/MockProjectService.java
+@@ -0,0 +1,20 @@
++package org.apache.cloudstack.api.command.test;
++
++import com.cloud.projects.Project;
++import com.cloud.projects.ProjectService;
++import com.cloud.user.Account;
++import org.mockito.ArgumentMatchers;
++import org.mockito.Mockito;
++
++public final class MockProjectService {
++
++    private MockProjectService() {
++    }
++
++    public static ProjectService createMockProjectService(Project project, Account account) {
++        ProjectService projectService = Mockito.mock(ProjectService.class);
++        Mockito.when(projectService.getProject(ArgumentMatchers.anyLong())).thenReturn(project);
++        Mockito.when(projectService.getProjectOwner(ArgumentMatchers.anyLong())).thenReturn(account);
++        return projectService;
++    }
++}

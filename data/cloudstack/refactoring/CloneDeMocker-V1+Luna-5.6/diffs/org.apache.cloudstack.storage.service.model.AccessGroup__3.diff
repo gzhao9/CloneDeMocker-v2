@@ -1,0 +1,41 @@
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
+@@ -459,12 +459,11 @@
+     // Test deleteAccessGroup - Success
+     @Test
+     public void testDeleteAccessGroup_Success() {
+-        AccessGroup accessGroup = mock(AccessGroup.class);
++        AccessGroup accessGroup = createAccessGroup();
+         Map<String, String> details = new HashMap<>();
+         details.put(OntapStorageConstants.EXPORT_POLICY_NAME, "export-policy-1");
+         details.put(OntapStorageConstants.EXPORT_POLICY_ID, "1");
+ 
+-        when(accessGroup.getStoragePoolId()).thenReturn(1L);
+         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+         // Removed primaryDataStoreInfo.getName() - not used
+         doNothing().when(nasFeignClient).deleteExportPolicyById(anyString(), anyString());
+@@ -498,12 +497,11 @@
+     // Test deleteAccessGroup - Failed to Delete
+     @Test
+     public void testDeleteAccessGroup_Failed() {
+-        AccessGroup accessGroup = mock(AccessGroup.class);
+         Map<String, String> details = new HashMap<>();
+         details.put(OntapStorageConstants.EXPORT_POLICY_NAME, "export-policy-1");
+         details.put(OntapStorageConstants.EXPORT_POLICY_ID, "1");
+ 
+-        when(accessGroup.getStoragePoolId()).thenReturn(1L);
++        AccessGroup accessGroup = createAccessGroup();
+         when(storagePoolDetailsDao.listDetailsKeyPairs(1L)).thenReturn(details);
+         doThrow(new RuntimeException("Failed to delete")).when(nasFeignClient)
+             .deleteExportPolicyById(anyString(), anyString());
+@@ -582,4 +580,10 @@
+             strategy.deleteCloudStackVolume(cloudStackVolume);
+         });
+     }
++
++    private static AccessGroup createAccessGroup() {
++        AccessGroup accessGroup = mock(AccessGroup.class);
++        when(accessGroup.getStoragePoolId()).thenReturn(1L);
++        return accessGroup;
++    }
+ }

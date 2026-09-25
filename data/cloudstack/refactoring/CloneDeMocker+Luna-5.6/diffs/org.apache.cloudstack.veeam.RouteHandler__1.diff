@@ -1,0 +1,57 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/VeeamControlServletTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/VeeamControlServletTest.java
+@@ -61,12 +61,11 @@
+ 
+     @Test
+     public void testServiceDelegatesToMatchingRouteHandler() throws Exception {
+-        final RouteHandler handler = mock(RouteHandler.class);
+         final String path = "/api/path";
++        final RouteHandler handler = createMockRouteHandler(path, true);
+         final VeeamControlServlet servlet = new VeeamControlServlet(Collections.singletonList(handler));
+         final HttpServletRequest request = new MockHttpServletRequest("GET", path);
+         final MockHttpServletResponse response = new MockHttpServletResponse();
+-        when(handler.canHandle("GET", path)).thenReturn(true);
+ 
+         servlet.service(request, response);
+ 
+@@ -75,14 +74,13 @@
+ 
+     @Test
+     public void testServiceReturnsNotFoundWhenNoHandlerMatches() throws Exception {
+-        final RouteHandler handler = mock(RouteHandler.class);
+         final String path = "/api/path";
++        final RouteHandler handler = createMockRouteHandler(path, false);
+         final VeeamControlServlet servlet = new VeeamControlServlet(Collections.singletonList(handler));
+         final MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
+         request.setPathInfo(path);
+         request.addHeader("Accept", "application/json");
+         final MockHttpServletResponse response = new MockHttpServletResponse();
+-        when(handler.canHandle("GET", path)).thenReturn(false);
+ 
+         servlet.service(request, response);
+ 
+@@ -93,12 +91,11 @@
+ 
+     @Test
+     public void testServiceConvertsHandlerErrorToFaultResponse() throws Exception {
+-        final RouteHandler handler = mock(RouteHandler.class);
+         final String path = "/api/faultpath";
++        final RouteHandler handler = createMockRouteHandler(path, true);
+         final VeeamControlServlet servlet = new VeeamControlServlet(Collections.singletonList(handler));
+         final HttpServletRequest request = new MockHttpServletRequest("GET", path);
+         final MockHttpServletResponse response = new MockHttpServletResponse();
+-        when(handler.canHandle("GET", path)).thenReturn(true);
+         doThrow(VeeamControlServlet.Error.unauthorized("denied")).when(handler)
+                 .handle(request, response, path, Negotiation.OutFormat.XML, servlet);
+ 
+@@ -118,4 +115,10 @@
+         assertEquals(405, response.getStatus());
+         assertEquals("GET, POST", response.getHeader("Allow"));
+     }
++
++    private static RouteHandler createMockRouteHandler(String path, boolean canHandleResult) {
++        final RouteHandler handler = mock(RouteHandler.class);
++        when(handler.canHandle("GET", path)).thenReturn(canHandleResult);
++        return handler;
++    }
+ }

@@ -1,0 +1,49 @@
+--- a/server/src/test/java/com/cloud/storage/ClvmPoolManagerTest.java
++++ b/server/src/test/java/com/cloud/storage/ClvmPoolManagerTest.java
+@@ -492,10 +492,8 @@
+ 
+         // DB says HOST_ID_1, but actual lock is on HOST_ID_2
+         // Fast path: query HOST_ID_1, inactive: fall back to fan-out
+-        VolumeDetailVO detail = Mockito.mock(VolumeDetailVO.class);
+-        when(detail.getValue()).thenReturn(String.valueOf(HOST_ID_1));
+-        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+-        when(detail.getId()).thenReturn(99L);
++        VolumeDetailVO detail = createMockVolumeDetailVO();
++        when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+ 
+         HostVO host1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+         HostVO host2 = createMockHost(HOST_ID_2, "host2", Status.Up, Hypervisor.HypervisorType.KVM);
+@@ -547,9 +545,7 @@
+         when(pool.getPath()).thenReturn(VG_NAME);
+ 
+         // DB has HOST_ID_1, fast path query returns inactive: fan-out also finds nothing
+-        VolumeDetailVO detail = Mockito.mock(VolumeDetailVO.class);
+-        when(detail.getId()).thenReturn(99L);
+-        when(detail.getValue()).thenReturn(String.valueOf(HOST_ID_1));
++        VolumeDetailVO detail = createMockVolumeDetailVO();
+         when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+ 
+         HostVO host = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+@@ -747,9 +743,7 @@
+         Mockito.lenient().when(pool.getName()).thenReturn("cluster-pool");
+         when(pool.getPath()).thenReturn(VG_NAME);
+ 
+-        VolumeDetailVO detail = Mockito.mock(VolumeDetailVO.class);
+-        when(detail.getId()).thenReturn(99L);
+-        when(detail.getValue()).thenReturn(String.valueOf(HOST_ID_1));
++        VolumeDetailVO detail = createMockVolumeDetailVO();
+         when(volsDetailsDao.findDetail(VOLUME_ID, ClvmPoolManager.CLVM_LOCK_HOST_ID)).thenReturn(detail);
+ 
+         HostVO host1 = createMockHost(HOST_ID_1, "host1", Status.Up, Hypervisor.HypervisorType.KVM);
+@@ -933,4 +927,11 @@
+         Mockito.lenient().when(host.getHypervisorType()).thenReturn(hypervisor);
+         return host;
+     }
++
++    private static VolumeDetailVO createMockVolumeDetailVO() {
++        VolumeDetailVO detail = Mockito.mock(VolumeDetailVO.class);
++        when(detail.getId()).thenReturn(99L);
++        when(detail.getValue()).thenReturn(String.valueOf(HOST_ID_1));
++        return detail;
++    }
+ }

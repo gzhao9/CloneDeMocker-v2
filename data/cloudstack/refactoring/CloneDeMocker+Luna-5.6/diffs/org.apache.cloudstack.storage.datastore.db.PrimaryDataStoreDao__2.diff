@@ -1,0 +1,122 @@
+--- a/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/KvmNonManagedStorageSystemDataMotionTest.java
++++ b/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/KvmNonManagedStorageSystemDataMotionTest.java
+@@ -83,8 +83,7 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class KvmNonManagedStorageSystemDataMotionTest {
+ 
+-    @Mock
+-    private PrimaryDataStoreDao primaryDataStoreDao;
++        private PrimaryDataStoreDao primaryDataStoreDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(new HashMap<>());
+     @Mock
+     private TemplateDataFactory templateDataFactory;
+     @Mock
+@@ -211,7 +210,7 @@
+         StoragePoolVO storagePool = Mockito.spy(new StoragePoolVO());
+         Mockito.doReturn(storagePoolType).when(storagePool).getPoolType();
+ 
+-        Mockito.doReturn(storagePool).when(primaryDataStoreDao).findById(0l);
++        primaryDataStoreDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(java.util.Collections.singletonMap(0l, storagePool));
+         Mockito.doReturn(isManagedStorage).when(storagePool).isManaged();
+         return volumeMap;
+     }
+--- a/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/StorageSystemDataMotionStrategyTest.java
++++ b/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/StorageSystemDataMotionStrategyTest.java
+@@ -78,8 +78,7 @@
+     private PrimaryDataStore sourceStore;
+     @Mock
+     private ImageStore destinationStore;
+-    @Mock
+-    private PrimaryDataStoreDao primaryDataStoreDao;
++        private PrimaryDataStoreDao primaryDataStoreDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(new HashMap<>());
+ 
+     @Mock
+     StoragePoolVO sourceStoragePoolVoMock, destinationStoragePoolVoMock;
+@@ -108,7 +107,7 @@
+         doReturn(sourceStore).when(volumeObjectSource).getDataStore();
+         doReturn(destinationStore).when(dataObjectDestination).getDataStore();
+         StoragePoolVO storeVO = new StoragePoolVO();
+-        doReturn(storeVO).when(primaryDataStoreDao).findById(0l);
++        primaryDataStoreDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(java.util.Collections.singletonMap(0l, storeVO));
+ 
+         assertTrue(strategy.canHandle(volumeObjectSource, dataObjectDestination) == StrategyPriority.CANT_HANDLE);
+     }
+@@ -148,8 +147,10 @@
+         StoragePoolVO storagePool1 = Mockito.spy(new StoragePoolVO());
+         Mockito.doReturn(sPool1IsManaged).when(storagePool1).isManaged();
+ 
+-        Mockito.doReturn(storagePool0).when(primaryDataStoreDao).findById(0l);
+-        Mockito.doReturn(storagePool1).when(primaryDataStoreDao).findById(1l);
++        Map<Long, StoragePoolVO> storagePools = new HashMap<>();
++        storagePools.put(0l, storagePool0);
++        storagePools.put(1l, storagePool1);
++        primaryDataStoreDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(storagePools);
+ 
+         StrategyPriority strategyPriority = strategy.internalCanHandle(volumeMap, new HostVO("srcHostUuid"), new HostVO("destHostUuid"));
+ 
+@@ -287,8 +288,10 @@
+         Map<VolumeInfo, DataStore> volumeDataStoreMap = new HashMap<>();
+         volumeDataStoreMap.put(srcVolumeInfo, destDataStore);
+ 
+-        Mockito.doReturn(sourceStoragePool).when(primaryDataStoreDao).findById(0l);
+-        Mockito.doReturn(destStoragePool).when(primaryDataStoreDao).findById(1l);
++        Map<Long, StoragePoolVO> storagePools = new HashMap<>();
++        storagePools.put(0L, sourceStoragePool);
++        storagePools.put(1L, destStoragePool);
++        primaryDataStoreDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(storagePools);
+ 
+         boolean result = strategy.isSourceAndDestinationPoolTypeOfNfs(volumeDataStoreMap);
+         Assert.assertEquals(expected, result);
+@@ -563,7 +566,9 @@
+         Mockito.lenient().doReturn(StoragePoolType.CLVM).when(sourcePool).getPoolType();
+         Mockito.doReturn(true).when(sourcePool).isManaged();
+ 
+-        Mockito.doReturn(sourcePool).when(primaryDataStoreDao).findById(0L);
++        Map<Long, StoragePoolVO> storagePools = new HashMap<>();
++        storagePools.put(0L, sourcePool);
++        primaryDataStoreDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(storagePools);
+ 
+         StrategyPriority result = strategy.internalCanHandle(
+                 volumeMap, new HostVO("srcHostUuid"), new HostVO("destHostUuid"));
+@@ -588,7 +593,7 @@
+         Mockito.lenient().doReturn(StoragePoolType.CLVM_NG).when(sourcePool).getPoolType();
+         Mockito.doReturn(true).when(sourcePool).isManaged();
+ 
+-        Mockito.doReturn(sourcePool).when(primaryDataStoreDao).findById(0L);
++        primaryDataStoreDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(java.util.Collections.singletonMap(0L, sourcePool));
+ 
+         StrategyPriority result = strategy.internalCanHandle(
+                 volumeMap, new HostVO("srcHostUuid"), new HostVO("destHostUuid"));
+@@ -644,7 +649,8 @@
+         StoragePoolVO destPool = Mockito.spy(new StoragePoolVO());
+         Mockito.lenient().doReturn(StoragePoolType.CLVM).when(destPool).getPoolType();
+ 
+-        Mockito.doReturn(sourcePool).when(primaryDataStoreDao).findById(0L);
++        primaryDataStoreDao = MockPrimaryDataStoreDao.createMockPrimaryDataStoreDao(
++                java.util.Collections.singletonMap(0L, sourcePool));
+ 
+         StrategyPriority result = strategy.internalCanHandle(
+                 volumeMap, new HostVO("srcHostUuid"), new HostVO("destHostUuid"));
+--- a/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/MockPrimaryDataStoreDao.java
++++ b/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/MockPrimaryDataStoreDao.java
+@@ -0,0 +1,21 @@
++package org.apache.cloudstack.storage.motion;
++
++import java.util.Map;
++
++import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
++import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
++
++import org.mockito.Mockito;
++
++public final class MockPrimaryDataStoreDao {
++    private MockPrimaryDataStoreDao() {
++    }
++
++    public static PrimaryDataStoreDao createMockPrimaryDataStoreDao(Map<Long, StoragePoolVO> storagePools) {
++        PrimaryDataStoreDao primaryDataStoreDao = Mockito.mock(PrimaryDataStoreDao.class);
++        for (Map.Entry<Long, StoragePoolVO> storagePool : storagePools.entrySet()) {
++            Mockito.doReturn(storagePool.getValue()).when(primaryDataStoreDao).findById(storagePool.getKey());
++        }
++        return primaryDataStoreDao;
++    }
++}

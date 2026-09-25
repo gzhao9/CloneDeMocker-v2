@@ -1,0 +1,84 @@
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/ActivateProjectCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/ActivateProjectCmdTest.java
+@@ -71,16 +71,35 @@
+     public void testGetEntityOwnerIdForProject() {
+         Project project = Mockito.mock(Project.class);
+         Mockito.when(project.getId()).thenReturn(2L);
+-        ProjectService projectService = Mockito.mock(ProjectService.class);
+         Account account = Mockito.mock(Account.class);
+         Mockito.when(account.getId()).thenReturn(2L);
+-        Mockito.when(projectService.getProject(ArgumentMatchers.anyLong())).thenReturn(project);
+ 
+-        Mockito.when(projectService.getProjectOwner(ArgumentMatchers.anyLong())).thenReturn(account);
++        ProjectService projectService = MockProjectService.createMockProjectService(project, account);
+         activateProjectCmd._projectService = projectService;
+ 
+         Assert.assertEquals(2L, activateProjectCmd.getEntityOwnerId());
+ 
+     }
+ 
++
++    public final class MockProjectService {
++
++        private MockProjectService() {
++            // Utility class
++        }
++
++        public static com.cloud.projects.ProjectService createMockProjectService(
++                com.cloud.projects.Project project,
++                com.cloud.user.Account account) {
++            com.cloud.projects.ProjectService projectService =
++                    Mockito.mock(com.cloud.projects.ProjectService.class);
++
++            Mockito.when(projectService.getProject(ArgumentMatchers.anyLong()))
++                    .thenReturn(project);
++            Mockito.when(projectService.getProjectOwner(ArgumentMatchers.anyLong()))
++                    .thenReturn(account);
++
++            return projectService;
++        }
++    }
+ }
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/AddAccountToProjectCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/AddAccountToProjectCmdTest.java
+@@ -98,13 +98,11 @@
+         Project project = Mockito.mock(Project.class);
+         Mockito.when(project.getId()).thenReturn(2L);
+ 
+-        ProjectService projectService = Mockito.mock(ProjectService.class);
+         Account account = Mockito.mock(Account.class);
+ 
+         Mockito.when(account.getId()).thenReturn(2L);
+-        Mockito.when(projectService.getProject(ArgumentMatchers.anyLong())).thenReturn(project);
++         ProjectService projectService = MockProjectService.createMockProjectService(project, account);
+ 
+-        Mockito.when(projectService.getProjectOwner(ArgumentMatchers.anyLong())).thenReturn(account);
+         addAccountToProjectCmd._projectService = projectService;
+ 
+         Assert.assertEquals(2L, addAccountToProjectCmd.getEntityOwnerId());
+@@ -175,4 +173,25 @@
+      * }
+      */
+ 
++
++    public final class MockProjectService {
++
++        private MockProjectService() {
++            // Utility class
++        }
++
++        public static com.cloud.projects.ProjectService createMockProjectService(
++                com.cloud.projects.Project project,
++                com.cloud.user.Account account) {
++            com.cloud.projects.ProjectService projectService =
++                    Mockito.mock(com.cloud.projects.ProjectService.class);
++
++            Mockito.when(projectService.getProject(ArgumentMatchers.anyLong()))
++                    .thenReturn(project);
++            Mockito.when(projectService.getProjectOwner(ArgumentMatchers.anyLong()))
++                    .thenReturn(account);
++
++            return projectService;
++        }
++    }
+ }

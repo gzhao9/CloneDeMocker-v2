@@ -1,0 +1,82 @@
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -827,11 +827,9 @@
+ 
+     public void testCreateIpv4RoutedNetworkWithBgpPeersFailure1() {
+         registerCallContext();
+-        CreateNetworkCmdByAdmin cmd = Mockito.mock(CreateNetworkCmdByAdmin.class);
+-        Mockito.when(cmd.getCidrSize()).thenReturn(24);
+         List<Long> bgpPeerIds = Arrays.asList(11L, 12L);
+-        Mockito.when(cmd.getBgpPeerIds()).thenReturn(bgpPeerIds);
+-
++
++        CreateNetworkCmdByAdmin cmd = createCreateNetworkCmdByAdmin(bgpPeerIds, zoneId);
+         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, true, true);
+         when(networkOfferingVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
+         when(networkOfferingVO.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Static);
+@@ -839,7 +837,6 @@
+         when(routedIpv4Manager.isVirtualRouterGateway(networkOfferingVO)).thenReturn(true);
+ 
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+-        when(cmd.getZoneId()).thenReturn(zoneId);
+         when(_dcDao.findById(zoneId)).thenReturn(zone);
+         when(zone.getId()).thenReturn(zoneId);
+ 
+@@ -855,11 +852,9 @@
+     @Test
+     public void testCreateIpv4RoutedNetworkWithBgpPeersFailure2() {
+         registerCallContext();
+-        CreateNetworkCmdByAdmin cmd = Mockito.mock(CreateNetworkCmdByAdmin.class);
+-        Mockito.when(cmd.getCidrSize()).thenReturn(24);
+         List<Long> bgpPeerIds = Arrays.asList(11L, 12L);
+-        Mockito.when(cmd.getBgpPeerIds()).thenReturn(bgpPeerIds);
+-
++
++        CreateNetworkCmdByAdmin cmd = createCreateNetworkCmdByAdmin(bgpPeerIds, zoneId);
+         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
+         when(networkOfferingVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
+         when(networkOfferingVO.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Static);
+@@ -867,7 +862,6 @@
+         when(routedIpv4Manager.isVirtualRouterGateway(networkOfferingVO)).thenReturn(true);
+ 
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+-        when(cmd.getZoneId()).thenReturn(zoneId);
+         when(_dcDao.findById(zoneId)).thenReturn(zone);
+         when(zone.getId()).thenReturn(zoneId);
+ 
+@@ -883,11 +877,9 @@
+     @Test
+     public void testCreateIpv4RoutedNetworkWithBgpPeersFailure3() {
+         registerCallContext();
+-        CreateNetworkCmdByAdmin cmd = Mockito.mock(CreateNetworkCmdByAdmin.class);
+-        Mockito.when(cmd.getCidrSize()).thenReturn(24);
+         List<Long> bgpPeerIds = Arrays.asList(11L, 12L);
+-        Mockito.when(cmd.getBgpPeerIds()).thenReturn(bgpPeerIds);
+-
++
++        CreateNetworkCmdByAdmin cmd = createCreateNetworkCmdByAdmin(bgpPeerIds, zoneId);
+         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
+         when(networkOfferingVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
+         when(networkOfferingVO.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Static);
+@@ -897,7 +889,6 @@
+         doThrow(new InvalidParameterValueException("validation error")).when(routedIpv4Manager).validateBgpPeers(nullable(Account.class), nullable(Long.class), any(List.class));
+ 
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+-        when(cmd.getZoneId()).thenReturn(zoneId);
+         when(_dcDao.findById(zoneId)).thenReturn(zone);
+         when(zone.getId()).thenReturn(zoneId);
+ 
+@@ -1378,4 +1369,13 @@
+ 
+         Assert.assertFalse(service.getAndValidateSupportForKeepMacAddressOnPublicNicParameter(false, networkOfferingVO));
+     }
++
++    private static CreateNetworkCmdByAdmin createCreateNetworkCmdByAdmin(
++            java.util.List<Long> bgpPeerIds, Long zoneId) {
++        CreateNetworkCmdByAdmin cmd = Mockito.mock(CreateNetworkCmdByAdmin.class);
++        Mockito.when(cmd.getCidrSize()).thenReturn(24);
++        Mockito.when(cmd.getBgpPeerIds()).thenReturn(bgpPeerIds);
++        when(cmd.getZoneId()).thenReturn(zoneId);
++        return cmd;
++    }
+ }
