@@ -1,0 +1,34 @@
+--- a/server/src/test/java/com/cloud/api/query/QueryManagerImplTest.java
++++ b/server/src/test/java/com/cloud/api/query/QueryManagerImplTest.java
+@@ -460,8 +460,7 @@
+         long templateId = 1L;
+         Account account = mock(Account.class);
+         Mockito.when(account.getType()).thenReturn(Account.Type.ADMIN);
+-        VMTemplateVO template = mock(VMTemplateVO.class);
+-        Mockito.when(template.getTemplateTag()).thenReturn("tag");
++        VMTemplateVO template = createMockVmTemplate("tag");
+         Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+         Mockito.lenient().doThrow(PermissionDeniedException.class).when(accountManager).checkAccess(account, null, false, template);
+         List<String> result = queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+@@ -473,7 +472,7 @@
+         long templateId = 1L;
+         Account account = mock(Account.class);
+         Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+-        VMTemplateVO template = mock(VMTemplateVO.class);
++        VMTemplateVO template = createMockVmTemplate(null);
+         Mockito.when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+         Mockito.lenient().doNothing().when(accountManager).checkAccess(account, null, false, template);
+         List<String> result = queryManager.getHostTagsFromTemplateForServiceOfferingsListing(account, templateId);
+@@ -752,6 +751,12 @@
+         Mockito.verify(sc).setParameters("hostId", new Object[]{10L});
+     }
+ 
++    private static VMTemplateVO createMockVmTemplate(String templateTag) {
++        VMTemplateVO template = mock(VMTemplateVO.class);
++        Mockito.when(template.getTemplateTag()).thenReturn(templateTag);
++        return template;
++    }
++
+     private AccountVO createAccount(String name, long domainId, long accountId) {
+         AccountVO acct = new AccountVO(name, domainId, "networkdomain", Account.Type.DOMAIN_ADMIN, UUID.randomUUID().toString());
+         acct.setId(accountId);

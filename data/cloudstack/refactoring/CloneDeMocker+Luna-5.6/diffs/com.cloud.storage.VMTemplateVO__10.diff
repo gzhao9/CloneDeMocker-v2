@@ -1,0 +1,101 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -293,6 +293,8 @@
+     @Mock
+     private VMTemplateDao templateDao;
+ 
++    private VMTemplateVO vmTemplateMock;
++
+     @Mock
+     private AccountDao accountDao;
+ 
+@@ -527,6 +529,7 @@
+ 
+     @Before
+     public void beforeTest() {
++        vmTemplateMock = Mockito.mock(VMTemplateVO.class);
+         userVmManagerImpl.resourceLimitService = resourceLimitMgr;
+ 
+         Mockito.when(updateVmCommand.getId()).thenReturn(vmId);
+@@ -1049,9 +1052,8 @@
+         when(cmd.getId()).thenReturn(1L);
+         when(userVmDao.findById(1L)).thenReturn(userVmVoMock);
+ 
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+         when(userVmVoMock.getTemplateId()).thenReturn(2L);
+-        when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
++        when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(vmTemplateMock);
+ 
+ 
+         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+@@ -1072,9 +1074,8 @@
+         when(cmd.getId()).thenReturn(1L);
+         when(userVmDao.findById(1L)).thenReturn(userVmVoMock);
+ 
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+         when(userVmVoMock.getTemplateId()).thenReturn(2L);
+-        when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
++        when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(vmTemplateMock);
+ 
+ 
+         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Stopped);
+@@ -1683,8 +1684,7 @@
+         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+         when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+ 
+-        VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+-        when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
++        when(templateDao.findById(currentTemplateId)).thenReturn(vmTemplateMock);
+         when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(new ArrayList<>());
+ 
+         userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+@@ -1730,8 +1730,7 @@
+         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+         when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+ 
+-        VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+-        when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
++        when(templateDao.findById(currentTemplateId)).thenReturn(vmTemplateMock);
+         List<VolumeVO> volumes = new ArrayList<>();
+         VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+         volumes.add(rootVolumeOfVm);
+@@ -1942,13 +1941,12 @@
+     @Test
+     public void testValidateStrictHostTagCheckPass() {
+         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+ 
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+         HostVO destinationHostVO = Mockito.mock(HostVO.class);
+ 
+         Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOffering);
+-        Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
++        Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(vmTemplateMock);
+ 
+         Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+         Mockito.when(vm.getTemplateId()).thenReturn(2L);
+@@ -1965,13 +1963,12 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateStrictHostTagCheckFail() {
+         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+ 
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+         HostVO destinationHostVO = Mockito.mock(HostVO.class);
+ 
+         Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOffering);
+-        Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
++        Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(vmTemplateMock);
+ 
+         Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+         Mockito.when(vm.getTemplateId()).thenReturn(2L);
+@@ -3636,8 +3633,7 @@
+         ReflectionTestUtils.setField(userVm, "state", VirtualMachine.State.Stopped);
+         userVm.setUserVmType("User");
+         when(userVmDao.findById(vmId)).thenReturn(userVm);
+-        VMTemplateVO template = mock(VMTemplateVO.class);
+-        when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
++        when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(vmTemplateMock);
+ 
+         Nic nic = mock(Nic.class);
+         when(nic.getNetworkId()).thenReturn(networkId);

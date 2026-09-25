@@ -1,0 +1,83 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -868,9 +868,8 @@
+     }
+ 
+     private void prepareAndRunConfigureCustomRootDiskSizeTest(Map<String, String> customParameters, long expectedRootDiskSize, int timesVerifyIfHypervisorSupports, Long offeringRootDiskSize) {
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+-        Mockito.when(template.getSize()).thenReturn(99L * GiB_TO_BYTES);
+-
++
++        VMTemplateVO template = MockVMTemplateVO.createMockVmTemplate(99L * GiB_TO_BYTES);
+         DiskOfferingVO diskfferingVo = Mockito.mock(DiskOfferingVO.class);
+ 
+         Mockito.when(diskfferingVo.getDiskSize()).thenReturn(offeringRootDiskSize);
+@@ -1982,8 +1981,7 @@
+ 
+     @Test
+     public void testGetRootVolumeSizeForVmRestore() {
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+-        Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
++        VMTemplateVO template = MockVMTemplateVO.createMockVmTemplate(10L * GiB_TO_BYTES);
+         UserVmVO userVm = Mockito.mock(UserVmVO.class);
+         Mockito.when(userVm.getId()).thenReturn(1L);
+         DiskOffering diskOffering = Mockito.mock(DiskOffering.class);
+@@ -2000,8 +1998,7 @@
+ 
+     @Test
+     public void testGetRootVolumeSizeForVmRestoreNullDiskOfferingAndEmptyDetails() {
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+-        Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
++        VMTemplateVO template = MockVMTemplateVO.createMockVmTemplate(10L * GiB_TO_BYTES);
+         UserVmVO userVm = Mockito.mock(UserVmVO.class);
+         Mockito.when(userVm.getId()).thenReturn(1L);
+         DiskOffering diskOffering = null;
+@@ -4740,4 +4737,15 @@
+         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+     }
++
++    public final class MockVMTemplateVO {
++        private MockVMTemplateVO() {
++        }
++
++        public static com.cloud.storage.VMTemplateVO createMockVmTemplate(long templateSize) {
++            com.cloud.storage.VMTemplateVO template = Mockito.mock(com.cloud.storage.VMTemplateVO.class);
++            Mockito.when(template.getSize()).thenReturn(templateSize);
++            return template;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerTest.java
+@@ -234,13 +234,12 @@
+         HypervisorType hypervisorType = HypervisorType.Any;
+         Long rootDiskSize = Long.valueOf(10);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
+         Map<String, String> customParameters = new HashMap<String, String>();
+         Map<String, String> vmDetals = new HashMap<String, String>();
+ 
+         vmDetals.put("rootDiskController", "ide");
+         when(vm.getDetails()).thenReturn(vmDetals);
+-        when(templateVO.getSize()).thenReturn((rootDiskSize << 30) + 1);
++        VMTemplateVO templateVO = MockVMTemplateVO.createMockVmTemplate((rootDiskSize << 30) + 1);
+         //Case 1: >
+         try {
+             _userVmMgr.validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
+@@ -839,4 +838,15 @@
+         _userVmMgr.persistDeviceBusInfo(_vmMock, "lsilogic");
+         verify(_vmDao, times(1)).saveDetails(any(UserVmVO.class));
+     }
++
++    public final class MockVMTemplateVO {
++        private MockVMTemplateVO() {
++        }
++
++        public static com.cloud.storage.VMTemplateVO createMockVmTemplate(long templateSize) {
++            com.cloud.storage.VMTemplateVO template = Mockito.mock(com.cloud.storage.VMTemplateVO.class);
++            Mockito.when(template.getSize()).thenReturn(templateSize);
++            return template;
++        }
++    }
+ }

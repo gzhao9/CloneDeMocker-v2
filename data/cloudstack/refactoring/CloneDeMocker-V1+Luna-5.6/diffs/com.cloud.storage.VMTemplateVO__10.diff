@@ -1,0 +1,74 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -216,6 +216,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class UserVmManagerImplTest {
++    @Mock
++    private VMTemplateVO template;
+ 
+     @Spy
+     @InjectMocks
+@@ -1049,7 +1051,6 @@
+         when(cmd.getId()).thenReturn(1L);
+         when(userVmDao.findById(1L)).thenReturn(userVmVoMock);
+ 
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+         when(userVmVoMock.getTemplateId()).thenReturn(2L);
+         when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+ 
+@@ -1072,7 +1073,6 @@
+         when(cmd.getId()).thenReturn(1L);
+         when(userVmDao.findById(1L)).thenReturn(userVmVoMock);
+ 
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+         when(userVmVoMock.getTemplateId()).thenReturn(2L);
+         when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+ 
+@@ -1683,8 +1683,7 @@
+         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+         when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+ 
+-        VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+-        when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
++        when(templateDao.findById(currentTemplateId)).thenReturn(template);
+         when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(new ArrayList<>());
+ 
+         userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+@@ -1730,8 +1729,7 @@
+         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+         when(userVmVoMock.getTemplateId()).thenReturn(currentTemplateId);
+ 
+-        VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+-        when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
++        when(templateDao.findById(currentTemplateId)).thenReturn(template);
+         List<VolumeVO> volumes = new ArrayList<>();
+         VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+         volumes.add(rootVolumeOfVm);
+@@ -1942,8 +1940,8 @@
+     @Test
+     public void testValidateStrictHostTagCheckPass() {
+         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+-
++
++        // removed local mock; replaced with global field `template`
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+         HostVO destinationHostVO = Mockito.mock(HostVO.class);
+ 
+@@ -1965,7 +1963,6 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateStrictHostTagCheckFail() {
+         ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+ 
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+         HostVO destinationHostVO = Mockito.mock(HostVO.class);
+@@ -3636,7 +3633,6 @@
+         ReflectionTestUtils.setField(userVm, "state", VirtualMachine.State.Stopped);
+         userVm.setUserVmType("User");
+         when(userVmDao.findById(vmId)).thenReturn(userVm);
+-        VMTemplateVO template = mock(VMTemplateVO.class);
+         when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
+ 
+         Nic nic = mock(Nic.class);

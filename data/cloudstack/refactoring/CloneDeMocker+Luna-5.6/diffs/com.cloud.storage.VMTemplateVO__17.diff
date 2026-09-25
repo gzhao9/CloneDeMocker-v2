@@ -1,0 +1,69 @@
+--- a/engine/schema/src/test/java/com/cloud/storage/dao/VMTemplateDaoImplTest.java
++++ b/engine/schema/src/test/java/com/cloud/storage/dao/VMTemplateDaoImplTest.java
+@@ -104,10 +104,8 @@
+ 
+     @Test
+     public void testGetSortedTemplatesListWithPreferredArch_PreferredProvided() {
+-        VMTemplateVO templatePreferred = Mockito.mock(VMTemplateVO.class);
+-        when(templatePreferred.getArch()).thenReturn(CPU.CPUArch.amd64);
+-        VMTemplateVO templateOther = Mockito.mock(VMTemplateVO.class);
+-        when(templateOther.getArch()).thenReturn(CPU.CPUArch.arm64);
++        VMTemplateVO templatePreferred = createMockVmTemplateWithArch(CPU.CPUArch.amd64);
++        VMTemplateVO templateOther = createMockVmTemplateWithArch(CPU.CPUArch.arm64);
+ 
+         Map<Pair<Hypervisor.HypervisorType, CPU.CPUArch>, VMTemplateVO> uniqueTemplates = new HashMap<>();
+         uniqueTemplates.put(new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64), templatePreferred);
+@@ -143,12 +141,10 @@
+         availableHypervisors.add(new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64));
+         availableHypervisors.add(new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64));
+         doReturn(availableHypervisors).when(hostDao).listDistinctHypervisorArchTypes(zoneId);
+-        VMTemplateVO template1 = Mockito.mock(VMTemplateVO.class);
++        VMTemplateVO template1 = createMockVmTemplateWithArch(CPU.CPUArch.amd64);
+         when(template1.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+-        when(template1.getArch()).thenReturn(CPU.CPUArch.amd64);
+-        VMTemplateVO template2 = Mockito.mock(VMTemplateVO.class);
++        VMTemplateVO template2 = createMockVmTemplateWithArch(CPU.CPUArch.arm64);
+         when(template2.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+-        when(template2.getArch()).thenReturn(CPU.CPUArch.arm64);
+         List<VMTemplateVO> templatesFromDb = Arrays.asList(template1, template2);
+         doReturn(templatesFromDb).when(templateDao).listBy(any(), any());
+         SearchBuilder<VMTemplateVO> sb = mock(SearchBuilder.class);
+@@ -166,8 +162,7 @@
+         Hypervisor.HypervisorType hType = Hypervisor.HypervisorType.KVM;
+         String templateName = "TestRouting";
+         String preferredArch = CPU.CPUArch.amd64.getType();
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+-        when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
++        VMTemplateVO template = createMockVmTemplateWithArch(CPU.CPUArch.amd64);
+         List<VMTemplateVO> templatesFromDb = Collections.singletonList(template);
+         doReturn(templatesFromDb).when(templateDao).listBy(any(), any());
+         SearchBuilder<VMTemplateVO> sb = mock(SearchBuilder.class);
+@@ -200,6 +195,12 @@
+         doReturn(Collections.emptyList()).when(templateDao).listBy(any(), any());
+         VMTemplateVO result = templateDao.findLatestTemplateByTypeAndHypervisorAndArch(hypervisorType, arch, type);
+         assertNull(result);
++    }
++
++    private static VMTemplateVO createMockVmTemplateWithArch(CPU.CPUArch arch) {
++        VMTemplateVO template = mock(VMTemplateVO.class);
++        Mockito.when(template.getArch()).thenReturn(arch);
++        return template;
+     }
+ 
+     private void mockTemplateZoneJoin() {
+@@ -324,12 +325,9 @@
+     @Test
+     public void testFindSystemVMReadyTemplate() {
+         Long zoneId = 1L;
+-        VMTemplateVO systemVmTemplate1 = mock(VMTemplateVO.class);
+-        Mockito.when(systemVmTemplate1.getArch()).thenReturn(CPU.CPUArch.x86);
+-        VMTemplateVO systemVmTemplate2 = mock(VMTemplateVO.class);
+-        Mockito.when(systemVmTemplate2.getArch()).thenReturn(CPU.CPUArch.x86);
+-        VMTemplateVO systemVmTemplate3 = mock(VMTemplateVO.class);
+-        Mockito.when(systemVmTemplate3.getArch()).thenReturn(CPU.CPUArch.arm64);
++        VMTemplateVO systemVmTemplate1 = createMockVmTemplateWithArch(CPU.CPUArch.x86);
++        VMTemplateVO systemVmTemplate2 = createMockVmTemplateWithArch(CPU.CPUArch.x86);
++        VMTemplateVO systemVmTemplate3 = createMockVmTemplateWithArch(CPU.CPUArch.arm64);
+         Mockito.when(systemVmTemplate3.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+         List<VMTemplateVO> templates = Arrays.asList(systemVmTemplate1, systemVmTemplate2, systemVmTemplate3);
+         Mockito.when(hostDao.listDistinctHypervisorTypes(zoneId)).thenReturn(Arrays.asList(Hypervisor.HypervisorType.KVM));
