@@ -1,0 +1,44 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
+@@ -18,6 +18,7 @@
+  */
+ package org.apache.cloudstack.storage.vmsnapshot;
+ 
++import org.mockito.Mock;
+ import static org.junit.Assert.assertEquals;
+ import static org.junit.Assert.assertNull;
+ import static org.junit.Assert.assertSame;
+@@ -85,6 +86,8 @@
+ import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
+ 
+ public class KvmFileBasedStorageVmSnapshotStrategyTest {
++    @Mock
++    private VMSnapshotVO vmSnapshotVO;
+ 
+     private KvmFileBasedStorageVmSnapshotStrategy strategy;
+     private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+@@ -132,7 +135,6 @@
+         VMSnapshot vmSnapshot = mock(VMSnapshot.class);
+         CreateDiskOnlyVmSnapshotAnswer answer = mock(CreateDiskOnlyVmSnapshotAnswer.class);
+         UserVm userVm = mock(UserVm.class);
+-        VMSnapshotVO vmSnapshotVO = mock(VMSnapshotVO.class);
+ 
+         when(vmSnapshot.getId()).thenReturn(42L);
+         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+@@ -156,7 +158,6 @@
+ 
+         UserVmVO userVm = mock(UserVmVO.class);
+         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+-        VMSnapshotVO currentVmSnapshot = mock(VMSnapshotVO.class);
+         SnapshotDataStoreVO snapshotDataStoreVO = mock(SnapshotDataStoreVO.class);
+         SnapshotInfo snapshotInfo = mock(SnapshotInfo.class);
+         SnapshotObjectTO snapshotObjectTO = mock(SnapshotObjectTO.class);
+@@ -186,7 +187,7 @@
+         when(snapshotDataStoreVO.getDataStoreId()).thenReturn(dataStoreId);
+         when(strategy.snapshotDataFactory.getSnapshot(snapshotId, dataStoreId, DataStoreRole.Primary)).thenReturn(snapshotInfo);
+         when(snapshotInfo.getTO()).thenReturn(snapshotObjectTO);
+-        when(vmSnapshotDao.findCurrentSnapshotByVmId(vmId)).thenReturn(currentVmSnapshot);
++        when(vmSnapshotDao.findCurrentSnapshotByVmId(vmId)).thenReturn(vmSnapshotVO);
+         when(agentMgr.easySend(eq(hostId), any())).thenAnswer(invocation ->
+                 new RevertDiskOnlyVmSnapshotAnswer((RevertDiskOnlyVmSnapshotCommand) invocation.getArgument(1), Collections.emptyList()));
+ 

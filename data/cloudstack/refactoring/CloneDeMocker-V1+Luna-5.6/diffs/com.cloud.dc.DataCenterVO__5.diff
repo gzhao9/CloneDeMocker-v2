@@ -1,0 +1,86 @@
+--- a/services/secondary-storage/controller/src/test/java/org/apache/cloudstack/secondarystorage/SecondaryStorageManagerTest.java
++++ b/services/secondary-storage/controller/src/test/java/org/apache/cloudstack/secondarystorage/SecondaryStorageManagerTest.java
+@@ -77,9 +77,7 @@
+ 
+     @Test
+     public void getDefaultNetworkForAdvancedNonSG() {
+-        DataCenterVO dc = mock(DataCenterVO.class);
+-        when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
+-        when(dc.isSecurityGroupEnabled()).thenReturn(false);
++        DataCenterVO dc = createMockDataCenterVO(NetworkType.Advanced, false);
+         when(_networkModel.isSecurityGroupSupportedForZone(anyLong())).thenReturn(false);
+ 
+         when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+@@ -104,7 +102,7 @@
+ 
+     @Test
+     public void getDefaultNetworkForAdvancedSG() {
+-        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
++        DataCenterVO dc = createMockDataCenterVO(NetworkType.Advanced, true);
+         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
+         when(dc.isSecurityGroupEnabled()).thenReturn(true);
+         when(_networkModel.isSecurityGroupSupportedForZone(anyLong())).thenReturn(true);
+@@ -127,10 +125,8 @@
+ 
+     @Test
+     public void getDefaultNetworkForBasicNonSG() {
+-        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+-        when(dc.getNetworkType()).thenReturn(NetworkType.Basic);
+-        when(dc.isSecurityGroupEnabled()).thenReturn(false);
+-
++
++        DataCenterVO dc = createMockDataCenterVO(NetworkType.Basic, false);
+         when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+ 
+         NetworkVO network = Mockito.mock(NetworkVO.class);
+@@ -150,10 +146,8 @@
+ 
+     @Test
+     public void getDefaultNetworkForBasicSG() {
+-        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+-        when(dc.getNetworkType()).thenReturn(NetworkType.Basic);
+-        when(dc.isSecurityGroupEnabled()).thenReturn(true);
+-
++
++        DataCenterVO dc = createMockDataCenterVO(NetworkType.Basic, true);
+         when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+ 
+         NetworkVO network = Mockito.mock(NetworkVO.class);
+@@ -174,10 +168,8 @@
+     //also test invalid input
+     @Test(expected=CloudRuntimeException.class)
+     public void getDefaultNetworkForBasicSGWrongZoneType() {
+-        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+-        when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
+-        when(dc.isSecurityGroupEnabled()).thenReturn(true);
+-
++
++        DataCenterVO dc = createMockDataCenterVO(NetworkType.Advanced, true);
+         when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+ 
+         NetworkVO network = Mockito.mock(NetworkVO.class);
+@@ -193,10 +185,8 @@
+ 
+     @Test(expected=CloudRuntimeException.class)
+     public void getDefaultNetworkForAdvancedWrongZoneType() {
+-        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+-        when(dc.getNetworkType()).thenReturn(NetworkType.Basic);
+-        when(dc.isSecurityGroupEnabled()).thenReturn(true);
+-
++
++        DataCenterVO dc = createMockDataCenterVO(NetworkType.Basic, true);
+         when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+ 
+         NetworkVO network = Mockito.mock(NetworkVO.class);
+@@ -250,4 +240,11 @@
+         Mockito.when(_dcDao.listEnabledNonEdgeZoneIds()).thenReturn(dbZoneIds);
+         verifyScannablePoolsZoneIds(dbZoneIds, _ssMgr.getScannablePools());
+     }
++
++    private static DataCenterVO createMockDataCenterVO(NetworkType networkType, boolean securityGroupEnabled) {
++        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
++        when(dc.getNetworkType()).thenReturn(networkType);
++        when(dc.isSecurityGroupEnabled()).thenReturn(securityGroupEnabled);
++        return dc;
++    }
+ }

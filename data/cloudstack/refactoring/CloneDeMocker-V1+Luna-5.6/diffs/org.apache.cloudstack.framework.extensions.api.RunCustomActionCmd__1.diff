@@ -1,0 +1,59 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -1806,8 +1806,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void runCustomAction_ActionNotFound_ThrowsException() {
+-        RunCustomActionCmd cmd = mock(RunCustomActionCmd.class);
+-        when(cmd.getCustomActionId()).thenReturn(99L);
++        RunCustomActionCmd cmd = createMockRunCustomActionCmd(99L);
+         when(extensionCustomActionDao.findById(99L)).thenReturn(null);
+ 
+ 
+@@ -1819,9 +1818,8 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void runCustomAction_ActionNotAllowedForRole_ThrowsException() {
+-        RunCustomActionCmd cmd = mock(RunCustomActionCmd.class);
+-        when(cmd.getCustomActionId()).thenReturn(2L);
+-
++
++        RunCustomActionCmd cmd = createMockRunCustomActionCmd(2L);
+         ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+         when(extensionCustomActionDao.findById(2L)).thenReturn(actionVO);
+         when(actionVO.getAllowedRoleTypes()).thenReturn(
+@@ -1835,9 +1833,8 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void runCustomAction_ActionDisabled_ThrowsException() {
+-        RunCustomActionCmd cmd = mock(RunCustomActionCmd.class);
+-        when(cmd.getCustomActionId()).thenReturn(2L);
+-
++
++        RunCustomActionCmd cmd = createMockRunCustomActionCmd(2L);
+         ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+         when(extensionCustomActionDao.findById(2L)).thenReturn(actionVO);
+         when(actionVO.isEnabled()).thenReturn(false);
+@@ -1850,9 +1847,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void runCustomAction_InvalidResourceType_ThrowsException() {
+-        RunCustomActionCmd cmd = mock(RunCustomActionCmd.class);
+-        when(cmd.getCustomActionId()).thenReturn(3L);
+-
++
++        RunCustomActionCmd cmd = createMockRunCustomActionCmd(3L);
+         ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+         when(extensionCustomActionDao.findById(3L)).thenReturn(actionVO);
+         when(actionVO.isEnabled()).thenReturn(true);
+@@ -3062,4 +3058,10 @@
+         assertTrue(resp.getResult().get(ApiConstants.DETAILS).contains("Action failed"));
+     }
+ 
++
++    private static RunCustomActionCmd createMockRunCustomActionCmd(long customActionId) {
++        RunCustomActionCmd cmd = mock(RunCustomActionCmd.class);
++        when(cmd.getCustomActionId()).thenReturn(customActionId);
++        return cmd;
++    }
+ }

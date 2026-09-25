@@ -1,0 +1,93 @@
+--- a/server/src/test/java/com/cloud/template/HypervisorTemplateAdapterTest.java
++++ b/server/src/test/java/com/cloud/template/HypervisorTemplateAdapterTest.java
+@@ -436,10 +436,9 @@
+     public void isZoneAndImageStoreAvailableTestZoneIsDisabledShouldReturnFalse() {
+         DataStore dataStoreMock = Mockito.mock(DataStore.class);
+         Long zoneId = 1L;
+-        DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
+-
++
++        DataCenterVO dataCenterVOMock = createMockDataCenterVO(Grouping.AllocationState.Disabled);
+         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
+-        Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Disabled);
+ 
+         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, new HashMap<>(), 0);
+ 
+@@ -451,10 +450,9 @@
+     public void isZoneAndImageStoreAvailableTestImageStoreDoesNotHaveEnoughCapacityShouldReturnFalse() {
+         DataStore dataStoreMock = Mockito.mock(DataStore.class);
+         Long zoneId = 1L;
+-        DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
+-
++
++        DataCenterVO dataCenterVOMock = createMockDataCenterVO(Grouping.AllocationState.Enabled);
+         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
+-        Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(false);
+ 
+         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, new HashMap<>(), 0);
+@@ -468,12 +466,11 @@
+     public void isZoneAndImageStoreAvailableTestReplicaLimitZeroShouldCopyToAllStores() {
+         DataStore dataStoreMock = Mockito.mock(DataStore.class);
+         Long zoneId = 1L;
+-        DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
+         Map<Long, Integer> zoneCopyCount = new HashMap<>();
+         zoneCopyCount.put(zoneId, 999);
+ 
++        DataCenterVO dataCenterVOMock = createMockDataCenterVO(Grouping.AllocationState.Enabled);
+         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
+-        Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
+ 
+         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneCopyCount, 0);
+@@ -486,12 +483,11 @@
+     public void isZoneAndImageStoreAvailableTestReplicaLimitReachedShouldReturnFalse() {
+         DataStore dataStoreMock = Mockito.mock(DataStore.class);
+         Long zoneId = 1L;
+-        DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
+         Map<Long, Integer> zoneCopyCount = new HashMap<>();
+         zoneCopyCount.put(zoneId, 1);
+ 
++        DataCenterVO dataCenterVOMock = createMockDataCenterVO(Grouping.AllocationState.Enabled);
+         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
+-        Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
+ 
+         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneCopyCount, 1);
+@@ -504,11 +500,10 @@
+     public void isZoneAndImageStoreAvailableTestReplicaLimitNotYetReachedShouldReturnTrueAndIncrementCount() {
+         DataStore dataStoreMock = Mockito.mock(DataStore.class);
+         Long zoneId = 1L;
+-        DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
++        DataCenterVO dataCenterVOMock = createMockDataCenterVO(Grouping.AllocationState.Enabled);
+         Map<Long, Integer> zoneCopyCount = new HashMap<>();
+ 
+         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
+-        Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
+ 
+         boolean result = _adapter.isZoneAndImageStoreAvailable(dataStoreMock, zoneId, zoneCopyCount, 2);
+@@ -520,11 +515,10 @@
+     @Test
+     public void isZoneAndImageStoreAvailableTestReplicaLimitOfTwoShouldCopyToExactlyTwoStores() {
+         Long zoneId = 1L;
+-        DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
++        DataCenterVO dataCenterVOMock = createMockDataCenterVO(Grouping.AllocationState.Enabled);
+         Map<Long, Integer> zoneCopyCount = new HashMap<>();
+ 
+         Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dataCenterVOMock);
+-        Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+         Mockito.when(statsCollectorMock.imageStoreHasEnoughCapacity(any(DataStore.class))).thenReturn(true);
+ 
+         Assert.assertTrue(_adapter.isZoneAndImageStoreAvailable(Mockito.mock(DataStore.class), zoneId, zoneCopyCount, 2));
+@@ -555,4 +549,10 @@
+         Mockito.when(dataStoreManagerMock.getImageStoresByScope(Mockito.any())).thenReturn(new ArrayList<>());
+         _adapter.checkZoneImageStores(templateVO, List.of(1L));
+     }
++
++    private static DataCenterVO createMockDataCenterVO(Grouping.AllocationState allocationState) {
++        DataCenterVO dataCenterVOMock = Mockito.mock(DataCenterVO.class);
++        Mockito.when(dataCenterVOMock.getAllocationState()).thenReturn(allocationState);
++        return dataCenterVOMock;
++    }
+ }

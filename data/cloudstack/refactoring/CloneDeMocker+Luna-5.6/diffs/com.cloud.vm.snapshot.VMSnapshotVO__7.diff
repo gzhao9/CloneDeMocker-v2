@@ -1,0 +1,52 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
+@@ -89,6 +89,7 @@
+     private KvmFileBasedStorageVmSnapshotStrategy strategy;
+     private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+     private VMSnapshotDao vmSnapshotDao;
++    private VMSnapshotVO vmSnapshotVOField;
+     private VMSnapshotHelper vmSnapshotHelper;
+     private AgentManager agentMgr;
+     private SnapshotDataStoreDao snapshotDataStoreDao;
+@@ -107,6 +108,7 @@
+         hostDetailsDao = mock(HostDetailsDao.class);
+         hostDao = mock(HostDao.class);
+         storagePoolDao = mock(PrimaryDataStoreDao.class);
++        vmSnapshotVOField = mock(VMSnapshotVO.class);
+ 
+         strategy.vmSnapshotDetailsDao = vmSnapshotDetailsDao;
+         strategy.vmSnapshotDao = vmSnapshotDao;
+@@ -132,7 +134,6 @@
+         VMSnapshot vmSnapshot = mock(VMSnapshot.class);
+         CreateDiskOnlyVmSnapshotAnswer answer = mock(CreateDiskOnlyVmSnapshotAnswer.class);
+         UserVm userVm = mock(UserVm.class);
+-        VMSnapshotVO vmSnapshotVO = mock(VMSnapshotVO.class);
+ 
+         when(vmSnapshot.getId()).thenReturn(42L);
+         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+@@ -142,7 +143,7 @@
+         Method method = KvmFileBasedStorageVmSnapshotStrategy.class.getDeclaredMethod("processCreateVmSnapshotAnswer", VMSnapshot.class, java.util.Map.class,
+                 CreateDiskOnlyVmSnapshotAnswer.class, UserVm.class, VMSnapshotVO.class, long.class, VMSnapshotVO.class);
+         method.setAccessible(true);
+-        method.invoke(strategy, vmSnapshot, Collections.emptyMap(), answer, userVm, vmSnapshotVO, 0L, null);
++        method.invoke(strategy, vmSnapshot, Collections.emptyMap(), answer, userVm, vmSnapshotVOField, 0L, null);
+ 
+         verify(vmSnapshotDetailsDao).addDetail(42L, "kvmFileBasedStorageSnapshotNvram", "nvram/42.fd", false);
+     }
+@@ -156,7 +157,6 @@
+ 
+         UserVmVO userVm = mock(UserVmVO.class);
+         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+-        VMSnapshotVO currentVmSnapshot = mock(VMSnapshotVO.class);
+         SnapshotDataStoreVO snapshotDataStoreVO = mock(SnapshotDataStoreVO.class);
+         SnapshotInfo snapshotInfo = mock(SnapshotInfo.class);
+         SnapshotObjectTO snapshotObjectTO = mock(SnapshotObjectTO.class);
+@@ -186,7 +186,7 @@
+         when(snapshotDataStoreVO.getDataStoreId()).thenReturn(dataStoreId);
+         when(strategy.snapshotDataFactory.getSnapshot(snapshotId, dataStoreId, DataStoreRole.Primary)).thenReturn(snapshotInfo);
+         when(snapshotInfo.getTO()).thenReturn(snapshotObjectTO);
+-        when(vmSnapshotDao.findCurrentSnapshotByVmId(vmId)).thenReturn(currentVmSnapshot);
++        when(vmSnapshotDao.findCurrentSnapshotByVmId(vmId)).thenReturn(vmSnapshotVOField);
+         when(agentMgr.easySend(eq(hostId), any())).thenAnswer(invocation ->
+                 new RevertDiskOnlyVmSnapshotAnswer((RevertDiskOnlyVmSnapshotCommand) invocation.getArgument(1), Collections.emptyList()));
+ 

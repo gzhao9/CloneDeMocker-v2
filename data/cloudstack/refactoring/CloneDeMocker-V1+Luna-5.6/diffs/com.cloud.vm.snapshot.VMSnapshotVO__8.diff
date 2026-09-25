@@ -1,0 +1,48 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/VmSnapshotVOToSnapshotConverterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/VmSnapshotVOToSnapshotConverterTest.java
+@@ -35,13 +35,9 @@
+ 
+     @Test
+     public void testToSnapshot_MapsReadyDiskAndMemorySnapshot() {
+-        final VMSnapshotVO vo = mock(VMSnapshotVO.class);
+-        when(vo.getUuid()).thenReturn("snap-1");
+-        when(vo.getDescription()).thenReturn("desc");
+-        when(vo.getCreated()).thenReturn(new Date(1234L));
++
++        final VMSnapshotVO vo = createMockVMSnapshotVO("snap-1", "desc", new Date(1234L), VMSnapshot.State.Ready);
+         when(vo.getType()).thenReturn(VMSnapshotVO.Type.DiskAndMemory);
+-        when(vo.getState()).thenReturn(VMSnapshot.State.Ready);
+-
+         final Snapshot snapshot = VmSnapshotVOToSnapshotConverter.toSnapshot(vo, "vm-1");
+ 
+         assertEquals("snap-1", snapshot.getId());
+@@ -56,13 +52,9 @@
+ 
+     @Test
+     public void testToSnapshot_MapsNonReadyToLockedAndToSnapshotList() {
+-        final VMSnapshotVO vo = mock(VMSnapshotVO.class);
+-        when(vo.getUuid()).thenReturn("snap-2");
+-        when(vo.getDescription()).thenReturn("desc2");
+-        when(vo.getCreated()).thenReturn(new Date(5678L));
++
++        final VMSnapshotVO vo = createMockVMSnapshotVO("snap-2", "desc2", new Date(5678L), VMSnapshot.State.Creating);
+         when(vo.getType()).thenReturn(VMSnapshotVO.Type.Disk);
+-        when(vo.getState()).thenReturn(VMSnapshot.State.Creating);
+-
+         final Snapshot snapshot = VmSnapshotVOToSnapshotConverter.toSnapshot(vo, "vm-2");
+         assertEquals("false", snapshot.getPersistMemorystate());
+         assertEquals("locked", snapshot.getSnapshotStatus());
+@@ -71,4 +63,13 @@
+         assertEquals(1, list.size());
+         assertEquals("snap-2", list.get(0).getId());
+     }
++
++    private static VMSnapshotVO createMockVMSnapshotVO(String uuid, String description, Date created, VMSnapshot.State state) {
++        final VMSnapshotVO vo = mock(VMSnapshotVO.class);
++        when(vo.getUuid()).thenReturn(uuid);
++        when(vo.getDescription()).thenReturn(description);
++        when(vo.getCreated()).thenReturn(created);
++        when(vo.getState()).thenReturn(state);
++        return vo;
++    }
+ }
