@@ -1,0 +1,61 @@
+--- a/plugins/storage/sharedfs/storagevm/src/test/java/org/apache/cloudstack/storage/sharedfs/lifecycle/StorageVmSharedFSLifeCycleTest.java
++++ b/plugins/storage/sharedfs/storagevm/src/test/java/org/apache/cloudstack/storage/sharedfs/lifecycle/StorageVmSharedFSLifeCycleTest.java
+@@ -223,6 +223,16 @@
+         Assert.assertEquals(exception.getMessage(), "Service offering's should be HA enabled");
+     }
+ 
++    private static SharedFS createMockSharedFS() {
++        SharedFS sharedFS = mock(SharedFS.class);
++        when(sharedFS.getDataCenterId()).thenReturn(s_zoneId);
++        when(sharedFS.getName()).thenReturn(s_name);
++        when(sharedFS.getServiceOfferingId()).thenReturn(s_serviceOfferingId);
++        when(sharedFS.getFsType()).thenReturn(SharedFS.FileSystemType.valueOf(s_fsFormat));
++        when(sharedFS.getAccountId()).thenReturn(s_ownerId);
++        return sharedFS;
++    }
++
+     private SharedFS prepareDeploySharedFS() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+         SharedFS sharedFS = mock(SharedFS.class);
+         when(sharedFS.getDataCenterId()).thenReturn(s_zoneId);
+@@ -279,12 +289,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testDeploySharedFSHypervisorNotFound() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
+-        SharedFS sharedFS = mock(SharedFS.class);
+-        when(sharedFS.getDataCenterId()).thenReturn(s_zoneId);
+-        when(sharedFS.getName()).thenReturn(s_name);
+-        when(sharedFS.getServiceOfferingId()).thenReturn(s_serviceOfferingId);
+-        when(sharedFS.getFsType()).thenReturn(SharedFS.FileSystemType.valueOf(s_fsFormat));
+-        when(sharedFS.getAccountId()).thenReturn(s_ownerId);
++        SharedFS sharedFS = createMockSharedFS();
+ 
+         when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(null);
+         DataCenterVO zone = mock(DataCenterVO.class);
+@@ -294,12 +299,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testDeploySharedFSTemplateNotFound() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
+-        SharedFS sharedFS = mock(SharedFS.class);
+-        when(sharedFS.getDataCenterId()).thenReturn(s_zoneId);
+-        when(sharedFS.getName()).thenReturn(s_name);
+-        when(sharedFS.getServiceOfferingId()).thenReturn(s_serviceOfferingId);
+-        when(sharedFS.getFsType()).thenReturn(SharedFS.FileSystemType.valueOf(s_fsFormat));
+-        when(sharedFS.getAccountId()).thenReturn(s_ownerId);
++        SharedFS sharedFS = createMockSharedFS();
+ 
+         when(accountMgr.getActiveAccountById(s_ownerId)).thenReturn(null);
+         DataCenterVO zone = mock(DataCenterVO.class);
+@@ -313,12 +313,7 @@
+     public void testDeploySharedFSSkipsHypervisorWithoutTemplate() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, IOException, OperationTimedoutException {
+         // Verifies that when the systemvm template is missing for one of the supported hypervisors,
+         // deploySharedFSVM() skips it and tries the next one instead of failing with an NPE.
+-        SharedFS sharedFS = mock(SharedFS.class);
+-        when(sharedFS.getDataCenterId()).thenReturn(s_zoneId);
+-        when(sharedFS.getName()).thenReturn(s_name);
+-        when(sharedFS.getServiceOfferingId()).thenReturn(s_serviceOfferingId);
+-        when(sharedFS.getFsType()).thenReturn(SharedFS.FileSystemType.valueOf(s_fsFormat));
+-        when(sharedFS.getAccountId()).thenReturn(s_ownerId);
++        SharedFS sharedFS = createMockSharedFS();
+ 
+         Account owner = mock(Account.class);
+         when(owner.getId()).thenReturn(s_ownerId);

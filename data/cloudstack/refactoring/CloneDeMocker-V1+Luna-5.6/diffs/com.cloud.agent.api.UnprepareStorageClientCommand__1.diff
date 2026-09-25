@@ -1,0 +1,46 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtUnprepareStorageClientCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtUnprepareStorageClientCommandWrapperTest.java
+@@ -46,13 +46,10 @@
+ 
+     @Test
+     public void testUnprepareStorageClientSuccess() {
+-        UnprepareStorageClientCommand cmd = Mockito.mock(UnprepareStorageClientCommand.class);
+-        Mockito.when(cmd.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
+-        Mockito.when(cmd.getPoolUuid()).thenReturn(poolUuid);
+         Map<String, String> details = new HashMap<>();
+         details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, "1.1.1.1,2.2.2.2");
+-        Mockito.when(cmd.getDetails()).thenReturn(details);
+ 
++        UnprepareStorageClientCommand cmd = createMockUnprepareStorageClientCommand(poolUuid, details);
+         KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         Mockito.when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+         Mockito.when(storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid(), cmd.getDetails())).thenReturn(new Pair<>(true, ""));
+@@ -64,13 +61,10 @@
+ 
+     @Test
+     public void testUnprepareStorageClientFailure() {
+-        UnprepareStorageClientCommand cmd = Mockito.mock(UnprepareStorageClientCommand.class);
+-        Mockito.when(cmd.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
+-        Mockito.when(cmd.getPoolUuid()).thenReturn(poolUuid);
+         Map<String, String> details = new HashMap<>();
+         details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, "1.1.1.1,2.2.2.2");
+-        Mockito.when(cmd.getDetails()).thenReturn(details);
+ 
++        UnprepareStorageClientCommand cmd = createMockUnprepareStorageClientCommand(poolUuid, details);
+         KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         Mockito.when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+         Mockito.when(storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid(), cmd.getDetails())).thenReturn(new Pair<>(false, "Unprepare storage client failed"));
+@@ -80,4 +74,13 @@
+         Assert.assertFalse(result.getResult());
+         Assert.assertEquals("Unprepare storage client failed", result.getDetails());
+     }
++
++    private static UnprepareStorageClientCommand createMockUnprepareStorageClientCommand(
++            String poolUuid, Map<String, String> details) {
++        UnprepareStorageClientCommand cmd = Mockito.mock(UnprepareStorageClientCommand.class);
++        Mockito.when(cmd.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
++        Mockito.when(cmd.getPoolUuid()).thenReturn(poolUuid);
++        Mockito.when(cmd.getDetails()).thenReturn(details);
++        return cmd;
++    }
+ }
