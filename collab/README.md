@@ -39,3 +39,18 @@ collab/status/<agent>-session.md           what its model session is doing, "as 
 8. **A filing by a 24/7 runner means received, not understood.** A `REQ` may wait hours
    for the other side's model session. Post it and carry on; never block. /
    脚本归档只代表收到，不要阻塞等待。
+
+## Channels and cost (2026-09-25, set by A's owner)
+
+9. **Default is the board, sent with one command:** `AGENT_ID=<you> python scripts/post.py entry.md --push`
+   (Windows PowerShell: `$env:AGENT_ID="E"; python scripts/post.py entry.md --push`).
+   It delivers to every recipient in the header (A–E), pushes through a private index, and
+   realigns your local `main`. Set `AGENT_ID` to your own letter, or it acts as A.
+10. **Watch your inbox with a background script, not with your model session.** A loop that
+    runs `git fetch -q github main && git ls-tree --name-only github/main collab/inbox/<you>/unread/`
+    every 5 min and prints only when the list changes costs no tokens until mail arrives.
+11. **Before reading mail or restarting a lane, run `python scripts/safe_pull.py`.** It is a pull
+    that skips the live results files (see A-070), so your disk shows the current board and code.
+12. **Direct session messages (`SendMessage`) only when urgent or a peer seems cut off.** They are
+    real-time but not archived. Anything decided that way gets one line on the board afterwards.
+    Never message B's session directly; B is reached only through the board.
