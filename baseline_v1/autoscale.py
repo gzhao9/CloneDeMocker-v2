@@ -13,6 +13,9 @@ Everything after `--` is passed to each lane. Every minute it samples CPU and fr
   * Grow by one lane when CPU averaged under --cpu-low % and free RAM stayed above --ram-grow GB
     over the last 15 minutes, below the cap, and enough MCIs are left to keep another lane busy.
 
+It also publishes the host's rows every --publish minutes. Each lane syncs only every 10 of its own
+MCIs, which with several lanes left up to ~2 h of rows unpublished and invisible to other hosts.
+
 Throughput is V2 and V1 results per hour in validation/results/pair-run.log. Decisions go to
 validation/results/pair-autoscale.log. One instance per checkout (.git/pair-autoscale.pid).
 """
@@ -103,6 +106,7 @@ def main() -> None:
     parser.add_argument("--ram-floor", type=float, default=3.0)
     parser.add_argument("--settle", type=float, default=50.0, help="minutes after a change before judging it")
     parser.add_argument("--cap-hours", type=float, default=3.0)
+    parser.add_argument("--publish", type=float, default=15.0, help="minutes between publishes of this host's rows")
     args, lane_args = parser.parse_known_args()
     if lane_args[:1] == ["--"]:
         lane_args = lane_args[1:]
@@ -123,6 +127,8 @@ def main() -> None:
     cap, cap_until = args.max, datetime.now()
     left: int | None = None
     left_at = datetime.min
+    published_at = datetime.now()
+    projects = [a for a in lane_args if not a.startswith("-") and "=" not in a][-1:]
 
     def running() -> list[str]:
         return [n for n in lanes.live_lanes() if not lanes.stop_requested(n)]
@@ -157,6 +163,14 @@ def main() -> None:
         ram.append(lanes.available_ram_gb())
         time.sleep(50)
         now = datetime.now()
+        if now - published_at >= timedelta(minutes=args.publish):
+            published_at = now
+            try:
+                from baseline_v1 import drive
+                for project in projects:
+                    drive.sync("autoscale", project, "periodic publish")
+            except Exception as error:  # noqa: BLE001 - lanes still sync on their own
+                log(f"periodic publish failed ({type(error).__name__}: {error})")
         live = running()
         n = len(live)
         if now >= cap_until:
