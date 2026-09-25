@@ -1,0 +1,90 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckVirtualMachineCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtCheckVirtualMachineCommandWrapperTest.java
+@@ -72,10 +72,10 @@
+         DomainInfo domainInfo = new DomainInfo();
+         domainInfo.state = DomainState.VIR_DOMAIN_RUNNING;
+ 
++        domain = MockDomain.createMockDomain(domainInfo);
+         when(libvirtComputingResource.getVmState(conn, VM_NAME)).thenReturn(PowerState.PowerOn);
+         when(libvirtComputingResource.getVncPort(conn, VM_NAME)).thenReturn(5900);
+         when(conn.domainLookupByName(VM_NAME)).thenReturn(domain);
+-        when(domain.getInfo()).thenReturn(domainInfo);
+ 
+         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) wrapper.execute(command, libvirtComputingResource);
+ 
+@@ -89,10 +89,10 @@
+         DomainInfo domainInfo = new DomainInfo();
+         domainInfo.state = DomainState.VIR_DOMAIN_PAUSED;
+ 
++         domain = MockDomain.createMockDomain(domainInfo);
+         when(libvirtComputingResource.getVmState(conn, VM_NAME)).thenReturn(PowerState.PowerOn);
+         when(libvirtComputingResource.getVncPort(conn, VM_NAME)).thenReturn(5901);
+         when(conn.domainLookupByName(VM_NAME)).thenReturn(domain);
+-        when(domain.getInfo()).thenReturn(domainInfo);
+ 
+         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) wrapper.execute(command, libvirtComputingResource);
+ 
+@@ -128,10 +128,10 @@
+         DomainInfo domainInfo = new DomainInfo();
+         domainInfo.state = DomainState.VIR_DOMAIN_RUNNING;
+ 
++         domain = MockDomain.createMockDomain(domainInfo);
+         when(libvirtComputingResource.getVmState(conn, VM_NAME)).thenReturn(PowerState.PowerOn);
+         when(libvirtComputingResource.getVncPort(conn, VM_NAME)).thenReturn(null);
+         when(conn.domainLookupByName(VM_NAME)).thenReturn(domain);
+-        when(domain.getInfo()).thenReturn(domainInfo);
+ 
+         CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer) wrapper.execute(command, libvirtComputingResource);
+ 
+@@ -188,4 +188,17 @@
+         verify(libvirtComputingResource).getLibvirtUtilitiesHelper();
+         verify(libvirtUtilitiesHelper).getConnectionByVmName(VM_NAME);
+     }
++
++    public final class MockDomain {
++
++        private MockDomain() {
++            // Utility class
++        }
++
++        public static Domain createMockDomain(DomainInfo domainInfo) {
++            Domain domain = mock(Domain.class);
++            when(domain.getInfo()).thenReturn(domainInfo);
++            return domain;
++        }
++    }
+ }
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
+@@ -337,11 +337,10 @@
+     @Test
+     public void testSuspendVmIfNeededSkipsAlreadyPausedVm() throws Exception {
+         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper();
+-        Domain domain = mock(Domain.class);
+         DomainInfo domainInfo = new DomainInfo();
+         domainInfo.state = DomainInfo.DomainState.VIR_DOMAIN_PAUSED;
+-        when(domain.getInfo()).thenReturn(domainInfo);
+-
++
++        Domain domain = MockDomain.createMockDomain(domainInfo);
+         assertFalse(wrapper.suspendVmIfNeeded(domain));
+         verify(domain, never()).suspend();
+     }
+@@ -818,4 +817,17 @@
+ 
+         assertFalse(answer.getResult());
+     }
++
++    public final class MockDomain {
++
++        private MockDomain() {
++            // Utility class
++        }
++
++        public static Domain createMockDomain(DomainInfo domainInfo) {
++            Domain domain = mock(Domain.class);
++            when(domain.getInfo()).thenReturn(domainInfo);
++            return domain;
++        }
++    }
+ }

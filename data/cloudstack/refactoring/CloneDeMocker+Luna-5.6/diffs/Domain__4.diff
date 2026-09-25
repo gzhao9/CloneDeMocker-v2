@@ -1,0 +1,77 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateVolumeCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateVolumeCommandWrapperTest.java
+@@ -277,13 +277,12 @@
+ 
+         Mockito.doReturn(libvirtUtilitiesHelper).when(libvirtComputingResource).getLibvirtUtilitiesHelper();
+         Connect conn = Mockito.mock(Connect.class);
+-        Domain dm = Mockito.mock(Domain.class);
+         Mockito.doReturn(conn).when(libvirtUtilitiesHelper).getConnection();
+-        Mockito.doReturn(dm).when(libvirtComputingResource).getDomain(conn, vmName);
+ 
+         DomainInfo domainInfo = Mockito.mock(DomainInfo.class);
+         domainInfo.state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+-        Mockito.doReturn(domainInfo).when(dm).getInfo();
++        Domain dm = createMockDomain(domainInfo, domxml);
++        Mockito.doReturn(dm).when(libvirtComputingResource).getDomain(conn, vmName);
+ 
+         KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         Mockito.doReturn(storagePoolMgr).when(libvirtComputingResource).getStoragePoolMgr();
+@@ -295,8 +294,6 @@
+ 
+         Mockito.doReturn(null).when(destVolumeObjectTO).getPassphrase();
+ 
+-        Mockito.doReturn(domxml).when(dm).getXMLDesc(0);
+-
+         Mockito.doNothing().when(dm).blockCopy(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.any(TypedParameter[].class), ArgumentMatchers.anyInt());
+         MigrateVolumeAnswer answer = new MigrateVolumeAnswer(command, true, null, destPath);
+         Mockito.doReturn(answer).when(libvirtMigrateVolumeCommandWrapper).checkBlockJobStatus(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+@@ -304,6 +301,13 @@
+         Answer migrateVolumeAnswer = libvirtMigrateVolumeCommandWrapper.migratePowerFlexVolume(command, libvirtComputingResource);
+ 
+         Assert.assertTrue(migrateVolumeAnswer.getResult());
++    }
++
++    private static Domain createMockDomain(DomainInfo domainInfo, String domainXml) {
++        Domain dm = Mockito.mock(Domain.class);
++        Mockito.doReturn(domainInfo).when(dm).getInfo();
++        Mockito.doReturn(domainXml).when(dm).getXMLDesc(0);
++        return dm;
+     }
+ 
+     @Test
+@@ -324,13 +328,12 @@
+ 
+         Mockito.doReturn(libvirtUtilitiesHelper).when(libvirtComputingResource).getLibvirtUtilitiesHelper();
+         Connect conn = Mockito.mock(Connect.class);
+-        Domain dm = Mockito.mock(Domain.class);
+         Mockito.doReturn(conn).when(libvirtUtilitiesHelper).getConnection();
+-        Mockito.doReturn(dm).when(libvirtComputingResource).getDomain(conn, vmName);
+ 
+         DomainInfo domainInfo = Mockito.mock(DomainInfo.class);
+         domainInfo.state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+-        Mockito.doReturn(domainInfo).when(dm).getInfo();
++        Domain dm = createMockDomain(domainInfo, domxml);
++        Mockito.doReturn(dm).when(libvirtComputingResource).getDomain(conn, vmName);
+ 
+         KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         Mockito.doReturn(storagePoolMgr).when(libvirtComputingResource).getStoragePoolMgr();
+@@ -341,7 +344,6 @@
+         Mockito.doReturn(true).when(pool).connectPhysicalDisk(Mockito.any(), Mockito.any());
+ 
+         Mockito.doReturn(null).when(destVolumeObjectTO).getPassphrase();
+-        Mockito.doReturn(domxml).when(dm).getXMLDesc(0);
+         Mockito.doThrow(LibvirtException.class).when(dm).blockCopy(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.any(TypedParameter[].class), ArgumentMatchers.anyInt());
+ 
+         Answer migrateVolumeAnswer = libvirtMigrateVolumeCommandWrapper.migratePowerFlexVolume(command, libvirtComputingResource);
+@@ -385,4 +387,11 @@
+         Assert.assertFalse(answer.getResult());
+     }
+ 
++    private static Domain createMockDomain(DomainInfo domainInfo, String domainXml) {
++        Domain dm = Mockito.mock(Domain.class);
++        Mockito.doReturn(domainInfo).when(dm).getInfo();
++        Mockito.doReturn(domainXml).when(dm).getXMLDesc(0);
++        return dm;
++    }
++
+ }

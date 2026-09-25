@@ -1,0 +1,131 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -189,6 +189,7 @@
+     private ExtensionCustomActionDetailsDao extensionCustomActionDetailsDao;
+     @Mock
+     private VirtualMachineManager virtualMachineManager;
++    private VirtualMachine vmMock;
+     @Mock
+     private EntityManager entityManager;
+     @Mock
+@@ -226,6 +227,7 @@
+     @Before
+     public void setUp() {
+         MockitoAnnotations.openMocks(this);
++        vmMock = mock(VirtualMachine.class);
+     }
+ 
+     @Test
+@@ -405,9 +407,8 @@
+ 
+     @Test
+     public void getExtensionFromResourceReturnsExtensionForValidResource() {
+-        VirtualMachine vm = mock(VirtualMachine.class);
+-        when(entityManager.findByUuid(eq(VirtualMachine.class), eq("vm-uuid"))).thenReturn(vm);
+-        when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(1L, 1L));
++        when(entityManager.findByUuid(eq(VirtualMachine.class), eq("vm-uuid"))).thenReturn(vmMock);
++        when(virtualMachineManager.findClusterAndHostIdForVm(vmMock, false)).thenReturn(new Pair<>(1L, 1L));
+         ExtensionResourceMapVO mapVO = mock(ExtensionResourceMapVO.class);
+         when(mapVO.getExtensionId()).thenReturn(100L);
+         when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(mapVO);
+@@ -430,9 +431,8 @@
+ 
+     @Test
+     public void getExtensionFromResourceReturnsNullForMissingClusterMapping() {
+-        VirtualMachine vm = mock(VirtualMachine.class);
+-        when(entityManager.findByUuid(eq(VirtualMachine.class), eq("vm-uuid"))).thenReturn(vm);
+-        when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(null, null));
++        when(entityManager.findByUuid(eq(VirtualMachine.class), eq("vm-uuid"))).thenReturn(vmMock);
++        when(virtualMachineManager.findClusterAndHostIdForVm(vmMock, false)).thenReturn(new Pair<>(null, null));
+ 
+         Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
+ 
+@@ -441,9 +441,8 @@
+ 
+     @Test
+     public void getExtensionFromResourceReturnsNullForMissingExtensionMapping() {
+-        VirtualMachine vm = mock(VirtualMachine.class);
+-        when(entityManager.findByUuid(eq(VirtualMachine.class), eq("vm-uuid"))).thenReturn(vm);
+-        when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(1L, 1L));
++        when(entityManager.findByUuid(eq(VirtualMachine.class), eq("vm-uuid"))).thenReturn(vmMock);
++        when(virtualMachineManager.findClusterAndHostIdForVm(vmMock, false)).thenReturn(new Pair<>(1L, 1L));
+         when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(null);
+ 
+         Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
+@@ -1920,9 +1919,8 @@
+         when(extensionDao.findById(anyLong())).thenReturn(extensionVO);
+         when(extensionVO.getState()).thenReturn(Extension.State.Enabled);
+ 
+-        VirtualMachine vm = mock(VirtualMachine.class);
+-        when(entityManager.findByUuid(eq(VirtualMachine.class), anyString())).thenReturn(vm);
+-        doThrow(PermissionDeniedException.class).when(accountService).checkAccess(any(Account.class), eq(null), eq(true), eq(vm));
++        when(entityManager.findByUuid(eq(VirtualMachine.class), anyString())).thenReturn(vmMock);
++        doThrow(PermissionDeniedException.class).when(accountService).checkAccess(any(Account.class), eq(null), eq(true), eq(vmMock));
+ 
+         try (MockedStatic<CallContext> ignored = mockStatic(CallContext.class)) {
+             mockCallerRole(RoleType.User);
+@@ -2424,13 +2422,12 @@
+         when(extension.getType()).thenReturn(Extension.Type.Orchestrator);
+         when(extension.getState()).thenReturn(Extension.State.Enabled);
+         when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+-        VirtualMachine vm = mock(VirtualMachine.class);
+         Host host = mock(Host.class);
+         when(host.getClusterId()).thenReturn(1L);
+         Answer expectedAnswer = mock(Answer.class);
+         when(virtualMachineManager.toVmTO(any())).thenReturn(mock(VirtualMachineTO.class));
+         when(agentMgr.easySend(anyLong(), any())).thenReturn(expectedAnswer);
+-        Answer result = extensionsManager.getInstanceConsole(vm, host);
++        Answer result = extensionsManager.getInstanceConsole(vmMock, host);
+         assertNotNull(result);
+         assertEquals(expectedAnswer, result);
+     }
+@@ -2438,10 +2435,9 @@
+     @Test
+     public void getInstanceConsole_whenNullExtension() {
+         when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(null);
+-        VirtualMachine vm = mock(VirtualMachine.class);
+         Host host = mock(Host.class);
+         when(host.getClusterId()).thenReturn(1L);
+-        Answer result = extensionsManager.getInstanceConsole(vm, host);
++        Answer result = extensionsManager.getInstanceConsole(vmMock, host);
+         assertNotNull(result);
+         assertFalse(result.getResult());
+     }
+@@ -2450,10 +2446,9 @@
+     public void getInstanceConsole_whenNullExtensionNotOrchestrator() {
+         Extension extension = mock(Extension.class);
+         when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+-        VirtualMachine vm = mock(VirtualMachine.class);
+         Host host = mock(Host.class);
+         when(host.getClusterId()).thenReturn(1L);
+-        Answer result = extensionsManager.getInstanceConsole(vm, host);
++        Answer result = extensionsManager.getInstanceConsole(vmMock, host);
+         assertNotNull(result);
+         assertFalse(result.getResult());
+     }
+@@ -2464,10 +2459,9 @@
+         when(extension.getType()).thenReturn(Extension.Type.Orchestrator);
+         when(extension.getState()).thenReturn(Extension.State.Disabled);
+         when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+-        VirtualMachine vm = mock(VirtualMachine.class);
+         Host host = mock(Host.class);
+         when(host.getClusterId()).thenReturn(1L);
+-        Answer result = extensionsManager.getInstanceConsole(vm, host);
++        Answer result = extensionsManager.getInstanceConsole(vmMock, host);
+         assertNotNull(result);
+         assertFalse(result.getResult());
+     }
+@@ -2478,12 +2472,11 @@
+         when(extension.getType()).thenReturn(Extension.Type.Orchestrator);
+         when(extension.getState()).thenReturn(Extension.State.Enabled);
+         when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+-        VirtualMachine vm = mock(VirtualMachine.class);
+         Host host = mock(Host.class);
+         when(host.getClusterId()).thenReturn(1L);
+         when(virtualMachineManager.toVmTO(any())).thenReturn(mock(VirtualMachineTO.class));
+         when(agentMgr.easySend(anyLong(), any())).thenReturn(null);
+-        Answer result = extensionsManager.getInstanceConsole(vm, host);
++        Answer result = extensionsManager.getInstanceConsole(vmMock, host);
+         assertNull(result);
+     }
+ 

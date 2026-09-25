@@ -1,0 +1,112 @@
+--- a/server/src/test/java/com/cloud/network/vpn/Site2SiteVpnManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/vpn/Site2SiteVpnManagerImplTest.java
+@@ -310,11 +310,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateCustomerGatewayInvalidEspPolicy() {
+-        CreateVpnCustomerGatewayCmd cmd = mock(CreateVpnCustomerGatewayCmd.class);
+-        when(cmd.getGatewayIp()).thenReturn("1.2.3.4");
+-        when(cmd.getGuestCidrList()).thenReturn("192.168.1.0/24");
+-        when(cmd.getIkePolicy()).thenReturn("aes128-sha256;modp2048");
+-        when(cmd.getEspPolicy()).thenReturn("invalid-policy");
++        CreateVpnCustomerGatewayCmd cmd = createMockCustomerGatewayCommand("192.168.1.0/24", "aes128-sha256;modp2048", "invalid-policy");
+         when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+ 
+         try (MockedStatic<NetUtils> netUtilsMock = Mockito.mockStatic(NetUtils.class)) {
+@@ -329,13 +325,9 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateCustomerGatewayWithExcludedParameters() throws Exception {
+-        CreateVpnCustomerGatewayCmd cmd = mock(CreateVpnCustomerGatewayCmd.class);
++        CreateVpnCustomerGatewayCmd cmd = createMockCustomerGatewayCommand("192.168.1.0/24", "3des-sha256;modp2048", "aes128-sha256;modp2048");
+         when(cmd.getName()).thenReturn("test-gateway");
+-        when(cmd.getGatewayIp()).thenReturn("1.2.3.4");
+-        when(cmd.getGuestCidrList()).thenReturn("192.168.1.0/24");
+         when(cmd.getIpsecPsk()).thenReturn("test-psk");
+-        when(cmd.getIkePolicy()).thenReturn("3des-sha256;modp2048");
+-        when(cmd.getEspPolicy()).thenReturn("aes128-sha256;modp2048");
+         when(cmd.getIkeVersion()).thenReturn("ike");
+         when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+ 
+@@ -356,12 +348,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateCustomerGatewayDuplicateName() {
+-        CreateVpnCustomerGatewayCmd cmd = mock(CreateVpnCustomerGatewayCmd.class);
++        CreateVpnCustomerGatewayCmd cmd = createMockCustomerGatewayCommand("192.168.1.0/24", "aes128-sha256;modp2048", "aes128-sha256;modp2048");
+         when(cmd.getName()).thenReturn("test-gateway");
+-        when(cmd.getGatewayIp()).thenReturn("1.2.3.4");
+-        when(cmd.getGuestCidrList()).thenReturn("192.168.1.0/24");
+-        when(cmd.getIkePolicy()).thenReturn("aes128-sha256;modp2048");
+-        when(cmd.getEspPolicy()).thenReturn("aes128-sha256;modp2048");
+         when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+ 
+         try (MockedStatic<NetUtils> netUtilsMock = Mockito.mockStatic(NetUtils.class)) {
+@@ -378,11 +366,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateCustomerGatewayInvalidIkeLifetime() {
+-        CreateVpnCustomerGatewayCmd cmd = mock(CreateVpnCustomerGatewayCmd.class);
+-        when(cmd.getGatewayIp()).thenReturn("1.2.3.4");
+-        when(cmd.getGuestCidrList()).thenReturn("192.168.1.0/24");
+-        when(cmd.getIkePolicy()).thenReturn("aes128-sha256;modp2048");
+-        when(cmd.getEspPolicy()).thenReturn("aes128-sha256;modp2048");
++        CreateVpnCustomerGatewayCmd cmd = createMockCustomerGatewayCommand("192.168.1.0/24", "aes128-sha256;modp2048", "aes128-sha256;modp2048");
+         when(cmd.getIkeLifetime()).thenReturn(86401L);
+         when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+ 
+@@ -398,11 +382,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateCustomerGatewayInvalidEspLifetime() {
+-        CreateVpnCustomerGatewayCmd cmd = mock(CreateVpnCustomerGatewayCmd.class);
+-        when(cmd.getGatewayIp()).thenReturn("1.2.3.4");
+-        when(cmd.getGuestCidrList()).thenReturn("192.168.1.0/24");
+-        when(cmd.getIkePolicy()).thenReturn("aes128-sha256;modp2048");
+-        when(cmd.getEspPolicy()).thenReturn("aes128-sha256;modp2048");
++        CreateVpnCustomerGatewayCmd cmd = createMockCustomerGatewayCommand("192.168.1.0/24", "aes128-sha256;modp2048", "aes128-sha256;modp2048");
+         when(cmd.getEspLifetime()).thenReturn(86401L);
+         when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+ 
+@@ -418,13 +398,9 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateCustomerGatewayTooManySubnets() {
+-        CreateVpnCustomerGatewayCmd cmd = mock(CreateVpnCustomerGatewayCmd.class);
+-        when(cmd.getGatewayIp()).thenReturn("1.2.3.4");
+         String tooManyCidrs = "192.168.1.0/24,192.168.2.0/24,192.168.3.0/24,192.168.4.0/24,192.168.5.0/24," +
+                 "192.168.6.0/24,192.168.7.0/24,192.168.8.0/24,192.168.9.0/24,192.168.10.0/24,192.168.11.0/24";
+-        when(cmd.getGuestCidrList()).thenReturn(tooManyCidrs);
+-        when(cmd.getIkePolicy()).thenReturn("aes128-sha256;modp2048");
+-        when(cmd.getEspPolicy()).thenReturn("aes128-sha256;modp2048");
++        CreateVpnCustomerGatewayCmd cmd = createMockCustomerGatewayCommand(tooManyCidrs, "aes128-sha256;modp2048", "aes128-sha256;modp2048");
+         when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+ 
+         try (MockedStatic<NetUtils> netUtilsMock = Mockito.mockStatic(NetUtils.class)) {
+@@ -440,11 +416,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCreateCustomerGatewayOverlappingSubnets() {
+-        CreateVpnCustomerGatewayCmd cmd = mock(CreateVpnCustomerGatewayCmd.class);
+-        when(cmd.getGatewayIp()).thenReturn("1.2.3.4");
+-        when(cmd.getGuestCidrList()).thenReturn("192.168.1.0/24,192.168.1.0/25");
+-        when(cmd.getIkePolicy()).thenReturn("aes128-sha256;modp2048");
+-        when(cmd.getEspPolicy()).thenReturn("aes128-sha256;modp2048");
++        CreateVpnCustomerGatewayCmd cmd = createMockCustomerGatewayCommand("192.168.1.0/24,192.168.1.0/25", "aes128-sha256;modp2048", "aes128-sha256;modp2048");
+         when(cmd.getEntityOwnerId()).thenReturn(ACCOUNT_ID);
+ 
+         try (MockedStatic<NetUtils> netUtilsMock = Mockito.mockStatic(NetUtils.class)) {
+@@ -941,4 +913,13 @@
+         assertFalse("Should detect obsolete encryption in ESP policy", result.isEmpty());
+         assertEquals("Should detect obsolete encryption in ESP policy", "[3des]", result.toString());
+     }
++
++    private static CreateVpnCustomerGatewayCmd createMockCustomerGatewayCommand(String guestCidrList, String ikePolicy, String espPolicy) {
++        CreateVpnCustomerGatewayCmd cmd = Mockito.mock(CreateVpnCustomerGatewayCmd.class);
++        when(cmd.getGatewayIp()).thenReturn("1.2.3.4");
++        when(cmd.getGuestCidrList()).thenReturn(guestCidrList);
++        when(cmd.getIkePolicy()).thenReturn(ikePolicy);
++        when(cmd.getEspPolicy()).thenReturn(espPolicy);
++        return cmd;
++    }
+ }

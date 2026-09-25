@@ -1,0 +1,199 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -867,7 +867,7 @@
+ 
+     @Test
+     public void orchestrateDeleteBackupTestBackupStateIsNotOk() {
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, vmId);
+         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any());
+ 
+         Boolean result = kbossBackupProviderSpy.orchestrateDeleteBackup(backupVoMock, false);
+@@ -878,7 +878,7 @@
+ 
+     @Test
+     public void orchestrateDeleteBackupTestDeleteFailedBackup() throws OperationTimedoutException, AgentUnavailableException {
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
++        VirtualMachineManager virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, vmId);
+         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any());
+         doReturn(true).when(kbossBackupProviderSpy).validateBackupStateForRemoval(backupId);
+         doReturn(true).when(kbossBackupProviderSpy).deleteFailedBackup(backupVoMock);
+@@ -893,7 +893,7 @@
+ 
+     @Test
+     public void orchestrateDeleteBackupTestDeleteBackupWithLiveChildren() throws OperationTimedoutException, AgentUnavailableException {
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, vmId);
+         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any());
+         doReturn(true).when(kbossBackupProviderSpy).validateBackupStateForRemoval(backupId);
+         doReturn(false).when(kbossBackupProviderSpy).deleteFailedBackup(backupVoMock);
+@@ -911,7 +911,7 @@
+ 
+     @Test
+     public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenFailedToMerge() throws OperationTimedoutException, AgentUnavailableException {
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, vmId);
+         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any());
+         doReturn(true).when(kbossBackupProviderSpy).validateBackupStateForRemoval(backupId);
+         doReturn(false).when(kbossBackupProviderSpy).deleteFailedBackup(backupVoMock);
+@@ -931,7 +931,7 @@
+     public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentNoEndPoint() throws OperationTimedoutException, AgentUnavailableException {
+         long parentBackupId = 12;
+         doReturn(parentBackupId).when(internalBackupJoinVoMock).getParentId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, vmId);
+         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any());
+         doReturn(true).when(kbossBackupProviderSpy).validateBackupStateForRemoval(backupId);
+         doReturn(false).when(kbossBackupProviderSpy).deleteFailedBackup(backupVoMock);
+@@ -957,7 +957,7 @@
+     public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentTimedoutException() throws OperationTimedoutException, AgentUnavailableException {
+         long parentBackupId = 12;
+         doReturn(parentBackupId).when(internalBackupJoinVoMock).getParentId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, vmId);
+         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any());
+         doReturn(true).when(kbossBackupProviderSpy).validateBackupStateForRemoval(backupId);
+         doReturn(false).when(kbossBackupProviderSpy).deleteFailedBackup(backupVoMock);
+@@ -984,7 +984,7 @@
+     public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentFailedSetNotEmpty() throws OperationTimedoutException, AgentUnavailableException {
+         long parentBackupId = 12;
+         doReturn(parentBackupId).when(internalBackupJoinVoMock).getParentId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, vmId);
+         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any());
+         doReturn(true).when(kbossBackupProviderSpy).validateBackupStateForRemoval(backupId);
+         doReturn(false).when(kbossBackupProviderSpy).deleteFailedBackup(backupVoMock);
+@@ -1014,7 +1014,7 @@
+     public void orchestrateDeleteBackupTestDeleteCurrentBackupWithNoChildrenWithParentFailedSetEmpty() throws OperationTimedoutException, AgentUnavailableException {
+         long parentBackupId = 12;
+         doReturn(parentBackupId).when(internalBackupJoinVoMock).getParentId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(vmId);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, vmId);
+         doNothing().when(kbossBackupProviderSpy).validateVmState(any(), any(), any());
+         doReturn(true).when(kbossBackupProviderSpy).validateBackupStateForRemoval(backupId);
+         doReturn(false).when(kbossBackupProviderSpy).deleteFailedBackup(backupVoMock);
+@@ -3113,4 +3113,20 @@
+         verify(kbossBackupProviderSpy).releaseBackup(backupId);
+     }
+ 
++
++    public final class MockVirtualMachineManager {
++        private MockVirtualMachineManager() {
++        }
++
++        public static com.cloud.vm.VirtualMachineManager createVirtualMachineManagerMock(
++                com.cloud.vm.VirtualMachine virtualMachineMock,
++                long vmId) {
++            com.cloud.vm.VirtualMachineManager virtualMachineManagerMock =
++                    Mockito.mock(com.cloud.vm.VirtualMachineManager.class);
++            doReturn(virtualMachineMock)
++                    .when(virtualMachineManagerMock)
++                    .findById(vmId);
++            return virtualMachineManagerMock;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
+@@ -314,7 +314,7 @@
+     @Test
+     public void prepareVolumeForMigrationTestBackupFrameworkDisabledReturnsImmediately() {
+         doReturn(INSTANCE_ID).when(volumeMock).getInstanceId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(INSTANCE_ID);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, INSTANCE_ID);
+         doReturn(true).when(internalBackupServiceImplSpy).isBackupFrameworkDisabled(virtualMachineMock);
+ 
+         internalBackupServiceImplSpy.prepareVolumeForMigration(volumeMock);
+@@ -327,7 +327,7 @@
+     @Test
+     public void prepareVolumeForMigrationTestProviderIsNullReturnsImmediately() {
+         doReturn(INSTANCE_ID).when(volumeMock).getInstanceId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(INSTANCE_ID);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, INSTANCE_ID);
+         doReturn(false).when(internalBackupServiceImplSpy).isBackupFrameworkDisabled(virtualMachineMock);
+         doReturn(ZONE_ID).when(volumeMock).getDataCenterId();
+         doReturn(null).when(internalBackupServiceImplSpy).getInternalBackupProviderForZone(ZONE_ID);
+@@ -343,7 +343,7 @@
+     @Test
+     public void prepareVolumeForMigrationTestProviderCallsPrepareVolumeForMigration() {
+         doReturn(INSTANCE_ID).when(volumeMock).getInstanceId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(INSTANCE_ID);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, INSTANCE_ID);
+         doReturn(false).when(internalBackupServiceImplSpy).isBackupFrameworkDisabled(virtualMachineMock);
+         doReturn(ZONE_ID).when(volumeMock).getDataCenterId();
+         doReturn(internalBackupProviderMock).when(internalBackupServiceImplSpy).getInternalBackupProviderForZone(ZONE_ID);
+@@ -373,7 +373,7 @@
+     public void updateVolumeIdTestBackupFrameworkDisabledReturnsImmediately() {
+         doReturn(volumeVoMock).when(volumeDaoMock).findById(NEW_VOLUME_ID);
+         doReturn(INSTANCE_ID).when(volumeVoMock).getInstanceId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(INSTANCE_ID);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, INSTANCE_ID);
+         doReturn(true).when(internalBackupServiceImplSpy).isBackupFrameworkDisabled(virtualMachineMock);
+ 
+         internalBackupServiceImplSpy.updateVolumeId(OLD_VOLUME_ID, NEW_VOLUME_ID);
+@@ -388,7 +388,7 @@
+     public void updateVolumeIdTestProviderIsNullReturnsImmediately() {
+         doReturn(volumeVoMock).when(volumeDaoMock).findById(NEW_VOLUME_ID);
+         doReturn(INSTANCE_ID).when(volumeVoMock).getInstanceId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(INSTANCE_ID);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, INSTANCE_ID);
+         doReturn(false).when(internalBackupServiceImplSpy).isBackupFrameworkDisabled(virtualMachineMock);
+         doReturn(ZONE_ID).when(virtualMachineMock).getDataCenterId();
+         doReturn(null).when(internalBackupServiceImplSpy).getInternalBackupProviderForZone(ZONE_ID);
+@@ -406,7 +406,7 @@
+     public void updateVolumeIdTestProviderCallsUpdateVolumeId() {
+         doReturn(volumeVoMock).when(volumeDaoMock).findById(NEW_VOLUME_ID);
+         doReturn(INSTANCE_ID).when(volumeVoMock).getInstanceId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(INSTANCE_ID);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, INSTANCE_ID);
+         doReturn(false).when(internalBackupServiceImplSpy).isBackupFrameworkDisabled(virtualMachineMock);
+         doReturn(ZONE_ID).when(virtualMachineMock).getDataCenterId();
+         doReturn(internalBackupProviderMock).when(internalBackupServiceImplSpy).getInternalBackupProviderForZone(ZONE_ID);
+@@ -503,7 +503,7 @@
+     @Test
+     public void prepareVmForSnapshotRevertTestBackupFrameworkDisabledReturnsImmediately() {
+         doReturn(INSTANCE_ID).when(vmSnapshotMock).getVmId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(INSTANCE_ID);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, INSTANCE_ID);
+         doReturn(true).when(internalBackupServiceImplSpy).isBackupFrameworkDisabled(virtualMachineMock);
+ 
+         internalBackupServiceImplSpy.prepareVmForSnapshotRevert(vmSnapshotMock);
+@@ -517,7 +517,7 @@
+     @Test
+     public void prepareVmForSnapshotRevertTestProviderIsNullReturnsImmediately() {
+         doReturn(INSTANCE_ID).when(vmSnapshotMock).getVmId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(INSTANCE_ID);
++        virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, INSTANCE_ID);
+         doReturn(false).when(internalBackupServiceImplSpy).isBackupFrameworkDisabled(virtualMachineMock);
+         doReturn(ZONE_ID).when(virtualMachineMock).getDataCenterId();
+         doReturn(null).when(internalBackupServiceImplSpy).getInternalBackupProviderForZone(ZONE_ID);
+@@ -534,7 +534,7 @@
+     @Test
+     public void prepareVmForSnapshotRevertTestProviderCallsPrepareVmForSnapshotRevert() {
+         doReturn(INSTANCE_ID).when(vmSnapshotMock).getVmId();
+-        doReturn(virtualMachineMock).when(virtualMachineManagerMock).findById(INSTANCE_ID);
++        VirtualMachineManager virtualMachineManagerMock = MockVirtualMachineManager.createVirtualMachineManagerMock(virtualMachineMock, INSTANCE_ID);
+         doReturn(false).when(internalBackupServiceImplSpy).isBackupFrameworkDisabled(virtualMachineMock);
+         doReturn(ZONE_ID).when(virtualMachineMock).getDataCenterId();
+         doReturn(internalBackupProviderMock).when(internalBackupServiceImplSpy).getInternalBackupProviderForZone(ZONE_ID);
+@@ -548,4 +548,20 @@
+         verify(internalBackupServiceImplSpy).getInternalBackupProviderForZone(ZONE_ID);
+         verify(internalBackupProviderMock).prepareVmForSnapshotRevert(vmSnapshotMock, virtualMachineMock);
+     }
++
++    public final class MockVirtualMachineManager {
++        private MockVirtualMachineManager() {
++        }
++
++        public static com.cloud.vm.VirtualMachineManager createVirtualMachineManagerMock(
++                com.cloud.vm.VirtualMachine virtualMachineMock,
++                long vmId) {
++            com.cloud.vm.VirtualMachineManager virtualMachineManagerMock =
++                    Mockito.mock(com.cloud.vm.VirtualMachineManager.class);
++            doReturn(virtualMachineMock)
++                    .when(virtualMachineManagerMock)
++                    .findById(vmId);
++            return virtualMachineManagerMock;
++        }
++    }
+ }

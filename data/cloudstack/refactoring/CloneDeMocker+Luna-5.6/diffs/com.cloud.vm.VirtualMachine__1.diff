@@ -1,0 +1,61 @@
+--- a/server/src/test/java/org/apache/cloudstack/schedule/vm/VMScheduleWorkerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/schedule/vm/VMScheduleWorkerTest.java
+@@ -84,6 +84,8 @@
+     @Mock
+     private AsyncJobDispatcher asyncJobDispatcher;
+ 
++    private VirtualMachine virtualMachine;
++
+     private AutoCloseable closeable;
+ 
+     private MockedStatic<ActionEventUtils> actionEventUtilsMocked;
+@@ -91,6 +93,7 @@
+     @Before
+     public void setUp() throws Exception {
+         closeable = MockitoAnnotations.openMocks(this);
++        virtualMachine = Mockito.mock(VirtualMachine.class);
+         actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
+         Mockito.when(ActionEventUtils.onScheduledActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
+                         Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(),
+@@ -347,12 +350,11 @@
+ 
+     @Test
+     public void testSubmitStopVMJob() {
+-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+         Mockito.when(asyncJobManager.submitAsyncJob(Mockito.any(AsyncJobVO.class))).thenReturn(1L);
+         Mockito.when(asyncJobDispatcher.getName()).thenReturn("ApiAsyncJobDispatcher");
+         try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+             when(ComponentContext.inject(Mockito.any(StopVMCmd.class))).thenReturn(Mockito.mock(StopVMCmd.class));
+-            long jobId = vmScheduleWorker.submitAsyncJob(StopVMCmd.class, vm.getAccountId(), vm.getId(), 1L,
++            long jobId = vmScheduleWorker.submitAsyncJob(StopVMCmd.class, virtualMachine.getAccountId(), virtualMachine.getId(), 1L,
+                     Map.of("forced", "false"));
+             Assert.assertEquals(1L, jobId);
+         }
+@@ -360,12 +362,11 @@
+ 
+     @Test
+     public void testSubmitRebootVMJob() {
+-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+         Mockito.when(asyncJobManager.submitAsyncJob(Mockito.any(AsyncJobVO.class))).thenReturn(1L);
+         Mockito.when(asyncJobDispatcher.getName()).thenReturn("ApiAsyncJobDispatcher");
+         try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+             when(ComponentContext.inject(Mockito.any(RebootVMCmd.class))).thenReturn(Mockito.mock(RebootVMCmd.class));
+-            long jobId = vmScheduleWorker.submitAsyncJob(RebootVMCmd.class, vm.getAccountId(), vm.getId(), 1L,
++            long jobId = vmScheduleWorker.submitAsyncJob(RebootVMCmd.class, virtualMachine.getAccountId(), virtualMachine.getId(), 1L,
+                     Map.of("forced", "false"));
+             Assert.assertEquals(1L, jobId);
+         }
+@@ -373,12 +374,11 @@
+ 
+     @Test
+     public void testSubmitStartVMJob() {
+-        VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+         Mockito.when(asyncJobManager.submitAsyncJob(Mockito.any(AsyncJobVO.class))).thenReturn(1L);
+         Mockito.when(asyncJobDispatcher.getName()).thenReturn("ApiAsyncJobDispatcher");
+         try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+             when(ComponentContext.inject(Mockito.any(StartVMCmd.class))).thenReturn(Mockito.mock(StartVMCmd.class));
+-            long jobId = vmScheduleWorker.submitAsyncJob(StartVMCmd.class, vm.getAccountId(), vm.getId(), 1L,
++            long jobId = vmScheduleWorker.submitAsyncJob(StartVMCmd.class, virtualMachine.getAccountId(), virtualMachine.getId(), 1L,
+                     Map.of());
+             Assert.assertEquals(1L, jobId);
+         }

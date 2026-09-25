@@ -1,0 +1,50 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/NetworkOrchestratorTest.java
+@@ -112,6 +112,7 @@
+     private String dhcpProvider = "VirtualRouter";
+     private NetworkGuru guru = mock(NetworkGuru.class);
+     private NetworkExtensionElement networkExtensionElement;
++    private VirtualMachine virtualMachine;
+ 
+     NetworkOfferingVO networkOffering = mock(NetworkOfferingVO.class);
+ 
+@@ -126,6 +127,7 @@
+     @Before
+     public void setUp() {
+         // make class-scope mocks
++        virtualMachine = mock(VirtualMachine.class);
+         testOrchestrator._nicDao = mock(NicDao.class);
+         testOrchestrator._networksDao = mock(NetworkDao.class);
+         testOrchestrator._networkModel = mock(NetworkModel.class);
+@@ -910,7 +912,6 @@
+     @Test(expected = InsufficientVirtualNetworkCapacityException.class)
+     public void testImportNicAcquireGuestIPFailed() throws Exception {
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+-        VirtualMachine vm = mock(VirtualMachine.class);
+         Network network = Mockito.mock(Network.class);
+         Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
+         Mockito.when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+@@ -923,13 +924,12 @@
+         Mockito.when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
+         String macAddress = "02:01:01:82:00:01";
+         int deviceId = 0;
+-        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
++        testOrchestrator.importNic(macAddress, deviceId, network, true, virtualMachine, ipAddresses, dataCenter, false);
+     }
+ 
+     @Test(expected = InsufficientVirtualNetworkCapacityException.class)
+     public void testImportNicAutoAcquireGuestIPFailed() throws Exception {
+         DataCenter dataCenter = Mockito.mock(DataCenter.class);
+-        VirtualMachine vm = mock(VirtualMachine.class);
+         Network network = Mockito.mock(Network.class);
+         Mockito.when(network.getGuestType()).thenReturn(GuestType.Isolated);
+         Mockito.when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+@@ -942,7 +942,7 @@
+         Mockito.when(testOrchestrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
+         String macAddress = "02:01:01:82:00:01";
+         int deviceId = 0;
+-        testOrchestrator.importNic(macAddress, deviceId, network, true, vm, ipAddresses, dataCenter, false);
++        testOrchestrator.importNic(macAddress, deviceId, network, true, virtualMachine, ipAddresses, dataCenter, false);
+     }
+ 
+     @Test

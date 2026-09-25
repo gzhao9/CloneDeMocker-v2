@@ -1,0 +1,57 @@
+--- a/plugins/storage/volume/default/src/test/java/org/apache/cloudstack/storage/datastore/driver/CloudStackPrimaryDataStoreDriverImplTest.java
++++ b/plugins/storage/volume/default/src/test/java/org/apache/cloudstack/storage/datastore/driver/CloudStackPrimaryDataStoreDriverImplTest.java
+@@ -149,8 +149,7 @@
+ 
+     @Test
+     public void testResize_clvmNg_vmStopped_routesToLockHost() throws Exception {
+-        VirtualMachine stoppedVm = Mockito.mock(VirtualMachine.class);
+-        when(stoppedVm.getHostId()).thenReturn(null);
++        VirtualMachine stoppedVm = createMockVirtualMachine();
+         when(vol.getAttachedVM()).thenReturn(stoppedVm);
+         makePayload(new long[]{OTHER_HOST_ID}); // stale lastHostId from caller
+ 
+@@ -167,8 +166,7 @@
+ 
+     @Test
+     public void testResize_clvmNg_vmStopped_lockHostDown_keepsCallerHosts() throws Exception {
+-        VirtualMachine stoppedVm = Mockito.mock(VirtualMachine.class);
+-        when(stoppedVm.getHostId()).thenReturn(null);
++        VirtualMachine stoppedVm = createMockVirtualMachine();
+         when(vol.getAttachedVM()).thenReturn(stoppedVm);
+         makePayload(new long[]{OTHER_HOST_ID});
+ 
+@@ -269,18 +267,23 @@
+     @Test
+     public void testResize_clvmLegacy_vmStopped_routesToLockHost() throws Exception {
+         when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
++        VirtualMachine stoppedVm = createMockVirtualMachine();
++        when(vol.getAttachedVM()).thenReturn(stoppedVm);
++        makePayload(new long[]{OTHER_HOST_ID});
++
++        when(clvmPoolManager.getClvmLockHostId(anyLong(), anyString(), anyString(), any(), eq(true)))
++                .thenReturn(LOCK_HOST_ID);
++        stubAgentSend(LOCK_HOST_ID, mockSuccessAnswer(20L * 1024 * 1024 * 1024));
++
++        driver.resize(vol, callback);
++
++        verifyAgentSend(LOCK_HOST_ID);
++        verifyAgentSendNever(OTHER_HOST_ID);
++    }
++
++    private static VirtualMachine createMockVirtualMachine() {
+         VirtualMachine stoppedVm = Mockito.mock(VirtualMachine.class);
+         when(stoppedVm.getHostId()).thenReturn(null);
+-        when(vol.getAttachedVM()).thenReturn(stoppedVm);
+-        makePayload(new long[]{OTHER_HOST_ID});
+-
+-        when(clvmPoolManager.getClvmLockHostId(anyLong(), anyString(), anyString(), any(), eq(true)))
+-                .thenReturn(LOCK_HOST_ID);
+-        stubAgentSend(LOCK_HOST_ID, mockSuccessAnswer(20L * 1024 * 1024 * 1024));
+-
+-        driver.resize(vol, callback);
+-
+-        verifyAgentSend(LOCK_HOST_ID);
+-        verifyAgentSendNever(OTHER_HOST_ID);
++        return stoppedVm;
+     }
+ }

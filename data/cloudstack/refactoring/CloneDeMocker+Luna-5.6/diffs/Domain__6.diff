@@ -1,0 +1,256 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
+@@ -43,6 +43,7 @@
+ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+ import org.apache.cloudstack.storage.to.VolumeObjectTO;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.libvirt.Domain;
+ import org.libvirt.DomainInfo;
+@@ -62,6 +63,13 @@
+ 
+ public class LibvirtDiskOnlyVMSnapshotCommandWrapperTest {
+ 
++    private Domain domainMock;
++
++    @Before
++    public void setUp() {
++        domainMock = mock(Domain.class);
++    }
++
+     @Test
+     public void testBackupNvramIfNeededCopiesActiveNvram() throws Exception {
+         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper();
+@@ -326,12 +334,11 @@
+     @Test
+     public void testResumeVmIfNeededOnlyResumesWhenWrapperSuspendedVm() throws Exception {
+         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper();
+-        Domain domain = mock(Domain.class);
+-
+-        wrapper.resumeVmIfNeeded(domain, "vm-name", false);
+-
+-        verify(domain, never()).resume();
+-        verify(domain, never()).getInfo();
++
++        wrapper.resumeVmIfNeeded(domainMock, "vm-name", false);
++
++        verify(domainMock, never()).resume();
++        verify(domainMock, never()).getInfo();
+     }
+ 
+     @Test
+@@ -404,7 +411,7 @@
+     public void testFreezeAndVerifyVmFilesystemsSucceedsWhenGuestAgentReportsFrozen() throws Exception {
+         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper() {
+             @Override
+-            protected String getResultOfQemuCommand(String cmd, Domain domain) {
++            protected String getResultOfQemuCommand(String cmd, Domain domainMock) {
+                 if ("status".equals(cmd)) {
+                     return "{\"return\":\"frozen\"}";
+                 }
+@@ -412,9 +419,8 @@
+             }
+         };
+ 
+-        Domain domain = mock(Domain.class);
+-        wrapper.freezeVmFilesystems(domain, "vm-name");
+-        wrapper.verifyVmFilesystemsFrozen(domain, "vm-name");
++        wrapper.freezeVmFilesystems(domainMock, "vm-name");
++        wrapper.verifyVmFilesystemsFrozen(domainMock, "vm-name");
+     }
+ 
+     @Test
+@@ -467,16 +473,16 @@
+             }
+ 
+             @Override
+-            protected void freezeVmFilesystems(Domain domain, String vmName) {
+-            }
+-
+-            @Override
+-            protected void verifyVmFilesystemsFrozen(Domain domain, String vmName) throws IOException {
++            protected void freezeVmFilesystems(Domain domainMock, String vmName) {
++            }
++
++            @Override
++            protected void verifyVmFilesystemsFrozen(Domain domainMock, String vmName) throws IOException {
+                 throw new IOException("status verification failed");
+             }
+ 
+             @Override
+-            protected boolean thawVmFilesystemsIfNeeded(Domain domain, String vmName) {
++            protected boolean thawVmFilesystemsIfNeeded(Domain domainMock, String vmName) {
+                 thawCalled[0] = true;
+                 return true;
+             }
+@@ -484,7 +490,6 @@
+         LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
+         LibvirtUtilitiesHelper libvirtUtilitiesHelper = mock(LibvirtUtilitiesHelper.class);
+         org.libvirt.Connect connect = mock(org.libvirt.Connect.class);
+-        Domain domain = mock(Domain.class);
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+         VMSnapshotTO target = mock(VMSnapshotTO.class);
+ 
+@@ -494,7 +499,7 @@
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         when(libvirtUtilitiesHelper.getConnection()).thenReturn(connect);
+         when(resource.getDisks(connect, "vm-name")).thenReturn(List.of());
+-        when(resource.getDomain(connect, "vm-name")).thenReturn(domain);
++        when(resource.getDomain(connect, "vm-name")).thenReturn(domainMock);
+ 
+         CreateDiskOnlyVmSnapshotAnswer answer = (CreateDiskOnlyVmSnapshotAnswer) wrapper.takeDiskOnlyVmSnapshotOfRunningVm(command, resource);
+ 
+@@ -540,16 +545,16 @@
+             }
+ 
+             @Override
+-            protected void freezeVmFilesystems(Domain domain, String vmName) {
+-            }
+-
+-            @Override
+-            protected String getResultOfQemuCommand(String cmd, Domain domain) {
++            protected void freezeVmFilesystems(Domain domainMock, String vmName) {
++            }
++
++            @Override
++            protected String getResultOfQemuCommand(String cmd, Domain domainMock) {
+                 return "not-json";
+             }
+ 
+             @Override
+-            protected boolean thawVmFilesystemsIfNeeded(Domain domain, String vmName) {
++            protected boolean thawVmFilesystemsIfNeeded(Domain domainMock, String vmName) {
+                 thawCalled[0] = true;
+                 return true;
+             }
+@@ -557,7 +562,6 @@
+         LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
+         LibvirtUtilitiesHelper libvirtUtilitiesHelper = mock(LibvirtUtilitiesHelper.class);
+         org.libvirt.Connect connect = mock(org.libvirt.Connect.class);
+-        Domain domain = mock(Domain.class);
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+         VMSnapshotTO target = mock(VMSnapshotTO.class);
+ 
+@@ -567,7 +571,7 @@
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         when(libvirtUtilitiesHelper.getConnection()).thenReturn(connect);
+         when(resource.getDisks(connect, "vm-name")).thenReturn(List.of());
+-        when(resource.getDomain(connect, "vm-name")).thenReturn(domain);
++        when(resource.getDomain(connect, "vm-name")).thenReturn(domainMock);
+ 
+         CreateDiskOnlyVmSnapshotAnswer answer = (CreateDiskOnlyVmSnapshotAnswer) wrapper.takeDiskOnlyVmSnapshotOfRunningVm(command, resource);
+ 
+@@ -669,11 +673,11 @@
+             }
+ 
+             @Override
+-            protected void freezeVmFilesystems(Domain domain, String vmName) {
+-            }
+-
+-            @Override
+-            protected void verifyVmFilesystemsFrozen(Domain domain, String vmName) {
++            protected void freezeVmFilesystems(Domain domainMock, String vmName) {
++            }
++
++            @Override
++            protected void verifyVmFilesystemsFrozen(Domain domainMock, String vmName) {
+             }
+ 
+             @Override
+@@ -682,19 +686,18 @@
+             }
+ 
+             @Override
+-            protected boolean thawVmFilesystemsIfNeeded(Domain domain, String vmName) {
+-                return false;
+-            }
+-
+-            @Override
+-            protected boolean thawVmFilesystemsIfNeeded(Domain domain, String vmName, boolean frozen) {
++            protected boolean thawVmFilesystemsIfNeeded(Domain domainMock, String vmName) {
++                return false;
++            }
++
++            @Override
++            protected boolean thawVmFilesystemsIfNeeded(Domain domainMock, String vmName, boolean frozen) {
+                 return false;
+             }
+         };
+         LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
+         LibvirtUtilitiesHelper libvirtUtilitiesHelper = mock(LibvirtUtilitiesHelper.class);
+         org.libvirt.Connect connect = mock(org.libvirt.Connect.class);
+-        Domain domain = mock(Domain.class);
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+         VMSnapshotTO target = mock(VMSnapshotTO.class);
+ 
+@@ -704,7 +707,7 @@
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         when(libvirtUtilitiesHelper.getConnection()).thenReturn(connect);
+         when(resource.getDisks(connect, "vm-name")).thenReturn(List.of());
+-        when(resource.getDomain(connect, "vm-name")).thenReturn(domain);
++        when(resource.getDomain(connect, "vm-name")).thenReturn(domainMock);
+         doReturn(new Pair<>("<domainsnapshot/>", Collections.emptyMap())).when(resource).createSnapshotXmlAndNewVolumePathMap(any(), any(), any());
+ 
+         CreateDiskOnlyVmSnapshotAnswer answer = (CreateDiskOnlyVmSnapshotAnswer) wrapper.takeDiskOnlyVmSnapshotOfRunningVm(command, resource);
+@@ -728,7 +731,7 @@
+             }
+ 
+             @Override
+-            protected boolean suspendVmIfNeeded(Domain domain) {
++            protected boolean suspendVmIfNeeded(Domain domainMock) {
+                 return true;
+             }
+ 
+@@ -743,19 +746,18 @@
+             }
+ 
+             @Override
+-            protected boolean resumeVmIfNeeded(Domain domain, String vmName) {
+-                return false;
+-            }
+-
+-            @Override
+-            protected boolean resumeVmIfNeeded(Domain domain, String vmName, boolean suspended) {
++            protected boolean resumeVmIfNeeded(Domain domainMock, String vmName) {
++                return false;
++            }
++
++            @Override
++            protected boolean resumeVmIfNeeded(Domain domainMock, String vmName, boolean suspended) {
+                 return false;
+             }
+         };
+         LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
+         LibvirtUtilitiesHelper libvirtUtilitiesHelper = mock(LibvirtUtilitiesHelper.class);
+         org.libvirt.Connect connect = mock(org.libvirt.Connect.class);
+-        Domain domain = mock(Domain.class);
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+         VMSnapshotTO target = mock(VMSnapshotTO.class);
+ 
+@@ -765,7 +767,7 @@
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         when(libvirtUtilitiesHelper.getConnection()).thenReturn(connect);
+         when(resource.getDisks(connect, "vm-name")).thenReturn(List.of());
+-        when(resource.getDomain(connect, "vm-name")).thenReturn(domain);
++        when(resource.getDomain(connect, "vm-name")).thenReturn(domainMock);
+         doReturn(new Pair<>("<domainsnapshot/>", Collections.emptyMap())).when(resource).createSnapshotXmlAndNewVolumePathMap(any(), any(), any());
+ 
+         CreateDiskOnlyVmSnapshotAnswer answer = (CreateDiskOnlyVmSnapshotAnswer) wrapper.takeDiskOnlyVmSnapshotOfRunningVm(command, resource);
+@@ -801,7 +803,6 @@
+         LibvirtComputingResource resource = mock(LibvirtComputingResource.class);
+         LibvirtUtilitiesHelper libvirtUtilitiesHelper = mock(LibvirtUtilitiesHelper.class);
+         org.libvirt.Connect connect = mock(org.libvirt.Connect.class);
+-        Domain domain = mock(Domain.class);
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+         VMSnapshotTO target = mock(VMSnapshotTO.class);
+ 
+@@ -812,7 +813,7 @@
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         when(libvirtUtilitiesHelper.getConnection()).thenReturn(connect);
+         when(resource.getDisks(connect, "vm-name")).thenReturn(List.of());
+-        when(resource.getDomain(connect, "vm-name")).thenReturn(domain);
++        when(resource.getDomain(connect, "vm-name")).thenReturn(domainMock);
+ 
+         CreateDiskOnlyVmSnapshotAnswer answer = (CreateDiskOnlyVmSnapshotAnswer) wrapper.takeDiskOnlyVmSnapshotOfRunningVm(command, resource);
+ 
