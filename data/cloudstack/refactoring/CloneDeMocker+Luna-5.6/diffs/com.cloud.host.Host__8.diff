@@ -1,0 +1,56 @@
+--- a/server/src/test/java/org/apache/cloudstack/ca/CAManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/ca/CAManagerImplTest.java
+@@ -97,6 +97,12 @@
+         f.set(provider, o);
+     }
+ 
++    private static Host createMockHost(final String privateIpAddress) {
++        Host host = Mockito.mock(Host.class);
++        Mockito.when(host.getPrivateIpAddress()).thenReturn(privateIpAddress);
++        return host;
++    }
++
+     @Before
+     public void setUp() throws Exception {
+         addField(caManager, "configuredCaProvider", caProvider);
+@@ -135,8 +141,7 @@
+ 
+     @Test
+     public void testProvisionCertificate() throws Exception {
+-        final Host host = Mockito.mock(Host.class);
+-        Mockito.when(host.getPrivateIpAddress()).thenReturn("1.2.3.4");
++        final Host host = createMockHost("1.2.3.4");
+         final KeyPair keyPair = CertUtils.generateRandomKeyPair(1024);
+         final X509Certificate certificate = CertUtils.generateV3Certificate(null, keyPair, keyPair.getPublic(), "CN=ca", "SHA256withRSA", 365, null, null);
+         Mockito.when(caProvider.issueCertificate(anyString(), anyList(), anyList(), anyInt())).thenReturn(new Certificate(certificate, null, Collections.singletonList(certificate)));
+@@ -179,9 +184,8 @@
+ 
+     @Test
+     public void testProvisionCertificateForSystemVm() throws Exception {
+-        final Host host = Mockito.mock(Host.class);
++        final Host host = createMockHost("1.2.3.4");
+         Mockito.when(host.getType()).thenReturn(Host.Type.ConsoleProxy);
+-        Mockito.when(host.getPrivateIpAddress()).thenReturn("1.2.3.4");
+         final KeyPair keyPair = CertUtils.generateRandomKeyPair(1024);
+         final X509Certificate x509 = CertUtils.generateV3Certificate(null, keyPair, keyPair.getPublic(), "CN=ca", "SHA256withRSA", 365, null, null);
+         Mockito.when(caProvider.issueCertificate(anyList(), anyList(), anyInt()))
+@@ -195,8 +199,7 @@
+ 
+     @Test
+     public void testProvisionCertificateWithoutReconnect() throws Exception {
+-        final Host host = Mockito.mock(Host.class);
+-        Mockito.when(host.getPrivateIpAddress()).thenReturn("1.2.3.4");
++        final Host host = createMockHost("1.2.3.4");
+         final KeyPair keyPair = CertUtils.generateRandomKeyPair(1024);
+         final X509Certificate x509 = CertUtils.generateV3Certificate(null, keyPair, keyPair.getPublic(), "CN=ca", "SHA256withRSA", 365, null, null);
+         Mockito.when(caProvider.issueCertificate(anyString(), anyList(), anyList(), anyInt()))
+@@ -224,8 +227,7 @@
+ 
+     @Test
+     public void testPurgeHostCertificate() throws Exception {
+-        final Host host = Mockito.mock(Host.class);
+-        Mockito.when(host.getPrivateIpAddress()).thenReturn("10.0.0.1");
++        final Host host = createMockHost("10.0.0.1");
+         Mockito.when(host.getPublicIpAddress()).thenReturn("192.168.0.1");
+         final KeyPair keyPair = CertUtils.generateRandomKeyPair(1024);
+         final X509Certificate x509 = CertUtils.generateV3Certificate(null, keyPair,
