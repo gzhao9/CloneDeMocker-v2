@@ -1,0 +1,40 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -132,6 +132,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class KbossBackupProviderTest {
++    @Mock
++    private SnapshotDataStoreVO snapshotDataStoreVO;
+ 
+     @Mock
+     private VirtualMachine virtualMachineMock;
+@@ -2216,7 +2218,6 @@
+     @Test
+     public void gatherSnapshotReferencesOfChildrenSnapshotTestSingleChildWithSingleSnapshotReference() {
+         VMSnapshotVO childSnapshot = Mockito.mock(VMSnapshotVO.class);
+-        SnapshotDataStoreVO snapshotDataStoreVO = Mockito.mock(SnapshotDataStoreVO.class);
+ 
+         doReturn(100L).when(vmSnapshotVoMock).getId();
+         doReturn(List.of(childSnapshot)).when(vmSnapshotDaoMock).listByParent(100L);
+@@ -2239,17 +2240,15 @@
+     public void gatherSnapshotReferencesOfChildrenSnapshotTestMultipleChildrenAggregatesSnapshotReferences() {
+         VMSnapshotVO childSnapshot1 = Mockito.mock(VMSnapshotVO.class);
+         VMSnapshotVO childSnapshot2 = Mockito.mock(VMSnapshotVO.class);
+-        SnapshotDataStoreVO snapshotDataStoreVO1 = Mockito.mock(SnapshotDataStoreVO.class);
++        // removed local mock; replaced with global field `snapshotDataStoreVO`
+         SnapshotDataStoreVO snapshotDataStoreVO2 = Mockito.mock(SnapshotDataStoreVO.class);
+ 
+         doReturn(100L).when(vmSnapshotVoMock).getId();
+         doReturn(List.of(childSnapshot1, childSnapshot2)).when(vmSnapshotDaoMock).listByParent(100L);
+         doReturn(201L).when(childSnapshot1).getId();
+         doReturn(202L).when(childSnapshot2).getId();
+-        doReturn(List.of(snapshotDataStoreVO1)).when(vmSnapshotHelperMock)
+-                .getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(201L);
+-        doReturn(List.of(snapshotDataStoreVO2)).when(vmSnapshotHelperMock)
+-                .getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(202L);
++        doReturn(List.of(snapshotDataStoreVO)).when(vmSnapshotHelperMock).getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(201L);
++        doReturn(List.of(snapshotDataStoreVO)).when(vmSnapshotHelperMock).getVolumeSnapshotsAssociatedWithKvmDiskOnlyVmSnapshot(202L);
+         doNothing().when(kbossBackupProviderSpy).mapVolumesToSnapshotReferences(anyList(), anyList(), anyMap());
+ 
+         List<VolumeObjectTO> volumeObjectTOs = List.of(volumeObjectToMock);

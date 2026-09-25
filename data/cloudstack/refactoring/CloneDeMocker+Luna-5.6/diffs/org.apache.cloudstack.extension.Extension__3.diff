@@ -1,0 +1,65 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -453,8 +453,7 @@
+ 
+     @Test
+     public void updateExtensionPathReadyUpdatesStateWhenNotReady() {
+-        Extension ext = mock(Extension.class);
+-        when(ext.getId()).thenReturn(1L);
++        Extension ext = createMockExtension(1L);
+         when(ext.isPathReady()).thenReturn(true);
+         ExtensionVO vo = mock(ExtensionVO.class);
+         when(extensionDao.createForUpdate(1L)).thenReturn(vo);
+@@ -487,8 +486,7 @@
+ 
+     @Test
+     public void updateAllExtensionHostsRemovesHostsSuccessfully() throws OperationTimedoutException, AgentUnavailableException {
+-        Extension extension = mock(Extension.class);
+-        when(extension.getId()).thenReturn(1L);
++        Extension extension = createMockExtension(1L);
+         Long clusterId = 100L;
+         Long hostId = 200L;
+         when(hostDao.listIdsByClusterId(clusterId)).thenReturn(List.of(hostId));
+@@ -498,8 +496,7 @@
+ 
+     @Test
+     public void updateAllExtensionHostsAddsHostsSuccessfully() throws OperationTimedoutException, AgentUnavailableException {
+-        Extension extension = mock(Extension.class);
+-        when(extension.getId()).thenReturn(1L);
++        Extension extension = createMockExtension(1L);
+         Long clusterId = 100L;
+         Long hostId = 200L;
+         when(hostDao.listIdsByClusterId(clusterId)).thenReturn(List.of(hostId));
+@@ -518,8 +515,7 @@
+ 
+     @Test
+     public void updateAllExtensionHostsHandlesNullClusterId() throws OperationTimedoutException, AgentUnavailableException {
+-        Extension extension = mock(Extension.class);
+-        when(extension.getId()).thenReturn(1L);
++        Extension extension = createMockExtension(1L);
+         when(extensionResourceMapDao.listResourceIdsByExtensionIdAndType(eq(1L), any())).thenReturn(Collections.emptyList());
+         extensionsManager.updateAllExtensionHosts(extension, null, false);
+         verify(agentMgr, never()).send(anyLong(), any(Command.class));
+@@ -1341,8 +1337,7 @@
+         when(cluster.getId()).thenReturn(12L);
+         when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+ 
+-        Extension extension = mock(Extension.class);
+-        when(extension.getId()).thenReturn(5L);
++        Extension extension = createMockExtension(5L);
+ 
+         ExtensionResourceMapVO persistedMap = mock(ExtensionResourceMapVO.class);
+         when(persistedMap.getId()).thenReturn(120L);
+@@ -1547,6 +1542,12 @@
+         extensionsManager.deleteCustomAction(cmd);
+         verify(extensionCustomActionDetailsDao).removeDetails(actionId);
+         verify(extensionCustomActionDao).remove(actionId);
++    }
++
++    private static Extension createMockExtension(long extensionId) {
++        Extension extension = mock(Extension.class);
++        when(extension.getId()).thenReturn(extensionId);
++        return extension;
+     }
+ 
+     private void mockCallerRole(RoleType roleType) {

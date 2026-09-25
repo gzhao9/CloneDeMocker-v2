@@ -1,0 +1,70 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
+@@ -87,6 +87,7 @@
+     WebhookDeliveryJoinDao webhookDeliveryJoinDao;
+     @Mock
+     WebhookFilterDao webhookFilterDao;
++    private WebhookFilterVO filterMock;
+     @Mock
+     ManagementServerHostDao managementServerHostDao;
+     @Mock
+@@ -108,6 +109,7 @@
+ 
+     @Before
+     public void setup() {
++        filterMock = Mockito.mock(WebhookFilterVO.class);
+         callContextMocked = Mockito.mockStatic(CallContext.class);
+         CallContext callContextMock = Mockito.mock(CallContext.class);
+         callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+@@ -1352,7 +1354,6 @@
+     public void addWebhookFilterAddsFilterSuccessfully() {
+         AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+-        WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+         WebhookFilterResponse filterResponse = Mockito.mock(WebhookFilterResponse.class);
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+@@ -1361,8 +1362,8 @@
+         Mockito.when(cmd.getMatchType()).thenReturn("Exact");
+         Mockito.when(cmd.getValue()).thenReturn("value");
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+-        Mockito.when(webhookFilterDao.persist(Mockito.any(WebhookFilterVO.class))).thenReturn(filter);
+-        Mockito.doReturn(filterResponse).when(webhookApiServiceImpl).createWebhookFilterResponse(filter, webhook);
++        Mockito.when(webhookFilterDao.persist(Mockito.any(WebhookFilterVO.class))).thenReturn(filterMock);
++        Mockito.doReturn(filterResponse).when(webhookApiServiceImpl).createWebhookFilterResponse(filterMock, webhook);
+ 
+         WebhookFilterResponse response = webhookApiServiceImpl.addWebhookFilter(cmd);
+ 
+@@ -1375,7 +1376,6 @@
+         AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+         WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+-        WebhookFilterVO newFilter = Mockito.mock(WebhookFilterVO.class);
+         WebhookFilterResponse filterResponse = Mockito.mock(WebhookFilterResponse.class);
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+@@ -1390,8 +1390,8 @@
+         Mockito.when(cmd.getValue()).thenReturn("value");
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+         Mockito.when(webhookFilterDao.listByWebhook(1L)).thenReturn(List.of(filter));
+-        Mockito.when(webhookFilterDao.persist(Mockito.any(WebhookFilterVO.class))).thenReturn(newFilter);
+-        Mockito.doReturn(filterResponse).when(webhookApiServiceImpl).createWebhookFilterResponse(newFilter, webhook);
++        Mockito.when(webhookFilterDao.persist(Mockito.any(WebhookFilterVO.class))).thenReturn(filterMock);
++        Mockito.doReturn(filterResponse).when(webhookApiServiceImpl).createWebhookFilterResponse(filterMock, webhook);
+ 
+         WebhookFilterResponse response = webhookApiServiceImpl.addWebhookFilter(cmd);
+ 
+@@ -1446,12 +1446,11 @@
+     @Test
+     public void deleteWebhookFilterDeletesFilterSuccessfully() {
+         DeleteWebhookFilterCmd cmd = Mockito.mock(DeleteWebhookFilterCmd.class);
+-        WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+         Mockito.when(webhookFilterDao.searchBy(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong()))
+-                .thenReturn(new Pair<>(List.of(filter), 1));
++                .thenReturn(new Pair<>(List.of(filterMock), 1));
+         Mockito.when(webhookDao.findById(Mockito.anyLong())).thenReturn(webhook);
+         Mockito.when(webhookFilterDao.delete(Mockito.anyLong(), Mockito.anyLong())).thenReturn(1);
+ 

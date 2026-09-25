@@ -1,0 +1,81 @@
+--- a/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/snapshot/SnapshotManagerImplTest.java
+@@ -133,9 +133,7 @@
+         final long snapshotId = 1L;
+         final long zoneId = 1L;
+         final long storeId = 1L;
+-        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+-        Mockito.when(ref.getDataStoreId()).thenReturn(storeId);
+-        Mockito.when(ref.getRole()).thenReturn(DataStoreRole.Image);
++        SnapshotDataStoreVO ref = createMockSnapshotDataStoreVO(storeId, DataStoreRole.Image);
+         List<SnapshotDataStoreVO> snapshotStoreList = List.of(Mockito.mock(SnapshotDataStoreVO.class), ref);
+         Mockito.when(dataStoreManager.getStoreZoneId(storeId, DataStoreRole.Image)).thenReturn(zoneId);
+         Mockito.when(dataStoreManager.getDataStore(storeId, DataStoreRole.Image)).thenReturn(Mockito.mock(DataStore.class));
+@@ -149,9 +147,7 @@
+         final long snapshotId = 1L;
+         final long zoneId = 1L;
+         final long storeId = 1L;
+-        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+-        Mockito.when(ref.getDataStoreId()).thenReturn(storeId);
+-        Mockito.when(ref.getRole()).thenReturn(DataStoreRole.Image);
++        SnapshotDataStoreVO ref = createMockSnapshotDataStoreVO(storeId, DataStoreRole.Image);
+         List<SnapshotDataStoreVO> snapshotStoreList = List.of(ref);
+         Mockito.when(dataStoreManager.getStoreZoneId(storeId, DataStoreRole.Image)).thenReturn(100L);
+         Mockito.when(snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image)).thenReturn(snapshotStoreList);
+@@ -170,12 +166,8 @@
+     @Test
+     public void testGetStoreRefsAndZonesForSnapshotDeleteMultiZones() {
+         final long snapshotId = 1L;
+-        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+-        Mockito.when(ref.getDataStoreId()).thenReturn(1L);
+-        Mockito.when(ref.getRole()).thenReturn(DataStoreRole.Image);
+-        SnapshotDataStoreVO ref1 = Mockito.mock(SnapshotDataStoreVO.class);
+-        Mockito.when(ref1.getDataStoreId()).thenReturn(2L);
+-        Mockito.when(ref1.getRole()).thenReturn(DataStoreRole.Image);
++        SnapshotDataStoreVO ref = createMockSnapshotDataStoreVO(1L, DataStoreRole.Image);
++        SnapshotDataStoreVO ref1 = createMockSnapshotDataStoreVO(2L, DataStoreRole.Image);
+         List<SnapshotDataStoreVO> snapshotStoreList = List.of(ref, ref1);
+         Mockito.when(snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId)).thenReturn(snapshotStoreList);
+         Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(100L);
+@@ -192,15 +184,9 @@
+         final long snapshotId = 1L;
+         final long zoneId = 1L;
+         Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(Mockito.mock(DataCenterVO.class));
+-        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+-        Mockito.when(ref.getDataStoreId()).thenReturn(1L);
+-        Mockito.when(ref.getRole()).thenReturn(DataStoreRole.Image);
+-        SnapshotDataStoreVO ref1 = Mockito.mock(SnapshotDataStoreVO.class);
+-        Mockito.when(ref1.getDataStoreId()).thenReturn(2L);
+-        Mockito.when(ref1.getRole()).thenReturn(DataStoreRole.Primary);
+-        SnapshotDataStoreVO ref2 = Mockito.mock(SnapshotDataStoreVO.class);
+-        Mockito.when(ref2.getDataStoreId()).thenReturn(3L);
+-        Mockito.when(ref2.getRole()).thenReturn(DataStoreRole.Image);
++        SnapshotDataStoreVO ref = createMockSnapshotDataStoreVO(1L, DataStoreRole.Image);
++        SnapshotDataStoreVO ref1 = createMockSnapshotDataStoreVO(2L, DataStoreRole.Primary);
++        SnapshotDataStoreVO ref2 = createMockSnapshotDataStoreVO(3L, DataStoreRole.Image);
+         List<SnapshotDataStoreVO> snapshotStoreList = List.of(ref, ref1, ref2);
+         Mockito.when(snapshotStoreDao.findBySnapshotIdWithNonDestroyedState(snapshotId)).thenReturn(snapshotStoreList);
+         Mockito.when(dataStoreManager.getStoreZoneId(1L, DataStoreRole.Image)).thenReturn(zoneId);
+@@ -298,9 +284,7 @@
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+         Mockito.when(zone.getId()).thenReturn(destZoneId);
+         Mockito.when(dataCenterDao.findById(destZoneId)).thenReturn(zone);
+-        SnapshotDataStoreVO ref = Mockito.mock(SnapshotDataStoreVO.class);
+-        Mockito.when(ref.getDataStoreId()).thenReturn(storeId);
+-        Mockito.when(ref.getRole()).thenReturn(DataStoreRole.Image);
++        SnapshotDataStoreVO ref = createMockSnapshotDataStoreVO(storeId, DataStoreRole.Image);
+         List<SnapshotDataStoreVO> snapshotStoreList = List.of(Mockito.mock(SnapshotDataStoreVO.class), ref);
+         Mockito.when(dataStoreManager.getStoreZoneId(storeId, DataStoreRole.Image)).thenReturn(zoneId);
+         DataStore store = Mockito.mock(DataStore.class);
+@@ -669,4 +653,11 @@
+         Mockito.verify(snapshotStoreDao, Mockito.never()).removeBySnapshotStore(
+                 Mockito.anyLong(), Mockito.anyLong(), Mockito.any());
+     }
++
++    private static SnapshotDataStoreVO createMockSnapshotDataStoreVO(long dataStoreId, DataStoreRole role) {
++        SnapshotDataStoreVO snapshotDataStoreVO = Mockito.mock(SnapshotDataStoreVO.class);
++        Mockito.when(snapshotDataStoreVO.getDataStoreId()).thenReturn(dataStoreId);
++        Mockito.when(snapshotDataStoreVO.getRole()).thenReturn(role);
++        return snapshotDataStoreVO;
++    }
+ }
