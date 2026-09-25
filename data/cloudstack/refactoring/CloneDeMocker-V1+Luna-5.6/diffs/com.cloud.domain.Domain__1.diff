@@ -1,0 +1,41 @@
+--- a/server/src/test/java/com/cloud/api/ApiServerTest.java
++++ b/server/src/test/java/com/cloud/api/ApiServerTest.java
+@@ -128,12 +128,11 @@
+     @Test
+     public void testForgotPasswordSuccess() {
+         UserAccount userAccount = mock(UserAccount.class);
+-        Domain domain = mock(Domain.class);
+ 
+         Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
+         Mockito.when(userAccount.getState()).thenReturn("ENABLED");
+         Mockito.when(userAccount.getAccountState()).thenReturn("ENABLED");
+-        Mockito.when(domain.getState()).thenReturn(Domain.State.Active);
++        Domain domain = createMockDomain(Domain.State.Active);
+         Mockito.doNothing().when(userPasswordResetManager).setResetTokenAndSend(userAccount);
+         Assert.assertTrue(apiServer.forgotPassword(userAccount, domain));
+         Mockito.verify(userPasswordResetManager).setResetTokenAndSend(userAccount);
+@@ -172,12 +171,11 @@
+     @Test(expected = CloudRuntimeException.class)
+     public void testForgotPasswordFailureInactiveDomain() {
+         UserAccount userAccount = mock(UserAccount.class);
+-        Domain domain = mock(Domain.class);
+ 
+         Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
+         Mockito.when(userAccount.getState()).thenReturn("ENABLED");
+         Mockito.when(userAccount.getAccountState()).thenReturn("ENABLED");
+-        Mockito.when(domain.getState()).thenReturn(Domain.State.Inactive);
++        Domain domain = createMockDomain(Domain.State.Inactive);
+         apiServer.forgotPassword(userAccount, domain);
+     }
+ 
+@@ -276,4 +274,10 @@
+         Mockito.when(accountManager.authenticateUser(anyString(), anyString(), anyLong(), any(), any())).thenReturn(null);
+         apiServer.loginUser(session, "user", "pass", 1L, "/", null, null);
+     }
++
++    private static Domain createMockDomain(Domain.State state) {
++        Domain domain = mock(Domain.class);
++        Mockito.when(domain.getState()).thenReturn(state);
++        return domain;
++    }
+ }

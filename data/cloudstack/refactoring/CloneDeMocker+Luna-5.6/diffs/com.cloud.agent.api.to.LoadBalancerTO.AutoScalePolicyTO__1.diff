@@ -1,0 +1,103 @@
+--- a/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
+@@ -1621,13 +1621,12 @@
+     @Test
+     public void isNativeTrue() {
+         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+-        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+         ConditionTO conditionTO = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO = Mockito.mock(CounterTO.class);
+         AutoScaleVmProfileTO profileTO = Mockito.mock(AutoScaleVmProfileTO.class);
+ 
++        AutoScalePolicyTO policyTO = createMockAutoScalePolicyTO(Arrays.asList(conditionTO));
+         when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+-        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO));
+         when(conditionTO.getCounter()).thenReturn(counterTO);
+         when(counterTO.getSource()).thenReturn(Counter.Source.CPU);
+ 
+@@ -1638,11 +1637,11 @@
+     @Test
+     public void isNativeFalse() {
+         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+-        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+         ConditionTO conditionTO = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO = Mockito.mock(CounterTO.class);
+         AutoScaleVmProfileTO profileTO = Mockito.mock(AutoScaleVmProfileTO.class);
+ 
++        AutoScalePolicyTO policyTO = createMockAutoScalePolicyTO(Arrays.asList(conditionTO));
+         when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+         when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO));
+         when(conditionTO.getCounter()).thenReturn(counterTO);
+@@ -1655,11 +1654,11 @@
+     @Test
+     public void hasSourceVirtualRouterTrue() {
+         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+-        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+         ConditionTO conditionTO = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO = Mockito.mock(CounterTO.class);
+         AutoScaleVmProfileTO profileTO = Mockito.mock(AutoScaleVmProfileTO.class);
+ 
++        AutoScalePolicyTO policyTO = createMockAutoScalePolicyTO(Arrays.asList(conditionTO));
+         when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+         when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO));
+         when(conditionTO.getCounter()).thenReturn(counterTO);
+@@ -1672,13 +1671,12 @@
+     @Test
+     public void hasSourceVirtualRouterFalse() {
+         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+-        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+         ConditionTO conditionTO = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO = Mockito.mock(CounterTO.class);
+         AutoScaleVmProfileTO profileTO = Mockito.mock(AutoScaleVmProfileTO.class);
+ 
++        AutoScalePolicyTO policyTO = createMockAutoScalePolicyTO(Arrays.asList(conditionTO));
+         when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+-        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO));
+         when(conditionTO.getCounter()).thenReturn(counterTO);
+         when(counterTO.getSource()).thenReturn(Counter.Source.CPU);
+ 
+@@ -1845,11 +1843,11 @@
+     @Test
+     public void setPerformanceMonitorCommandParams() {
+         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+-        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+         ConditionTO conditionTO1 = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO1 = Mockito.mock(CounterTO.class);
+         ConditionTO conditionTO2 = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO2 = Mockito.mock(CounterTO.class);
++        AutoScalePolicyTO policyTO = createMockAutoScalePolicyTO(Arrays.asList(conditionTO1, conditionTO2));
+ 
+         when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+         when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO1, conditionTO2));
+@@ -2207,16 +2205,16 @@
+     public void monitorVirtualRouterAsGroup() {
+         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+ 
+-        AutoScalePolicyTO scaleUpPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
+         ConditionTO scaleUpConditionTO = Mockito.mock(ConditionTO.class);
+         CounterTO scaleUpCounterTO = Mockito.mock(CounterTO.class);
++        AutoScalePolicyTO scaleUpPolicyTO = createMockAutoScalePolicyTO(Arrays.asList(scaleUpConditionTO));
+         when(scaleUpPolicyTO.getConditions()).thenReturn(Arrays.asList(scaleUpConditionTO));
+         when(scaleUpConditionTO.getCounter()).thenReturn(scaleUpCounterTO);
+         when(scaleUpCounterTO.getSource()).thenReturn(Counter.Source.CPU);
+ 
+-        AutoScalePolicyTO scaleDownPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
+         ConditionTO scaleDownConditionTO = Mockito.mock(ConditionTO.class);
+         CounterTO scaleDownCounterTO = Mockito.mock(CounterTO.class);
++        AutoScalePolicyTO scaleDownPolicyTO = createMockAutoScalePolicyTO(Arrays.asList(scaleDownConditionTO));
+         when(scaleDownPolicyTO.getConditions()).thenReturn(Arrays.asList(scaleDownConditionTO));
+         when(scaleDownConditionTO.getCounter()).thenReturn(scaleDownCounterTO);
+         when(scaleDownCounterTO.getSource()).thenReturn(Counter.Source.VIRTUALROUTER);
+@@ -2512,6 +2510,12 @@
+                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
+         Assert.assertTrue(result.first().matches(vmHostNamePattern));
+         Assert.assertEquals(result.first(), result.second());
++    }
++
++    private static AutoScalePolicyTO createMockAutoScalePolicyTO(List<ConditionTO> conditions) {
++        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
++        when(policyTO.getConditions()).thenReturn(new ArrayList<>(conditions));
++        return policyTO;
+     }
+ 
+     private void runGetNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForWindowsTemplate() {

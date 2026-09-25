@@ -1,0 +1,131 @@
+--- a/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
+@@ -1706,17 +1706,15 @@
+     @Test
+     public void getPolicyCounters() {
+         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+-        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+         ConditionTO conditionTO1 = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO1 = Mockito.mock(CounterTO.class);
+         ConditionTO conditionTO2 = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO2 = Mockito.mock(CounterTO.class);
+ 
++        AutoScalePolicyTO policyTO = createMockAutoScalePolicyTO(scaleUpPolicyId, Arrays.asList(conditionTO1, conditionTO2));
+         when(groupTO.getPolicies()).thenReturn(Arrays.asList(policyTO));
+-        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO1, conditionTO2));
+         when(conditionTO1.getCounter()).thenReturn(counterTO1);
+         when(conditionTO2.getCounter()).thenReturn(counterTO2);
+-        when(policyTO.getId()).thenReturn(scaleUpPolicyId);
+ 
+         Map<Long, List<CounterTO>> result = autoScaleManagerImplSpy.getPolicyCounters(groupTO);
+ 
+@@ -1758,15 +1756,13 @@
+ 
+     @Test
+     public void checkConditionsForPolicy1() {
+-        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
+         ConditionTO conditionTO1 = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO1 = Mockito.mock(CounterTO.class);
+         ConditionTO conditionTO2 = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO2 = Mockito.mock(CounterTO.class);
+         when(conditionTO1.getCounter()).thenReturn(counterTO1);
+         when(conditionTO2.getCounter()).thenReturn(counterTO2);
+-        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO1, conditionTO2));
+-        when(policyTO.getId()).thenReturn(scaleUpPolicyId);
++        AutoScalePolicyTO policyTO = createMockAutoScalePolicyTO(scaleUpPolicyId, Arrays.asList(conditionTO1, conditionTO2));
+         when(policyTO.getAction()).thenReturn(AutoScalePolicy.Action.SCALEUP);
+ 
+         Long counterId2 = counterId + 1;
+@@ -1803,14 +1799,12 @@
+ 
+     @Test
+     public void checkConditionsForPolicy2() {
+-        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
++        AutoScalePolicyTO policyTO = createMockAutoScalePolicyTO(scaleUpPolicyId, Arrays.asList(conditionTO1, conditionTO2));
+         ConditionTO conditionTO1 = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO1 = Mockito.mock(CounterTO.class);
+         ConditionTO conditionTO2 = Mockito.mock(ConditionTO.class);
+         CounterTO counterTO2 = Mockito.mock(CounterTO.class);
+         when(conditionTO1.getCounter()).thenReturn(counterTO1);
+-        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditionTO1, conditionTO2));
+-        when(policyTO.getId()).thenReturn(scaleUpPolicyId);
+ 
+         Long counterId2 = counterId + 1;
+         Long conditionId2 = conditionId + 1;
+@@ -2022,22 +2016,18 @@
+         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+         when(groupTO.getId()).thenReturn(vmGroupId);
+ 
+-        AutoScalePolicyTO scaleUpPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
+-        when(scaleUpPolicyTO.getId()).thenReturn(scaleUpPolicyId);
+-        when(scaleUpPolicyTO.getDuration()).thenReturn(scaleUpPolicyDuration);
+         ConditionTO scaleUpConditionTO = Mockito.mock(ConditionTO.class);
+         CounterTO scaleUpCounterTO = Mockito.mock(CounterTO.class);
+-        when(scaleUpPolicyTO.getConditions()).thenReturn(Arrays.asList(scaleUpConditionTO));
++        AutoScalePolicyTO scaleUpPolicyTO = createMockAutoScalePolicyTO(scaleUpPolicyId, Arrays.asList(scaleUpConditionTO));
++        when(scaleUpPolicyTO.getDuration()).thenReturn(scaleUpPolicyDuration);
+         when(scaleUpConditionTO.getId()).thenReturn(scaleUpConditionId);
+         when(scaleUpConditionTO.getCounter()).thenReturn(scaleUpCounterTO);
+         when(scaleUpCounterTO.getId()).thenReturn(scaleUpCounterId);
+ 
+-        AutoScalePolicyTO scaleDownPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
+-        when(scaleDownPolicyTO.getId()).thenReturn(scaleDownPolicyId);
+-        when(scaleDownPolicyTO.getDuration()).thenReturn(scaleDownPolicyDuration);
+         ConditionTO scaleDownConditionTO = Mockito.mock(ConditionTO.class);
+         CounterTO scaleDownCounterTO = Mockito.mock(CounterTO.class);
+-        when(scaleDownPolicyTO.getConditions()).thenReturn(Arrays.asList(scaleDownConditionTO));
++        AutoScalePolicyTO scaleDownPolicyTO = createMockAutoScalePolicyTO(scaleDownPolicyId, Arrays.asList(scaleDownConditionTO));
++        when(scaleDownPolicyTO.getDuration()).thenReturn(scaleDownPolicyDuration);
+         when(scaleDownConditionTO.getId()).thenReturn(scaleDownConditionId);
+         when(scaleDownConditionTO.getCounter()).thenReturn(scaleDownCounterTO);
+         when(scaleDownCounterTO.getId()).thenReturn(scaleDownCounterId);
+@@ -2077,12 +2067,10 @@
+         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+         when(groupTO.getId()).thenReturn(vmGroupId);
+ 
+-        AutoScalePolicyTO scaleUpPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
+-        when(scaleUpPolicyTO.getId()).thenReturn(scaleUpPolicyId);
++        ConditionTO scaleUpConditionTO = Mockito.mock(ConditionTO.class);
++        AutoScalePolicyTO scaleUpPolicyTO = createMockAutoScalePolicyTO(scaleUpPolicyId, Arrays.asList(scaleUpConditionTO));
+         when(scaleUpPolicyTO.getDuration()).thenReturn(scaleUpPolicyDuration);
+-        ConditionTO scaleUpConditionTO = Mockito.mock(ConditionTO.class);
+         CounterTO scaleUpCounterTO = Mockito.mock(CounterTO.class);
+-        when(scaleUpPolicyTO.getConditions()).thenReturn(Arrays.asList(scaleUpConditionTO));
+         when(scaleUpConditionTO.getId()).thenReturn(scaleUpConditionId);
+         when(scaleUpConditionTO.getCounter()).thenReturn(scaleUpCounterTO);
+         when(scaleUpCounterTO.getId()).thenReturn(scaleUpCounterId);
+@@ -2365,20 +2353,16 @@
+     public void setGetAutoScaleMetricsCommandMetrics() {
+         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
+ 
+-        AutoScalePolicyTO scaleUpPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
+         ConditionTO scaleUpConditionTO = Mockito.mock(ConditionTO.class);
+         CounterTO scaleUpCounterTO = Mockito.mock(CounterTO.class);
+-        when(scaleUpPolicyTO.getId()).thenReturn(scaleUpPolicyId);
+-        when(scaleUpPolicyTO.getConditions()).thenReturn(Arrays.asList(scaleUpConditionTO));
++        AutoScalePolicyTO scaleUpPolicyTO = createMockAutoScalePolicyTO(scaleUpPolicyId, Arrays.asList(scaleUpConditionTO));
+         when(scaleUpConditionTO.getCounter()).thenReturn(scaleUpCounterTO);
+         when(scaleUpCounterTO.getProvider()).thenReturn(Network.Provider.VirtualRouter.getName());
+         when(scaleUpCounterTO.getValue()).thenReturn(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS.toString());
+ 
+-        AutoScalePolicyTO scaleDownPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
+         ConditionTO scaleDownConditionTO = Mockito.mock(ConditionTO.class);
+         CounterTO scaleDownCounterTO = Mockito.mock(CounterTO.class);
+-        when(scaleDownPolicyTO.getId()).thenReturn(scaleDownPolicyId);
+-        when(scaleDownPolicyTO.getConditions()).thenReturn(Arrays.asList(scaleDownConditionTO));
++        AutoScalePolicyTO scaleDownPolicyTO = createMockAutoScalePolicyTO(scaleDownPolicyId, Arrays.asList(scaleDownConditionTO));
+         when(scaleDownConditionTO.getCounter()).thenReturn(scaleDownCounterTO);
+         when(scaleDownCounterTO.getProvider()).thenReturn(Network.Provider.VirtualRouter.getName());
+         when(scaleDownCounterTO.getValue()).thenReturn(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS.toString());
+@@ -2581,4 +2565,11 @@
+     public void testValidateMinMaxMembersInvalidRange() {
+         autoScaleManagerImplSpy.validateMinMaxMembers(5, 1);
+     }
++
++    private static AutoScalePolicyTO createMockAutoScalePolicyTO(Long policyId, List<ConditionTO> conditions) {
++        AutoScalePolicyTO policyTO = Mockito.mock(AutoScalePolicyTO.class);
++        when(policyTO.getConditions()).thenReturn(Arrays.asList(conditions.toArray(new ConditionTO[0])));
++        when(policyTO.getId()).thenReturn(policyId);
++        return policyTO;
++    }
+ }

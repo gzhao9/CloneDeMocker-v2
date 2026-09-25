@@ -1,0 +1,59 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerCloneIntegrationTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerCloneIntegrationTest.java
+@@ -538,7 +538,7 @@
+ 
+         when(serviceOfferingDao.findById(sourceId)).thenReturn(sourceOffering);
+         DiskOfferingVO diskOfferingVO = mock(DiskOfferingVO.class);
+-        when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVO);
++        diskOfferingDao = createMockDiskOfferingDao(diskOfferingVO);
+         when(diskOfferingVO.getProvisioningType()).thenReturn(Storage.ProvisioningType.THIN);
+ 
+         ServiceOfferingVO clonedOffering = mock(ServiceOfferingVO.class);
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
+@@ -1152,7 +1152,7 @@
+ 
+         Mockito.when(primaryDataStoreDao.listStoragePoolsWithActiveVolumesByOfferingId(anyLong())).thenReturn(pools);
+         Mockito.when(storagePoolTagsDao.getStoragePoolTags(anyLong())).thenReturn(storageTagsNull);
+-        Mockito.when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVOMock);
++        diskOfferingDao = createMockDiskOfferingDao(diskOfferingVOMock);
+         Mockito.when(_volumeDao.findByDiskOfferingId(anyLong())).thenReturn(volumes);
+ 
+         this.configurationMgr.updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+@@ -1167,7 +1167,7 @@
+ 
+         Mockito.when(primaryDataStoreDao.listStoragePoolsWithActiveVolumesByOfferingId(anyLong())).thenReturn(pools);
+         Mockito.when(storagePoolTagsDao.getStoragePoolTags(anyLong())).thenReturn(storageTagsWithMissingTag);
+-        Mockito.when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVOMock);
++        diskOfferingDao = createMockDiskOfferingDao(diskOfferingVOMock);
+         Mockito.when(_volumeDao.findByDiskOfferingId(anyLong())).thenReturn(volumes);
+ 
+         this.configurationMgr.updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+@@ -1187,7 +1187,7 @@
+ 
+         Mockito.when(primaryDataStoreDao.listStoragePoolsWithActiveVolumesByOfferingId(anyLong())).thenReturn(pools);
+         Mockito.when(storagePoolTagsDao.findStoragePoolTags(anyLong())).thenReturn(poolTags);
+-        Mockito.when(diskOfferingDao.findById(anyLong())).thenReturn(diskOfferingVOMock);
++        diskOfferingDao = createMockDiskOfferingDao(diskOfferingVOMock);
+         Mockito.when(_volumeDao.findByDiskOfferingId(anyLong())).thenReturn(volumes);
+ 
+         this.configurationMgr.updateOfferingTagsIfIsNotNull(tags, diskOfferingVOMock);
+--- a/server/src/test/java/com/cloud/configuration/MockDiskOfferingDao.java
++++ b/server/src/test/java/com/cloud/configuration/MockDiskOfferingDao.java
+@@ -0,0 +1,16 @@
++package com.cloud.configuration;
++
++import com.cloud.storage.dao.DiskOfferingDao;
++import com.cloud.storage.DiskOfferingVO;
++import org.mockito.Mockito;
++
++public final class MockDiskOfferingDao {
++    private MockDiskOfferingDao() {
++    }
++
++    public static DiskOfferingDao createMockDiskOfferingDao(DiskOfferingVO diskOffering) {
++        DiskOfferingDao diskOfferingDao = Mockito.mock(DiskOfferingDao.class);
++        Mockito.when(diskOfferingDao.findById(Mockito.anyLong())).thenReturn(diskOffering);
++        return diskOfferingDao;
++    }
++}
