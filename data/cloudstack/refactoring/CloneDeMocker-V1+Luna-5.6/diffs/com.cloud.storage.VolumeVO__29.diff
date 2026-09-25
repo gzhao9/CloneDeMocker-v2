@@ -1,0 +1,106 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -1807,7 +1807,6 @@
+ 
+     @Test
+     public void testValidationsForCheckVolumeAPI() {
+-        VolumeVO volume = mock(VolumeVO.class);
+ 
+         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
+         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+@@ -1815,12 +1814,10 @@
+ 
+         lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+ 
+-        when(volume.getInstanceId()).thenReturn(1L);
++        VolumeVO volume = createMockVolumeVO(1L, 1L);
+         UserVmVO vm = mock(UserVmVO.class);
+         when(userVmDaoMock.findById(1L)).thenReturn(vm);
+         when(vm.getState()).thenReturn(State.Stopped);
+-        when(volume.getState()).thenReturn(Volume.State.Ready);
+-        when(volume.getId()).thenReturn(1L);
+         when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.KVM);
+         when(volume.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+ 
+@@ -1882,7 +1879,6 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidationsForCheckVolumeAPIWithNonKVMhypervisor() {
+-        VolumeVO volume = mock(VolumeVO.class);
+ 
+         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
+         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+@@ -1890,12 +1886,10 @@
+ 
+         lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+ 
+-        when(volume.getInstanceId()).thenReturn(1L);
++        VolumeVO volume = createMockVolumeVO(1L, 1L);
+         UserVmVO vm = mock(UserVmVO.class);
+         when(userVmDaoMock.findById(1L)).thenReturn(vm);
+         when(vm.getState()).thenReturn(State.Stopped);
+-        when(volume.getState()).thenReturn(Volume.State.Ready);
+-        when(volume.getId()).thenReturn(1L);
+         when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.VMware);
+ 
+         volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
+@@ -1948,19 +1942,16 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidationsForCheckVolumeAPIWithInvalidVolumeFormat() {
+-        VolumeVO volume = mock(VolumeVO.class);
+         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
+         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+         CallContext.register(user, account);
+ 
+         lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
+ 
+-        when(volume.getInstanceId()).thenReturn(1L);
++        VolumeVO volume = createMockVolumeVO(1L, 1L);
+         UserVmVO vm = mock(UserVmVO.class);
+         when(userVmDaoMock.findById(1L)).thenReturn(vm);
+         when(vm.getState()).thenReturn(State.Stopped);
+-        when(volume.getState()).thenReturn(Volume.State.Ready);
+-        when(volume.getId()).thenReturn(1L);
+         when(volumeDaoMock.getHypervisorType(1L)).thenReturn(HypervisorType.KVM);
+         when(volume.getFormat()).thenReturn(Storage.ImageFormat.RAW);
+ 
+@@ -2746,11 +2737,8 @@
+         long volumeId = 200L;
+         long vmId     = 201L;
+ 
+-        VolumeVO volume = Mockito.mock(VolumeVO.class);
+-        when(volume.getId()).thenReturn(volumeId);
+-        when(volume.getInstanceId()).thenReturn(vmId);
++        VolumeVO volume = createMockVolumeVO(volumeId, vmId);
+         when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+-        when(volume.getState()).thenReturn(Volume.State.Ready);
+ 
+         // snapshotDaoMock returns an empty list by default (Mockito default behaviour)
+         when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+@@ -2780,11 +2768,8 @@
+         long volumeId = 200L;
+         long vmId     = 201L;
+ 
+-        VolumeVO volume = Mockito.mock(VolumeVO.class);
+-        when(volume.getId()).thenReturn(volumeId);
+-        when(volume.getInstanceId()).thenReturn(vmId);
++        VolumeVO volume = createMockVolumeVO(volumeId, vmId);
+         when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+-        when(volume.getState()).thenReturn(Volume.State.Ready);
+ 
+         when(volumeDaoMock.getHypervisorType(volumeId)).thenReturn(HypervisorType.VMware);
+ 
+@@ -2896,4 +2881,12 @@
+                     e.getMessage() != null && e.getMessage().contains("VM should be in"));
+         }
+     }
++
++    private static VolumeVO createMockVolumeVO(long volumeId, long instanceId) {
++        VolumeVO volume = mock(VolumeVO.class);
++        when(volume.getId()).thenReturn(volumeId);
++        when(volume.getInstanceId()).thenReturn(instanceId);
++        when(volume.getState()).thenReturn(Volume.State.Ready);
++        return volume;
++    }
+ }
