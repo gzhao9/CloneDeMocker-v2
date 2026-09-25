@@ -1,0 +1,99 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -2039,10 +2039,14 @@
+         verify(internalBackupJoinDaoMock, never()).findById(anyLong());
+     }
+ 
++    private void mockInternalBackupStoragePoolDao(long volumeId) {
++        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
++    }
++
+     @Test (expected = CloudRuntimeException.class)
+     public void mergeCurrentDeltaIntoVolumeTestNullAnswer() {
+         doReturn(volumeId).when(volumeVoMock).getId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
++        mockInternalBackupStoragePoolDao(volumeId);
+         doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
+         doReturn(null).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
+@@ -2061,7 +2065,7 @@
+     @Test
+     public void mergeCurrentDeltaIntoVolumeTestNoSucceedingSnapshot() {
+         doReturn(volumeId).when(volumeVoMock).getId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
++        mockInternalBackupStoragePoolDao(volumeId);
+         doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
+         doReturn(null).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
+@@ -2089,7 +2093,7 @@
+     @Test
+     public void mergeCurrentDeltaIntoVolumeTestWithSucceedingSnapshotWithMoreDeltas() {
+         doReturn(volumeId).when(volumeVoMock).getId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
++        mockInternalBackupStoragePoolDao(volumeId);
+         doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
+         doReturn(vmSnapshotVoMock).when(kbossBackupProviderSpy).getSucceedingVmSnapshot(internalBackupJoinVoMock);
+--- a/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
+@@ -158,10 +158,14 @@
+         verify(volumeObjectToMock, never()).setChainInfo(anyString());
+     }
+ 
++    private void mockInternalBackupStoragePoolDao(long volumeId) {
++        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
++    }
++
+     @Test
+     public void configureChainInfoTestSetsChainInfoForGenericCommand() {
+         doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        mockInternalBackupStoragePoolDao(VOLUME_ID);
+         doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+         Command cmdMock = mock(Command.class);
+@@ -175,7 +179,7 @@
+     @Test
+     public void configureChainInfoTestSetsDeleteChainForDeleteCommand() {
+         doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        mockInternalBackupStoragePoolDao(VOLUME_ID);
+         doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+         DeleteCommand deleteCommand = new DeleteCommand(volumeObjectToMock);
+@@ -189,7 +193,7 @@
+     @Test
+     public void configureChainInfoTestSetsDeleteChainForRevertSnapshotCommand() {
+         doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        mockInternalBackupStoragePoolDao(VOLUME_ID);
+         doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+         RevertSnapshotCommand revertSnapshotCommand = new RevertSnapshotCommand(snapshotObjectToMock, snapshotObjectToMock);
+@@ -214,7 +218,7 @@
+     @Test
+     public void cleanupBackupMetadataTestDeltaExistsButOtherDeltasRemainReturnsImmediately() {
+         doReturn(BACKUP_ID).when(internalBackupStoragePoolVoMock).getBackupId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        mockInternalBackupStoragePoolDao(VOLUME_ID);
+         doReturn(List.of(internalBackupStoragePoolVoMock, mock(InternalBackupStoragePoolVO.class)))
+                 .when(internalBackupStoragePoolDaoMock).listByBackupId(BACKUP_ID);
+ 
+@@ -229,7 +233,7 @@
+     @Test
+     public void cleanupBackupMetadataTestLastDeltaAndEndOfChainTrue() {
+         doReturn(BACKUP_ID).when(internalBackupStoragePoolVoMock).getBackupId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        mockInternalBackupStoragePoolDao(VOLUME_ID);
+         doReturn(List.of()).when(internalBackupStoragePoolDaoMock).listByBackupId(BACKUP_ID);
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(BACKUP_ID);
+         doReturn(BACKUP_ID).when(internalBackupJoinVoMock).getId();
+@@ -248,7 +252,7 @@
+     @Test
+     public void cleanupBackupMetadataTestLastDeltaAndEndOfChainFalse() {
+         doReturn(BACKUP_ID).when(internalBackupStoragePoolVoMock).getBackupId();
+-        doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
++        mockInternalBackupStoragePoolDao(VOLUME_ID);
+         doReturn(List.of()).when(internalBackupStoragePoolDaoMock).listByBackupId(BACKUP_ID);
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(BACKUP_ID);
+         doReturn(BACKUP_ID).when(internalBackupJoinVoMock).getId();
