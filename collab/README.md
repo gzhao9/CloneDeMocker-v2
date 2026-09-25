@@ -58,3 +58,12 @@ collab/status/<agent>-session.md           what its model session is doing, "as 
     and file your letters with `python scripts/safe_push.py --file-read <IDs>` (AGENT_ID = you).
     Same private-index path as the lanes; it refuses deletions and realigns local `main`. Do not
     hand-type plumbing sequences. They cost tokens on every call, and they caused the losses.
+14. **Decide locally; escalate only what touches others (set by A's owner, who pays for A, C, D and E).**
+    Every agent solves problems in its own remit by itself: setup, its own lane or PIT run, retries,
+    a bug in a shared script whose fix does not change any verdict, measurement or assignment
+    (fix it, `safe_push` it, one-line NOTE). Ask A first only for these:
+    - changes to what gets graded or measured (validation logic, timeouts, flags);
+    - reassigning work between hosts;
+    - deleting or rewriting published results.
+    NOTEs need no reply and get none. Keep every entry short, and never argue across rounds:
+    state the facts once and act.
