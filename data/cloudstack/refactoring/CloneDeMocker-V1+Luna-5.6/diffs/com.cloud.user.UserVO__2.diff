@@ -1,0 +1,77 @@
+--- a/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
+@@ -401,8 +401,8 @@
+     public void testGetUserKeysCmdDomainAdminRootAdminUser() {
+         CallContext.register(callingUser, callingAccount);
+         Mockito.when(_getkeyscmd.getId()).thenReturn(2L);
++        userVoMock = createMockUserVO(2L);
+         Mockito.when(accountManagerImpl.getActiveUser(2L)).thenReturn(userVoMock);
+-        Mockito.when(userVoMock.getAccountId()).thenReturn(2L);
+ 
+         // Queried account - admin account
+         AccountVO adminAccountMock = Mockito.mock(AccountVO.class);
+@@ -453,7 +453,7 @@
+ 
+     @Test
+     public void updateUserTestTimeZoneAndEmailNull() {
+-        Mockito.when(userVoMock.getAccountId()).thenReturn(10L);
++        userVoMock = createMockUserVO(10L);
+         Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(10L);
+         Mockito.when(accountMock.getAccountId()).thenReturn(10L);
+         Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(10L);
+@@ -466,7 +466,7 @@
+     public void updateUserTestTimeZoneAndEmailNotNull() {
+         Mockito.when(UpdateUserCmdMock.getEmail()).thenReturn("email");
+         Mockito.when(UpdateUserCmdMock.getTimezone()).thenReturn("timezone");
+-        Mockito.when(userVoMock.getAccountId()).thenReturn(10L);
++        userVoMock = createMockUserVO(10L);
+         Mockito.doReturn(accountMock).when(accountManagerImpl).getAccount(10L);
+         Mockito.when(accountMock.getAccountId()).thenReturn(10L);
+         Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(10L);
+@@ -1214,7 +1214,6 @@
+         long accountId = 2L;
+         Long callerId = 100L;
+ 
+-        UserVO userVO = Mockito.mock(UserVO.class);
+         Account caller = Mockito.mock(Account.class);
+         Mockito.when(caller.getType()).thenReturn(Account.Type.ADMIN);
+         Mockito.when(caller.getId()).thenReturn(callerId);
+@@ -1225,8 +1224,8 @@
+ 
+         Mockito.doNothing().when(accountManagerImpl).checkAccess(nullable(Account.class), Mockito.isNull(), nullable(Boolean.class), nullable(Account.class));
+ 
++         UserVO userVO = createMockUserVO(accountId);
+         Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
+-        Mockito.when(userVO.getAccountId()).thenReturn(accountId);
+         Mockito.doReturn(owner).when(accountManagerImpl).getAccount(accountId);
+         Mockito.when(_accountService.getActiveAccountById(accountId)).thenReturn(owner);
+ 
+@@ -1250,7 +1249,6 @@
+         long accountId = 2L;
+         Long callerId = 100L;
+ 
+-        UserVO userVO = Mockito.mock(UserVO.class);
+         Account caller = Mockito.mock(Account.class);
+         Mockito.when(caller.getType()).thenReturn(Account.Type.DOMAIN_ADMIN);
+         Mockito.when(caller.getId()).thenReturn(callerId);
+@@ -1258,8 +1256,8 @@
+         Mockito.when(owner.getType()).thenReturn(Account.Type.ADMIN);
+         Mockito.doReturn(caller).when(accountManagerImpl).getCurrentCallingAccount();
+ 
++         UserVO userVO = createMockUserVO(accountId);
+         Mockito.when(userDaoMock.findById(userId)).thenReturn(userVO);
+-        Mockito.when(userVO.getAccountId()).thenReturn(accountId);
+         Mockito.doReturn(owner).when(accountManagerImpl).getAccount(accountId);
+ 
+         accountManagerImpl.disableTwoFactorAuthentication(userId, caller, owner);
+@@ -2289,4 +2287,10 @@
+ 
+         accountManagerImpl.checkRoleEscalation(caller, requested);
+     }
++
++    private static UserVO createMockUserVO(long accountId) {
++        UserVO userVO = Mockito.mock(UserVO.class);
++        Mockito.when(userVO.getAccountId()).thenReturn(accountId);
++        return userVO;
++    }
+ }

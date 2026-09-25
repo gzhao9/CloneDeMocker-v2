@@ -1,0 +1,101 @@
+--- a/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
+@@ -185,9 +185,9 @@
+         Mockito.doReturn(accountMockId).when(accountMock).getId();
+         Mockito.doReturn(accountMock).when(accountManagerImpl).getCurrentCallingAccount();
+ 
++        userVoMock = createMockUserVO(userVoIdMock);
+         Mockito.doReturn(accountMockId).when(userVoMock).getAccountId();
+ 
+-        Mockito.doReturn(userVoIdMock).when(userVoMock).getId();
+ 
+         Mockito.lenient().doNothing().when(accountManagerImpl).checkRoleEscalation(accountMock, accountMock);
+         Mockito.doReturn(accountMockId).when(accountVoMock).getId();
+@@ -316,6 +316,7 @@
+         try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+             DeleteUserCmd cmd = Mockito.mock(DeleteUserCmd.class);
+             CallContext callContextMock = Mockito.mock(CallContext.class);
++            userVoMock = createMockUserVO(1L);
+             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+ 
+             Mockito.doReturn(userVoMock).when(callContextMock).getCallingUser();
+@@ -323,7 +324,6 @@
+             Mockito.doReturn(userVoMock).when(accountManagerImpl).getValidUserVO(Mockito.anyLong());
+             Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+             Mockito.doReturn(domainVoMock).when(_domainDao).findById(Mockito.anyLong());
+-            Mockito.doReturn(1L).when(userVoMock).getId();
+ 
+             accountManagerImpl.deleteUser(cmd);
+         }
+@@ -340,8 +340,8 @@
+             Mockito.doReturn(1L).when(cmd).getId();
+             Mockito.doReturn(userVoMock).when(accountManagerImpl).getValidUserVO(Mockito.anyLong());
+             Mockito.doReturn(accountVoMock).when(_accountDao).findById(Mockito.anyLong());
+-            Mockito.doReturn(2L).when(userVoMock).getId();
+-
++
++            userVoMock = createMockUserVO(2L);
+             Mockito.doNothing().when(accountManagerImpl).checkAccountAndAccess(Mockito.any(), Mockito.any());
+             Mockito.doNothing().when(accountManagerImpl).verifyCallerPrivilegeForUserOrAccountOperations(userVoMock);
+             Mockito.doNothing().when(accountManagerImpl).removeUserApiKeys(Mockito.anyLong());
+@@ -593,7 +593,7 @@
+         Mockito.doReturn(apiKey).when(UpdateUserCmdMock).getApiKey();
+         Mockito.doReturn("secretKey").when(UpdateUserCmdMock).getSecretKey();
+ 
+-        Mockito.doReturn(1L).when(userVoMock).getId();
++        UserVO userVoMock = createMockUserVO(1L);
+         Mockito.doReturn(apiKeyPairVOMock).when(apiKeyPairDaoMock).getLastApiKeyCreatedByUser(1L);
+ 
+         User otherUserMock = Mockito.mock(User.class);
+@@ -609,7 +609,7 @@
+         String apiKey = "apiKey";
+         Mockito.doReturn(apiKey).when(UpdateUserCmdMock).getApiKey();
+         Mockito.doReturn("secretKey").when(UpdateUserCmdMock).getSecretKey();
+-        Mockito.doReturn(1L).when(userVoMock).getId();
++        userVoMock = createMockUserVO(1L);
+         accountManagerImpl.validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
+     }
+ 
+@@ -621,7 +621,7 @@
+         String secretKey = "secretKey";
+         Mockito.doReturn(secretKey).when(UpdateUserCmdMock).getSecretKey();
+ 
+-        Mockito.doReturn(1L).when(userVoMock).getId();
++        userVoMock = createMockUserVO(1L);
+         Mockito.doReturn(apiKeyPairVOMock).when(apiKeyPairDaoMock).getLastApiKeyCreatedByUser(1L);
+ 
+         accountManagerImpl.validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
+@@ -788,9 +788,8 @@
+         Mockito.doReturn(domanIdCurrentUser).when(accountMock).getDomainId();
+ 
+         long userVoDuplicatedMockId = 67L;
+-        UserVO userVoDuplicatedMock = Mockito.mock(UserVO.class);
+-        Mockito.doReturn(userVoDuplicatedMockId).when(userVoDuplicatedMock).getId();
+-
++
++        UserVO userVoDuplicatedMock = createMockUserVO(userVoDuplicatedMockId);
+         long accountIdUserDuplicated = 98L;
+ 
+         Mockito.doReturn(accountIdUserDuplicated).when(userVoDuplicatedMock).getAccountId();
+@@ -823,9 +822,8 @@
+         Mockito.doReturn(domanIdCurrentUser).when(accountMock).getDomainId();
+ 
+         long userVoDuplicatedMockId = 67L;
+-        UserVO userVoDuplicatedMock = Mockito.mock(UserVO.class);
++        UserVO userVoDuplicatedMock = createMockUserVO(userVoDuplicatedMockId);
+         Mockito.lenient().doReturn(userName).when(userVoDuplicatedMock).getUsername();
+-        Mockito.doReturn(userVoDuplicatedMockId).when(userVoDuplicatedMock).getId();
+ 
+         long accountIdUserDuplicated = 98L;
+         Mockito.doReturn(accountIdUserDuplicated).when(userVoDuplicatedMock).getAccountId();
+@@ -2289,4 +2287,10 @@
+ 
+         accountManagerImpl.checkRoleEscalation(caller, requested);
+     }
++
++    private static UserVO createMockUserVO(long id) {
++        UserVO userVoMock = Mockito.mock(UserVO.class);
++        Mockito.doReturn(id).when(userVoMock).getId();
++        return userVoMock;
++    }
+ }

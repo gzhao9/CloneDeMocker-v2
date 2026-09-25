@@ -1,0 +1,43 @@
+--- a/server/src/test/java/com/cloud/api/ApiResponseHelperTest.java
++++ b/server/src/test/java/com/cloud/api/ApiResponseHelperTest.java
+@@ -763,9 +763,9 @@
+             Mockito.when(domainVOMock.getPath()).thenReturn(expected.getDomainPath());
+             Mockito.when(domainVOMock.getUuid()).thenReturn(expected.getDomainId());
+ 
++            userVOMock = MockUserVO.createMockUserVO(expected.getUserId());
+             Mockito.when(apiResponseHelper.findUserById(2L)).thenReturn(userVOMock);
+             Mockito.when(userVOMock.getUsername()).thenReturn(expected.getUser());
+-            Mockito.when(userVOMock.getUuid()).thenReturn(expected.getUserId());
+ 
+             Mockito.when(ApiDBUtils.findAccountById(2L)).thenReturn(accountVOMock);
+             Mockito.when(accountVOMock.getAccountName()).thenReturn(expected.getAccount());
+--- a/server/src/test/java/com/cloud/api/ApiServerTest.java
++++ b/server/src/test/java/com/cloud/api/ApiServerTest.java
+@@ -248,8 +248,7 @@
+         Mockito.when(account.getType()).thenReturn(Account.Type.NORMAL);
+         Mockito.when(accountManager.getAccount(200L)).thenReturn(account);
+ 
+-        UserVO userVO = mock(UserVO.class);
+-        Mockito.when(userVO.getUuid()).thenReturn("user-uuid");
++        UserVO userVO = com.cloud.api.MockUserVO.createMockUserVO("user-uuid");
+         Mockito.when(accountManager.getActiveUser(100L)).thenReturn(userVO);
+ 
+         Mockito.when(session.getAttributeNames()).thenReturn(Collections.enumeration(List.of(PASSWORD_CHANGE_REQUIRED)));
+--- a/server/src/test/java/com/cloud/api/MockUserVO.java
++++ b/server/src/test/java/com/cloud/api/MockUserVO.java
+@@ -0,0 +1,15 @@
++package com.cloud.api;
++
++import com.cloud.user.UserVO;
++import org.mockito.Mockito;
++
++public final class MockUserVO {
++    private MockUserVO() {
++    }
++
++    public static UserVO createMockUserVO(String uuid) {
++        UserVO userVO = Mockito.mock(UserVO.class);
++        Mockito.when(userVO.getUuid()).thenReturn(uuid);
++        return userVO;
++    }
++}
