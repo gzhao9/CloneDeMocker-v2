@@ -1,0 +1,176 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -1362,7 +1362,7 @@
+     public void testUpdateVncPasswordIfItHasChangedNewPassword() {
+         String vncPassword = "12345678";
+         String newPassword = "87654321";
+-        Mockito.when(userVmVoMock.getId()).thenReturn(vmId);
++        userVmVoMock = createMockUserVm(vmId);
+         userVmManagerImpl.updateVncPasswordIfItHasChanged(vncPassword, newPassword, virtualMachineProfile);
+         Mockito.verify(userVmDao).findById(vmId);
+         Mockito.verify(userVmDao).update(vmId, userVmVoMock);
+@@ -1822,8 +1822,7 @@
+         try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class);
+              MockedStatic<UsageEventUtils> ignoredEventUtils = mockStatic(UsageEventUtils.class)
+         ) {
+-            UserVmVO vm = mock(UserVmVO.class);
+-            when(vm.getId()).thenReturn(vmId);
++            UserVmVO vm = createMockUserVm(vmId);
+             when(vm.getAccountId()).thenReturn(accountId);
+             when(vm.getHostId()).thenReturn(null);
+             when(vm.getLastHostId()).thenReturn(lastHostId);
+@@ -1984,8 +1983,7 @@
+     public void testGetRootVolumeSizeForVmRestore() {
+         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+         Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+-        Mockito.when(userVm.getId()).thenReturn(1L);
++        UserVmVO userVm = createMockUserVm(1L);
+         DiskOffering diskOffering = Mockito.mock(DiskOffering.class);
+         Mockito.when(diskOffering.isCustomized()).thenReturn(false);
+         Mockito.when(diskOffering.getDiskSize()).thenReturn(8L * GiB_TO_BYTES);
+@@ -2002,8 +2000,7 @@
+     public void testGetRootVolumeSizeForVmRestoreNullDiskOfferingAndEmptyDetails() {
+         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+         Mockito.when(template.getSize()).thenReturn(10L * GiB_TO_BYTES);
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+-        Mockito.when(userVm.getId()).thenReturn(1L);
++        UserVmVO userVm = createMockUserVm(1L);
+         DiskOffering diskOffering = null;
+         Map<String, String> details = new HashMap<>();
+         VMInstanceDetailVO vmRootDiskSizeDetail = Mockito.mock(VMInstanceDetailVO.class);
+@@ -3971,8 +3968,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testApplyLeaseOnUpdateInstanceForNoLease() {
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+-        when(userVm.getId()).thenReturn(vmId);
++        UserVmVO userVm = createMockUserVm(vmId);
+         when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(5, VMLeaseManager.LeaseActionExecution.DISABLED.name()));
+         userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+@@ -3989,8 +3985,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testApplyLeaseOnUpdateInstanceForDisabledLeaseInstance() {
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+-        when(userVm.getId()).thenReturn(vmId);
++        UserVmVO userVm = createMockUserVm(vmId);
+         when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(5, VMLeaseManager.LeaseActionExecution.DISABLED.name()));
+         userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+         Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
+@@ -3998,7 +3993,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testApplyLeaseOnUpdateInstanceForLeaseExpired() {
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
++        UserVmVO userVm = createMockUserVm(0L);
+         when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(-2, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+         userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+@@ -4006,8 +4001,7 @@
+ 
+     @Test
+     public void testApplyLeaseOnUpdateInstanceToRemoveLease() {
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+-        when(userVm.getId()).thenReturn(vmId);;
++        UserVmVO userVm = createMockUserVm(vmId);
+         when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(2, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+         try (MockedStatic<ActionEventUtils> ignored = mockStatic(ActionEventUtils.class)) {
+             Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+@@ -4023,8 +4017,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testApplyLeaseOnUpdateInstanceToRemoveLeaseForExpired() {
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+-        when(userVm.getId()).thenReturn(vmId);
++        UserVmVO userVm = createMockUserVm(vmId);
+         when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(-2, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+         userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, -1, VMLeaseManager.ExpiryAction.STOP);
+         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+@@ -4273,8 +4266,7 @@
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+         when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+ 
+-        UserVmVO createdVm = mock(UserVmVO.class);
+-        when(createdVm.getId()).thenReturn(2L);
++        UserVmVO createdVm = createMockUserVm(2L);
+         Mockito.doReturn(createdVm).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                 any(), any(), any(), any(), eq(true), any(), any(), any(), any(), any());
+@@ -4341,8 +4333,7 @@
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+         when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+ 
+-        UserVmVO createdVm = mock(UserVmVO.class);
+-        when(createdVm.getId()).thenReturn(2L);
++        UserVmVO createdVm = createMockUserVm(2L);
+         Mockito.doReturn(createdVm).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                 any(), any(), any(), any(), eq(true), any(), any(), any(), any(), any());
+@@ -4393,7 +4384,7 @@
+ 
+     @Test
+     public void testUnmanageUserVMUnsupportedHypervisor() {
+-        when(userVmVoMock.getId()).thenReturn(vmId);
++        userVmVoMock = createMockUserVm(vmId);
+         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+         when(userVmDao.acquireInLockTable(vmId)).thenReturn(userVmVoMock);
+         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Stopped);
+@@ -4410,8 +4401,8 @@
+ 
+     @Test
+     public void testUnmanageUserVMItManagerReturnsFalse() {
++        userVmVoMock = createMockUserVm(vmId);
+         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+-        when(userVmVoMock.getId()).thenReturn(vmId);
+         when(userVmVoMock.getUuid()).thenReturn(vmUuid);
+         when(userVmDao.acquireInLockTable(vmId)).thenReturn(userVmVoMock);
+         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+@@ -4456,7 +4447,7 @@
+     @Test
+     public void testUnmanageUserVMSuccess() {
+         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+-        when(userVmVoMock.getId()).thenReturn(vmId);
++        userVmVoMock = createMockUserVm(vmId);
+         when(userVmVoMock.getUuid()).thenReturn(vmUuid);
+         when(userVmDao.acquireInLockTable(vmId)).thenReturn(userVmVoMock);
+         when(userVmVoMock.getState()).thenReturn(VirtualMachine.State.Running);
+@@ -4495,7 +4486,7 @@
+ 
+     @Test
+     public void updateVmExtraConfigAddsConfigWhenValidAndEnabled() {
+-        UserVmVO userVm = mock(UserVmVO.class);
++        UserVmVO userVm = createMockUserVm(1L);
+         when(userVm.getUuid()).thenReturn("test-uuid");
+         when(userVm.getAccountId()).thenReturn(1L);
+         when(userVm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+@@ -4693,7 +4684,7 @@
+ 
+     @Test
+     public void verifyVmLimits_fixedOffering_throwsException() {
+-        when(userVmVoMock.getId()).thenReturn(1L);
++        userVmVoMock = createMockUserVm(1L);
+         when(userVmVoMock.getServiceOfferingId()).thenReturn(1L);
+         when(accountDao.findById(anyLong())).thenReturn(callerAccount);
+         ServiceOfferingVO serviceOffering = getMockedServiceOffering(false, false);
+@@ -4710,7 +4701,7 @@
+ 
+     @Test
+     public void verifyVmLimits_constrainedOffering_throwsException() {
+-        when(userVmVoMock.getId()).thenReturn(1L);
++        UserVmVO userVmVoMock = createMockUserVm(1L);
+         when(userVmVoMock.getServiceOfferingId()).thenReturn(1L);
+         when(accountDao.findById(anyLong())).thenReturn(callerAccount);
+         ServiceOfferingVO serviceOffering = getMockedServiceOffering(true, false);
+@@ -4740,4 +4731,10 @@
+         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+     }
++
++    private static UserVmVO createMockUserVm(long userVmId) {
++        UserVmVO userVm = mock(UserVmVO.class);
++        when(userVm.getId()).thenReturn(userVmId);
++        return userVm;
++    }
+ }

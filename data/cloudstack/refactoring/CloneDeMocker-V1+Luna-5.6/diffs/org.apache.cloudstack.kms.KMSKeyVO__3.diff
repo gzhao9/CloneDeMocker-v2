@@ -1,0 +1,126 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyCreationTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyCreationTest.java
+@@ -127,8 +127,7 @@
+                 .thenReturn("test-kek-label");
+ 
+         // Mock DAO persist operations
+-        KMSKeyVO mockKey = mock(KMSKeyVO.class);
+-        when(mockKey.getId()).thenReturn(1L);
++        KMSKeyVO mockKey = MockKMSKeyVO.createMockKmsKeyVO(1L);
+         when(kmsKeyDao.persist(any(KMSKeyVO.class))).thenReturn(mockKey);
+ 
+         KMSKekVersionVO mockVersion = mock(KMSKekVersionVO.class);
+@@ -186,8 +185,7 @@
+         when(kmsProvider.createKek(any(KeyPurpose.class), anyString(), anyInt(), eq(hsmProfileId)))
+                 .thenReturn("test-kek-label");
+ 
+-        KMSKeyVO mockKey = mock(KMSKeyVO.class);
+-        when(mockKey.getId()).thenReturn(1L);
++        KMSKeyVO mockKey = MockKMSKeyVO.createMockKmsKeyVO(1L);
+         when(kmsKeyDao.persist(any(KMSKeyVO.class))).thenReturn(mockKey);
+ 
+         KMSKekVersionVO mockVersion = mock(KMSKekVersionVO.class);
+@@ -213,4 +211,15 @@
+             assertEquals("test-kek-label", createdVersion.getKekLabel());
+         }
+     }
++
++    public final class MockKMSKeyVO {
++        private MockKMSKeyVO() {
++        }
++
++        public static org.apache.cloudstack.kms.KMSKeyVO createMockKmsKeyVO(long id) {
++            org.apache.cloudstack.kms.KMSKeyVO mockKey = mock(org.apache.cloudstack.kms.KMSKeyVO.class);
++            when(mockKey.getId()).thenReturn(id);
++            return mockKey;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
+@@ -272,8 +272,7 @@
+ 
+     @Test
+     public void testUpdateUserKMSKey_UpdatesName() {
+-        KMSKeyVO key = mock(KMSKeyVO.class);
+-        when(key.getId()).thenReturn(1L);
++        KMSKeyVO key = MockKMSKeyVO.createMockKmsKeyVO(1L);
+         when(key.getName()).thenReturn("old-name");
+ 
+         kmsManager.updateUserKMSKey(key, "new-name", null, null);
+@@ -294,8 +293,7 @@
+ 
+     @Test
+     public void testUpdateUserKMSKey_UpdatesDescription() {
+-        KMSKeyVO key = mock(KMSKeyVO.class);
+-        when(key.getId()).thenReturn(1L);
++        KMSKeyVO key = MockKMSKeyVO.createMockKmsKeyVO(1L);
+         when(key.getDescription()).thenReturn("old");
+ 
+         kmsManager.updateUserKMSKey(key, null, "new-desc", null);
+@@ -306,8 +304,7 @@
+ 
+     @Test
+     public void testUpdateUserKMSKey_TogglesEnabled() {
+-        KMSKeyVO key = mock(KMSKeyVO.class);
+-        when(key.getId()).thenReturn(1L);
++        KMSKeyVO key = MockKMSKeyVO.createMockKmsKeyVO(1L);
+         when(key.isEnabled()).thenReturn(true);
+ 
+         kmsManager.updateUserKMSKey(key, null, null, false);
+@@ -318,8 +315,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testDeleteUserKMSKey_ThrowsWhenWrappedKeysExist() throws KMSException {
+-        KMSKeyVO key = mock(KMSKeyVO.class);
+-        when(key.getId()).thenReturn(1L);
++        KMSKeyVO key = MockKMSKeyVO.createMockKmsKeyVO(1L);
+         when(kmsWrappedKeyDao.countByKmsKeyId(1L)).thenReturn(3L);
+ 
+         kmsManager.deleteUserKMSKey(key);
+@@ -327,8 +323,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testDeleteUserKMSKey_ThrowsWhenVolumesExist() throws KMSException {
+-        KMSKeyVO key = mock(KMSKeyVO.class);
+-        when(key.getId()).thenReturn(1L);
++        KMSKeyVO key = MockKMSKeyVO.createMockKmsKeyVO(1L);
+         when(kmsWrappedKeyDao.countByKmsKeyId(1L)).thenReturn(0L);
+         when(volumeDao.existsWithKmsKey(1L)).thenReturn(true);
+ 
+@@ -403,8 +398,7 @@
+     public void testDeleteKMSKeysByAccountId_DeletesAllKeysAndKeks() {
+         Long accountId = 1L;
+ 
+-        KMSKeyVO key = mock(KMSKeyVO.class);
+-        when(key.getId()).thenReturn(10L);
++        KMSKeyVO key = MockKMSKeyVO.createMockKmsKeyVO(10L);
+         when(kmsKeyDao.listByAccount(accountId, null, null)).thenReturn(List.of(key));
+         when(kmsKeyDao.remove(10L)).thenReturn(true);
+ 
+@@ -431,8 +425,7 @@
+     public void testDeleteKMSKeysByAccountId_ToleratesKekProviderFailure() {
+         Long accountId = 1L;
+ 
+-        KMSKeyVO key = mock(KMSKeyVO.class);
+-        when(key.getId()).thenReturn(10L);
++        KMSKeyVO key = MockKMSKeyVO.createMockKmsKeyVO(10L);
+         when(kmsKeyDao.listByAccount(accountId, null, null)).thenReturn(List.of(key));
+         when(kmsKeyDao.remove(10L)).thenReturn(true);
+ 
+@@ -454,4 +447,15 @@
+             verify(kmsKeyDao).remove(10L);
+         }
+     }
++
++    public final class MockKMSKeyVO {
++        private MockKMSKeyVO() {
++        }
++
++        public static org.apache.cloudstack.kms.KMSKeyVO createMockKmsKeyVO(long id) {
++            org.apache.cloudstack.kms.KMSKeyVO mockKey = mock(org.apache.cloudstack.kms.KMSKeyVO.class);
++            when(mockKey.getId()).thenReturn(id);
++            return mockKey;
++        }
++    }
+ }

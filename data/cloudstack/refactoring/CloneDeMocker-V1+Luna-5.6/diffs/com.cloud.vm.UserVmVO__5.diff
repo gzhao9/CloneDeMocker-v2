@@ -1,0 +1,95 @@
+--- a/server/src/test/java/com/cloud/vm/FirstFitPlannerTest.java
++++ b/server/src/test/java/com/cloud/vm/FirstFitPlannerTest.java
+@@ -324,7 +324,7 @@
+     private void initializeForTest(VirtualMachineProfileImpl vmProfile, DataCenterDeployment plan, ExcludeList avoids) {
+         DataCenterVO mockDc = mock(DataCenterVO.class);
+         VMInstanceVO vm = mock(VMInstanceVO.class);
+-        UserVmVO userVm = mock(UserVmVO.class);
++        UserVmVO userVm = createMockUserVm(accountId);
+         ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+ 
+         AccountVO account = mock(AccountVO.class);
+@@ -333,8 +333,6 @@
+         when(vmProfile.getOwner()).thenReturn(account);
+         when(vmProfile.getVirtualMachine()).thenReturn(vm);
+         when(vmProfile.getId()).thenReturn(12L);
+-        when(vmDao.findById(12L)).thenReturn(userVm);
+-        when(userVm.getAccountId()).thenReturn(accountId);
+ 
+         when(vm.getDataCenterId()).thenReturn(dataCenterId);
+         when(dcDao.findById(1L)).thenReturn(mockDc);
+@@ -640,4 +638,15 @@
+         when(memCapacity2.getCapacityType()).thenReturn(CapacityVO.CAPACITY_TYPE_MEMORY);
+         return Arrays.asList(cpuCapacity1, memCapacity1, cpuCapacity2, memCapacity2);
+     }
++
++    public final class MockUserVmVO {
++        private MockUserVmVO() {
++        }
++
++        public static UserVmVO createMockUserVm(long accountId) {
++            UserVmVO userVm = mock(UserVmVO.class);
++            when(userVm.getAccountId()).thenReturn(accountId);
++            return userVm;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -1633,8 +1633,8 @@
+         long accountId = 2L;
+         long newTemplateId = 2L;
+         when(accountMock.getId()).thenReturn(userId);
++        userVmVoMock = MockUserVmVO.createMockUserVm(accountId);
+         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+-        when(userVmVoMock.getAccountId()).thenReturn(accountId);
+         when(accountDao.findById(accountId)).thenReturn(null);
+ 
+         userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+@@ -1646,8 +1646,8 @@
+         long accountId = 2L;
+         long newTemplateId = 2L;
+         when(accountMock.getId()).thenReturn(userId);
++        userVmVoMock = MockUserVmVO.createMockUserVm(accountId);
+         when(userVmDao.findById(vmId)).thenReturn(userVmVoMock);
+-        when(userVmVoMock.getAccountId()).thenReturn(accountId);
+         when(accountDao.findById(accountId)).thenReturn(callerAccount);
+         when(callerAccount.getState()).thenReturn(Account.State.DISABLED);
+ 
+@@ -4495,9 +4495,8 @@
+ 
+     @Test
+     public void updateVmExtraConfigAddsConfigWhenValidAndEnabled() {
+-        UserVmVO userVm = mock(UserVmVO.class);
++        UserVmVO userVm = MockUserVmVO.createMockUserVm(1L);
+         when(userVm.getUuid()).thenReturn("test-uuid");
+-        when(userVm.getAccountId()).thenReturn(1L);
+         when(userVm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+         doNothing().when(userVmManagerImpl).persistExtraConfigKvm(anyString(), eq(userVm));
+         updateDefaultConfigValue(UserVmManagerImpl.EnableAdditionalVmConfig, true, false);
+@@ -4510,8 +4509,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void updateVmExtraConfigThrowsExceptionWhenConfigDisabled() {
+-        UserVmVO userVm = mock(UserVmVO.class);
+-        when(userVm.getAccountId()).thenReturn(1L);
++        UserVmVO userVm = MockUserVmVO.createMockUserVm(1L);
+         updateDefaultConfigValue(UserVmManagerImpl.EnableAdditionalVmConfig, false, false);
+ 
+         userVmManagerImpl.updateVmExtraConfig(userVm, "validConfig", false);
+@@ -4740,4 +4738,15 @@
+         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+     }
++
++    public final class MockUserVmVO {
++        private MockUserVmVO() {
++        }
++
++        public static UserVmVO createMockUserVm(long accountId) {
++            UserVmVO userVm = mock(UserVmVO.class);
++            when(userVm.getAccountId()).thenReturn(accountId);
++            return userVm;
++        }
++    }
+ }

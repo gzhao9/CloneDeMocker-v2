@@ -1,0 +1,113 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -275,6 +275,8 @@
+     @Mock
+     private UserVmVO userVmVoMock;
+ 
++    private UserVmVO userVmMock;
++
+     @Mock
+     private NetworkModel networkModel;
+ 
+@@ -527,6 +529,7 @@
+ 
+     @Before
+     public void beforeTest() {
++        userVmMock = Mockito.mock(UserVmVO.class);
+         userVmManagerImpl.resourceLimitService = resourceLimitMgr;
+ 
+         Mockito.when(updateVmCommand.getId()).thenReturn(vmId);
+@@ -3931,41 +3934,36 @@
+ 
+     @Test
+     public void testApplyLeaseOnCreateInstanceFeatureEnabled() {
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+-        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
++        userVmManagerImpl.applyLeaseOnCreateInstance(userVmMock, 10, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
+         Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
+     }
+ 
+     @Test
+     public void testApplyLeaseOnCreateInstanceNegativeLease() {
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+-        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, -1, VMLeaseManager.ExpiryAction.DESTROY, null);
++        userVmManagerImpl.applyLeaseOnCreateInstance(userVmMock, -1, VMLeaseManager.ExpiryAction.DESTROY, null);
+         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+     }
+ 
+     @Test
+     public void testApplyLeaseOnCreateInstanceFromSvcOfferingWithoutLease() {
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+-        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, null, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
++        userVmManagerImpl.applyLeaseOnCreateInstance(userVmMock, null, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
+         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+     }
+ 
+     @Test
+     public void testApplyLeaseOnCreateInstanceFromSvcOfferingWithLease() {
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+         when(svcOfferingMock.getLeaseDuration()).thenReturn(10);
+-        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, null, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
++        userVmManagerImpl.applyLeaseOnCreateInstance(userVmMock, null, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
+         Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
+     }
+ 
+     @Test
+     public void testApplyLeaseOnCreateInstanceNullExpiryAction() {
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+-        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10, null, svcOfferingMock);
++        userVmManagerImpl.applyLeaseOnCreateInstance(userVmMock, 10, null, svcOfferingMock);
+         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+     }
+ 
+@@ -3998,9 +3996,8 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testApplyLeaseOnUpdateInstanceForLeaseExpired() {
+-        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+         when(vmInstanceDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(-2, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+-        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
++        userVmManagerImpl.applyLeaseOnUpdateInstance(userVmMock, 10, VMLeaseManager.ExpiryAction.STOP);
+         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+     }
+ 
+@@ -4283,8 +4280,7 @@
+         existingDetails.put("existingKey", "existingValue");
+         when(vmInstanceDetailsDao.listDetailsKeyPairs(2L)).thenReturn(existingDetails);
+ 
+-        UserVmVO vmVO = mock(UserVmVO.class);
+-        when(userVmDao.findById(2L)).thenReturn(vmVO);
++        when(userVmDao.findById(2L)).thenReturn(userVmMock);
+ 
+         UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
+ 
+@@ -4519,9 +4515,8 @@
+ 
+     @Test
+     public void updateVmExtraConfigDoesNothingWhenExtraConfigIsBlank() {
+-        UserVmVO userVm = mock(UserVmVO.class);
+-
+-        userVmManagerImpl.updateVmExtraConfig(userVm, "", false);
++
++        userVmManagerImpl.updateVmExtraConfig(userVmMock, "", false);
+ 
+         verify(vmInstanceDetailsDao, never()).removeDetailsWithPrefix(anyLong(), anyString());
+         verify(userVmManagerImpl, never()).addExtraConfig(any(UserVmVO.class), anyString());
+@@ -4730,12 +4725,11 @@
+     public void getRootVolumeSizeForVmRestoreAppliesMaxIopsToTheMaxIopsField() {
+         VolumeVO volume = new VolumeVO(Volume.Type.ROOT, "root", 1L, 1L, 1L, 1L,
+                 com.cloud.storage.Storage.ProvisioningType.THIN, 10L, null, null, null);
+-        UserVmVO restoreVm = Mockito.mock(UserVmVO.class);
+         Map<String, String> details = new HashMap<>();
+         details.put(ApiConstants.MIN_IOPS, "500");
+         details.put(ApiConstants.MAX_IOPS, "2000");
+ 
+-        userVmManagerImpl.getRootVolumeSizeForVmRestore(volume, null, restoreVm, null, details, true);
++        userVmManagerImpl.getRootVolumeSizeForVmRestore(volume, null, userVmMock, null, details, true);
+ 
+         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());

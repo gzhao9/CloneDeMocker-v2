@@ -1,0 +1,41 @@
+--- a/plugins/user-authenticators/oauth2/src/test/java/org/apache/cloudstack/oauth2/OAuth2UserAuthenticatorTest.java
++++ b/plugins/user-authenticators/oauth2/src/test/java/org/apache/cloudstack/oauth2/OAuth2UserAuthenticatorTest.java
+@@ -88,12 +88,11 @@
+ 
+         UserAccount userAccount = mock(UserAccount.class);
+         UserVO user = mock(UserVO.class);
+-        UserOAuth2Authenticator userOAuth2Authenticator = mock(UserOAuth2Authenticator.class);
+ 
+         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
+         when(userDao.getUser(userAccount.getId())).thenReturn(user);
++        UserOAuth2Authenticator userOAuth2Authenticator = createUserOAuth2Authenticator(email[0], secretCode[0], domainId, true);
+         when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
+-        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId)).thenReturn(true);
+ 
+         Map<String, Object[]> requestParameters = new HashMap<>();
+         requestParameters.put("provider", provider);
+@@ -121,12 +120,11 @@
+ 
+         UserAccount userAccount = mock(UserAccount.class);
+         UserVO user = mock(UserVO.class);
+-        UserOAuth2Authenticator userOAuth2Authenticator = mock(UserOAuth2Authenticator.class);
+ 
+         when(userAccountDao.getUserAccount(username, domainId)).thenReturn(userAccount);
+         when(userDao.getUser(userAccount.getId())).thenReturn(user);
++        UserOAuth2Authenticator userOAuth2Authenticator = createUserOAuth2Authenticator(email[0], secretCode[0], domainId, false);
+         when(userOAuth2mgr.getUserOAuth2AuthenticationProvider(provider[0])).thenReturn(userOAuth2Authenticator);
+-        when(userOAuth2Authenticator.verifyUser(email[0], secretCode[0], domainId)).thenReturn(false);
+ 
+         Map<String, Object[]> requestParameters = new HashMap<>();
+         requestParameters.put("provider", provider);
+@@ -212,4 +210,10 @@
+         assertNull(result.second());
+         verify(userOAuth2mgr, never()).getUserOAuth2AuthenticationProvider(anyString());
+     }
++
++    private static UserOAuth2Authenticator createUserOAuth2Authenticator(String email, String secretCode, Long domainId, boolean verifyUserResult) {
++        UserOAuth2Authenticator userOAuth2Authenticator = mock(UserOAuth2Authenticator.class);
++        when(userOAuth2Authenticator.verifyUser(email, secretCode, domainId)).thenReturn(verifyUserResult);
++        return userOAuth2Authenticator;
++    }
+ }

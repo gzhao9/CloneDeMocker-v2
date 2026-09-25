@@ -1,0 +1,40 @@
+--- a/engine/schema/src/test/java/com/cloud/host/dao/HostDaoImplTest.java
++++ b/engine/schema/src/test/java/com/cloud/host/dao/HostDaoImplTest.java
+@@ -145,10 +145,8 @@
+         Long zoneId = 1L;
+         List<Hypervisor.HypervisorType> mockResults = List.of(Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.XenServer);
+         HostVO host = mock(HostVO.class);
+-        GenericSearchBuilder<HostVO, String> sb = mock(GenericSearchBuilder.class);
+-        when(sb.entity()).thenReturn(host);
+         SearchCriteria<String> sc = mock(SearchCriteria.class);
+-        when(sb.create()).thenReturn(sc);
++        GenericSearchBuilder<HostVO, String> sb = createGenericSearchBuilder(host, sc);
+         doReturn(sb).when(hostDao).createSearchBuilder(String.class);
+         doReturn(mockResults.stream().map(h -> h.name()).collect(Collectors.toList())).when(hostDao)
+                 .customSearch(any(SearchCriteria.class), any());
+@@ -237,10 +235,8 @@
+         Long clusterId = 1L;
+         List<CPU.CPUArch> mockResults = List.of(CPU.CPUArch.amd64, CPU.CPUArch.arm64);
+         HostVO host = mock(HostVO.class);
+-        GenericSearchBuilder<HostVO, String> sb = mock(GenericSearchBuilder.class);
+-        when(sb.entity()).thenReturn(host);
+         SearchCriteria<String> sc = mock(SearchCriteria.class);
+-        when(sb.create()).thenReturn(sc);
++        GenericSearchBuilder<HostVO, String> sb = createGenericSearchBuilder(host, sc);
+         doReturn(sb).when(hostDao).createSearchBuilder(String.class);
+         doReturn(mockResults.stream().map(h -> h.getType()).collect(Collectors.toList())).when(hostDao)
+                 .customSearch(any(SearchCriteria.class), any());
+@@ -249,4 +245,13 @@
+         Mockito.verify(sc).setParameters("clusterId", clusterId);
+         Mockito.verify(sc).setParameters("type", Host.Type.Routing);
+     }
++
++    private static GenericSearchBuilder<HostVO, String> createGenericSearchBuilder(
++            HostVO host,
++            SearchCriteria<String> searchCriteria) {
++        GenericSearchBuilder<HostVO, String> sb = mock(GenericSearchBuilder.class);
++        when(sb.entity()).thenReturn(host);
++        when(sb.create()).thenReturn(searchCriteria);
++        return sb;
++    }
+ }

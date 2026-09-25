@@ -1,0 +1,55 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
+@@ -26,6 +26,7 @@
+ import org.apache.cloudstack.framework.kms.KeyPurpose;
+ import org.apache.cloudstack.kms.dao.HSMProfileDao;
+ import org.apache.cloudstack.kms.dao.KMSKeyDao;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.mockito.InjectMocks;
+@@ -67,6 +68,13 @@
+     @Mock
+     private AccountManager accountManager;
+ 
++    private KMSKeyVO kmsKey;
++
++    @Before
++    public void setUp() {
++        kmsKey = mock(KMSKeyVO.class);
++    }
++
+     @Test
+     public void testHasPermission_ReturnsFalseWhenCallerAccountIdIsNull() {
+         assertFalse(kmsManager.hasPermission(null, mock(KMSKey.class)));
+@@ -117,24 +125,22 @@
+ 
+     @Test(expected = PermissionDeniedException.class)
+     public void testFindKMSKeyAndCheckAccess_ThrowsWhenPermissionDenied() {
+-        KMSKeyVO key = mock(KMSKeyVO.class);
+-        Account caller = mock(Account.class);
+-        when(kmsKeyDao.findById(1L)).thenReturn(key);
++        Account caller = mock(Account.class);
++        when(kmsKeyDao.findById(1L)).thenReturn(kmsKey);
+         doThrow(new PermissionDeniedException("denied"))
+-                .when(accountManager).checkAccess(caller, null, true, key);
++                .when(accountManager).checkAccess(caller, null, true, kmsKey);
+ 
+         kmsManager.findKMSKeyAndCheckAccess(1L, caller);
+     }
+ 
+     @Test
+     public void testFindKMSKeyAndCheckAccess_ReturnsKeyOnSuccess() {
+-        KMSKeyVO key = mock(KMSKeyVO.class);
+-        Account caller = mock(Account.class);
+-        when(kmsKeyDao.findById(1L)).thenReturn(key);
++        Account caller = mock(Account.class);
++        when(kmsKeyDao.findById(1L)).thenReturn(kmsKey);
+ 
+         KMSKeyVO result = kmsManager.findKMSKeyAndCheckAccess(1L, caller);
+ 
+-        assertSame(key, result);
++        assertSame(kmsKey, result);
+     }
+ 
+     @Test
