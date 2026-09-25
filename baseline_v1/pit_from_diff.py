@@ -95,8 +95,14 @@ def apply_diff(project_root: Path, diff_text: str) -> dict[str, str]:
                 text = source.read_text(encoding="utf-8").replace("\r\n", "\n")
                 (work / rel).write_text(text, encoding="utf-8", newline="\n")
         (work / "change.diff").write_text(diff_text.replace("\r\n", "\n"), encoding="utf-8", newline="\n")
-        done = subprocess.run(["git", "apply", "--whitespace=nowarn", "--recount", "change.diff"],
-                              cwd=work, capture_output=True, text=True)
+        # Plain first: --recount ignores hunk counts, so in a multi-file diff it swallows the
+        # next file's header as a removed line (E-003: 88 of 467 dubbo diffs). It stays only as
+        # a fallback for a diff whose counts are off.
+        for extra in ([], ["--recount"]):
+            done = subprocess.run(["git", "apply", "--whitespace=nowarn", *extra, "change.diff"],
+                                  cwd=work, capture_output=True, text=True)
+            if done.returncode == 0:
+                break
         if done.returncode != 0:
             raise RuntimeError(f"diff does not apply: {done.stderr.strip()[:300]}")
         return {rel: (work / rel).read_text(encoding="utf-8") for rel in targets if (work / rel).is_file()}
