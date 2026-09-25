@@ -89,6 +89,18 @@ None of these raise. Each one was found only after it had already written someth
 - **Windows: `CREATE_NO_WINDOW` and `DETACHED_PROCESS` are mutually exclusive.** Passing both
   gives every child its own visible console window; `DETACHED_PROCESS` wins. Pass
   `CREATE_NO_WINDOW` alone.
+- **A failed publish is silent, and the lane looks healthy.** `drive.sync()` writes to
+  `validation/results/pair-issues.log`, returns `False`, and the worker goes on grading; nothing
+  reaches the lane log. GitHub rejected every push of the CloudStack pair dataset for 35 minutes
+  (the results file passed its 100 MB hard limit) and the only visible symptom was a published-row
+  count that stopped moving while local rows kept growing. Watch `pair-issues.log`, and compare
+  local row counts against `git show <remote>/main:<file>` rather than trusting that a running
+  lane is a publishing lane.
+- **The published results files have no LFS rule and are near GitHub's limit.**
+  `.gitattributes` tracks `data/cloudstack/detection.json` in LFS but not
+  `refactoring-results.json`. CloudStack's V2 file reached 102 MB at 1,682 rows, ~60 KB per row,
+  of which the `harness` field (full Maven command arrays with absolute paths) is nearly all.
+  Check the size before starting a run that will add thousands of rows to one file.
 - **Check which command produced which line.** Running `git ls-tree <remote>` and a local `ls`
   in one block and reading the joined output as one source is how a letter that had never been
   pushed was reported as delivered.
