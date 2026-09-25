@@ -1,0 +1,98 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -4829,7 +4829,7 @@
+     @Test
+     public void testResizeVolumeCommand() {
+         final String path = "nfs:/127.0.0.1/storage/secondary";
+-        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
++        final StorageFilerTO pool = createMockStorageFilerTO(StoragePoolType.RBD);
+         final Long currentSize = 100l;
+         final Long newSize = 200l;
+         final boolean shrinkOk = true;
+@@ -4848,7 +4848,6 @@
+         final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+         info.state = state;
+ 
+-        when(pool.getType()).thenReturn(StoragePoolType.RBD);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
+@@ -4889,7 +4888,7 @@
+     @Test
+     public void testResizeVolumeCommandLinstorNotifyOnly() {
+         final String path = "/dev/drbd1000";
+-        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
++        final StorageFilerTO pool = createMockStorageFilerTO(StoragePoolType.Linstor);
+         final Long currentSize = 100l;
+         final Long newSize = 200l;
+         final boolean shrinkOk = false;
+@@ -4907,7 +4906,6 @@
+         final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+         info.state = state;
+ 
+-        when(pool.getType()).thenReturn(StoragePoolType.Linstor);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
+@@ -4962,7 +4960,7 @@
+     @Test
+     public void testResizeVolumeCommandShrink() {
+         final String path = "nfs:/127.0.0.1/storage/secondary";
+-        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
++        final StorageFilerTO pool = createMockStorageFilerTO(StoragePoolType.Filesystem);
+         final Long currentSize = 100l;
+         final Long newSize = 200l;
+         final boolean shrinkOk = true;
+@@ -4974,7 +4972,6 @@
+         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+ 
+-        when(pool.getType()).thenReturn(StoragePoolType.Filesystem);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
+@@ -4992,7 +4989,7 @@
+     @Test
+     public void testResizeVolumeCommandException() {
+         final String path = "nfs:/127.0.0.1/storage/secondary";
+-        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
++        final StorageFilerTO pool = createMockStorageFilerTO(StoragePoolType.RBD);
+         final Long currentSize = 100l;
+         final Long newSize = 200l;
+         final boolean shrinkOk = false;
+@@ -5005,7 +5002,6 @@
+         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+-        when(pool.getType()).thenReturn(StoragePoolType.RBD);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+         when(storagePool.getPhysicalDisk(path)).thenReturn(vol);
+@@ -5040,7 +5036,7 @@
+     @Test
+     public void testResizeVolumeCommandException2() {
+         final String path = "nfs:/127.0.0.1/storage/secondary";
+-        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
++        final StorageFilerTO pool = createMockStorageFilerTO(StoragePoolType.RBD);
+         final Long currentSize = 100l;
+         final Long newSize = 200l;
+         final boolean shrinkOk = false;
+@@ -5051,7 +5047,6 @@
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+ 
+-        when(pool.getType()).thenReturn(StoragePoolType.RBD);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+         when(storagePoolMgr.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(storagePool);
+         when(storagePool.getPhysicalDisk(path)).thenThrow(CloudRuntimeException.class);
+@@ -7698,4 +7693,10 @@
+         Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
+         Assert.assertEquals(expectedResult, result);
+     }
++
++    private static StorageFilerTO createMockStorageFilerTO(StoragePoolType poolType) {
++        final StorageFilerTO pool = Mockito.mock(StorageFilerTO.class);
++        when(pool.getType()).thenReturn(poolType);
++        return pool;
++    }
+ }
