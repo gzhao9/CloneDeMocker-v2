@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -377,6 +378,15 @@ if __name__ == "__main__":
     if not 0 <= ROUTE["slice"][0] < ROUTE["slice"][1]:
         parser.error("--slice K/N needs 0 <= K < N")
     ROUTE["start"] = args.start
+    # CloudStack's build runs `bash` (exec-maven-plugin in engine/schema). A lane started outside
+    # a Git Bash shell (WMI, Task Scheduler) has only Git\cmd on PATH, so every build failed in
+    # 5 s and the MCI was recorded as FAILED_BEHAVIORAL_EQUIVALENCE (A, 2026-09-25 17:39-18:15).
+    if os.name == "nt" and not shutil.which("bash"):
+        for extra in (r"C:\Program Files\Git\bin", r"C:\Program Files\Git\usr\bin"):
+            if Path(extra, "bash.exe").is_file():
+                os.environ["PATH"] = extra + os.pathsep + os.environ.get("PATH", "")
+        if not shutil.which("bash"):
+            parser.error("no bash on PATH; builds that call bash would be graded as failures")
     for pair in args.root:
         name, _, path = pair.partition("=")
         PROJECT_ROOTS[name] = path
