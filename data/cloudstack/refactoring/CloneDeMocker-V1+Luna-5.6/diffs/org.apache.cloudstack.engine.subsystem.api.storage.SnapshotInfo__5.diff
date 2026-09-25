@@ -1,0 +1,47 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
+@@ -18,6 +18,7 @@
+  */
+ package org.apache.cloudstack.storage.vmsnapshot;
+ 
++import org.mockito.Mock;
+ import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.Mockito.when;
+ 
+@@ -103,6 +104,8 @@
+ @RunWith(SpringJUnit4ClassRunner.class)
+ @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
+ public class VMSnapshotStrategyKVMTest extends TestCase{
++    @Mock
++    private SnapshotInfo snapshotInfo;
+     List<StoragePoolVO> storage;
+     @Inject
+     VMSnapshotHelper vmSnapshotHelper;
+@@ -158,7 +161,6 @@
+         VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);
+         List<SnapshotInfo> snapshotsForRollback = new ArrayList<>();
+         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
+-        SnapshotInfo snapshotInfo = Mockito.mock(SnapshotInfo.class);
+         SnapshotStrategy strategy = Mockito.mock(SnapshotStrategy.class);
+         DataStore dataStore = Mockito.mock(DataStore.class);
+         String volUuid = UUID.randomUUID().toString();
+@@ -247,7 +249,7 @@
+         VolumeInfo vol = Mockito.mock(VolumeInfo.class);
+         SnapshotVO snapshotVO = Mockito.mock(SnapshotVO.class);
+         Snapshot snap = Mockito.mock(Snapshot.class);
+-        SnapshotInfo info = Mockito.mock(SnapshotInfo.class);
++        // removed local mock; replaced with global field `snapshotInfo`
+         SnapshotStrategy strategy = Mockito.mock(SnapshotStrategy.class);
+         String volUuid = UUID.randomUUID().toString();
+         String vmUuid = UUID.randomUUID().toString();
+@@ -255,8 +257,8 @@
+         when(vol.getUuid()).thenReturn(volUuid);
+         when(vmSnapshot.getUuid()).thenReturn(vmUuid);
+         when(snapshotVO.getId()).thenReturn(1L);
+-        when( _snapshotDataFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore())).thenReturn(info);
+-        when(_storageStrategyFactory.getSnapshotStrategy(info, SnapshotOperation.DELETE)).thenReturn(strategy);
++        when(_snapshotDataFactory.getSnapshot(snapshotVO.getId(), vol.getDataStore())).thenReturn(snapshotInfo);
++        when(_storageStrategyFactory.getSnapshotStrategy(snapshotInfo, SnapshotOperation.DELETE)).thenReturn(strategy);
+         testFindSnapshotByName(name);
+         vmStrategy.deleteDiskSnapshot(vmSnapshot);
+     }

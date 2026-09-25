@@ -1,0 +1,75 @@
+--- a/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
++++ b/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
+@@ -102,6 +102,8 @@
+     @Mock
+     IPAddressDao _ipAddressDao;
+ 
++    private Vpc vpcMock;
++
+     @Spy
+     @InjectMocks
+     FirewallManagerImpl _firewallMgr;
+@@ -118,6 +120,7 @@
+     @Before
+     public void initMocks() {
+         closeable = MockitoAnnotations.openMocks(this);
++        vpcMock = Mockito.mock(Vpc.class);
+ 
+         fwRule50to150 = createFirewallRule(50, 150, Purpose.Firewall);
+         fwRule100to200 = createFirewallRule(100, 150, Purpose.Firewall);
+@@ -257,10 +260,9 @@
+         List<FirewallRule> newRuleList = createNewRuleList(newNetworkId);
+ 
+         NetworkVO newNetworkVO = Mockito.mock(NetworkVO.class);
+-        Vpc vpc = Mockito.mock(Vpc.class);
+         when(_firewallMgr._networkDao.findById(2L)).thenReturn(newNetworkVO);
+         when(newNetworkVO.getVpcId()).thenReturn(vpcId);
+-        when(_vpcMgr.getActiveVpc(Mockito.eq(vpcId))).thenReturn(vpc);
++        when(_vpcMgr.getActiveVpc(Mockito.eq(vpcId))).thenReturn(vpcMock);
+         when(_vpcMgr.isNetworkOnVpcEnabledConserveMode(Mockito.eq(newNetworkVO))).thenReturn(vpcConserveMode);
+ 
+         for (FirewallRule newRule : newRuleList) {
+@@ -553,8 +555,7 @@
+     public void testValidateFirewallRuleForVpcThrowsWhenFirewallServiceNotSupported() {
+         Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+-        Vpc vpc = Mockito.mock(Vpc.class);
+-        when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpc);
++        when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpcMock);
+         _firewallMgr._firewallElements = Collections.emptyList();
+ 
+         _firewallMgr.validateFirewallRuleForVpc(caller, ipAddress, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
+@@ -564,7 +565,6 @@
+     public void testValidateFirewallRuleForVpcThrowsOnUnsupportedProtocol() {
+         Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+-        Vpc vpc = Mockito.mock(Vpc.class);
+         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> firewallCaps = new HashMap<>();
+         firewallCaps.put(Capability.SupportedProtocols, "tcp,udp");
+@@ -572,7 +572,7 @@
+         Map<Service, Map<Capability, String>> caps = new HashMap<>();
+         caps.put(Service.Firewall, firewallCaps);
+ 
+-        when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpc);
++        when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpcMock);
+         when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+         when(fwProvider.getCapabilities()).thenReturn(caps);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+@@ -585,7 +585,6 @@
+     public void testValidateFirewallRuleForVpcSucceedsWithSupportedProtocolAndTrafficType() {
+         Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+-        Vpc vpc = Mockito.mock(Vpc.class);
+         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> firewallCaps = new HashMap<>();
+         firewallCaps.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+@@ -593,7 +592,7 @@
+         Map<Service, Map<Capability, String>> caps = new HashMap<>();
+         caps.put(Service.Firewall, firewallCaps);
+ 
+-        when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpc);
++        when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpcMock);
+         when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+         when(fwProvider.getCapabilities()).thenReturn(caps);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);

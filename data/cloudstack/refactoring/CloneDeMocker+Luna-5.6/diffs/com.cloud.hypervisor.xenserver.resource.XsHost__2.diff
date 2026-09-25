@@ -1,0 +1,203 @@
+--- a/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/wrapper/xenbase/CitrixRequestWrapperTest.java
++++ b/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/wrapper/xenbase/CitrixRequestWrapperTest.java
+@@ -153,6 +153,7 @@
+     private RebootAnswer rebootAnswer;
+     @Mock
+     private CreateAnswer createAnswer;
++    private final XsHost xsHostMock = Mockito.mock(XsHost.class);
+ 
+     @Test
+     public void testWrapperInstance() {
+@@ -373,14 +374,13 @@
+     @Test
+     public void testCreateStoragePoolCommand() {
+         final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+-        final XsHost xsHost = Mockito.mock(XsHost.class);
+ 
+         final CreateStoragePoolCommand createStorageCommand = new CreateStoragePoolCommand(false, poolVO);
+ 
+         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+ 
+-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
++        when(citrixResourceBase.getHost()).thenReturn(xsHostMock);
+ 
+         final Answer answer = wrapper.execute(createStorageCommand, citrixResourceBase);
+         verify(citrixResourceBase, times(1)).getConnection();
+@@ -391,14 +391,13 @@
+     @Test
+     public void testModifyStoragePoolCommand() {
+         final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+-        final XsHost xsHost = Mockito.mock(XsHost.class);
+ 
+         final ModifyStoragePoolCommand modifyStorageCommand = new ModifyStoragePoolCommand(false, poolVO);
+ 
+         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+ 
+-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
++        when(citrixResourceBase.getHost()).thenReturn(xsHostMock);
+ 
+         final Answer answer = wrapper.execute(modifyStorageCommand, citrixResourceBase);
+         verify(citrixResourceBase, times(1)).getConnection();
+@@ -482,7 +481,6 @@
+ 
+     @Test
+     public void testGetStorageStatsCommand() {
+-        final XsHost xsHost = Mockito.mock(XsHost.class);
+         final DataStoreTO store = Mockito.mock(DataStoreTO.class);
+ 
+         final GetStorageStatsCommand storageStatsCommand = new GetStorageStatsCommand(store);
+@@ -490,7 +488,7 @@
+         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+ 
+-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
++        when(citrixResourceBase.getHost()).thenReturn(xsHostMock);
+ 
+         final Answer answer = wrapper.execute(storageStatsCommand, citrixResourceBase);
+         verify(citrixResourceBase, times(1)).getConnection();
+@@ -500,7 +498,6 @@
+ 
+     @Test
+     public void testPrimaryStorageDownloadCommand() {
+-        final XsHost xsHost = Mockito.mock(XsHost.class);
+         final StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+ 
+         final PrimaryStorageDownloadCommand storageDownloadCommand = new PrimaryStorageDownloadCommand("Test", "http://127.0.0.1", ImageFormat.VHD, 1l, poolVO, 200);
+@@ -508,7 +505,7 @@
+         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+ 
+-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
++        when(citrixResourceBase.getHost()).thenReturn(xsHostMock);
+ 
+         final Answer answer = wrapper.execute(storageDownloadCommand, citrixResourceBase);
+         verify(citrixResourceBase, times(1)).getConnection();
+@@ -698,7 +695,6 @@
+     @Test
+     public void testSecurityGroupRulesCommand() {
+         final Connection conn = Mockito.mock(Connection.class);
+-        final XsHost xsHost = Mockito.mock(XsHost.class);
+ 
+         final String guestIp = "127.0.0.1";
+         final String guestIp6 = "2001:db8::cad:40ff:fefd:75c4";
+@@ -717,7 +713,7 @@
+         assertNotNull(wrapper);
+ 
+         when(citrixResourceBase.getConnection()).thenReturn(conn);
+-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
++        when(citrixResourceBase.getHost()).thenReturn(xsHostMock);
+ 
+         final Answer answer = wrapper.execute(sshCommand, citrixResourceBase);
+ 
+@@ -737,7 +733,6 @@
+         final PIF pif = Mockito.mock(PIF.class);
+         final PIF.Record pifRec = Mockito.mock(PIF.Record.class);
+ 
+-        final XsHost xsHost = Mockito.mock(XsHost.class);
+ 
+         final OvsFetchInterfaceCommand fetchInterCommand = new OvsFetchInterfaceCommand(label);
+ 
+@@ -747,7 +742,7 @@
+         when(citrixResourceBase.isXcp()).thenReturn(true);
+         when(citrixResourceBase.getLabel()).thenReturn("[abc]");
+         when(citrixResourceBase.getConnection()).thenReturn(conn);
+-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
++        when(citrixResourceBase.getHost()).thenReturn(xsHostMock);
+ 
+         try {
+             when(network.getNetwork()).thenReturn(network2);
+@@ -774,7 +769,6 @@
+         final String bridge = "gre";
+         final Connection conn = Mockito.mock(Connection.class);
+         final Network network = Mockito.mock(Network.class);
+-        final XsHost xsHost = Mockito.mock(XsHost.class);
+ 
+         final OvsCreateGreTunnelCommand createGreCommand = new OvsCreateGreTunnelCommand("127.0.0.1", "KEY", 1l, 2l);
+ 
+@@ -782,7 +776,7 @@
+         assertNotNull(wrapper);
+ 
+         when(citrixResourceBase.getConnection()).thenReturn(conn);
+-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
++        when(citrixResourceBase.getHost()).thenReturn(xsHostMock);
+         when(citrixResourceBase.setupvSwitchNetwork(conn)).thenReturn(network);
+         try {
+             when(network.getBridge(conn)).thenReturn(bridge);
+@@ -945,7 +939,6 @@
+     @Test
+     public void testCleanupNetworkRulesCmd() {
+         final Connection conn = Mockito.mock(Connection.class);
+-        final XsHost xsHost = Mockito.mock(XsHost.class);
+ 
+         final CleanupNetworkRulesCmd cleanupNets = new CleanupNetworkRulesCmd(20);
+ 
+@@ -954,7 +947,7 @@
+ 
+         when(citrixResourceBase.canBridgeFirewall()).thenReturn(true);
+         when(citrixResourceBase.getConnection()).thenReturn(conn);
+-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
++        when(citrixResourceBase.getHost()).thenReturn(xsHostMock);
+         when(citrixResourceBase.getVMInstanceName()).thenReturn("VM");
+         when(citrixResourceBase.callHostPlugin(conn, "vmops", "cleanup_rules", "instance", citrixResourceBase.getVMInstanceName())).thenReturn("1");
+ 
+@@ -968,7 +961,6 @@
+     @Test
+     public void testCleanupNetworkRulesCmdLTZ() {
+         final Connection conn = Mockito.mock(Connection.class);
+-        final XsHost xsHost = Mockito.mock(XsHost.class);
+ 
+         final CleanupNetworkRulesCmd cleanupNets = new CleanupNetworkRulesCmd(20);
+ 
+@@ -977,14 +969,14 @@
+ 
+         when(citrixResourceBase.canBridgeFirewall()).thenReturn(true);
+         when(citrixResourceBase.getConnection()).thenReturn(conn);
+-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
++        when(citrixResourceBase.getHost()).thenReturn(xsHostMock);
+         when(citrixResourceBase.getVMInstanceName()).thenReturn("VM");
+         when(citrixResourceBase.callHostPlugin(conn, "vmops", "cleanup_rules", "instance", citrixResourceBase.getVMInstanceName())).thenReturn("-1");
+ 
+         final Answer answer = wrapper.execute(cleanupNets, citrixResourceBase);
+ 
+         verify(citrixResourceBase, times(1)).getConnection();
+-        verify(xsHost, times(1)).getIp();
++        verify(xsHostMock, times(1)).getIp();
+ 
+         assertFalse(answer.getResult());
+         assertEquals(answer.getDetails(), "-1");
+@@ -1413,7 +1405,6 @@
+         final String uuid = "6172d8b7-ba10-4a70-93f9-ecaf41f51d53";
+ 
+         final Connection conn = Mockito.mock(Connection.class);
+-        final XsHost xsHost = Mockito.mock(XsHost.class);
+ 
+         final Pool pool = Mockito.mock(Pool.class);
+         final Pool.Record poolr = Mockito.mock(Pool.Record.class);
+@@ -1427,7 +1418,7 @@
+ 
+         when(citrixResourceBase.getConnection()).thenReturn(conn);
+         try (MockedStatic<Pool.Record> ignored = Mockito.mockStatic(Pool.Record.class)){
+-            when(citrixResourceBase.getHost()).thenReturn(xsHost);
++            when(citrixResourceBase.getHost()).thenReturn(xsHostMock);
+             poolr.master = master;
+ 
+             final Answer answer = wrapper.execute(vmDataSync, citrixResourceBase);
+@@ -1616,7 +1607,6 @@
+ 
+         final VirtualMachineTO machineTO = Mockito.mock(VirtualMachineTO.class);
+         final Connection conn = Mockito.mock(Connection.class);
+-        final XsHost xsHost = Mockito.mock(XsHost.class);
+         final Host host = Mockito.mock(Host.class);
+ 
+         final ScaleVmCommand scaleVm = new ScaleVmCommand(machineTO);
+@@ -1625,7 +1615,7 @@
+         assertNotNull(wrapper);
+ 
+         when(citrixResourceBase.getConnection()).thenReturn(conn);
+-        when(citrixResourceBase.getHost()).thenReturn(xsHost);
++        when(citrixResourceBase.getHost()).thenReturn(xsHostMock);
+         when(citrixResourceBase.getHost().getUuid()).thenReturn(uuid);
+ 
+         final Answer answer = wrapper.execute(scaleVm, citrixResourceBase);

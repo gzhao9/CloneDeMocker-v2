@@ -1,0 +1,56 @@
+--- a/api/src/test/java/org/apache/cloudstack/api/command/user/vpc/CreateVPCCmdTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/user/vpc/CreateVPCCmdTest.java
+@@ -29,6 +29,7 @@
+ import org.apache.cloudstack.api.ResponseObject;
+ import org.apache.cloudstack.api.response.VpcResponse;
+ import org.junit.Assert;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.mockito.InjectMocks;
+@@ -51,6 +52,13 @@
+     @Mock
+     private Object job;
+ 
++    private Vpc vpcMock;
++
++    @Before
++    public void setUp() {
++        vpcMock = Mockito.mock(Vpc.class);
++    }
++
+     @InjectMocks
+     CreateVPCCmd cmd;
+ 
+@@ -168,7 +176,6 @@
+ 
+     @Test
+     public void testCreate() throws ResourceAllocationException {
+-        Vpc vpc = Mockito.mock(Vpc.class);
+         ReflectionTestUtils.setField(cmd, "zoneId", 1L);
+         ReflectionTestUtils.setField(cmd, "vpcOffering", 1L);
+         ReflectionTestUtils.setField(cmd, "vpcName", "testVpc");
+@@ -177,20 +184,19 @@
+         ReflectionTestUtils.setField(cmd, "networkDomain", "cs1cloud.internal");
+         ReflectionTestUtils.setField(cmd, "display", true);
+         ReflectionTestUtils.setField(cmd, "publicMtu", 1450);
+-        Mockito.when(_vpcService.createVpc(Mockito.any(CreateVPCCmd.class))).thenReturn(vpc);
++        Mockito.when(_vpcService.createVpc(Mockito.any(CreateVPCCmd.class))).thenReturn(vpcMock);
+         cmd.create();
+         Mockito.verify(_vpcService, Mockito.times(1)).createVpc(Mockito.any(CreateVPCCmd.class));
+     }
+ 
+     @Test
+     public void testExecute() throws ResourceUnavailableException, InsufficientCapacityException {
+-        Vpc vpc = Mockito.mock(Vpc.class);
+         VpcResponse response = Mockito.mock(VpcResponse.class);
+ 
+         ReflectionTestUtils.setField(cmd, "id", 1L);
+         Mockito.doNothing().when(_vpcService).startVpc(cmd);
+-        Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.any(Long.class))).thenReturn(vpc);
+-        Mockito.when(_responseGenerator.createVpcResponse(ResponseObject.ResponseView.Restricted, vpc)).thenReturn(response);
++        Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.any(Long.class))).thenReturn(vpcMock);
++        Mockito.when(_responseGenerator.createVpcResponse(ResponseObject.ResponseView.Restricted, vpcMock)).thenReturn(response);
+         cmd.execute();
+         Mockito.verify(_vpcService, Mockito.times(1)).startVpc(cmd);
+     }

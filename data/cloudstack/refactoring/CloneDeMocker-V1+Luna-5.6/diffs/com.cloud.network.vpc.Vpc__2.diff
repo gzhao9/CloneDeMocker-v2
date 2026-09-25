@@ -1,0 +1,44 @@
+--- a/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
++++ b/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
+@@ -79,6 +79,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class FirewallManagerTest {
++    @Mock
++    private Vpc vpc;
+     private AutoCloseable closeable;
+ 
+     @Mock
+@@ -257,7 +259,6 @@
+         List<FirewallRule> newRuleList = createNewRuleList(newNetworkId);
+ 
+         NetworkVO newNetworkVO = Mockito.mock(NetworkVO.class);
+-        Vpc vpc = Mockito.mock(Vpc.class);
+         when(_firewallMgr._networkDao.findById(2L)).thenReturn(newNetworkVO);
+         when(newNetworkVO.getVpcId()).thenReturn(vpcId);
+         when(_vpcMgr.getActiveVpc(Mockito.eq(vpcId))).thenReturn(vpc);
+@@ -553,7 +554,6 @@
+     public void testValidateFirewallRuleForVpcThrowsWhenFirewallServiceNotSupported() {
+         Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+-        Vpc vpc = Mockito.mock(Vpc.class);
+         when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpc);
+         _firewallMgr._firewallElements = Collections.emptyList();
+ 
+@@ -564,7 +564,7 @@
+     public void testValidateFirewallRuleForVpcThrowsOnUnsupportedProtocol() {
+         Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+-        Vpc vpc = Mockito.mock(Vpc.class);
++        // removed local mock; replaced with global field `vpc`
+         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> firewallCaps = new HashMap<>();
+         firewallCaps.put(Capability.SupportedProtocols, "tcp,udp");
+@@ -585,7 +585,6 @@
+     public void testValidateFirewallRuleForVpcSucceedsWithSupportedProtocolAndTrafficType() {
+         Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+-        Vpc vpc = Mockito.mock(Vpc.class);
+         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> firewallCaps = new HashMap<>();
+         firewallCaps.put(Capability.SupportedProtocols, "tcp,udp,icmp");

@@ -1,0 +1,63 @@
+--- a/server/src/test/java/com/cloud/api/ApiServerTest.java
++++ b/server/src/test/java/com/cloud/api/ApiServerTest.java
+@@ -96,6 +96,14 @@
+         f.set(configKey, o);
+     }
+ 
++    private static UserAccount createMockUserAccount(String accountStateReturn) {
++        UserAccount userAccount = mock(UserAccount.class);
++        Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
++        Mockito.when(userAccount.getState()).thenReturn("ENABLED");
++        Mockito.when(userAccount.getAccountState()).thenReturn(accountStateReturn);
++        return userAccount;
++    }
++
+     private void runTestSetupIntegrationPortListenerInvalidPorts(Integer port) {
+         try (MockedConstruction<ApiServer.ListenerThread> mocked =
+                      Mockito.mockConstruction(ApiServer.ListenerThread.class)) {
+@@ -127,12 +135,9 @@
+ 
+     @Test
+     public void testForgotPasswordSuccess() {
+-        UserAccount userAccount = mock(UserAccount.class);
+-        Domain domain = mock(Domain.class);
+-
+-        Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
+-        Mockito.when(userAccount.getState()).thenReturn("ENABLED");
+-        Mockito.when(userAccount.getAccountState()).thenReturn("ENABLED");
++        UserAccount userAccount = createMockUserAccount("ENABLED");
++        Domain domain = mock(Domain.class);
++
+         Mockito.when(domain.getState()).thenReturn(Domain.State.Active);
+         Mockito.doNothing().when(userPasswordResetManager).setResetTokenAndSend(userAccount);
+         Assert.assertTrue(apiServer.forgotPassword(userAccount, domain));
+@@ -160,23 +165,17 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testForgotPasswordFailureDisabledAccount() {
+-        UserAccount userAccount = mock(UserAccount.class);
+-        Domain domain = mock(Domain.class);
+-
+-        Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
+-        Mockito.when(userAccount.getState()).thenReturn("ENABLED");
+-        Mockito.when(userAccount.getAccountState()).thenReturn("DISABLED");
++        UserAccount userAccount = createMockUserAccount("DISABLED");
++        Domain domain = mock(Domain.class);
++
+         apiServer.forgotPassword(userAccount, domain);
+     }
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testForgotPasswordFailureInactiveDomain() {
+-        UserAccount userAccount = mock(UserAccount.class);
+-        Domain domain = mock(Domain.class);
+-
+-        Mockito.when(userAccount.getEmail()).thenReturn("test@test.com");
+-        Mockito.when(userAccount.getState()).thenReturn("ENABLED");
+-        Mockito.when(userAccount.getAccountState()).thenReturn("ENABLED");
++        UserAccount userAccount = createMockUserAccount("ENABLED");
++        Domain domain = mock(Domain.class);
++
+         Mockito.when(domain.getState()).thenReturn(Domain.State.Inactive);
+         apiServer.forgotPassword(userAccount, domain);
+     }

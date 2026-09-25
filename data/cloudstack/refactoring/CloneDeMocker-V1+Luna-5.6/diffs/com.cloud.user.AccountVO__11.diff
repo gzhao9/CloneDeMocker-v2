@@ -1,0 +1,69 @@
+--- a/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
+@@ -95,6 +95,8 @@
+ import com.cloud.vm.snapshot.VMSnapshotVO;
+ 
+ public class AccountManagerImplTest extends AccountManagentImplTestBase {
++    @Mock
++    private AccountVO adminAccountMock;
+ 
+     @Mock
+     private UserVmManagerImpl _vmMgr;
+@@ -405,7 +407,6 @@
+         Mockito.when(userVoMock.getAccountId()).thenReturn(2L);
+ 
+         // Queried account - admin account
+-        AccountVO adminAccountMock = Mockito.mock(AccountVO.class);
+         Mockito.when(_accountDao.findByIdIncludingRemoved(2L)).thenReturn(adminAccountMock);
+         Mockito.lenient().when(accountService.isRootAdmin(2L)).thenReturn(true);
+         Mockito.lenient().when(securityChecker.checkAccess(Mockito.any(Account.class),
+@@ -1267,10 +1268,9 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testVerify2FAcodeWhen2FAisNotEnabled() {
+-        AccountVO accountMock = Mockito.mock(AccountVO.class);
+         Account caller = CallContext.current().getCallingAccount();
+         Mockito.when(caller.getId()).thenReturn(1L);
+-        Mockito.lenient().when(_accountService.getActiveAccountById(1L)).thenReturn(accountMock);
++        Mockito.lenient().when(_accountService.getActiveAccountById(1L)).thenReturn(adminAccountMock);
+         Mockito.when(_accountService.getUserAccountById(1L)).thenReturn(userAccountVO);
+         Mockito.when(userAccountVO.isUser2faEnabled()).thenReturn(false);
+ 
+@@ -1279,10 +1279,9 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testVerify2FAcodeWhen2FAisNotSetup() {
+-        AccountVO accountMock = Mockito.mock(AccountVO.class);
+         Account caller = CallContext.current().getCallingAccount();
+         Mockito.when(caller.getId()).thenReturn(1L);
+-        Mockito.lenient().when(_accountService.getActiveAccountById(1L)).thenReturn(accountMock);
++        Mockito.lenient().when(_accountService.getActiveAccountById(1L)).thenReturn(adminAccountMock);
+         Mockito.when(_accountService.getUserAccountById(1L)).thenReturn(userAccountVO);
+         Mockito.when(userAccountVO.isUser2faEnabled()).thenReturn(true);
+         Mockito.when(userAccountVO.getUser2faProvider()).thenReturn(null);
+@@ -1292,10 +1291,10 @@
+ 
+     @Test
+     public void testVerify2FAcode() {
+-        AccountVO accountMock = Mockito.mock(AccountVO.class);
++        // removed local mock; replaced with global field `adminAccountMock`
+         Account caller = CallContext.current().getCallingAccount();
+         Mockito.when(caller.getId()).thenReturn(1L);
+-        Mockito.lenient().when(_accountService.getActiveAccountById(1L)).thenReturn(accountMock);
++        Mockito.lenient().when(_accountService.getActiveAccountById(1L)).thenReturn(adminAccountMock);
+         Mockito.when(_accountService.getUserAccountById(1L)).thenReturn(userAccountVO);
+         Mockito.when(userAccountVO.isUser2faEnabled()).thenReturn(true);
+         Mockito.when(userAccountVO.getUser2faProvider()).thenReturn("staticpin");
+@@ -1316,11 +1315,10 @@
+         Mockito.when(cmd.getUserId()).thenReturn(null);
+         Mockito.when(cmd.getProvider()).thenReturn("staticpin");
+ 
+-        AccountVO accountMock = Mockito.mock(AccountVO.class);
+         Mockito.when(callingAccount.getId()).thenReturn(1L);
+         Mockito.when(callingUser.getId()).thenReturn(1L);
+         CallContext.register(callingUser, callingAccount); // Calling account is user account i.e normal account
+-        Mockito.lenient().when(_accountService.getActiveAccountById(1L)).thenReturn(accountMock);
++        Mockito.lenient().when(_accountService.getActiveAccountById(1L)).thenReturn(adminAccountMock);
+         Mockito.when(userAccountDao.findById(1L)).thenReturn(userAccountVO);
+         Mockito.when(userDaoMock.findById(1L)).thenReturn(userVoMock);
+         Mockito.when(userAccountVO.getDomainId()).thenReturn(1L);

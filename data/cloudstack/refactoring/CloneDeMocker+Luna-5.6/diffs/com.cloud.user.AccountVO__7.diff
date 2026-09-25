@@ -1,0 +1,48 @@
+--- a/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
++++ b/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
+@@ -107,8 +107,7 @@
+     @Mock
+     AccountVO newOwnerMock;
+ 
+-    @Mock
+-    AccountVO previousOwnerMock;
++    AccountVO previousOwnerMock = createMockAccountVO();
+ 
+     @Mock
+     AccountManager accountManagerMock;
+@@ -286,6 +285,12 @@
+         return network;
+     }
+ 
++    private static AccountVO createMockAccountVO() {
++        AccountVO previousOwnerMock = Mockito.mock(AccountVO.class);
++        Mockito.when(previousOwnerMock.getUuid()).thenReturn("uuid");
++        return previousOwnerMock;
++    }
++
+     @Test
+     public void isPublicIpAddressStillInQuarantineTestRemovedDateIsNullAndCurrentDateIsEqualToEndDateShouldReturnFalse() {
+         Date endDate = currentDate;
+@@ -389,9 +394,10 @@
+         Mockito.doNothing().when(ipAddressManager).removePublicIpAddressFromQuarantine(Mockito.anyLong(), Mockito.anyString());
+ 
+         Mockito.when(publicIpQuarantineVOMock.getPreviousOwnerId()).thenReturn(dummyID);
++        previousOwnerMock = createMockAccountVO();
+         Mockito.when(accountManagerMock.getAccount(Mockito.anyLong())).thenReturn(previousOwnerMock);
+         Mockito.when(previousOwnerMock.getUuid()).thenReturn(UUID);
+-        Mockito.when(newOwnerMock.getUuid()).thenReturn(UUID);
++        newOwnerMock = createMockAccountVO();
+ 
+         boolean result = ipAddressManager.canPublicIpAddressBeAllocated(ipAddressMock, newOwnerMock);
+ 
+@@ -408,8 +414,9 @@
+         Mockito.doReturn(true).when(ipAddressManager).isPublicIpAddressStillInQuarantine(Mockito.any(PublicIpQuarantineVO.class), Mockito.any(Date.class));
+ 
+         Mockito.when(publicIpQuarantineVOMock.getPreviousOwnerId()).thenReturn(dummyID);
++        previousOwnerMock = createMockAccountVO();
+         Mockito.when(accountManagerMock.getAccount(Mockito.anyLong())).thenReturn(previousOwnerMock);
+-        Mockito.when(previousOwnerMock.getUuid()).thenReturn(UUID);
++        newOwnerMock = createMockAccountVO();
+         Mockito.when(newOwnerMock.getUuid()).thenReturn(UUID_2);
+ 
+         boolean result = ipAddressManager.canPublicIpAddressBeAllocated(ipAddressMock, newOwnerMock);

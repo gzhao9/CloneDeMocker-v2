@@ -1,0 +1,49 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -354,7 +354,6 @@
+ 
+     @Test
+     public void testaddHostIpToCertDetailsIfConfigAllows() {
+-        Host vmHost = mock(Host.class);
+         ConfigKey testConfig = mock(ConfigKey.class);
+ 
+         Long dataCenterId = 5L;
+@@ -364,7 +363,7 @@
+         ipAddresses.put(NetworkElementCommand.ROUTER_IP, routerIp);
+ 
+         when(testConfig.valueIn(dataCenterId)).thenReturn(true);
+-        when(vmHost.getDataCenterId()).thenReturn(dataCenterId);
++        Host vmHost = createMockHost(dataCenterId);
+         when(vmHost.getPrivateIpAddress()).thenReturn(hostIp);
+ 
+         virtualMachineManagerImpl.addHostIpToCertDetailsIfConfigAllows(vmHost, ipAddresses, testConfig);
+@@ -376,7 +375,6 @@
+ 
+     @Test
+     public void testaddHostIpToCertDetailsIfConfigAllowsWhenConfigFalse() {
+-        Host vmHost = mock(Host.class);
+         ConfigKey testConfig = mock(ConfigKey.class);
+ 
+         Long dataCenterId = 5L;
+@@ -386,8 +384,8 @@
+         ipAddresses.put(NetworkElementCommand.ROUTER_IP, routerIp);
+ 
+         when(testConfig.valueIn(dataCenterId)).thenReturn(false);
+-        when(vmHost.getDataCenterId()).thenReturn(dataCenterId);
+-
++
++        Host vmHost = createMockHost(dataCenterId);
+         virtualMachineManagerImpl.addHostIpToCertDetailsIfConfigAllows(vmHost, ipAddresses, testConfig);
+         assertFalse(ipAddresses.containsKey(NetworkElementCommand.HYPERVISOR_HOST_PRIVATE_IP));
+         assertTrue(ipAddresses.containsKey(NetworkElementCommand.ROUTER_IP));
+@@ -2241,4 +2239,10 @@
+         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
+     }
+ 
++
++    private static Host createMockHost(Long dataCenterId) {
++        Host vmHost = mock(Host.class);
++        when(vmHost.getDataCenterId()).thenReturn(dataCenterId);
++        return vmHost;
++    }
+ }

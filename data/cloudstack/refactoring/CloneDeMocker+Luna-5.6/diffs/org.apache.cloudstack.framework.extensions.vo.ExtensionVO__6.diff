@@ -1,0 +1,357 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -167,6 +167,9 @@
+ 
+     @Mock
+     private ExtensionDao extensionDao;
++
++    private ExtensionVO extensionVOMock;
++
+     @Mock
+     private ExtensionDetailsDao extensionDetailsDao;
+     @Mock
+@@ -226,6 +229,7 @@
+     @Before
+     public void setUp() {
+         MockitoAnnotations.openMocks(this);
++        extensionVOMock = mock(ExtensionVO.class);
+     }
+ 
+     @Test
+@@ -411,12 +415,11 @@
+         ExtensionResourceMapVO mapVO = mock(ExtensionResourceMapVO.class);
+         when(mapVO.getExtensionId()).thenReturn(100L);
+         when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(mapVO);
+-        ExtensionVO extension = mock(ExtensionVO.class);
+-        when(extensionDao.findById(100L)).thenReturn(extension);
++        when(extensionDao.findById(100L)).thenReturn(extensionVOMock);
+ 
+         Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.VirtualMachine, "vm-uuid");
+ 
+-        assertEquals(extension, result);
++        assertEquals(extensionVOMock, result);
+     }
+ 
+     @Test
+@@ -456,13 +459,12 @@
+         Extension ext = mock(Extension.class);
+         when(ext.getId()).thenReturn(1L);
+         when(ext.isPathReady()).thenReturn(true);
+-        ExtensionVO vo = mock(ExtensionVO.class);
+-        when(extensionDao.createForUpdate(1L)).thenReturn(vo);
+-        when(extensionDao.update(1L, vo)).thenReturn(true);
++        when(extensionDao.createForUpdate(1L)).thenReturn(extensionVOMock);
++        when(extensionDao.update(1L, extensionVOMock)).thenReturn(true);
+ 
+         extensionsManager.updateExtensionPathReady(ext, false);
+ 
+-        verify(extensionDao).update(1L, vo);
++        verify(extensionDao).update(1L, extensionVOMock);
+     }
+ 
+     @Test
+@@ -475,14 +477,13 @@
+ 
+     @Test
+     public void disableExtensionChangesStateToDisabled() {
+-        ExtensionVO vo = mock(ExtensionVO.class);
+-        when(extensionDao.createForUpdate(1L)).thenReturn(vo);
+-        when(extensionDao.update(1L, vo)).thenReturn(true);
++        when(extensionDao.createForUpdate(1L)).thenReturn(extensionVOMock);
++        when(extensionDao.update(1L, extensionVOMock)).thenReturn(true);
+ 
+         extensionsManager.disableExtension(1L);
+ 
+-        verify(vo).setState(Extension.State.Disabled);
+-        verify(extensionDao).update(1L, vo);
++        verify(extensionVOMock).setState(Extension.State.Disabled);
++        verify(extensionDao).update(1L, extensionVOMock);
+     }
+ 
+     @Test
+@@ -714,13 +715,12 @@
+             when(msHost1.getMsid()).thenReturn(101L);
+ 
+             // Extension entry point ready state should be updated
+-            ExtensionVO updateExt = mock(ExtensionVO.class);
+-            when(extensionDao.createForUpdate(1L)).thenReturn(updateExt);
+-            when(extensionDao.update(1L, updateExt)).thenReturn(true);
++            when(extensionDao.createForUpdate(1L)).thenReturn(extensionVOMock);
++            when(extensionDao.update(1L, extensionVOMock)).thenReturn(true);
+ 
+             boolean result = extensionsManager.prepareExtensionPathAcrossServers(ext);
+             assertTrue(result);
+-            verify(extensionDao).update(1L, updateExt);
++            verify(extensionDao).update(1L, extensionVOMock);
+         }
+     }
+ 
+@@ -745,13 +745,12 @@
+             doReturn(new Pair<>(true, "ok")).when(extensionsManager).prepareExtensionPathOnCurrentServer(anyString(), anyBoolean(), anyString());
+             doReturn(false).when(extensionsManager).prepareExtensionPathOnMSPeer(eq(ext), eq(msHost2));
+ 
+-            ExtensionVO updateExt = mock(ExtensionVO.class);
+-            when(extensionDao.createForUpdate(1L)).thenReturn(updateExt);
+-            when(extensionDao.update(1L, updateExt)).thenReturn(true);
++            when(extensionDao.createForUpdate(1L)).thenReturn(extensionVOMock);
++            when(extensionDao.update(1L, extensionVOMock)).thenReturn(true);
+ 
+             boolean result = extensionsManager.prepareExtensionPathAcrossServers(ext);
+             assertFalse(result);
+-            verify(extensionDao).update(1L, updateExt);
++            verify(extensionDao).update(1L, extensionVOMock);
+         }
+     }
+ 
+@@ -788,9 +787,8 @@
+         when(cmd.getPageSizeVal()).thenReturn(10L);
+         when(cmd.getDetails()).thenReturn(null);
+ 
+-        ExtensionVO ext1 = mock(ExtensionVO.class);
+         ExtensionVO ext2 = mock(ExtensionVO.class);
+-        List<ExtensionVO> extList = Arrays.asList(ext1, ext2);
++        List<ExtensionVO> extList = Arrays.asList(extensionVOMock, ext2);
+         SearchBuilder<ExtensionVO> sb = mock(SearchBuilder.class);
+         when(sb.create()).thenReturn(mock(SearchCriteria.class));
+         when(sb.entity()).thenReturn(mock(ExtensionVO.class));
+@@ -800,7 +798,7 @@
+         // Spy createExtensionResponse to return a dummy response
+         ExtensionResponse resp1 = mock(ExtensionResponse.class);
+         ExtensionResponse resp2 = mock(ExtensionResponse.class);
+-        doReturn(resp1).when(extensionsManager).createExtensionResponse(eq(ext1), any());
++        doReturn(resp1).when(extensionsManager).createExtensionResponse(eq(extensionVOMock), any());
+         doReturn(resp2).when(extensionsManager).createExtensionResponse(eq(ext2), any());
+ 
+         List<ExtensionResponse> result = extensionsManager.listExtensions(cmd);
+@@ -820,14 +818,13 @@
+         when(cmd.getPageSizeVal()).thenReturn(10L);
+         when(cmd.getDetails()).thenReturn(null);
+ 
+-        ExtensionVO ext = mock(ExtensionVO.class);
+         SearchBuilder<ExtensionVO> sb = mock(SearchBuilder.class);
+         when(sb.create()).thenReturn(mock(SearchCriteria.class));
+         when(sb.entity()).thenReturn(mock(ExtensionVO.class));
+         when(extensionDao.createSearchBuilder()).thenReturn(sb);
+-        when(extensionDao.searchAndCount(any(), any())).thenReturn(new Pair<>(Collections.singletonList(ext), 1));
++        when(extensionDao.searchAndCount(any(), any())).thenReturn(new Pair<>(Collections.singletonList(extensionVOMock), 1));
+         ExtensionResponse resp = mock(ExtensionResponse.class);
+-        doReturn(resp).when(extensionsManager).createExtensionResponse(eq(ext), any());
++        doReturn(resp).when(extensionsManager).createExtensionResponse(eq(extensionVOMock), any());
+ 
+         List<ExtensionResponse> result = extensionsManager.listExtensions(cmd);
+ 
+@@ -845,14 +842,13 @@
+         when(cmd.getPageSizeVal()).thenReturn(10L);
+         when(cmd.getDetails()).thenReturn(null);
+ 
+-        ExtensionVO ext = mock(ExtensionVO.class);
+         SearchBuilder<ExtensionVO> sb = mock(SearchBuilder.class);
+         when(sb.create()).thenReturn(mock(SearchCriteria.class));
+         when(sb.entity()).thenReturn(mock(ExtensionVO.class));
+         when(extensionDao.createSearchBuilder()).thenReturn(sb);
+-        when(extensionDao.searchAndCount(any(), any())).thenReturn(new Pair<>(Collections.singletonList(ext), 1));
++        when(extensionDao.searchAndCount(any(), any())).thenReturn(new Pair<>(Collections.singletonList(extensionVOMock), 1));
+         ExtensionResponse resp = mock(ExtensionResponse.class);
+-        doReturn(resp).when(extensionsManager).createExtensionResponse(eq(ext), any());
++        doReturn(resp).when(extensionsManager).createExtensionResponse(eq(extensionVOMock), any());
+ 
+         List<ExtensionResponse> result = extensionsManager.listExtensions(cmd);
+ 
+@@ -1116,15 +1112,14 @@
+         when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.Cluster.name());
+         when(cmd.getResourceId()).thenReturn(UUID.randomUUID().toString());
+         when(cmd.getExtensionId()).thenReturn(1L);
+-        ExtensionVO extension = mock(ExtensionVO.class);
+         ClusterVO clusterVO = mock(ClusterVO.class);
+         when(clusterVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+         when(clusterDao.findByUuid(anyString())).thenReturn(clusterVO);
+         ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+         when(extensionResourceMapDao.persist(any())).thenReturn(resourceMap);
+-        when(extensionDao.findById(anyLong())).thenReturn(extension);
++        when(extensionDao.findById(anyLong())).thenReturn(extensionVOMock);
+         Extension result = extensionsManager.registerExtensionWithResource(cmd);
+-        assertEquals(extension, result);
++        assertEquals(extensionVOMock, result);
+         verify(extensionResourceMapDao).persist(any());
+     }
+ 
+@@ -1153,8 +1148,7 @@
+         ClusterVO clusterVO = mock(ClusterVO.class);
+         when(clusterVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+         when(clusterDao.findByUuid(anyString())).thenReturn(clusterVO);
+-        ExtensionVO extension = mock(ExtensionVO.class);
+-        when(extensionDao.findById(1L)).thenReturn(extension);
++        when(extensionDao.findById(1L)).thenReturn(extensionVOMock);
+         when(extensionResourceMapDao.persist(any())).thenThrow(CloudRuntimeException.class);
+         extensionsManager.registerExtensionWithResource(cmd);
+     }
+@@ -1251,8 +1245,7 @@
+         when(cmd.getDetails()).thenReturn(Map.of("username", "root", "hosts", "10.10.10.10"));
+         when(cmd.isCleanupDetails()).thenReturn(false);
+ 
+-        ExtensionVO extension = mock(ExtensionVO.class);
+-        when(extensionDao.findById(1L)).thenReturn(extension);
++        when(extensionDao.findById(1L)).thenReturn(extensionVOMock);
+ 
+         PhysicalNetworkVO physicalNetwork = mock(PhysicalNetworkVO.class);
+         when(physicalNetwork.getId()).thenReturn(42L);
+@@ -1265,7 +1258,7 @@
+ 
+         Extension result = extensionsManager.updateRegisteredExtensionWithResource(cmd);
+ 
+-        assertEquals(extension, result);
++        assertEquals(extensionVOMock, result);
+         verify(extensionResourceMapDetailsDao, never()).removeDetails(anyLong());
+         verify(extensionResourceMapDetailsDao).saveDetails(any());
+     }
+@@ -1279,8 +1272,7 @@
+         when(cmd.getDetails()).thenReturn(Map.of("username", "root", "password", "secret"));
+         when(cmd.isCleanupDetails()).thenReturn(true);
+ 
+-        ExtensionVO extension = mock(ExtensionVO.class);
+-        when(extensionDao.findById(1L)).thenReturn(extension);
++        when(extensionDao.findById(1L)).thenReturn(extensionVOMock);
+ 
+         PhysicalNetworkVO physicalNetwork = mock(PhysicalNetworkVO.class);
+         when(physicalNetwork.getId()).thenReturn(42L);
+@@ -1307,8 +1299,7 @@
+         when(cmd.getDetails()).thenReturn(Map.of("username", "root", "password", "newSecret"));
+         when(cmd.isCleanupDetails()).thenReturn(false);
+ 
+-        ExtensionVO extension = mock(ExtensionVO.class);
+-        when(extensionDao.findById(1L)).thenReturn(extension);
++        when(extensionDao.findById(1L)).thenReturn(extensionVOMock);
+ 
+         PhysicalNetworkVO physicalNetwork = mock(PhysicalNetworkVO.class);
+         when(physicalNetwork.getId()).thenReturn(42L);
+@@ -1455,8 +1446,7 @@
+         when(cmd.getDetails()).thenReturn(null);
+ 
+         when(extensionCustomActionDao.findByNameAndExtensionId(1L, "action1")).thenReturn(null);
+-        ExtensionVO ext = mock(ExtensionVO.class);
+-        when(extensionDao.findById(1L)).thenReturn(ext);
++        when(extensionDao.findById(1L)).thenReturn(extensionVOMock);
+ 
+         ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+         when(extensionCustomActionDao.persist(any())).thenReturn(actionVO);
+@@ -1495,8 +1485,7 @@
+         when(cmd.getExtensionId()).thenReturn(1L);
+         when(cmd.getResourceType()).thenReturn("InvalidType");
+         when(extensionCustomActionDao.findByNameAndExtensionId(1L, "action1")).thenReturn(null);
+-        ExtensionVO ext = mock(ExtensionVO.class);
+-        when(extensionDao.findById(1L)).thenReturn(ext);
++        when(extensionDao.findById(1L)).thenReturn(extensionVOMock);
+ 
+         extensionsManager.addCustomAction(cmd);
+     }
+@@ -1944,10 +1933,9 @@
+         when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(10L))
+                 .thenReturn(new Pair<>(new HashMap<>(), new HashMap<>()));
+ 
+-        ExtensionVO extensionVO = mock(ExtensionVO.class);
+ 
+         CustomActionResultResponse response = extensionsManager.runNetworkCustomAction(
+-                network, actionVO, extensionVO, ExtensionCustomAction.ResourceType.Network, Collections.emptyMap());
++                network, actionVO, extensionVOMock, ExtensionCustomAction.ResourceType.Network, Collections.emptyMap());
+ 
+         assertFalse(response.getSuccess());
+         assertEquals("No network service provider found for this network", response.getResult().get(ApiConstants.DETAILS));
+@@ -2098,10 +2086,9 @@
+         when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(201L))
+                 .thenReturn(new Pair<>(new HashMap<>(), new HashMap<>()));
+ 
+-        ExtensionVO extensionVO = mock(ExtensionVO.class);
+ 
+         CustomActionResultResponse response = extensionsManager.runVpcCustomAction(
+-                vpc, actionVO, extensionVO, ExtensionCustomAction.ResourceType.Vpc, Collections.emptyMap());
++                vpc, actionVO, extensionVOMock, ExtensionCustomAction.ResourceType.Vpc, Collections.emptyMap());
+ 
+         assertFalse(response.getSuccess());
+         assertEquals("No VPC service provider found for this VPC", response.getResult().get(ApiConstants.DETAILS));
+@@ -2381,12 +2368,11 @@
+     @Test
+     public void getExtension_WhenExtensionExists_ReturnsExtension() {
+         long id = 1L;
+-        ExtensionVO ext = mock(ExtensionVO.class);
+-        when(extensionDao.findById(id)).thenReturn(ext);
++        when(extensionDao.findById(id)).thenReturn(extensionVOMock);
+ 
+         Extension result = extensionsManager.getExtension(id);
+ 
+-        assertEquals(ext, result);
++        assertEquals(extensionVOMock, result);
+     }
+ 
+     @Test
+@@ -2403,11 +2389,10 @@
+     public void getExtensionForCluster_WhenMappingExists_ReturnsExtension() {
+         long clusterId = 10L;
+         long extensionId = 20L;
+-        ExtensionVO ext = mock(ExtensionVO.class);
+         when(extensionsManager.getExtensionIdForCluster(clusterId)).thenReturn(extensionId);
+-        when(extensionDao.findById(extensionId)).thenReturn(ext);
++        when(extensionDao.findById(extensionId)).thenReturn(extensionVOMock);
+         Extension result = extensionsManager.getExtensionForCluster(clusterId);
+-        assertEquals(ext, result);
++        assertEquals(extensionVOMock, result);
+     }
+ 
+     @Test
+@@ -2726,7 +2711,6 @@
+         when(actionVO.getName()).thenReturn("dump-config");
+         when(actionVO.getId()).thenReturn(2L);
+ 
+-        ExtensionVO extensionVO = mock(ExtensionVO.class);
+ 
+         Pair<Map<String, String>, Map<String, String>> details = new Pair<>(new HashMap<>(), new HashMap<>());
+         when(extensionCustomActionDetailsDao.listDetailsKeyPairsWithVisibility(2L)).thenReturn(details);
+@@ -2735,7 +2719,7 @@
+         when(networkServiceMapDao.getProviderForServiceInNetwork(eq(5L), any())).thenReturn(null);
+ 
+         CustomActionResultResponse resp = extensionsManager.runNetworkCustomAction(
+-                network, actionVO, extensionVO,
++                network, actionVO, extensionVOMock,
+                 ExtensionCustomAction.ResourceType.Network, new HashMap<>());
+ 
+         assertFalse(resp.isSuccess());
+@@ -2756,11 +2740,10 @@
+         String providerName ="my-ext-provider";
+         when(networkServiceMapDao.getProviderForServiceInNetwork(10L, Network.Service.CustomAction)).thenReturn(providerName);
+ 
+-        ExtensionVO ext = mock(ExtensionVO.class);
+-        doReturn(ext).when(extensionsManager).getExtensionForPhysicalNetworkAndProvider(5L, "my-ext-provider");
++        doReturn(extensionVOMock).when(extensionsManager).getExtensionForPhysicalNetworkAndProvider(5L, "my-ext-provider");
+ 
+         Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.Network, "net-uuid");
+-        assertEquals(ext, result);
++        assertEquals(extensionVOMock, result);
+     }
+ 
+     @Test
+@@ -2798,12 +2781,11 @@
+ 
+         when(vpcServiceMapDao.getProviderForServiceInVpc(20L, Network.Service.CustomAction)).thenReturn("my-vpc-provider");
+ 
+-        ExtensionVO ext = mock(ExtensionVO.class);
+-        when(extensionDao.findByNameAndType("my-vpc-provider", Extension.Type.NetworkOrchestrator)).thenReturn(ext);
++        when(extensionDao.findByNameAndType("my-vpc-provider", Extension.Type.NetworkOrchestrator)).thenReturn(extensionVOMock);
+ 
+         Extension result = extensionsManager.getExtensionWithCustomActionFromResource(ExtensionCustomAction.ResourceType.Vpc, "vpc-uuid");
+ 
+-        assertEquals(ext, result);
++        assertEquals(extensionVOMock, result);
+     }
+ 
+     @Test
+@@ -3008,9 +2990,8 @@
+         long physNetId = 10L;
+         String providerName = "my-ext";
+ 
+-        ExtensionVO ext = mock(ExtensionVO.class);
+-        when(ext.getId()).thenReturn(5L);
+-        doReturn(ext).when(extensionsManager).getExtensionForPhysicalNetworkAndProvider(physNetId, providerName);
++        when(extensionVOMock.getId()).thenReturn(5L);
++        doReturn(extensionVOMock).when(extensionsManager).getExtensionForPhysicalNetworkAndProvider(physNetId, providerName);
+ 
+         when(extensionDetailsDao.listDetailsKeyPairs(5L)).thenReturn(Map.of(
+                 ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY,
