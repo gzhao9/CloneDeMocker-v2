@@ -1,0 +1,49 @@
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/version/KubernetesVersionServiceTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/version/KubernetesVersionServiceTest.java
+@@ -105,6 +105,7 @@
+     private TemplateApiService templateService;
+     @Mock
+     private Account accountMock;
++    private DeleteKubernetesSupportedVersionCmd deleteKubernetesSupportedVersionCmd;
+ 
+     AutoCloseable closeable;
+ 
+@@ -118,6 +119,7 @@
+     @Before
+     public void setUp() throws Exception {
+         closeable = MockitoAnnotations.openMocks(this);
++        deleteKubernetesSupportedVersionCmd = Mockito.mock(DeleteKubernetesSupportedVersionCmd.class);
+ 
+         overrideDefaultConfigValue(KubernetesClusterService.KubernetesServiceEnabled, "_defaultValue", "true");
+ 
+@@ -299,7 +301,6 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void deleteKubernetesSupportedVersionExistingClustersTest() {
+-        DeleteKubernetesSupportedVersionCmd cmd = Mockito.mock(DeleteKubernetesSupportedVersionCmd.class);
+         AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
+         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+         CallContext.register(user, account);
+@@ -307,12 +308,11 @@
+         List<KubernetesClusterVO> clusters = new ArrayList<>();
+         clusters.add(Mockito.mock(KubernetesClusterVO.class));
+         when(kubernetesClusterDao.listAllByKubernetesVersion(Mockito.anyLong())).thenReturn(clusters);
+-        kubernetesVersionService.deleteKubernetesSupportedVersion(cmd);
++        kubernetesVersionService.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd);
+     }
+ 
+     @Test
+     public void deleteKubernetesSupportedVersionTest() {
+-        DeleteKubernetesSupportedVersionCmd cmd = Mockito.mock(DeleteKubernetesSupportedVersionCmd.class);
+         AccountVO account = new AccountVO("admin", 1L, "", Account.Type.ADMIN, "uuid");
+         UserVO user = new UserVO(1, "adminuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+         CallContext.register(user, account);
+@@ -321,7 +321,7 @@
+         when(kubernetesClusterDao.listAllByKubernetesVersion(Mockito.anyLong())).thenReturn(clusters);
+         try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class)) {
+             mockedComponentContext.when(() -> ComponentContext.inject(Mockito.any(DeleteIsoCmd.class))).thenReturn(new DeleteIsoCmd());
+-            kubernetesVersionService.deleteKubernetesSupportedVersion(cmd);
++            kubernetesVersionService.deleteKubernetesSupportedVersion(deleteKubernetesSupportedVersionCmd);
+             Mockito.verify(kubernetesSupportedVersionDao).remove(Mockito.anyLong());
+         }
+     }

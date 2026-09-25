@@ -1,0 +1,180 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
+@@ -70,7 +70,6 @@
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+         VMSnapshotTO vmSnapshotTO = mock(VMSnapshotTO.class);
+-        PrimaryDataStoreTO dataStoreTO = mock(PrimaryDataStoreTO.class);
+         VolumeObjectTO rootVolume = mock(VolumeObjectTO.class);
+ 
+         Path activeNvram = Files.createTempFile("active-", ".fd");
+@@ -84,8 +83,8 @@
+         when(vmSnapshotTO.getId()).thenReturn(42L);
+         when(command.getVolumeTOs()).thenReturn(List.of(rootVolume));
+         when(rootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
++        PrimaryDataStoreTO dataStoreTO = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         when(rootVolume.getDataStore()).thenReturn(dataStoreTO);
+-        when(dataStoreTO.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         when(dataStoreTO.getUuid()).thenReturn("pool-uuid");
+         when(resource.getUefiNvramPath("vm-uuid")).thenReturn(activeNvram.toString());
+         when(resource.getStoragePoolMgr()).thenReturn(storagePoolManager);
+@@ -304,8 +303,8 @@
+         KVMStoragePoolManager storagePoolManager = mock(KVMStoragePoolManager.class);
+         KVMStoragePool storagePool = mock(KVMStoragePool.class);
+         DeleteDiskOnlyVmSnapshotCommand command = mock(DeleteDiskOnlyVmSnapshotCommand.class);
+-        PrimaryDataStoreTO primaryDataStoreTO = mock(PrimaryDataStoreTO.class);
+-
++
++        PrimaryDataStoreTO primaryDataStoreTO = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         Path poolDirectory = Files.createTempDirectory("pool-");
+         Path snapshotNvram = poolDirectory.resolve("nvram/42.fd");
+         Files.createDirectories(snapshotNvram.getParent());
+@@ -313,7 +312,6 @@
+ 
+         when(command.getNvramSnapshotPath()).thenReturn("nvram/42.fd");
+         when(command.getPrimaryDataStore()).thenReturn(primaryDataStoreTO);
+-        when(primaryDataStoreTO.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         when(primaryDataStoreTO.getUuid()).thenReturn("pool-uuid");
+         when(storagePoolManager.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, "pool-uuid")).thenReturn(storagePool);
+         when(storagePool.getLocalPathFor("nvram/42.fd")).thenReturn(snapshotNvram.toString());
+@@ -818,4 +816,17 @@
+ 
+         assertFalse(answer.getResult());
+     }
++
++    public final class MockPrimaryDataStoreTO {
++        private MockPrimaryDataStoreTO() {
++        }
++
++        public static org.apache.cloudstack.storage.to.PrimaryDataStoreTO createMockPrimaryDataStoreTO() {
++            org.apache.cloudstack.storage.to.PrimaryDataStoreTO dataStoreTO =
++                    org.mockito.Mockito.mock(org.apache.cloudstack.storage.to.PrimaryDataStoreTO.class);
++            org.mockito.Mockito.when(dataStoreTO.getPoolType())
++                    .thenReturn(com.cloud.storage.Storage.StoragePoolType.NetworkFilesystem);
++            return dataStoreTO;
++        }
++    }
+ }
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtRestoreBackupCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtRestoreBackupCommandWrapperTest.java
+@@ -77,8 +77,7 @@
+         when(command.getDiskType()).thenReturn("root");
+         when(command.getRestoreVolumeSizes()).thenReturn(Arrays.asList(1024L));
+         when(command.getWait()).thenReturn(60);
+-        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+-        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        PrimaryDataStoreTO primaryDataStore = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+         when(command.getBackupFiles()).thenReturn(Arrays.asList("volume-123"));
+@@ -124,8 +123,7 @@
+         when(command.getMountOptions()).thenReturn("rw");
+         when(command.isVmExists()).thenReturn(true);
+         when(command.getDiskType()).thenReturn("root");
+-        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+-        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        PrimaryDataStoreTO primaryDataStore = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+         when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("volume-123"));
+@@ -166,8 +164,7 @@
+         when(command.getMountOptions()).thenReturn("rw");
+         when(command.isVmExists()).thenReturn(false);
+         when(command.getDiskType()).thenReturn("root");
+-        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+-        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        PrimaryDataStoreTO primaryDataStore = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+         when(command.getBackupFiles()).thenReturn(Arrays.asList("volume-123"));
+@@ -209,8 +206,7 @@
+         when(command.getDiskType()).thenReturn("root");
+         when(command.getRestoreVolumeSizes()).thenReturn(Arrays.asList(1024L));
+         when(command.getWait()).thenReturn(60);
+-        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+-        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        PrimaryDataStoreTO primaryDataStore = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+         when(command.getBackupFiles()).thenReturn(Arrays.asList("volume-123"));
+@@ -291,8 +287,7 @@
+         when(command.getDiskType()).thenReturn("root");
+         when(command.getRestoreVolumeSizes()).thenReturn(Arrays.asList(1024L));
+         when(command.getWait()).thenReturn(60);
+-        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+-        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        PrimaryDataStoreTO primaryDataStore = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+         when(command.getBackupFiles()).thenReturn(Arrays.asList("volume-123"));
+@@ -340,8 +335,7 @@
+         when(command.getDiskType()).thenReturn("root");
+         when(command.getRestoreVolumeSizes()).thenReturn(Arrays.asList(1024L));
+         when(command.getWait()).thenReturn(60);
+-        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+-        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        PrimaryDataStoreTO primaryDataStore = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+         when(command.getBackupFiles()).thenReturn(Arrays.asList("volume-123"));
+@@ -391,8 +385,7 @@
+         when(command.getDiskType()).thenReturn("root");
+         when(command.getRestoreVolumeSizes()).thenReturn(Arrays.asList(1024L));
+         when(command.getWait()).thenReturn(60);
+-        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+-        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        PrimaryDataStoreTO primaryDataStore = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+         when(command.getBackupFiles()).thenReturn(Arrays.asList("volume-123"));
+@@ -453,8 +446,7 @@
+         when(command.getDiskType()).thenReturn("root");
+         when(command.getRestoreVolumeSizes()).thenReturn(Arrays.asList(1024L));
+         when(command.getWait()).thenReturn(60);
+-        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+-        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        PrimaryDataStoreTO primaryDataStore = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+         when(command.getBackupFiles()).thenReturn(Arrays.asList("volume-123"));
+@@ -546,10 +538,8 @@
+         when(command.getMountOptions()).thenReturn("rw");
+         when(command.isVmExists()).thenReturn(true);
+         when(command.getDiskType()).thenReturn("root");
+-        PrimaryDataStoreTO primaryDataStore1 = Mockito.mock(PrimaryDataStoreTO.class);
+-        PrimaryDataStoreTO primaryDataStore2 = Mockito.mock(PrimaryDataStoreTO.class);
+-        when(primaryDataStore1.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+-        when(primaryDataStore2.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        PrimaryDataStoreTO primaryDataStore1 = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
++        PrimaryDataStoreTO primaryDataStore2 = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(
+                 primaryDataStore1,
+                 primaryDataStore2
+@@ -778,8 +768,7 @@
+         when(command.getMountOptions()).thenReturn("rw");
+         when(command.isVmExists()).thenReturn(true);
+         when(command.getDiskType()).thenReturn("root");
+-        PrimaryDataStoreTO primaryDataStore = Mockito.mock(PrimaryDataStoreTO.class);
+-        when(primaryDataStore.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        PrimaryDataStoreTO primaryDataStore = MockPrimaryDataStoreTO.createMockPrimaryDataStoreTO();
+         when(command.getRestoreVolumePools()).thenReturn(Arrays.asList(primaryDataStore));
+         when(command.getRestoreVolumePaths()).thenReturn(Arrays.asList("/var/lib/libvirt/images/volume-123"));
+         when(command.getBackupVolumesUUIDs()).thenReturn(Arrays.asList("volume-123"));
+@@ -812,4 +801,17 @@
+             }
+         }
+     }
++
++    public final class MockPrimaryDataStoreTO {
++        private MockPrimaryDataStoreTO() {
++        }
++
++        public static org.apache.cloudstack.storage.to.PrimaryDataStoreTO createMockPrimaryDataStoreTO() {
++            org.apache.cloudstack.storage.to.PrimaryDataStoreTO dataStoreTO =
++                    org.mockito.Mockito.mock(org.apache.cloudstack.storage.to.PrimaryDataStoreTO.class);
++            org.mockito.Mockito.when(dataStoreTO.getPoolType())
++                    .thenReturn(com.cloud.storage.Storage.StoragePoolType.NetworkFilesystem);
++            return dataStoreTO;
++        }
++    }
+ }
