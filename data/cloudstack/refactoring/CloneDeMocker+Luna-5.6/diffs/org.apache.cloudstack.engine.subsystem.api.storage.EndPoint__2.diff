@@ -1,0 +1,60 @@
+--- a/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/AncientDataMotionStrategyTest.java
++++ b/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/AncientDataMotionStrategyTest.java
+@@ -80,11 +80,14 @@
+     @Mock
+     ConfigurationDao configDao;
+ 
++    private EndPoint endPointMock;
++
+     private static final long POOL_ID = 1l;
+     private static final Boolean FULL_CLONE_FLAG = true;
+ 
+     @Before
+     public void setup() throws Exception {
++        endPointMock = Mockito.mock(EndPoint.class);
+         overrideDefaultConfigValue(StorageManager.VmwareCreateCloneFull, String.valueOf(FULL_CLONE_FLAG));
+ 
+         when(dataTO.getHypervisorType()).thenReturn(HypervisorType.VMware);
+@@ -399,7 +402,6 @@
+                 DataObject.class);
+         method.setAccessible(true);
+ 
+-        EndPoint endPoint = Mockito.mock(EndPoint.class);
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         // Create mock that implements both DataStore and StoragePool interfaces
+         DataStore dataStore = Mockito.mock(DataStore.class, Mockito.withSettings().extraInterfaces(StoragePool.class));
+@@ -408,7 +410,7 @@
+         Mockito.when(volumeInfo.getDataStore()).thenReturn(dataStore);
+         Mockito.when(((StoragePool) dataStore).getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+ 
+-        method.invoke(strategy, endPoint, volumeInfo);
++        method.invoke(strategy, endPointMock, volumeInfo);
+ 
+         Mockito.verify(clvmPoolManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
+         Mockito.verify(clvmPoolManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
+@@ -475,11 +477,10 @@
+                 DataObject.class);
+         method.setAccessible(true);
+ 
+-        EndPoint endPoint = Mockito.mock(EndPoint.class);
+         SnapshotInfo snapshotInfo = Mockito.mock(SnapshotInfo.class);
+         ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+ 
+-        method.invoke(strategy, endPoint, snapshotInfo);
++        method.invoke(strategy, endPointMock, snapshotInfo);
+ 
+         Mockito.verify(clvmPoolManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
+         Mockito.verify(clvmPoolManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
+@@ -494,11 +495,10 @@
+                 DataObject.class);
+         method.setAccessible(true);
+ 
+-        EndPoint endPoint = Mockito.mock(EndPoint.class);
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         ClvmPoolManager clvmPoolManager = injectMockedClvmPoolManager();
+ 
+-        method.invoke(strategy, endPoint, volumeInfo);
++        method.invoke(strategy, endPointMock, volumeInfo);
+ 
+         Mockito.verify(clvmPoolManager, never()).setClvmLockHostId(any(Long.class), any(Long.class));
+         Mockito.verify(clvmPoolManager, never()).getClvmLockHostId(any(Long.class), any(String.class),
