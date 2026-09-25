@@ -1,0 +1,57 @@
+--- a/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
+@@ -826,9 +826,8 @@
+         when(gpuDeviceDao.persist(any(GpuDeviceVO.class))).thenReturn(mockGpuDevice);
+ 
+         try (MockedStatic<GlobalLock> ignored = Mockito.mockStatic(GlobalLock.class)) {
+-            GlobalLock lock = mock(GlobalLock.class);
++            GlobalLock lock = createGlobalLock();
+             when(GlobalLock.getInternLock("add-gpu-devices-to-host-" + HOST_ID)).thenReturn(lock);
+-            when(lock.lock(30)).thenReturn(true);
+ 
+             gpuService.addGpuDevicesToHost(mockHost, newDevices);
+ 
+@@ -855,9 +854,8 @@
+         when(gpuDeviceDao.update(eq(GPU_DEVICE_ID_LONG), any(GpuDeviceVO.class))).thenReturn(true);
+ 
+         try (MockedStatic<GlobalLock> ignored = Mockito.mockStatic(GlobalLock.class)) {
+-            GlobalLock lock = mock(GlobalLock.class);
++            GlobalLock lock = createGlobalLock();
+             when(GlobalLock.getInternLock("add-gpu-devices-to-host-" + HOST_ID)).thenReturn(lock);
+-            when(lock.lock(30)).thenReturn(true);
+ 
+             gpuService.addGpuDevicesToHost(mockHost, newDevices);
+             verify(gpuDeviceDao).update(eq(GPU_DEVICE_ID_LONG), any(GpuDeviceVO.class));
+@@ -884,9 +882,8 @@
+         when(gpuDeviceDao.persist(any(GpuDeviceVO.class))).thenReturn(mockGpuDevice);
+ 
+         try (MockedStatic<GlobalLock> ignored = Mockito.mockStatic(GlobalLock.class)) {
+-            GlobalLock lock = mock(GlobalLock.class);
++            GlobalLock lock = createGlobalLock();
+             when(GlobalLock.getInternLock("add-gpu-devices-to-host-" + HOST_ID)).thenReturn(lock);
+-            when(lock.lock(30)).thenReturn(true);
+ 
+             gpuService.addGpuDevicesToHost(mockHost, newDevices);
+ 
+@@ -1103,9 +1100,8 @@
+         when(gpuDeviceDao.update(eq(GPU_DEVICE_ID_2), any(GpuDeviceVO.class))).thenReturn(true);
+ 
+         try (MockedStatic<GlobalLock> ignored = Mockito.mockStatic(GlobalLock.class)) {
+-            GlobalLock lock = mock(GlobalLock.class);
++            GlobalLock lock = createGlobalLock();
+             when(GlobalLock.getInternLock("add-gpu-devices-to-host-" + HOST_ID)).thenReturn(lock);
+-            when(lock.lock(30)).thenReturn(true);
+ 
+             gpuService.addGpuDevicesToHost(mockHost, newDevices);
+             verify(gpuDeviceDao).update(eq(GPU_DEVICE_ID_2), any(GpuDeviceVO.class));
+@@ -1492,4 +1488,10 @@
+         verify(parentDevice).setState(GpuDevice.State.Error);
+         verify(gpuDeviceDao).update(eq(PARENT_GPU_DEVICE_ID), eq(parentDevice));
+     }
++
++    private static GlobalLock createGlobalLock() {
++        GlobalLock lock = mock(GlobalLock.class);
++        when(lock.lock(30)).thenReturn(true);
++        return lock;
++    }
+ }
