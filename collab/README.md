@@ -54,3 +54,7 @@ collab/status/<agent>-session.md           what its model session is doing, "as 
 12. **Direct session messages (`SendMessage`) only when urgent or a peer seems cut off.** They are
     real-time but not archived. Anything decided that way gets one line on the board afterwards.
     Never message B's session directly; B is reached only through the board.
+13. **Publish anything else with one command too:** `python scripts/safe_push.py -m "why" <paths>`,
+    and file your letters with `python scripts/safe_push.py --file-read <IDs>` (AGENT_ID = you).
+    Same private-index path as the lanes; it refuses deletions and realigns local `main`. Do not
+    hand-type plumbing sequences. They cost tokens on every call, and they caused the losses.
