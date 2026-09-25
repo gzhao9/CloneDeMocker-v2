@@ -1,0 +1,68 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -179,6 +179,7 @@
+     @Spy
+     @InjectMocks
+     private VirtualMachineManagerImpl virtualMachineManagerImpl = new VirtualMachineManagerImpl();
++    private VirtualMachineTO vmTOMock;
+     @Mock
+     private AgentManager agentManagerMock;
+     @Mock
+@@ -301,6 +302,7 @@
+ 
+     @Before
+     public void setup() {
++        vmTOMock = mock(VirtualMachineTO.class);
+         ReflectionTestUtils.getField(VirtualMachineManager.VmMetadataManufacturer, "s_depot");
+         virtualMachineManagerImpl.setHostAllocators(new ArrayList<>());
+ 
+@@ -1468,12 +1470,11 @@
+     @Test
+     public void updateStartCommandWithExternalDetails_nonExternalHypervisor_noAction() {
+         Host host = mock(Host.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+         StartCommand command = mock(StartCommand.class);
+ 
+         when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+ 
+-        virtualMachineManagerImpl.updateStartCommandWithExternalDetails(host, vmTO, command);
++        virtualMachineManagerImpl.updateStartCommandWithExternalDetails(host, vmTOMock, command);
+ 
+         verify(command, never()).setExternalDetails(any());
+     }
+@@ -1526,10 +1527,9 @@
+     @Test
+     public void updateRebootCommandWithExternalDetails_nonExternalHypervisor_noAction() {
+         Host host = mock(Host.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+         RebootCommand rebootCmd = mock(RebootCommand.class);
+         when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+-        virtualMachineManagerImpl.updateRebootCommandWithExternalDetails(host, vmTO, rebootCmd);
++        virtualMachineManagerImpl.updateRebootCommandWithExternalDetails(host, vmTOMock, rebootCmd);
+         verify(rebootCmd, never()).setExternalDetails(any());
+     }
+ 
+@@ -1547,10 +1547,9 @@
+ 
+     @Test
+     public void updateExternalVmDetailsFromPrepareAnswer_nullDetails_noAction() {
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+         UserVmVO userVmVO = mock(UserVmVO.class);
+-        virtualMachineManagerImpl.updateExternalVmDetailsFromPrepareAnswer(vmTO, userVmVO, null);
+-        verify(vmTO, never()).setDetails(any());
++        virtualMachineManagerImpl.updateExternalVmDetailsFromPrepareAnswer(vmTOMock, userVmVO, null);
++        verify(vmTOMock, never()).setDetails(any());
+         verify(userVmVO, never()).setDetails(any());
+         verify(userVmDaoMock, never()).saveDetails(any());
+     }
+@@ -1583,9 +1582,8 @@
+     @Test
+     public void updateExternalVmNicsFromPrepareAnswer_nullNics_noAction() {
+         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+         when(vmTO.getNics()).thenReturn(null);
+-        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
++        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, vmTOMock);
+         verify(_nicsDao, never()).findByUuid(anyString());
+     }
+ 

@@ -1,0 +1,61 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -352,6 +352,12 @@
+         return method;
+     }
+ 
++    private static VirtualMachineTO createMockVirtualMachineTO() {
++        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        when(vmTO.getNics()).thenReturn(null);
++        return vmTO;
++    }
++
+     @Test
+     public void testaddHostIpToCertDetailsIfConfigAllows() {
+         Host vmHost = mock(Host.class);
+@@ -1582,9 +1588,8 @@
+ 
+     @Test
+     public void updateExternalVmNicsFromPrepareAnswer_nullNics_noAction() {
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getNics()).thenReturn(null);
+         virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+         verify(_nicsDao, never()).findByUuid(anyString());
+     }
+@@ -1630,22 +1635,20 @@
+     @Test
+     public void updateExternalVmNicsFromPrepareAnswer_nullUpdatedNics_noAction() {
+         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        VirtualMachineTO updatedTO = createMockVirtualMachineTO();
++
++        when(vmTO.getNics()).thenReturn(new NicTO[]{mock(NicTO.class)});
++
++        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
++
++        verify(_nicsDao, never()).findByUuid(anyString());
++    }
++
++    @Test
++    public void updateExternalVmNicsFromPrepareAnswer_nullVmNics_noAction() {
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+ 
+-        when(vmTO.getNics()).thenReturn(new NicTO[]{mock(NicTO.class)});
+-        when(updatedTO.getNics()).thenReturn(null);
+-
+-        virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+-
+-        verify(_nicsDao, never()).findByUuid(anyString());
+-    }
+-
+-    @Test
+-    public void updateExternalVmNicsFromPrepareAnswer_nullVmNics_noAction() {
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+-
+-        when(vmTO.getNics()).thenReturn(null);
+         when(updatedTO.getNics()).thenReturn(new NicTO[]{mock(NicTO.class)});
+ 
+         virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);

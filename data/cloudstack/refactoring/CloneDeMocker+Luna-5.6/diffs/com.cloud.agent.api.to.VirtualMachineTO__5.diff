@@ -1,0 +1,40 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -345,6 +345,12 @@
+         return clvmPoolManagerMock;
+     }
+ 
++    private static VirtualMachineTO createMockVirtualMachineTO() {
++        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        when(vmTO.getExternalDetails()).thenReturn(new HashMap<>());
++        return vmTO;
++    }
++
+     private Method getUpdateClvmLockHostForVmVolumesMethod() throws NoSuchMethodException {
+         Method method = VirtualMachineManagerImpl.class.getDeclaredMethod(
+             "updateClvmLockHostForVmVolumes", long.class, long.class);
+@@ -1512,11 +1518,10 @@
+         VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+         StopCommand stopCommand = mock(StopCommand.class);
+         HostVO host = mock(HostVO.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(vmProfile.getHostId()).thenReturn(1L);
+         when(hostDaoMock.findById(1L)).thenReturn(host);
+         when(stopCommand.getVirtualMachine()).thenReturn(vmTO);
+-        when(vmTO.getExternalDetails()).thenReturn(new HashMap<>());
+         when(extensionsManager.getExternalAccessDetails(eq(host), any())).thenReturn(new HashMap<>());
+         doReturn(mock(VirtualMachineTO.class)).when(virtualMachineManagerImpl).toVmTO(any());
+         virtualMachineManagerImpl.updateStopCommandForExternalHypervisorType(HypervisorType.External, vmProfile, stopCommand);
+@@ -1536,10 +1541,9 @@
+     @Test
+     public void updateRebootCommandWithExternalDetails_externalHypervisor_setsExternalDetails() {
+         Host host = mock(Host.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         RebootCommand rebootCmd = mock(RebootCommand.class);
+         when(host.getHypervisorType()).thenReturn(HypervisorType.External);
+-        when(vmTO.getExternalDetails()).thenReturn(new HashMap<>());
+         when(extensionsManager.getExternalAccessDetails(eq(host), any())).thenReturn(new HashMap<>());
+         virtualMachineManagerImpl.updateRebootCommandWithExternalDetails(host, vmTO, rebootCmd);
+         verify(rebootCmd).setExternalDetails(any());
