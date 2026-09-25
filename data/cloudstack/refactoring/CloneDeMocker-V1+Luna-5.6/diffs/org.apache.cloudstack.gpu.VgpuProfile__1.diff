@@ -1,0 +1,71 @@
+--- a/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/gpu/GpuServiceImplTest.java
+@@ -767,9 +767,8 @@
+ 
+     @Test
+     public void testIsGPUDeviceAvailable_Sufficient() {
+-        VgpuProfile vgpuProfile = mock(VgpuProfile.class);
+-        when(vgpuProfile.getId()).thenReturn(VGPU_PROFILE_ID);
+-
++
++        VgpuProfile vgpuProfile = createMockVgpuProfile(VGPU_PROFILE_ID);
+         GpuDeviceVO additionalDevice = mock(GpuDeviceVO.class);
+         List<GpuDeviceVO> availableDevices = List.of(mockGpuDevice, additionalDevice);
+         when(gpuDeviceDao.listDevicesForAllocation(HOST_ID, VGPU_PROFILE_ID)).thenReturn(availableDevices);
+@@ -781,9 +780,8 @@
+ 
+     @Test
+     public void testIsGPUDeviceAvailable_Insufficient() {
+-        VgpuProfile vgpuProfile = mock(VgpuProfile.class);
+-        when(vgpuProfile.getId()).thenReturn(VGPU_PROFILE_ID);
+-
++
++        VgpuProfile vgpuProfile = createMockVgpuProfile(VGPU_PROFILE_ID);
+         List<GpuDeviceVO> availableDevices = List.of(mockGpuDevice);
+         List<GpuDeviceVO> existingDevices = new ArrayList<>();
+ 
+@@ -902,8 +900,7 @@
+         when(vm.getHostId()).thenReturn(HOST_ID);
+         when(vm.getServiceOfferingId()).thenReturn(SERVICE_OFFERING_ID);
+ 
+-        VgpuProfile vgpuProfile = mock(VgpuProfile.class);
+-        when(vgpuProfile.getId()).thenReturn(VGPU_PROFILE_ID);
++        VgpuProfile vgpuProfile = createMockVgpuProfile(VGPU_PROFILE_ID);
+         when(vgpuProfile.getCardId()).thenReturn(GPU_CARD_ID);
+         when(vgpuProfile.getName()).thenReturn(TEST_PROFILE_NAME);
+ 
+@@ -934,9 +931,8 @@
+         when(vm.getId()).thenReturn(VM_ID);
+         when(vm.getHostId()).thenReturn(HOST_ID);
+ 
+-        VgpuProfile vgpuProfile = mock(VgpuProfile.class);
+-        when(vgpuProfile.getId()).thenReturn(VGPU_PROFILE_ID);
+-
++
++        VgpuProfile vgpuProfile = createMockVgpuProfile(VGPU_PROFILE_ID);
+         try (MockedStatic<Transaction> transactionMock = Mockito.mockStatic(Transaction.class)) {
+             when(gpuDeviceDao.listDevicesForAllocation(HOST_ID, VGPU_PROFILE_ID)).thenReturn(new ArrayList<>());
+ 
+@@ -1072,9 +1068,8 @@
+ 
+     @Test
+     public void testIsGPUDeviceAvailable_WithExistingDevices() {
+-        VgpuProfile vgpuProfile = mock(VgpuProfile.class);
+-        when(vgpuProfile.getId()).thenReturn(VGPU_PROFILE_ID);
+-
++
++        VgpuProfile vgpuProfile = createMockVgpuProfile(VGPU_PROFILE_ID);
+         List<GpuDeviceVO> availableDevices = List.of(mockGpuDevice);
+ 
+         GpuDeviceVO existingDevice = mock(GpuDeviceVO.class);
+@@ -1492,4 +1487,10 @@
+         verify(parentDevice).setState(GpuDevice.State.Error);
+         verify(gpuDeviceDao).update(eq(PARENT_GPU_DEVICE_ID), eq(parentDevice));
+     }
++
++    private static VgpuProfile createMockVgpuProfile(Long vgpuProfileId) {
++        VgpuProfile vgpuProfile = mock(VgpuProfile.class);
++        when(vgpuProfile.getId()).thenReturn(vgpuProfileId);
++        return vgpuProfile;
++    }
+ }

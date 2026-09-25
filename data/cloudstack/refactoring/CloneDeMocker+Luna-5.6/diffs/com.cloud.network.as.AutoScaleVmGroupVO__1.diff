@@ -1,0 +1,50 @@
+--- a/server/src/test/java/org/apache/cloudstack/schedule/autoscale/AutoScaleScheduleWorkerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/schedule/autoscale/AutoScaleScheduleWorkerTest.java
+@@ -92,7 +92,7 @@
+     @Test
+     public void testProcessJobWithValidDetailsSubmitsUpdateAutoScaleVmGroupCmd() {
+         ResourceScheduledJobVO job = Mockito.mock(ResourceScheduledJobVO.class);
+-        AutoScaleVmGroupVO group = Mockito.mock(AutoScaleVmGroupVO.class);
++        AutoScaleVmGroupVO group = createMockAutoScaleVmGroup(3L);
+         Map<String, String> details = new HashMap<>();
+         details.put("minmembers", "2");
+         details.put("maxmembers", "5");
+@@ -101,8 +101,6 @@
+         Mockito.when(job.getScheduleId()).thenReturn(10L);
+         Mockito.when(job.getActionName()).thenReturn(AutoScaleScheduleAction.UPDATE.name());
+         Mockito.when(autoScaleVmGroupDao.findById(1L)).thenReturn(group);
+-        Mockito.when(group.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
+-        Mockito.when(group.getAccountId()).thenReturn(3L);
+         Mockito.when(group.getId()).thenReturn(1L);
+         Mockito.when(group.getUuid()).thenReturn("asg-uuid");
+         Mockito.when(resourceScheduleDetailsDao.listDetailsKeyPairs(10L, true)).thenReturn(details);
+@@ -136,7 +134,7 @@
+     @Test
+     public void testScheduleNextJobDisablesWithEventWhenEndDatePassed() {
+         ResourceScheduleVO schedule = Mockito.mock(ResourceScheduleVO.class);
+-        AutoScaleVmGroupVO group = Mockito.mock(AutoScaleVmGroupVO.class);
++        AutoScaleVmGroupVO group = createMockAutoScaleVmGroup(2L);
+         Date pastDate = DateUtils.addDays(new Date(), -1);
+ 
+         Mockito.when(schedule.getEnabled()).thenReturn(true);
+@@ -148,8 +146,6 @@
+         Mockito.when(schedule.getUuid()).thenReturn("sched-uuid");
+         Mockito.when(schedule.getDescription()).thenReturn("test schedule");
+         Mockito.when(autoScaleVmGroupDao.findById(1L)).thenReturn(group);
+-        Mockito.when(group.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
+-        Mockito.when(group.getAccountId()).thenReturn(2L);
+ 
+         worker.scheduleNextJob(schedule, new Date());
+ 
+@@ -161,4 +157,11 @@
+                 Mockito.contains("end date"),
+                 Mockito.eq(1L), Mockito.anyString(), Mockito.eq(true), Mockito.eq(0L)));
+     }
++
++    private static AutoScaleVmGroupVO createMockAutoScaleVmGroup(long accountId) {
++        AutoScaleVmGroupVO group = Mockito.mock(AutoScaleVmGroupVO.class);
++        Mockito.when(group.getState()).thenReturn(AutoScaleVmGroup.State.ENABLED);
++        Mockito.when(group.getAccountId()).thenReturn(accountId);
++        return group;
++    }
+ }
