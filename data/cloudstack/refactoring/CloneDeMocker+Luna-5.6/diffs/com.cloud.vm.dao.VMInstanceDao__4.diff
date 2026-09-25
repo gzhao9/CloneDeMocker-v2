@@ -1,0 +1,112 @@
+--- a/plugins/affinity-group-processors/non-strict-host-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAffinityProcessorTest.java
++++ b/plugins/affinity-group-processors/non-strict-host-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAffinityProcessorTest.java
+@@ -90,7 +90,7 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2, vm2Id, null, 0);
+         vm2.setHostId(host2Id);
+ 
+         processor.process(vmProfile, plan, avoid);
+@@ -122,10 +122,10 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id, vm3Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+         vm2.setHostId(host2Id);
+         VMInstanceVO vm3 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm3Id)).thenReturn(vm3);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2, vm2Id, vm3, vm3Id);
++        vm3.setHostId(host3Id);
+         vm3.setHostId(host3Id);
+ 
+         processor.process(vmProfile, plan, avoid);
+@@ -157,7 +157,7 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2, vm2Id, null, 0);
+         when(vm2.getHostId()).thenReturn(null);
+         when(vm2.getLastHostId()).thenReturn(host2Id);
+         when(vm2.getState()).thenReturn(VirtualMachine.State.Starting);
+--- a/plugins/affinity-group-processors/non-strict-host-anti-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAntiAffinityProcessorTest.java
++++ b/plugins/affinity-group-processors/non-strict-host-anti-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAntiAffinityProcessorTest.java
+@@ -89,7 +89,7 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2, vm2Id, null, 0);
+         vm2.setHostId(host2Id);
+ 
+         processor.process(vmProfile, plan, avoid);
+@@ -121,10 +121,9 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id, vm3Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++        VMInstanceVO vm3 = new VMInstanceVO();
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2, vm2Id, vm3, vm3Id);
+         vm2.setHostId(host2Id);
+-        VMInstanceVO vm3 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm3Id)).thenReturn(vm3);
+         vm3.setHostId(host3Id);
+ 
+         processor.process(vmProfile, plan, avoid);
+@@ -156,7 +155,7 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2, vm2Id, null, 0L);
+         when(vm2.getHostId()).thenReturn(null);
+         when(vm2.getLastHostId()).thenReturn(host2Id);
+         when(vm2.getState()).thenReturn(VirtualMachine.State.Starting);
+--- a/plugins/affinity-group-processors/non-strict-host-affinity/src/test/java/org/apache/cloudstack/affinity/MockVMInstanceDao.java
++++ b/plugins/affinity-group-processors/non-strict-host-affinity/src/test/java/org/apache/cloudstack/affinity/MockVMInstanceDao.java
+@@ -0,0 +1,20 @@
++package org.apache.cloudstack.affinity;
++
++import com.cloud.vm.VMInstanceVO;
++import com.cloud.vm.dao.VMInstanceDao;
++
++import static org.mockito.Mockito.when;
++
++public final class MockVMInstanceDao {
++    private MockVMInstanceDao() {
++    }
++
++    public static VMInstanceDao createMockVmInstanceDao(VMInstanceVO vm2, long vm2Id, VMInstanceVO vm3, long vm3Id) {
++        VMInstanceDao vmInstanceDao = org.mockito.Mockito.mock(VMInstanceDao.class);
++        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++        if (vm3 != null) {
++            when(vmInstanceDao.findById(vm3Id)).thenReturn(vm3);
++        }
++        return vmInstanceDao;
++    }
++}
+--- a/plugins/affinity-group-processors/non-strict-host-anti-affinity/src/test/java/org/apache/cloudstack/affinity/MockVMInstanceDao.java
++++ b/plugins/affinity-group-processors/non-strict-host-anti-affinity/src/test/java/org/apache/cloudstack/affinity/MockVMInstanceDao.java
+@@ -0,0 +1,20 @@
++package org.apache.cloudstack.affinity;
++
++import com.cloud.vm.VMInstanceVO;
++import com.cloud.vm.dao.VMInstanceDao;
++
++import static org.mockito.Mockito.when;
++
++public final class MockVMInstanceDao {
++    private MockVMInstanceDao() {
++    }
++
++    public static VMInstanceDao createMockVmInstanceDao(VMInstanceVO vm2, long vm2Id, VMInstanceVO vm3, long vm3Id) {
++        VMInstanceDao vmInstanceDao = org.mockito.Mockito.mock(VMInstanceDao.class);
++        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++        if (vm3 != null) {
++            when(vmInstanceDao.findById(vm3Id)).thenReturn(vm3);
++        }
++        return vmInstanceDao;
++    }
++}

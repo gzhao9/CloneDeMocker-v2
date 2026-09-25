@@ -1,0 +1,120 @@
+--- a/plugins/affinity-group-processors/non-strict-host-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAffinityProcessorTest.java
++++ b/plugins/affinity-group-processors/non-strict-host-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAffinityProcessorTest.java
+@@ -90,7 +90,7 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2Id, vm2, null, null);
+         vm2.setHostId(host2Id);
+ 
+         processor.process(vmProfile, plan, avoid);
+@@ -122,10 +122,9 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id, vm3Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+         vm2.setHostId(host2Id);
+         VMInstanceVO vm3 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm3Id)).thenReturn(vm3);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2Id, vm2, vm3Id, vm3);
+         vm3.setHostId(host3Id);
+ 
+         processor.process(vmProfile, plan, avoid);
+@@ -157,7 +156,7 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2Id, vm2, null, null);
+         when(vm2.getHostId()).thenReturn(null);
+         when(vm2.getLastHostId()).thenReturn(host2Id);
+         when(vm2.getState()).thenReturn(VirtualMachine.State.Starting);
+@@ -170,4 +169,27 @@
+         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
+         Assert.assertEquals(Integer.valueOf(1), plan.getHostPriorities().get(host2Id));
+     }
++
++    public final class MockVMInstanceDao {
++
++        private MockVMInstanceDao() {
++        }
++
++        public static com.cloud.vm.dao.VMInstanceDao createMockVmInstanceDao(
++                long vm2Id,
++                com.cloud.vm.VMInstanceVO vm2,
++                Long vm3Id,
++                com.cloud.vm.VMInstanceVO vm3) {
++            com.cloud.vm.dao.VMInstanceDao vmInstanceDao =
++                    org.mockito.Mockito.mock(com.cloud.vm.dao.VMInstanceDao.class);
++
++            when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++
++            if (vm3Id != null && vm3 != null) {
++                when(vmInstanceDao.findById(vm3Id)).thenReturn(vm3);
++            }
++
++            return vmInstanceDao;
++        }
++    }
+ }
+--- a/plugins/affinity-group-processors/non-strict-host-anti-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAntiAffinityProcessorTest.java
++++ b/plugins/affinity-group-processors/non-strict-host-anti-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAntiAffinityProcessorTest.java
+@@ -89,7 +89,7 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2Id, vm2, null, null);
+         vm2.setHostId(host2Id);
+ 
+         processor.process(vmProfile, plan, avoid);
+@@ -121,10 +121,9 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id, vm3Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+         vm2.setHostId(host2Id);
+         VMInstanceVO vm3 = new VMInstanceVO();
+-        when(vmInstanceDao.findById(vm3Id)).thenReturn(vm3);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2Id, vm2, vm3Id, vm3);
+         vm3.setHostId(host3Id);
+ 
+         processor.process(vmProfile, plan, avoid);
+@@ -156,7 +155,7 @@
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
+-        when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++        vmInstanceDao = MockVMInstanceDao.createMockVmInstanceDao(vm2Id, vm2, null, null);
+         when(vm2.getHostId()).thenReturn(null);
+         when(vm2.getLastHostId()).thenReturn(host2Id);
+         when(vm2.getState()).thenReturn(VirtualMachine.State.Starting);
+@@ -169,4 +168,27 @@
+         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
+         Assert.assertEquals(Integer.valueOf(-1), plan.getHostPriorities().get(host2Id));
+     }
++
++    public final class MockVMInstanceDao {
++
++        private MockVMInstanceDao() {
++        }
++
++        public static com.cloud.vm.dao.VMInstanceDao createMockVmInstanceDao(
++                long vm2Id,
++                com.cloud.vm.VMInstanceVO vm2,
++                Long vm3Id,
++                com.cloud.vm.VMInstanceVO vm3) {
++            com.cloud.vm.dao.VMInstanceDao vmInstanceDao =
++                    org.mockito.Mockito.mock(com.cloud.vm.dao.VMInstanceDao.class);
++
++            when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
++
++            if (vm3Id != null && vm3 != null) {
++                when(vmInstanceDao.findById(vm3Id)).thenReturn(vm3);
++            }
++
++            return vmInstanceDao;
++        }
++    }
+ }

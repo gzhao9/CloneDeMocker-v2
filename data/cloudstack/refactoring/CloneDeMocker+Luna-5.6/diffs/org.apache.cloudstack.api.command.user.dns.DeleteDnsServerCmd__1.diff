@@ -1,0 +1,27 @@
+--- a/server/src/test/java/org/apache/cloudstack/dns/DnsProviderManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/dns/DnsProviderManagerImplTest.java
+@@ -428,16 +428,20 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testDeleteDnsServerNotFound() {
++        DeleteDnsServerCmd cmd = createMockDeleteDnsServerCmd();
++        when(dnsServerDao.findById(SERVER_ID)).thenReturn(null);
++        manager.deleteDnsServer(cmd);
++    }
++
++    private static DeleteDnsServerCmd createMockDeleteDnsServerCmd() {
+         DeleteDnsServerCmd cmd = mock(DeleteDnsServerCmd.class);
+         when(cmd.getId()).thenReturn(SERVER_ID);
+-        when(dnsServerDao.findById(SERVER_ID)).thenReturn(null);
+-        manager.deleteDnsServer(cmd);
++        return cmd;
+     }
+ 
+     @Test
+     public void testDeleteDnsServerWithCleanup() throws Exception {
+-        DeleteDnsServerCmd cmd = mock(DeleteDnsServerCmd.class);
+-        when(cmd.getId()).thenReturn(SERVER_ID);
++        DeleteDnsServerCmd cmd = createMockDeleteDnsServerCmd();
+         when(cmd.getCleanup()).thenReturn(true);
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+         doNothing().when(accountMgr).checkAccess(any(Account.class),

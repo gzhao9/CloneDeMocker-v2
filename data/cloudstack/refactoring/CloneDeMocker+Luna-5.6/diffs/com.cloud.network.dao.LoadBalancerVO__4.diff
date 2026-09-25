@@ -1,0 +1,44 @@
+--- a/server/src/test/java/com/cloud/network/lb/LoadBalancingRulesManagerImplTest.java
++++ b/server/src/test/java/com/cloud/network/lb/LoadBalancingRulesManagerImplTest.java
+@@ -111,6 +111,9 @@
+     @Mock
+     LoadBalancerVO loadBalancerMock;
+ 
++    @Mock
++    private LoadBalancerVO loadBalancerField;
++
+     private long accountId = 10L;
+     private long lbRuleId = 2L;
+     private long certMapRuleId = 3L;
+@@ -157,13 +160,12 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testGetLoadBalancerServiceProviderFail() {
+-        LoadBalancerVO loadBalancerMock = Mockito.mock(LoadBalancerVO.class);
+         NetworkVO networkMock = Mockito.mock(NetworkVO.class);
+ 
+         when(_networkDao.findById(Mockito.any())).thenReturn(networkMock);
+         when(_networkMgr.getProvidersForServiceInNetwork(networkMock, Network.Service.Lb)).thenReturn(new ArrayList<>());
+ 
+-        Network.Provider provider = lbr.getLoadBalancerServiceProvider(loadBalancerMock);
++        Network.Provider provider = lbr.getLoadBalancerServiceProvider(loadBalancerField);
+     }
+ 
+     @Test
+@@ -344,7 +346,6 @@
+         long vmId = 30L;
+         UserVm userVm = Mockito.mock(UserVm.class);
+         when(userVm.getId()).thenReturn(vmId);
+-        LoadBalancerVO loadBalancer = Mockito.mock(LoadBalancerVO.class);
+         Network loadBalancerNetwork = Mockito.mock(Network.class);
+         Account owner = Mockito.mock(Account.class);
+ 
+@@ -360,7 +361,7 @@
+         Nic nic = Mockito.mock(Nic.class);
+         when(_networkModel.getNicInNetwork(Mockito.eq(vmId), Mockito.eq(networkTier2Id))).thenReturn(nic);
+ 
+-        Nic nicInLb = lbr.getVmNicInLoadBalancer(userVm, loadBalancer, loadBalancerNetwork, vmIdNetworkIdMap, owner);
++        Nic nicInLb = lbr.getVmNicInLoadBalancer(userVm, loadBalancerField, loadBalancerNetwork, vmIdNetworkIdMap, owner);
+         Assert.assertEquals(nic, nicInLb);
+     }
+ 

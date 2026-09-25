@@ -1,0 +1,118 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -2266,7 +2266,7 @@
+     @Test
+     public void createDeltaMergeTreeTestChildIsVolumeWithoutSucceedingSnapshot() {
+         doReturn(dataStoreMock).when(dataStoreManagerMock).getDataStore(anyLong(), eq(DataStoreRole.Primary));
+-        doReturn("parent-path").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
++        internalBackupStoragePoolVoMock = MockInternalBackupStoragePoolVO.createMockInternalBackupStoragePoolVO("parent-path");
+ 
+         DeltaMergeTreeTO result = kbossBackupProviderSpy.createDeltaMergeTree(true, true, internalBackupStoragePoolVoMock,
+                 volumeObjectToMock, null);
+@@ -2280,7 +2280,7 @@
+     @Test
+     public void createDeltaMergeTreeTestChildIsDeltaWithoutSucceedingSnapshot() {
+         doReturn(dataStoreMock).when(dataStoreManagerMock).getDataStore(anyLong(), eq(DataStoreRole.Primary));
+-        doReturn("parent-path").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
++        internalBackupStoragePoolVoMock = MockInternalBackupStoragePoolVO.createMockInternalBackupStoragePoolVO("parent-path");
+         doReturn("child-path").when(internalBackupStoragePoolVoMock).getBackupDeltaPath();
+ 
+         DeltaMergeTreeTO result = kbossBackupProviderSpy.createDeltaMergeTree(false, true, internalBackupStoragePoolVoMock,
+@@ -2297,7 +2297,7 @@
+         SnapshotDataStoreVO snapshotRefMock = Mockito.mock(SnapshotDataStoreVO.class);
+ 
+         doReturn(dataStoreMock).when(dataStoreManagerMock).getDataStore(anyLong(), eq(DataStoreRole.Primary));
+-        doReturn("parent-path").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
++        internalBackupStoragePoolVoMock = MockInternalBackupStoragePoolVO.createMockInternalBackupStoragePoolVO("parent-path");
+         doReturn("child-path").when(internalBackupStoragePoolVoMock).getBackupDeltaPath();
+         doReturn(volumeId).when(volumeObjectToMock).getVolumeId();
+         doReturn("snapshot-grandchild").when(snapshotRefMock).getInstallPath();
+@@ -2315,7 +2315,7 @@
+     @Test
+     public void createDeltaMergeTreeTestChildIsDeltaWithSucceedingSnapshotButNoReferencesRebasesToVolumePath() {
+         doReturn(dataStoreMock).when(dataStoreManagerMock).getDataStore(anyLong(), eq(DataStoreRole.Primary));
+-        doReturn("parent-path").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
++        InternalBackupStoragePoolVO internalBackupStoragePoolVoMock = MockInternalBackupStoragePoolVO.createMockInternalBackupStoragePoolVO("parent-path");
+         doReturn("child-path").when(internalBackupStoragePoolVoMock).getBackupDeltaPath();
+         doReturn("/volume/path").when(volumeObjectToMock).getPath();
+         doReturn(true).when(vmSnapshotVoMock).getCurrent();
+@@ -2377,10 +2377,10 @@
+     @Test
+     public void populateDeltasToRemoveAndToMergeAndUpdateVolumePathsTestVolumeIsPartOfBackupAddsDeltaToRemoveAndUpdatesPath() {
+         doReturn(dataStoreMock).when(dataStoreManagerMock).getDataStore(11L, DataStoreRole.Primary);
++        internalBackupStoragePoolVoMock = MockInternalBackupStoragePoolVO.createMockInternalBackupStoragePoolVO("parent-path");
+         doReturn(10L).when(internalBackupStoragePoolVoMock).getVolumeId();
+         doReturn(11L).when(internalBackupStoragePoolVoMock).getStoragePoolId();
+         doReturn("delta-path").when(internalBackupStoragePoolVoMock).getBackupDeltaPath();
+-        doReturn("parent-path").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+         doReturn(10L).when(volumeObjectToMock).getVolumeId();
+ 
+         Set<BackupDeltaTO> deltasToRemove = new java.util.HashSet<>();
+--- a/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
+@@ -161,8 +161,8 @@
+     @Test
+     public void configureChainInfoTestSetsChainInfoForGenericCommand() {
+         doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
++        internalBackupStoragePoolVoMock = MockInternalBackupStoragePoolVO.createMockInternalBackupStoragePoolVO("/path/to/parent");
+         doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
+-        doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+         Command cmdMock = mock(Command.class);
+ 
+@@ -175,8 +175,8 @@
+     @Test
+     public void configureChainInfoTestSetsDeleteChainForDeleteCommand() {
+         doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
++        InternalBackupStoragePoolVO internalBackupStoragePoolVoMock = MockInternalBackupStoragePoolVO.createMockInternalBackupStoragePoolVO("/path/to/parent");
+         doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
+-        doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+         DeleteCommand deleteCommand = new DeleteCommand(volumeObjectToMock);
+ 
+@@ -189,8 +189,8 @@
+     @Test
+     public void configureChainInfoTestSetsDeleteChainForRevertSnapshotCommand() {
+         doReturn(VOLUME_ID).when(volumeObjectToMock).getVolumeId();
++        internalBackupStoragePoolVoMock = MockInternalBackupStoragePoolVO.createMockInternalBackupStoragePoolVO("/path/to/parent");
+         doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
+-        doReturn("/path/to/parent").when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
+ 
+         RevertSnapshotCommand revertSnapshotCommand = new RevertSnapshotCommand(snapshotObjectToMock, snapshotObjectToMock);
+ 
+--- a/server/src/test/java/org/apache/cloudstack/backup/MockInternalBackupStoragePoolVO.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/MockInternalBackupStoragePoolVO.java
+@@ -0,0 +1,14 @@
++package org.apache.cloudstack.backup;
++
++import static org.mockito.Mockito.doReturn;
++
++public final class MockInternalBackupStoragePoolVO {
++    private MockInternalBackupStoragePoolVO() {
++    }
++
++    public static InternalBackupStoragePoolVO createMockInternalBackupStoragePoolVO(String backupDeltaParentPath) {
++        InternalBackupStoragePoolVO internalBackupStoragePoolVoMock = Mockito.mock(InternalBackupStoragePoolVO.class);
++        doReturn(backupDeltaParentPath).when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
++        return internalBackupStoragePoolVoMock;
++    }
++}
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/MockInternalBackupStoragePoolVO.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/MockInternalBackupStoragePoolVO.java
+@@ -0,0 +1,16 @@
++package org.apache.cloudstack.backup;
++
++import static org.mockito.Mockito.doReturn;
++
++import org.mockito.Mockito;
++
++public final class MockInternalBackupStoragePoolVO {
++    private MockInternalBackupStoragePoolVO() {
++    }
++
++    public static InternalBackupStoragePoolVO createMockInternalBackupStoragePoolVO(String backupDeltaParentPath) {
++        InternalBackupStoragePoolVO internalBackupStoragePoolVoMock = Mockito.mock(InternalBackupStoragePoolVO.class);
++        doReturn(backupDeltaParentPath).when(internalBackupStoragePoolVoMock).getBackupDeltaParentPath();
++        return internalBackupStoragePoolVoMock;
++    }
++}

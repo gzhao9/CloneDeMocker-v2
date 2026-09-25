@@ -1,0 +1,83 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -132,6 +132,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class KbossBackupProviderTest {
++    @Mock
++    private InternalBackupJoinVO internalBackupJoinVoMock2;
+ 
+     @Mock
+     private VirtualMachine virtualMachineMock;
+@@ -519,7 +521,6 @@
+ 
+         InternalBackupJoinVO internalBackupJoinVoMock1 = Mockito.mock(InternalBackupJoinVO.class);
+         doReturn(Backup.Status.BackedUp).when(internalBackupJoinVoMock1).getStatus();
+-        InternalBackupJoinVO internalBackupJoinVoMock2 = Mockito.mock(InternalBackupJoinVO.class);
+         InternalBackupJoinVO result = kbossBackupProviderSpy.getParentAndSetEndOfChain(backupVoMock, List.of(internalBackupJoinVoMock1, internalBackupJoinVoMock2), null);
+ 
+         assertEquals(internalBackupJoinVoMock1, result);
+@@ -534,7 +535,6 @@
+ 
+         InternalBackupJoinVO internalBackupJoinVoMock1 = Mockito.mock(InternalBackupJoinVO.class);
+         doReturn(Backup.Status.BackedUp).when(internalBackupJoinVoMock1).getStatus();
+-        InternalBackupJoinVO internalBackupJoinVoMock2 = Mockito.mock(InternalBackupJoinVO.class);
+         InternalBackupJoinVO result = kbossBackupProviderSpy.getParentAndSetEndOfChain(backupVoMock, List.of(internalBackupJoinVoMock1, internalBackupJoinVoMock2), null);
+ 
+         assertEquals(internalBackupJoinVoMock1, result);
+@@ -844,8 +844,7 @@
+ 
+         doNothing().when(kbossBackupProviderSpy).validateStorages(any(), any());
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(any());
+-        InternalBackupJoinVO parentMock = Mockito.mock(InternalBackupJoinVO.class);
+-        doReturn(parentMock).when(kbossBackupProviderSpy).getParentAndSetEndOfChain(any(), any(), any());
++        doReturn(internalBackupJoinVoMock2).when(kbossBackupProviderSpy).getParentAndSetEndOfChain(any(), any(), any());
+         doReturn(dataStoreMock).when(kbossBackupProviderSpy).getImageStoreForBackup(any(), any());
+         doReturn(takeKbossBackupAnswerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+         doReturn(true).when(takeKbossBackupAnswerMock).getResult();
+@@ -1236,7 +1235,6 @@
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
+         long parentId = 1332;
+         doReturn(parentId).when(internalBackupJoinVoMock).getParentId();
+-        InternalBackupJoinVO parentVo = Mockito.mock(InternalBackupJoinVO.class);
+         doReturn(parentVo).when(internalBackupJoinDaoMock).findById(parentId);
+         doReturn(List.of(internalBackupDataStoreVoMock)).when(internalBackupDataStoreDaoMock).listByBackupId(backupId);
+         InternalBackupDataStoreVO parentDelta = mock(InternalBackupDataStoreVO.class);
+@@ -1246,7 +1244,7 @@
+         doReturn(backupOfferingMock).when(backupOfferingDaoMock).findByIdIncludingRemoved(anyLong());
+         doReturn(backupOfferingDetailsVoMock).when(backupOfferingDetailsDaoMock).findDetail(anyLong(), any());
+         doReturn("zstd").when(backupOfferingDetailsVoMock).getValue();
+-        doReturn(List.of(parentVo)).when(kbossBackupProviderSpy).getBackupJoinParents(backupVoMock, true);
++        doReturn(List.of(internalBackupJoinVoMock2)).when(kbossBackupProviderSpy).getBackupJoinParents(backupVoMock, true);
+         doReturn(null).when(kbossBackupProviderSpy).getChainImageStoreUrls(any());
+         doReturn(null).when(agentManagerMock).easySend(anyLong(), any());
+ 
+@@ -1263,8 +1261,7 @@
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
+         long parentId = 1332;
+         doReturn(parentId).when(internalBackupJoinVoMock).getParentId();
+-        InternalBackupJoinVO parentVo = Mockito.mock(InternalBackupJoinVO.class);
+-        doReturn(parentVo).when(internalBackupJoinDaoMock).findById(parentId);
++        doReturn(internalBackupJoinVoMock2).when(internalBackupJoinDaoMock).findById(parentId);
+         doReturn(List.of(internalBackupDataStoreVoMock)).when(internalBackupDataStoreDaoMock).listByBackupId(backupId);
+         InternalBackupDataStoreVO parentDelta = mock(InternalBackupDataStoreVO.class);
+         doReturn(List.of(parentDelta)).when(internalBackupDataStoreDaoMock).listByBackupId(parentId);
+@@ -1273,7 +1270,7 @@
+         doReturn(backupOfferingMock).when(backupOfferingDaoMock).findByIdIncludingRemoved(anyLong());
+         doReturn(backupOfferingDetailsVoMock).when(backupOfferingDetailsDaoMock).findDetail(anyLong(), any());
+         doReturn("zstd").when(backupOfferingDetailsVoMock).getValue();
+-        doReturn(List.of(parentVo)).when(kbossBackupProviderSpy).getBackupJoinParents(backupVoMock, true);
++        doReturn(List.of(internalBackupJoinVoMock2)).when(kbossBackupProviderSpy).getBackupJoinParents(backupVoMock, true);
+         doReturn(null).when(kbossBackupProviderSpy).getChainImageStoreUrls(any());
+         doReturn(answerMock).when(agentManagerMock).easySend(anyLong(), any());
+         doReturn(true).when(answerMock).getResult();
+@@ -1797,8 +1794,7 @@
+         doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+         doReturn(true).when(answerMock).getResult();
+         doReturn(true).when(kbossBackupProviderSpy).processCleanupBackupErrorAnswer(any(), any());
+-        InternalBackupJoinVO current = mock(InternalBackupJoinVO.class);
+-        doReturn(current).when(internalBackupJoinDaoMock).findCurrent(anyLong());
++        doReturn(internalBackupJoinVoMock2).when(internalBackupJoinDaoMock).findCurrent(anyLong());
+         doNothing().when(internalBackupStoragePoolDaoMock).expungeByBackupId(anyLong());
+         doNothing().when(kbossBackupProviderSpy).setEndOfChainAndRemoveCurrentForBackup(any());
+ 

@@ -1,0 +1,49 @@
+--- a/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/wrapper/xenbase/XenServer56WrapperTest.java
++++ b/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/wrapper/xenbase/XenServer56WrapperTest.java
+@@ -136,7 +136,6 @@
+ 
+     @Test
+     public void testNetworkUsageCommandCreateVpc() {
+-        final ExecutionResult executionResult = Mockito.mock(ExecutionResult.class);
+ 
+         final NetworkUsageCommand networkCommand = new NetworkUsageCommand("192.168.10.10", "domRName", true, "192.168.10.1", "10.1.1.1/24");
+ 
+@@ -144,8 +143,8 @@
+         assertNotNull(wrapper);
+ 
+         final String args = " -l 192.168.10.1 -c -v 10.1.1.1/24";
++        final ExecutionResult executionResult = createExecutionResult(true);
+         when(xenServer56Resource.executeInVR(networkCommand.getPrivateIP(), "vpc_netusage.sh", args)).thenReturn(executionResult);
+-        when(executionResult.isSuccess()).thenReturn(true);
+ 
+         final Answer answer = wrapper.execute(networkCommand, xenServer56Resource);
+ 
+@@ -154,7 +153,6 @@
+ 
+     @Test
+     public void testNetworkUsageCommandCreateVpcFailure() {
+-        final ExecutionResult executionResult = Mockito.mock(ExecutionResult.class);
+ 
+         final NetworkUsageCommand networkCommand = new NetworkUsageCommand("192.168.10.10", "domRName", true, "192.168.10.1", "10.1.1.1/24");
+ 
+@@ -162,8 +160,8 @@
+         assertNotNull(wrapper);
+ 
+         final String args = " -l 192.168.10.1 -c -v 10.1.1.1/24";
++        final ExecutionResult executionResult = createExecutionResult(false);
+         when(xenServer56Resource.executeInVR(networkCommand.getPrivateIP(), "vpc_netusage.sh", args)).thenReturn(executionResult);
+-        when(executionResult.isSuccess()).thenReturn(false);
+ 
+         final Answer answer = wrapper.execute(networkCommand, xenServer56Resource);
+ 
+@@ -271,4 +269,10 @@
+ 
+         assertFalse(answer.getResult());
+     }
++
++    private static ExecutionResult createExecutionResult(boolean success) {
++        final ExecutionResult executionResult = Mockito.mock(ExecutionResult.class);
++        when(executionResult.isSuccess()).thenReturn(success);
++        return executionResult;
++    }
+ }
