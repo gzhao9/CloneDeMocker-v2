@@ -1,0 +1,55 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
+@@ -321,11 +321,10 @@
+     @Test
+     public void testGetRootVolumePrimaryDataStoreForCleanupReturnsNullWhenRootVolumeIsMissing() {
+         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+-        VolumeObjectTO dataVolume = mock(VolumeObjectTO.class);
+-
+-        when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+-        when(dataVolume.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+-
++
++        when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
++
++        VolumeObjectTO dataVolume = createMockVolumeObjectTo(Volume.Type.DATADISK);
+         PrimaryDataStoreTO primaryDataStore = strategy.getRootVolumePrimaryDataStoreForCleanup(vmSnapshot, List.of(dataVolume));
+ 
+         assertNull(primaryDataStore);
+@@ -338,13 +337,12 @@
+         long dataStoreId = 40L;
+ 
+         VMSnapshotVO vmSnapshot = mock(VMSnapshotVO.class);
+-        VolumeObjectTO rootVolume = mock(VolumeObjectTO.class);
++        VolumeObjectTO rootVolume = createMockVolumeObjectTo(Volume.Type.ROOT);
+         PrimaryDataStoreTO liveRootVolumePrimaryDataStore = mock(PrimaryDataStoreTO.class);
+         PrimaryDataStoreTO rootSnapshotPrimaryDataStore = mock(PrimaryDataStoreTO.class);
+         SnapshotDataStoreVO rootSnapshotDataStore = mock(SnapshotDataStoreVO.class);
+         SnapshotInfo rootSnapshotInfo = mock(SnapshotInfo.class);
+         SnapshotObjectTO rootSnapshotObjectTo = mock(SnapshotObjectTO.class);
+-        VolumeObjectTO rootSnapshotVolume = mock(VolumeObjectTO.class);
+ 
+         when(vmSnapshot.getId()).thenReturn(vmSnapshotId);
+         when(vmSnapshot.getUuid()).thenReturn("vm-snapshot");
+@@ -354,9 +352,8 @@
+         when(strategy.snapshotDataFactory.getSnapshot(rootSnapshotId, dataStoreId, DataStoreRole.Primary)).thenReturn(rootSnapshotInfo);
+         when(rootSnapshotInfo.getTO()).thenReturn(rootSnapshotObjectTo);
+         when(rootSnapshotObjectTo.getVolume()).thenReturn(rootSnapshotVolume);
+-        when(rootSnapshotVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
++        VolumeObjectTO rootSnapshotVolume = createMockVolumeObjectTo(Volume.Type.ROOT);
+         when(rootSnapshotObjectTo.getDataStore()).thenReturn(rootSnapshotPrimaryDataStore);
+-        when(rootVolume.getVolumeType()).thenReturn(Volume.Type.ROOT);
+         when(rootVolume.getDataStore()).thenReturn(liveRootVolumePrimaryDataStore);
+ 
+         PrimaryDataStoreTO primaryDataStore = strategy.getPrimaryDataStoreForNvramCleanup(vmSnapshot, List.of(rootVolume));
+@@ -547,4 +544,10 @@
+         when(host.getId()).thenReturn(hostId);
+         when(hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, clusterId, podId, dataCenterId, null)).thenReturn(List.of(host));
+     }
++
++    private static VolumeObjectTO createMockVolumeObjectTo(Volume.Type volumeType) {
++        VolumeObjectTO volumeObject = mock(VolumeObjectTO.class);
++        when(volumeObject.getVolumeType()).thenReturn(volumeType);
++        return volumeObject;
++    }
+ }

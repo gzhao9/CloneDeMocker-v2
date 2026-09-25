@@ -1,0 +1,90 @@
+--- a/server/src/test/java/org/apache/cloudstack/dns/DnsProviderManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/dns/DnsProviderManagerImplTest.java
+@@ -232,18 +232,14 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testAllocateDnsZoneServerNotFound() {
+-        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+-        when(cmd.getName()).thenReturn("example.com");
+-        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
++        CreateDnsZoneCmd cmd = createMockCreateDnsZoneCmd("example.com");
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(null);
+         manager.allocateDnsZone(cmd);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testAllocateDnsZoneAlreadyExists() {
+-        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+-        when(cmd.getName()).thenReturn("example.com");
+-        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
++        CreateDnsZoneCmd cmd = createMockCreateDnsZoneCmd("example.com");
+         when(cmd.getType()).thenReturn(DnsZone.ZoneType.Public);
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+         Mockito.doReturn(SERVER_ID).when(serverVO).getId();
+@@ -254,9 +250,7 @@
+ 
+     @Test
+     public void testAllocateDnsZoneOwnerSuccess() {
+-        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+-        when(cmd.getName()).thenReturn("example.com");
+-        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
++        CreateDnsZoneCmd cmd = createMockCreateDnsZoneCmd("example.com");
+         when(cmd.getType()).thenReturn(DnsZone.ZoneType.Public);
+         when(cmd.getDescription()).thenReturn("desc");
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+@@ -270,9 +264,7 @@
+ 
+     @Test(expected = PermissionDeniedException.class)
+     public void testAllocateDnsZoneNonOwnerPrivateServer() {
+-        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+-        when(cmd.getName()).thenReturn("tenant.com");
+-        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
++        CreateDnsZoneCmd cmd = createMockCreateDnsZoneCmd("tenant.com");
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+         Mockito.doReturn(ACCOUNT_ID + 99).when(serverVO).getAccountId(); // different owner
+ 
+@@ -281,9 +273,7 @@
+ 
+     @Test(expected = PermissionDeniedException.class)
+     public void testAllocateDnsZoneNonOwnerShadowingOtherAccountZoneRejected() {
+-        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+-        when(cmd.getName()).thenReturn("www.tenant1.cloud.example");
+-        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
++        CreateDnsZoneCmd cmd = createMockCreateDnsZoneCmd("www.tenant1.cloud.example");
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+         Mockito.doReturn(SERVER_ID).when(serverVO).getId();
+         Mockito.doReturn(ACCOUNT_ID + 99).when(serverVO).getAccountId(); // different owner
+@@ -298,9 +288,7 @@
+ 
+     @Test(expected = PermissionDeniedException.class)
+     public void testAllocateDnsZoneNonOwnerParentOfOtherAccountZoneRejected() {
+-        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+-        when(cmd.getName()).thenReturn("tenant1.cloud.example");
+-        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
++        CreateDnsZoneCmd cmd = createMockCreateDnsZoneCmd("tenant1.cloud.example");
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+         Mockito.doReturn(SERVER_ID).when(serverVO).getId();
+         Mockito.doReturn(ACCOUNT_ID + 99).when(serverVO).getAccountId(); // different owner
+@@ -315,9 +303,7 @@
+ 
+     @Test
+     public void testAllocateDnsZoneNonOwnerPublicServerSuccess() {
+-        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
+-        when(cmd.getName()).thenReturn("tenant2.cloud.example");
+-        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
++        CreateDnsZoneCmd cmd = createMockCreateDnsZoneCmd("tenant2.cloud.example");
+         when(cmd.getType()).thenReturn(DnsZone.ZoneType.Public);
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+         Mockito.doReturn(SERVER_ID).when(serverVO).getId();
+@@ -1656,4 +1642,11 @@
+             verify(nicDetailsDao, never()).addDetail(anyLong(), anyString(), anyString(), eq(true));
+         }
+     }
++
++    private static CreateDnsZoneCmd createMockCreateDnsZoneCmd(String name) {
++        CreateDnsZoneCmd cmd = mock(CreateDnsZoneCmd.class);
++        when(cmd.getName()).thenReturn(name);
++        when(cmd.getDnsServerId()).thenReturn(SERVER_ID);
++        return cmd;
++    }
+ }
