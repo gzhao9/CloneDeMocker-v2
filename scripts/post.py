@@ -36,7 +36,7 @@ def main() -> None:
     """
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     body = Path(args[0]).read_text(encoding="utf-8").rstrip() + chr(10)
-    ids = re.findall(r"^### \[([ABC]-\d+)\]", body, flags=re.M)
+    ids = re.findall(r"^### \[([A-E]-\d+)\]", body, flags=re.M)
     if len(ids) != 1:
         sys.exit(f"post: entry must contain exactly one '### [X-NNN]' header, found {ids}")
     entry_id = ids[0]
@@ -55,9 +55,9 @@ def deliver(entry_id: str, body: str) -> list[str]:
     cannot tell the difference. One writer per path is the point -- these never conflict.
     """
     header = body.splitlines()[0]
-    m = re.search(r"→\s*([ABC](?:\s*,\s*[ABC])*)", header)
-    cc = re.search(r"\(cc\s+([ABC](?:\s*,\s*[ABC])*)\)", header)
-    names = re.findall(r"[ABC]", (m.group(1) if m else "") + (cc.group(1) if cc else ""))
+    m = re.search(r"→\s*([A-E](?:\s*,\s*[A-E])*)", header)
+    cc = re.search(r"\(cc\s+([A-E](?:\s*,\s*[A-E])*)\)", header)
+    names = re.findall(r"[A-E]", (m.group(1) if m else "") + (cc.group(1) if cc else ""))
     if not names:
         print(f"post: {entry_id} has no recipient in its header, inbox copy skipped")
         return []
@@ -186,6 +186,9 @@ def _publish_attempt(entry_id, git, repo, extra) -> bool:
             sys.exit(f"post: refusing to publish, {len(stray)} deletions outside A's inbox, e.g. {stray[:3]}")
         sha = git("commit-tree", tree, "-p", head, "-m", f"board: {entry_id}").stdout.strip()
         if sha and git("push", "github", f"{sha}:main", env={"CLONEDEMOCKER_ALLOW_PUSH": "1"}).returncode == 0:
+            # Move local main and the index onto the pushed commit (working tree untouched), or
+            # every published file keeps showing as a local change (E-002).
+            git("reset", "-q", sha)
             print(f"post: {entry_id} pushed as {sha[:8]} (working tree untouched)")
             return True
     return False
