@@ -1,0 +1,223 @@
+--- a/server/src/test/java/com/cloud/resource/ResourceManagerImplTest.java
++++ b/server/src/test/java/com/cloud/resource/ResourceManagerImplTest.java
+@@ -188,6 +188,12 @@
+         f.set(configKey, o);
+     }
+ 
++    private static HostVO createMockHost(long hostId) {
++        HostVO host = Mockito.mock(HostVO.class);
++        Mockito.when(host.getId()).thenReturn(hostId);
++        return host;
++    }
++
+     @Before
+     public void setup() throws Exception {
+         closeable = MockitoAnnotations.openMocks(this);
+@@ -740,16 +746,14 @@
+ 
+     @Test
+     public void testHostWithMatchingStorageAccessGroups() {
+-        HostVO host1 = Mockito.mock(HostVO.class);
+-        HostVO host2 = Mockito.mock(HostVO.class);
++        HostVO host1 = createMockHost(1L);
++        HostVO host2 = createMockHost(2L);
+         List<HostVO> allHosts = Arrays.asList(host1, host2);
+         List<String> storageAccessGroups = Arrays.asList("group1", "group2");
+ 
+-        Mockito.when(host1.getId()).thenReturn(1L);
+         Mockito.doReturn(new String[]{"group1"})
+                 .when(storageManager).getStorageAccessGroups(null, null, null, 1L);
+ 
+-        Mockito.when(host2.getId()).thenReturn(2L);
+         Mockito.doReturn(new String[]{"group3"})
+                 .when(storageManager).getStorageAccessGroups(null, null, null, 2L);
+ 
+@@ -762,16 +766,14 @@
+ 
+     @Test
+     public void testHostWithoutMatchingStorageAccessGroups() {
+-        HostVO host1 = Mockito.mock(HostVO.class);
+-        HostVO host2 = Mockito.mock(HostVO.class);
++        HostVO host1 = createMockHost(1L);
++        HostVO host2 = createMockHost(2L);
+         List<HostVO> allHosts = Arrays.asList(host1, host2);
+         List<String> storageAccessGroups = Arrays.asList("group1", "group2");
+ 
+-        Mockito.when(host1.getId()).thenReturn(1L);
+         Mockito.doReturn(new String[]{"group3"})
+                 .when(storageManager).getStorageAccessGroups(null, null, null, 1L);
+ 
+-        Mockito.when(host2.getId()).thenReturn(2L);
+         Mockito.doReturn(new String[]{"group4"})
+                 .when(storageManager).getStorageAccessGroups(null, null, null, 2L);
+ 
+@@ -782,21 +784,18 @@
+ 
+     @Test
+     public void testMixedMatchingAndNonMatchingHosts() {
+-        HostVO host1 = Mockito.mock(HostVO.class);
+-        HostVO host2 = Mockito.mock(HostVO.class);
+-        HostVO host3 = Mockito.mock(HostVO.class);
++        HostVO host1 = createMockHost(1L);
++        HostVO host2 = createMockHost(2L);
++        HostVO host3 = createMockHost(3L);
+         List<HostVO> allHosts = Arrays.asList(host1, host2, host3);
+         List<String> storageAccessGroups = Arrays.asList("group1", "group2");
+ 
+-        Mockito.when(host1.getId()).thenReturn(1L);
+         Mockito.doReturn(new String[]{"group1"})
+                 .when(storageManager).getStorageAccessGroups(null, null, null, 1L);
+ 
+-        Mockito.when(host2.getId()).thenReturn(2L);
+         Mockito.doReturn(new String[]{"group3"})
+                 .when(storageManager).getStorageAccessGroups(null, null, null, 2L);
+ 
+-        Mockito.when(host3.getId()).thenReturn(3L);
+         Mockito.doReturn(new String[]{"group2"})
+                 .when(storageManager).getStorageAccessGroups(null, null, null, 3L);
+ 
+@@ -809,16 +808,13 @@
+ 
+     @Test
+     public void testHostsWithEmptyStorageAccessGroups() {
+-        HostVO host1 = Mockito.mock(HostVO.class);
+-        HostVO host2 = Mockito.mock(HostVO.class);
++        HostVO host1 = createMockHost(1L);
++        HostVO host2 = createMockHost(2L);
+         List<HostVO> allHosts = Arrays.asList(host1, host2);
+         List<String> storageAccessGroups = Arrays.asList("group1", "group2");
+-
+-        Mockito.when(host1.getId()).thenReturn(1L);
+         Mockito.doReturn(new String[0])
+                 .when(storageManager).getStorageAccessGroups(null, null, null, 1L);
+ 
+-        Mockito.when(host2.getId()).thenReturn(2L);
+         Mockito.doReturn(new String[0])
+                 .when(storageManager).getStorageAccessGroups(null, null, null, 2L);
+ 
+@@ -904,8 +900,7 @@
+         List<String> sagsToAdd = Arrays.asList("sag1", "sag2");
+         List<String> sagsToDelete = Arrays.asList("sag3", "sag4");
+ 
+-        HostVO host = Mockito.mock(HostVO.class);
+-        Mockito.when(host.getId()).thenReturn(1L);
++        HostVO host = createMockHost(1L);
+         Mockito.when(host.getDataCenterId()).thenReturn(2L);
+         Mockito.when(host.getPodId()).thenReturn(3L);
+         Mockito.when(host.getClusterId()).thenReturn(4L);
+@@ -949,10 +944,8 @@
+ 
+         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(storagePool);
+ 
+-        HostVO host1 = Mockito.mock(HostVO.class);
+-        HostVO host2 = Mockito.mock(HostVO.class);
+-        Mockito.when(host1.getId()).thenReturn(2L);
+-        Mockito.when(host2.getId()).thenReturn(3L);
++        HostVO host1 = createMockHost(2L);
++        HostVO host2 = createMockHost(3L);
+ 
+         List<HostVO> clusterHosts = Arrays.asList(host1, host2);
+         Mockito.doReturn(clusterHosts).when(resourceManager).listAllUpHosts(Host.Type.Routing, 1L, 1L, 1L);
+@@ -990,10 +983,8 @@
+ 
+         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(storagePool);
+ 
+-        HostVO host1 = Mockito.mock(HostVO.class);
+-        HostVO host2 = Mockito.mock(HostVO.class);
+-        Mockito.when(host1.getId()).thenReturn(2L);
+-        Mockito.when(host2.getId()).thenReturn(3L);
++        HostVO host1 = createMockHost(2L);
++        HostVO host2 = createMockHost(3L);
+ 
+         List<HostVO> zoneHosts = Arrays.asList(host1, host2);
+         Mockito.doReturn(zoneHosts).when(resourceManager).listAllUpHosts(Host.Type.Routing, null, null, 1L);
+@@ -1029,10 +1020,8 @@
+ 
+         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(storagePool);
+ 
+-        HostVO host1 = Mockito.mock(HostVO.class);
+-        HostVO host2 = Mockito.mock(HostVO.class);
+-        Mockito.when(host1.getId()).thenReturn(2L);
+-        Mockito.when(host2.getId()).thenReturn(3L);
++        HostVO host1 = createMockHost(2L);
++        HostVO host2 = createMockHost(3L);
+ 
+         List<HostVO> clusterHosts = Arrays.asList(host1, host2);
+         Mockito.doReturn(clusterHosts).when(resourceManager).listAllUpHosts(Host.Type.Routing, 1L, 1L, 1L);
+@@ -1096,12 +1085,9 @@
+         Mockito.when(dataStore.getId()).thenReturn(1L);
+         Mockito.when(primaryStore.getClusterId()).thenReturn(1L);
+ 
+-        HostVO host1 = Mockito.mock(HostVO.class);
+-        HostVO host2 = Mockito.mock(HostVO.class);
++        HostVO host1 = createMockHost(1L);
++        HostVO host2 = createMockHost(2L);
+         List<HostVO> allHosts = Arrays.asList(host1, host2);
+-
+-        Mockito.when(host1.getId()).thenReturn(1L);
+-        Mockito.when(host2.getId()).thenReturn(2L);
+ 
+         Mockito.doReturn(allHosts).when(resourceManager).listAllUpHosts(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong());
+         Mockito.doReturn(allHosts).when(resourceManager).listAllUpAndEnabledHosts(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong());
+@@ -1146,10 +1132,8 @@
+         Mockito.when(zoneVO.getId()).thenReturn(zoneId);
+         Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group1,group3");
+ 
+-        HostVO host1 = Mockito.mock(HostVO.class);
+-        HostVO host2 = Mockito.mock(HostVO.class);
+-        Mockito.when(host1.getId()).thenReturn(host1Id);
+-        Mockito.when(host2.getId()).thenReturn(host2Id);
++        HostVO host1 = createMockHost(host1Id);
++        HostVO host2 = createMockHost(host2Id);
+ 
+         HostPodVO pod1 = Mockito.mock(HostPodVO.class);
+         ClusterVO cluster1 = Mockito.mock(ClusterVO.class);
+@@ -1183,10 +1167,8 @@
+         long host2Id = 2L;
+         List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+ 
+-        HostVO host1 = Mockito.mock(HostVO.class);
+-        HostVO host2 = Mockito.mock(HostVO.class);
+-        Mockito.when(host1.getId()).thenReturn(host1Id);
+-        Mockito.when(host2.getId()).thenReturn(host2Id);
++        HostVO host1 = createMockHost(host1Id);
++        HostVO host2 = createMockHost(host2Id);
+ 
+         HostPodVO pod1 = Mockito.mock(HostPodVO.class);
+         ClusterVO cluster1 = Mockito.mock(ClusterVO.class);
+@@ -1211,6 +1193,12 @@
+         Mockito.verify(hostDao, Mockito.times(1)).update(host2Id, host2);
+     }
+ 
++    private static HostVO createMockHost(long hostId) {
++        HostVO host = Mockito.mock(HostVO.class);
++        Mockito.when(host.getId()).thenReturn(hostId);
++        return host;
++    }
++
+     @Test
+     public void testUpdateClusterStorageAccessGroups() {
+         long clusterId = 3L;
+@@ -1218,10 +1206,8 @@
+         long host2Id = 2L;
+         List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+ 
+-        HostVO host1 = Mockito.mock(HostVO.class);
+-        HostVO host2 = Mockito.mock(HostVO.class);
+-        Mockito.when(host1.getId()).thenReturn(host1Id);
+-        Mockito.when(host2.getId()).thenReturn(host2Id);
++        HostVO host1 = createMockHost(host1Id);
++        HostVO host2 = createMockHost(host2Id);
+ 
+         ClusterVO cluster1 = Mockito.mock(ClusterVO.class);
+         Mockito.when(cluster1.getStorageAccessGroups()).thenReturn("group1,group3");
+@@ -1249,8 +1235,7 @@
+         long clusterId = 2L;
+         List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+ 
+-        HostVO host = Mockito.mock(HostVO.class);
+-        Mockito.when(host.getId()).thenReturn(hostId);
++        HostVO host = createMockHost(hostId);
+         Mockito.when(host.getClusterId()).thenReturn(clusterId);
+         Mockito.when(host.getStorageAccessGroups()).thenReturn("group1,group3");
+ 
