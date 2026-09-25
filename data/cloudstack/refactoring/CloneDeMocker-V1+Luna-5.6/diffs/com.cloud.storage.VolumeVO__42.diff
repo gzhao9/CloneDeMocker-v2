@@ -1,0 +1,43 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -216,6 +216,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class UserVmManagerImplTest {
++    @Mock
++    private VolumeVO rootVolumeOfVm;
+ 
+     @Spy
+     @InjectMocks
+@@ -913,13 +915,11 @@
+     @Test (expected = InvalidParameterValueException.class)
+     public void prepareResizeVolumeCmdTestCurrentRootDiskOffering() {
+         DiskOfferingVO newRootDiskOffering = Mockito.mock(DiskOfferingVO.class);
+-        VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+         userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVm, null, newRootDiskOffering);
+     }
+ 
+     @Test (expected = InvalidParameterValueException.class)
+     public void prepareResizeVolumeCmdTestNewRootDiskOffering() {
+-        VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+         DiskOfferingVO currentRootDiskOffering = Mockito.mock(DiskOfferingVO.class);
+         userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVm, currentRootDiskOffering, null);
+     }
+@@ -1708,8 +1708,7 @@
+         when(currentTemplate.isDeployAsIs()).thenReturn(false);
+         when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
+         List<VolumeVO> volumes = new ArrayList<>();
+-        VolumeVO rootVolume1 = Mockito.mock(VolumeVO.class);
+-        volumes.add(rootVolume1);
++        volumes.add(rootVolumeOfVm);
+         VolumeVO rootVolume2 = Mockito.mock(VolumeVO.class);
+         volumes.add(rootVolume2);
+         when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(volumes);
+@@ -1733,7 +1732,6 @@
+         VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+         when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
+         List<VolumeVO> volumes = new ArrayList<>();
+-        VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+         volumes.add(rootVolumeOfVm);
+         when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(volumes);
+         List<VMSnapshotVO> vmSnapshots = new ArrayList<>();

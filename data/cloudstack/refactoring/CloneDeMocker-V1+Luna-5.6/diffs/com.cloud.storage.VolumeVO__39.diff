@@ -1,0 +1,37 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -947,9 +947,8 @@
+ 
+     private void prepareAndRunResizeVolumeTest(Long expectedOfferingId, long expectedMinIops, long expectedMaxIops, DiskOfferingVO currentRootDiskOffering, DiskOfferingVO newRootDiskOffering) {
+         long rootVolumeId = 1L;
+-        VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+-        Mockito.when(rootVolumeOfVm.getId()).thenReturn(rootVolumeId);
+-
++
++        VolumeVO rootVolumeOfVm = createMockVolumeVO(rootVolumeId);
+         ResizeVolumeCmd resizeVolumeCmd = userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVm, currentRootDiskOffering, newRootDiskOffering);
+ 
+         Assert.assertEquals(rootVolumeId, resizeVolumeCmd.getId().longValue());
+@@ -1881,10 +1880,9 @@
+             when(hostDao.findByIdIncludingRemoved(lastHostId)).thenReturn(host);
+             VolumeInfo volumeInfo = mock(VolumeInfo.class);
+ 
+-            VolumeVO newVolume = mock(VolumeVO.class);
++            VolumeVO newVolume = createMockVolumeVO(11L);
+             when(volumeMgr.allocateDuplicateVolume(any(VolumeVO.class), any(), anyLong()))
+                     .thenReturn(newVolume);
+-            when(newVolume.getId()).thenReturn(11L);
+ 
+             UserVm result = userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, expunge, details);
+             assertNotNull(result);
+@@ -4740,4 +4738,10 @@
+         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+     }
++
++    private static VolumeVO createMockVolumeVO(long volumeId) {
++        VolumeVO volume = Mockito.mock(VolumeVO.class);
++        Mockito.when(volume.getId()).thenReturn(volumeId);
++        return volume;
++    }
+ }

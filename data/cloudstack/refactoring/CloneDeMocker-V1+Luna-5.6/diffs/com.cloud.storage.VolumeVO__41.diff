@@ -1,0 +1,87 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -2099,9 +2099,8 @@
+         long destHostId = 2L;
+         long poolId = 10L;
+ 
+-        VolumeVO nfsVolume = mock(VolumeVO.class);
+-        when(nfsVolume.getPoolId()).thenReturn(poolId);
+-
++
++        VolumeVO nfsVolume = MockVolumeVO.createMockVolumeVO(poolId);
+         StoragePoolVO nfsPool = mock(StoragePoolVO.class);
+         when(nfsPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+ 
+@@ -2124,12 +2123,11 @@
+         long nfsPoolId = 20L;
+ 
+         VolumeVO clvmVolume = mock(VolumeVO.class);
+-        VolumeVO nfsVolume = mock(VolumeVO.class);
+ 
+         when(clvmVolume.getId()).thenReturn(1L);
+         when(clvmVolume.getPoolId()).thenReturn(clvmPoolId);
+-        when(nfsVolume.getPoolId()).thenReturn(nfsPoolId);
+-
++
++        VolumeVO nfsVolume = MockVolumeVO.createMockVolumeVO(nfsPoolId);
+         StoragePoolVO clvmPool = mock(StoragePoolVO.class);
+         when(clvmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+ 
+@@ -2189,9 +2187,8 @@
+         long destHostId = 2L;
+         long poolId = 10L;
+ 
+-        VolumeVO volume = mock(VolumeVO.class);
+-        when(volume.getPoolId()).thenReturn(poolId);
+-
++
++        VolumeVO volume = MockVolumeVO.createMockVolumeVO(poolId);
+         when(volumeDaoMock.findByInstance(vmId)).thenReturn(Arrays.asList(volume));
+         when(storagePoolDaoMock.findById(poolId)).thenReturn(null);
+ 
+@@ -2241,4 +2238,15 @@
+         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
+     }
+ 
++
++    public final class MockVolumeVO {
++        private MockVolumeVO() {
++        }
++
++        public static com.cloud.storage.VolumeVO createMockVolumeVO(long poolId) {
++            com.cloud.storage.VolumeVO volume = org.mockito.Mockito.mock(com.cloud.storage.VolumeVO.class);
++            org.mockito.Mockito.when(volume.getPoolId()).thenReturn(poolId);
++            return volume;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -1232,10 +1232,9 @@
+     private List<VolumeVO> mockVolumesForIsAnyVmVolumeUsingLocalStorageTest(int localVolumes, int nonLocalVolumes) {
+         List<VolumeVO> volumes = new ArrayList<>();
+         for (int i=0; i< localVolumes + nonLocalVolumes; ++i) {
+-            VolumeVO vol = Mockito.mock(VolumeVO.class);
+             long index = i + 1;
++            VolumeVO vol = MockVolumeVO.createMockVolumeVO(index);
+             Mockito.when(vol.getDiskOfferingId()).thenReturn(index);
+-            Mockito.when(vol.getPoolId()).thenReturn(index);
+             DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+             Mockito.when(diskOfferingDao.findById(index)).thenReturn(diskOffering);
+             StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+@@ -4740,4 +4739,15 @@
+         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+     }
++
++    public final class MockVolumeVO {
++        private MockVolumeVO() {
++        }
++
++        public static com.cloud.storage.VolumeVO createMockVolumeVO(long poolId) {
++            com.cloud.storage.VolumeVO volume = org.mockito.Mockito.mock(com.cloud.storage.VolumeVO.class);
++            org.mockito.Mockito.when(volume.getPoolId()).thenReturn(poolId);
++            return volume;
++        }
++    }
+ }

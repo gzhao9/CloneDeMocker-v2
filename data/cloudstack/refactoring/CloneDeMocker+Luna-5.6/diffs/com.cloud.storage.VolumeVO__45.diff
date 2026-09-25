@@ -1,0 +1,60 @@
+--- a/engine/schema/src/test/java/com/cloud/storage/dao/VolumeDaoImplTest.java
++++ b/engine/schema/src/test/java/com/cloud/storage/dao/VolumeDaoImplTest.java
+@@ -61,6 +61,9 @@
+     @Spy
+     private final VolumeDaoImpl volumeDao = new VolumeDaoImpl();
+ 
++    @Mock
++    private VolumeVO mockedVO2;
++
+     @BeforeClass
+     public static void init() {
+         mockedTransactionLegacy = Mockito.mockStatic(TransactionLegacy.class);
+@@ -121,8 +124,7 @@
+         Mockito.when(sb.create()).thenReturn(sc);
+         Mockito.doReturn(new ArrayList<>()).when(volumeDao).listBy(sc);
+         Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+-        VolumeVO mockedVO = Mockito.mock(VolumeVO.class);
+-        Mockito.when(sb.entity()).thenReturn(mockedVO);
++        Mockito.when(sb.entity()).thenReturn(mockedVO2);
+ 
+         volumeDao.findByInstanceAndNotStates(42L, Volume.State.Ready);
+ 
+@@ -137,8 +139,7 @@
+         Mockito.when(sb.create()).thenReturn(sc);
+         Mockito.doReturn(new ArrayList<>()).when(volumeDao).listBy(sc);
+         Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+-        VolumeVO mockedVO = Mockito.mock(VolumeVO.class);
+-        Mockito.when(sb.entity()).thenReturn(mockedVO);
++        Mockito.when(sb.entity()).thenReturn(mockedVO2);
+ 
+         volumeDao.findByInstanceAndNotStates(7L, Volume.State.Destroy, Volume.State.Expunged);
+ 
+@@ -152,15 +153,14 @@
+         SearchBuilder<VolumeVO> sb = Mockito.mock(SearchBuilder.class);
+         SearchCriteria<VolumeVO> sc = Mockito.mock(SearchCriteria.class);
+         Mockito.when(sb.create()).thenReturn(sc);
+-        VolumeVO vol = Mockito.mock(VolumeVO.class);
+-        Mockito.doReturn(List.of(vol)).when(volumeDao).listBy(sc);
++        Mockito.doReturn(List.of(mockedVO2)).when(volumeDao).listBy(sc);
+         Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+         Mockito.when(sb.entity()).thenReturn(Mockito.mock(VolumeVO.class));
+ 
+         List<VolumeVO> result = volumeDao.findByInstanceAndNotStates(1L, Volume.State.Ready);
+ 
+         Assert.assertEquals(1, result.size());
+-        Assert.assertSame(vol, result.get(0));
++        Assert.assertSame(mockedVO2, result.get(0));
+     }
+ 
+     @Test
+@@ -194,8 +194,7 @@
+                 Mockito.any(SearchCriteria.class), Mockito.any(Filter.class), Mockito.eq(null),
+                 Mockito.eq(false));
+         Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+-        final VolumeVO mockedVO = Mockito.mock(VolumeVO.class);
+-        Mockito.when(sb.entity()).thenReturn(mockedVO);
++        Mockito.when(sb.entity()).thenReturn(mockedVO2);
+         List<Long> vmIds = List.of(1L, 2L);
+         Object[] array = vmIds.toArray();
+         Long batchSize = 50L;

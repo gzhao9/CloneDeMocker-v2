@@ -1,0 +1,57 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -329,6 +329,8 @@
+     @Mock
+     private VolumeVO volumeVOMock;
+ 
++    private VolumeVO rootVolumeOfVmMock;
++
+     @Mock
+     private VolumeDao volumeDaoMock;
+ 
+@@ -527,6 +529,7 @@
+ 
+     @Before
+     public void beforeTest() {
++        rootVolumeOfVmMock = Mockito.mock(VolumeVO.class);
+         userVmManagerImpl.resourceLimitService = resourceLimitMgr;
+ 
+         Mockito.when(updateVmCommand.getId()).thenReturn(vmId);
+@@ -913,15 +916,13 @@
+     @Test (expected = InvalidParameterValueException.class)
+     public void prepareResizeVolumeCmdTestCurrentRootDiskOffering() {
+         DiskOfferingVO newRootDiskOffering = Mockito.mock(DiskOfferingVO.class);
+-        VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+-        userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVm, null, newRootDiskOffering);
++        userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVmMock, null, newRootDiskOffering);
+     }
+ 
+     @Test (expected = InvalidParameterValueException.class)
+     public void prepareResizeVolumeCmdTestNewRootDiskOffering() {
+-        VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+         DiskOfferingVO currentRootDiskOffering = Mockito.mock(DiskOfferingVO.class);
+-        userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVm, currentRootDiskOffering, null);
++        userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVmMock, currentRootDiskOffering, null);
+     }
+ 
+     @Test
+@@ -1708,8 +1709,7 @@
+         when(currentTemplate.isDeployAsIs()).thenReturn(false);
+         when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
+         List<VolumeVO> volumes = new ArrayList<>();
+-        VolumeVO rootVolume1 = Mockito.mock(VolumeVO.class);
+-        volumes.add(rootVolume1);
++        volumes.add(rootVolumeOfVmMock);
+         VolumeVO rootVolume2 = Mockito.mock(VolumeVO.class);
+         volumes.add(rootVolume2);
+         when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(volumes);
+@@ -1733,8 +1733,7 @@
+         VMTemplateVO currentTemplate = Mockito.mock(VMTemplateVO.class);
+         when(templateDao.findById(currentTemplateId)).thenReturn(currentTemplate);
+         List<VolumeVO> volumes = new ArrayList<>();
+-        VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+-        volumes.add(rootVolumeOfVm);
++        volumes.add(rootVolumeOfVmMock);
+         when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(volumes);
+         List<VMSnapshotVO> vmSnapshots = new ArrayList<>();
+         VMSnapshotVO vmSnapshot = Mockito.mock(VMSnapshotVO.class);

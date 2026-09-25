@@ -1,0 +1,54 @@
+--- a/engine/schema/src/test/java/com/cloud/storage/dao/VolumeDaoImplTest.java
++++ b/engine/schema/src/test/java/com/cloud/storage/dao/VolumeDaoImplTest.java
+@@ -51,6 +51,8 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class VolumeDaoImplTest {
+     @Mock
++    private final VolumeVO mockedVO;
++    @Mock
+     private PreparedStatement preparedStatementMock;
+ 
+     @Mock
+@@ -121,7 +123,6 @@
+         Mockito.when(sb.create()).thenReturn(sc);
+         Mockito.doReturn(new ArrayList<>()).when(volumeDao).listBy(sc);
+         Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+-        VolumeVO mockedVO = Mockito.mock(VolumeVO.class);
+         Mockito.when(sb.entity()).thenReturn(mockedVO);
+ 
+         volumeDao.findByInstanceAndNotStates(42L, Volume.State.Ready);
+@@ -137,7 +138,6 @@
+         Mockito.when(sb.create()).thenReturn(sc);
+         Mockito.doReturn(new ArrayList<>()).when(volumeDao).listBy(sc);
+         Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+-        VolumeVO mockedVO = Mockito.mock(VolumeVO.class);
+         Mockito.when(sb.entity()).thenReturn(mockedVO);
+ 
+         volumeDao.findByInstanceAndNotStates(7L, Volume.State.Destroy, Volume.State.Expunged);
+@@ -152,15 +152,14 @@
+         SearchBuilder<VolumeVO> sb = Mockito.mock(SearchBuilder.class);
+         SearchCriteria<VolumeVO> sc = Mockito.mock(SearchCriteria.class);
+         Mockito.when(sb.create()).thenReturn(sc);
+-        VolumeVO vol = Mockito.mock(VolumeVO.class);
+-        Mockito.doReturn(List.of(vol)).when(volumeDao).listBy(sc);
++        Mockito.doReturn(List.of(mockedVO)).when(volumeDao).listBy(sc);
+         Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+         Mockito.when(sb.entity()).thenReturn(Mockito.mock(VolumeVO.class));
+ 
+         List<VolumeVO> result = volumeDao.findByInstanceAndNotStates(1L, Volume.State.Ready);
+ 
+         Assert.assertEquals(1, result.size());
+-        Assert.assertSame(vol, result.get(0));
++        Assert.assertSame(mockedVO, result.get(0));
+     }
+ 
+     @Test
+@@ -194,7 +193,7 @@
+                 Mockito.any(SearchCriteria.class), Mockito.any(Filter.class), Mockito.eq(null),
+                 Mockito.eq(false));
+         Mockito.when(volumeDao.createSearchBuilder()).thenReturn(sb);
+-        final VolumeVO mockedVO = Mockito.mock(VolumeVO.class);
++        // removed local mock; replaced with global field `mockedVO`
+         Mockito.when(sb.entity()).thenReturn(mockedVO);
+         List<Long> vmIds = List.of(1L, 2L);
+         Object[] array = vmIds.toArray();

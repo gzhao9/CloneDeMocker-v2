@@ -1,0 +1,37 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -947,8 +947,7 @@
+ 
+     private void prepareAndRunResizeVolumeTest(Long expectedOfferingId, long expectedMinIops, long expectedMaxIops, DiskOfferingVO currentRootDiskOffering, DiskOfferingVO newRootDiskOffering) {
+         long rootVolumeId = 1L;
+-        VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+-        Mockito.when(rootVolumeOfVm.getId()).thenReturn(rootVolumeId);
++        VolumeVO rootVolumeOfVm = createMockVolumeVO(rootVolumeId);
+ 
+         ResizeVolumeCmd resizeVolumeCmd = userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVm, currentRootDiskOffering, newRootDiskOffering);
+ 
+@@ -1881,10 +1880,9 @@
+             when(hostDao.findByIdIncludingRemoved(lastHostId)).thenReturn(host);
+             VolumeInfo volumeInfo = mock(VolumeInfo.class);
+ 
+-            VolumeVO newVolume = mock(VolumeVO.class);
++            VolumeVO newVolume = createMockVolumeVO(11L);
+             when(volumeMgr.allocateDuplicateVolume(any(VolumeVO.class), any(), anyLong()))
+                     .thenReturn(newVolume);
+-            when(newVolume.getId()).thenReturn(11L);
+ 
+             UserVm result = userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, expunge, details);
+             assertNotNull(result);
+@@ -4047,6 +4045,12 @@
+         leaseDetails.put(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, getLeaseExpiryDate(leaseDuration));
+         leaseDetails.put(VmDetailConstants.INSTANCE_LEASE_EXECUTION, leaseExecution);
+         return leaseDetails;
++    }
++
++    private static VolumeVO createMockVolumeVO(long volumeId) {
++        VolumeVO volume = Mockito.mock(VolumeVO.class);
++        Mockito.when(volume.getId()).thenReturn(volumeId);
++        return volume;
+     }
+ 
+     private static DeployVMCmd buildDeployVMCmd(Long volumeId, Long snapshotId) {
