@@ -1,0 +1,137 @@
+--- a/server/src/test/java/org/apache/cloudstack/dns/DnsProviderManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/dns/DnsProviderManagerImplTest.java
+@@ -487,16 +487,16 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testListDnsRecordsZoneNotFound() {
+-        ListDnsRecordsCmd cmd = mock(ListDnsRecordsCmd.class);
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++        ListDnsRecordsCmd cmd = createMockListDnsRecordsCmd();
++
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(null);
+         manager.listDnsRecords(cmd);
+     }
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testListDnsRecordsServerMissing() {
+-        ListDnsRecordsCmd cmd = mock(ListDnsRecordsCmd.class);
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++        ListDnsRecordsCmd cmd = createMockListDnsRecordsCmd();
++
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(null);
+         manager.listDnsRecords(cmd);
+@@ -504,8 +504,8 @@
+ 
+     @Test
+     public void testListDnsRecordsSuccess() throws Exception {
+-        ListDnsRecordsCmd cmd = mock(ListDnsRecordsCmd.class);
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++        ListDnsRecordsCmd cmd = createMockListDnsRecordsCmd();
++
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+         DnsRecord record = new DnsRecord("www.example.com", DnsRecord.RecordType.A,
+@@ -518,8 +518,8 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testListDnsRecordsZoneNotFoundInProvider() throws Exception {
+-        ListDnsRecordsCmd cmd = mock(ListDnsRecordsCmd.class);
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++        ListDnsRecordsCmd cmd = createMockListDnsRecordsCmd();
++
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+         when(dnsProviderMock.listRecords(any(), any())).thenThrow(new DnsNotFoundException("not found"));
+@@ -677,7 +677,7 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testAssociateZoneToNetworkZoneNotFound() {
+         AssociateDnsZoneToNetworkCmd cmd = mock(AssociateDnsZoneToNetworkCmd.class);
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(null);
+         manager.associateZoneToNetwork(cmd);
+     }
+@@ -685,7 +685,7 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testAssociateZoneToNetworkNetworkNotFound() {
+         AssociateDnsZoneToNetworkCmd cmd = mock(AssociateDnsZoneToNetworkCmd.class);
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++
+         when(cmd.getNetworkId()).thenReturn(NETWORK_ID);
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+@@ -696,7 +696,7 @@
+     @Test(expected = CloudRuntimeException.class)
+     public void testAssociateZoneToNetworkNonSharedNetwork() {
+         AssociateDnsZoneToNetworkCmd cmd = mock(AssociateDnsZoneToNetworkCmd.class);
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++
+         when(cmd.getNetworkId()).thenReturn(NETWORK_ID);
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+@@ -709,7 +709,7 @@
+     @Test
+     public void testAssociateZoneToNetworkSuccess() {
+         AssociateDnsZoneToNetworkCmd cmd = mock(AssociateDnsZoneToNetworkCmd.class);
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++
+         when(cmd.getNetworkId()).thenReturn(NETWORK_ID);
+ 
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+@@ -729,7 +729,7 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testAssociateZoneToNetworkAlreadyAssociated() {
+         AssociateDnsZoneToNetworkCmd cmd = mock(AssociateDnsZoneToNetworkCmd.class);
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++
+         when(cmd.getNetworkId()).thenReturn(NETWORK_ID);
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+@@ -745,7 +745,7 @@
+     public void testCreateDnsRecordSuccess() throws Exception {
+         CreateDnsRecordCmd cmd = mock(CreateDnsRecordCmd.class);
+         when(cmd.getName()).thenReturn("www");
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++
+         when(cmd.getType()).thenReturn(DnsRecord.RecordType.A);
+         when(cmd.getContents()).thenReturn(Collections.singletonList("1.2.3.4"));
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+@@ -760,7 +760,7 @@
+     @Test
+     public void testDeleteDnsRecordSuccess() throws Exception {
+         DeleteDnsRecordCmd cmd = mock(DeleteDnsRecordCmd.class);
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++
+         when(cmd.getName()).thenReturn("www");
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+         when(dnsServerDao.findById(anyLong())).thenReturn(serverVO);
+@@ -1159,7 +1159,7 @@
+     public void testCreateDnsRecordAlreadyExistsThrowsCloudRuntimeException() throws Exception {
+         CreateDnsRecordCmd cmd = mock(CreateDnsRecordCmd.class);
+         when(cmd.getName()).thenReturn("www");
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++
+         when(cmd.getType()).thenReturn(DnsRecord.RecordType.A);
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+         when(dnsServerDao.findById(anyLong())).thenReturn(serverVO);
+@@ -1177,7 +1177,7 @@
+     @Test
+     public void testDeleteDnsRecordProviderReturnsNullReturnsFalse() throws Exception {
+         DeleteDnsRecordCmd cmd = mock(DeleteDnsRecordCmd.class);
+-        when(cmd.getDnsZoneId()).thenReturn(ZONE_ID);
++
+         when(cmd.getName()).thenReturn("www");
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+         when(dnsServerDao.findById(anyLong())).thenReturn(serverVO);
+@@ -1656,4 +1656,10 @@
+             verify(nicDetailsDao, never()).addDetail(anyLong(), anyString(), anyString(), eq(true));
+         }
+     }
++
++    private static ListDnsRecordsCmd createMockListDnsRecordsCmd() {
++        ListDnsRecordsCmd cmd = mock(ListDnsRecordsCmd.class);
++        doReturn(ZONE_ID).when(cmd).getDnsZoneId();
++        return cmd;
++    }
+ }

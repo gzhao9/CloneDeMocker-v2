@@ -1,0 +1,90 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -862,13 +862,9 @@
+ 
+     @Test
+     public void testUpdateExtension_SuccessfulDescriptionUpdate() {
+-        UpdateExtensionCmd cmd = mock(UpdateExtensionCmd.class);
+-        when(cmd.getId()).thenReturn(1L);
++        UpdateExtensionCmd cmd = createUpdateExtensionCmd(1L);
+         when(cmd.getDescription()).thenReturn("new desc");
+-        when(cmd.isOrchestratorRequiresPrepareVm()).thenReturn(null);
+-        when(cmd.getState()).thenReturn(null);
+         when(cmd.getDetails()).thenReturn(null);
+-        when(cmd.isCleanupDetails()).thenReturn(false);
+ 
+         ExtensionVO ext = mock(ExtensionVO.class);
+         when(ext.getDescription()).thenReturn("old desc");
+@@ -906,13 +902,9 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testUpdateExtension_UpdateFails() {
+-        UpdateExtensionCmd cmd = mock(UpdateExtensionCmd.class);
+-        when(cmd.getId()).thenReturn(4L);
++        UpdateExtensionCmd cmd = createUpdateExtensionCmd(4L);
+         when(cmd.getDescription()).thenReturn("desc");
+-        when(cmd.isOrchestratorRequiresPrepareVm()).thenReturn(null);
+-        when(cmd.getState()).thenReturn(null);
+         when(cmd.getDetails()).thenReturn(null);
+-        when(cmd.isCleanupDetails()).thenReturn(false);
+ 
+         ExtensionVO ext = mock(ExtensionVO.class);
+         when(ext.getDescription()).thenReturn("old");
+@@ -938,14 +930,10 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testUpdateExtension_RemovingUsedNetworkServiceThrows() {
+-        UpdateExtensionCmd cmd = mock(UpdateExtensionCmd.class);
+-        when(cmd.getId()).thenReturn(6L);
+-        when(cmd.isOrchestratorRequiresPrepareVm()).thenReturn(null);
+-        when(cmd.getState()).thenReturn(null);
++        UpdateExtensionCmd cmd = createUpdateExtensionCmd(6L);
+         Map<String, String> newDetails = new HashMap<>();
+         newDetails.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat");
+         when(cmd.getDetails()).thenReturn(newDetails);
+-        when(cmd.isCleanupDetails()).thenReturn(false);
+ 
+         ExtensionVO ext = mock(ExtensionVO.class);
+         when(ext.getId()).thenReturn(6L);
+@@ -967,14 +955,10 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testUpdateExtension_RemovingServiceUsedByVpcOfferingThrows() {
+-        UpdateExtensionCmd cmd = mock(UpdateExtensionCmd.class);
+-        when(cmd.getId()).thenReturn(8L);
+-        when(cmd.isOrchestratorRequiresPrepareVm()).thenReturn(null);
+-        when(cmd.getState()).thenReturn(null);
++        UpdateExtensionCmd cmd = createUpdateExtensionCmd(8L);
+         Map<String, String> newDetails = new HashMap<>();
+         newDetails.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat");
+         when(cmd.getDetails()).thenReturn(newDetails);
+-        when(cmd.isCleanupDetails()).thenReturn(false);
+ 
+         ExtensionVO ext = mock(ExtensionVO.class);
+         when(ext.getId()).thenReturn(8L);
+@@ -998,10 +982,7 @@
+ 
+     @Test
+     public void testUpdateExtension_UpdatesPhysicalNetworkServicesWhenNotInUse() {
+-        UpdateExtensionCmd cmd = mock(UpdateExtensionCmd.class);
+-        when(cmd.getId()).thenReturn(7L);
+-        when(cmd.isOrchestratorRequiresPrepareVm()).thenReturn(null);
+-        when(cmd.getState()).thenReturn(null);
++        UpdateExtensionCmd cmd = createUpdateExtensionCmd(7L);
+         Map<String, String> newDetails = new HashMap<>();
+         newDetails.put(ExtensionHelper.NETWORK_SERVICES_DETAIL_KEY, "SourceNat,StaticNat");
+         when(cmd.getDetails()).thenReturn(newDetails);
+@@ -3062,4 +3043,13 @@
+         assertTrue(resp.getResult().get(ApiConstants.DETAILS).contains("Action failed"));
+     }
+ 
++
++    private static UpdateExtensionCmd createUpdateExtensionCmd(long extensionId) {
++        UpdateExtensionCmd cmd = mock(UpdateExtensionCmd.class);
++        when(cmd.getId()).thenReturn(extensionId);
++        when(cmd.getState()).thenReturn(null);
++        when(cmd.isCleanupDetails()).thenReturn(false);
++        when(cmd.isOrchestratorRequiresPrepareVm()).thenReturn(null);
++        return cmd;
++    }
+ }
