@@ -28,7 +28,7 @@ from studio.refactoring_agent import RefactoringAgent  # noqa: E402
 RUN_ID = "473f3cc8e16b4ccf97ee72fe18ec3aa2"
 WORKSPACE_ID = "cloudstack-salvage-linux"
 PROJECT = "cloudstack"
-MODEL = "deepseek-chat"
+MODEL = "gpt-5.6-terra"
 CANONICAL_MODEL = "gpt-5.6-terra"
 REMOTE = "origin"
 DATASET = REPO / "data/cloudstack/refactoring/CloneDeMocker+Terra-5.6"
