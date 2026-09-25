@@ -1,0 +1,47 @@
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpResourceTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpResourceTest.java
+@@ -327,10 +327,9 @@
+     public void testCreateLogicalRouter() throws ConfigurationException, NiciraNvpApiException {
+         resource.configure("NiciraNvpResource", parameters);
+ 
+-        final LogicalRouter lrc = mock(LogicalRouter.class);
++        final LogicalRouter lrc = createMockLogicalRouter();
+         final LogicalRouterPort lrp = mock(LogicalRouterPort.class);
+         final LogicalSwitchPort lsp = mock(LogicalSwitchPort.class);
+-        when(lrc.getUuid()).thenReturn("ccccc");
+         when(lrp.getUuid()).thenReturn("ddddd").thenReturn("eeeee");
+         when(lsp.getUuid()).thenReturn("fffff");
+         when(nvpApi.createLogicalRouter((LogicalRouter) any())).thenReturn(lrc);
+@@ -359,8 +358,7 @@
+     public void testCreateLogicalRouterApiExceptionRollbackRouter() throws ConfigurationException, NiciraNvpApiException {
+         resource.configure("NiciraNvpResource", parameters);
+ 
+-        final LogicalRouter lrc = mock(LogicalRouter.class);
+-        when(lrc.getUuid()).thenReturn("ccccc");
++        final LogicalRouter lrc = createMockLogicalRouter();
+         when(nvpApi.createLogicalRouter((LogicalRouter) any())).thenReturn(lrc);
+         when(nvpApi.createLogicalRouterPort(eq("ccccc"), (LogicalRouterPort) any())).thenThrow(new NiciraNvpApiException());
+         final CreateLogicalRouterCommand clrc = new CreateLogicalRouterCommand("aaaaa", 50, "bbbbb", "lrouter", "publiccidr", "nexthop", "internalcidr", "owner");
+@@ -374,10 +372,9 @@
+     public void testCreateLogicalRouterApiExceptionRollbackRouterAndSwitchPort() throws ConfigurationException, NiciraNvpApiException {
+         resource.configure("NiciraNvpResource", parameters);
+ 
+-        final LogicalRouter lrc = mock(LogicalRouter.class);
+         final LogicalRouterPort lrp = mock(LogicalRouterPort.class);
+         final LogicalSwitchPort lsp = mock(LogicalSwitchPort.class);
+-        when(lrc.getUuid()).thenReturn("ccccc");
++        final LogicalRouter lrc = createMockLogicalRouter();
+         when(lrp.getUuid()).thenReturn("ddddd").thenReturn("eeeee");
+         when(lsp.getUuid()).thenReturn("fffff");
+         when(nvpApi.createLogicalRouter((LogicalRouter) any())).thenReturn(lrc);
+@@ -822,4 +819,10 @@
+         assertTrue(snr.getMatch().getSourcePort() == 8080);
+         assertTrue(snr.getMatch().getEthertype().equals("IPv4") && rules[1].getMatch().getProtocol() == 6);
+     }
++
++    private static LogicalRouter createMockLogicalRouter() {
++        final LogicalRouter lrc = mock(LogicalRouter.class);
++        when(lrc.getUuid()).thenReturn("ccccc");
++        return lrc;
++    }
+ }
