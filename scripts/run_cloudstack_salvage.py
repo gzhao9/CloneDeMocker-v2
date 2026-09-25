@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -183,7 +184,43 @@ def sync_batch(pending: list[tuple[dict, Path | None]], message: str, attempts: 
     return False
 
 
+def _descendants(pid: int) -> list[int]:
+    """This process's children, grandchildren, ... deepest first."""
+    table = subprocess.run(["ps", "-e", "-o", "pid=,ppid="], capture_output=True, text=True).stdout
+    children: dict[int, list[int]] = {}
+    for line in table.splitlines():
+        child, parent = map(int, line.split())
+        children.setdefault(parent, []).append(child)
+    order, stack = [], [pid]
+    while stack:
+        for child in children.get(stack.pop(), []):
+            order.append(child)
+            stack.append(child)
+    return order[::-1]
+
+
+def _stop(signum: int, _frame) -> None:
+    """
+    Stop cleanly on SIGINT or SIGTERM. The Maven/surefire children (and anything they started,
+    e.g. a `sudo` waiting for a password) are ended first: subprocess.run only kills its direct
+    child, so the rest would be orphaned and keep running. Raising KeyboardInterrupt then lets
+    RefactoringAgent's `finally` restore the workspace before the process exits.
+    """
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    for pid in _descendants(os.getpid()):
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except OSError:
+            pass
+    log(f"Received {signal.Signals(signum).name}: children stopped, restoring the workspace and exiting")
+    raise KeyboardInterrupt
+
+
 def main() -> None:
+    # A shell starts background jobs with SIGINT ignored, so install both handlers explicitly.
+    signal.signal(signal.SIGINT, _stop)
+    signal.signal(signal.SIGTERM, _stop)
     parser = argparse.ArgumentParser(description="CloudStack MCI Salvage Runner by C (Remedy)")
     parser.add_argument("--ids-file", default="validation/cloudstack_salvage_targets_7.txt",
                         help="Path to file containing MCI IDs to salvage")

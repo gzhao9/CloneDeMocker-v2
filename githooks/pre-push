@@ -1,0 +1,27 @@
+#!/bin/sh
+# Refuse a push that deletes files, so a commit made from a stale working tree cannot wipe
+# published results (it once took 58 files). Moves pass: a deleted file whose content reappears
+# elsewhere in the same push (inbox unread/ -> read/, a file put back in the right folder).
+# Additions and edits always pass. To delete on purpose: ALLOW_DELETE=1 git push ...
+# Enable once per clone: git config core.hooksPath githooks   (see AGENTS.md)
+input=$(cat)
+if [ "${ALLOW_DELETE:-0}" != 1 ]; then
+  bad=$(printf '%s\n' "$input" | while read -r lref lsha rref rsha; do
+    [ -n "$lsha" ] || continue
+    case $lsha in *[!0]*) ;; *) echo "(the whole branch $rref)"; continue ;; esac
+    case $rsha in *[!0]*) ;; *) continue ;; esac          # new branch: nothing to compare with
+    git cat-file -e "$rsha^{commit}" 2>/dev/null || continue  # unknown tip: git rejects it as non-fast-forward
+    git diff --raw --no-renames --no-abbrev "$rsha" "$lsha" | awk -F '\t' '
+      { split($1, f, " "); if (f[5] == "D") del[f[3]] = del[f[3]] "\n" $2; else add[f[4]] = 1 }
+      END { for (b in del) if (!(b in add)) printf "%s", del[b] }'
+  done | sed '/^$/d')
+  if [ -n "$bad" ]; then
+    echo "pre-push: refused. This push deletes $(printf '%s\n' "$bad" | wc -l) file(s) that do not reappear elsewhere:" >&2
+    printf '%s\n' "$bad" | head -15 | sed 's/^/  /' >&2
+    echo "Usually this means the commit was made from a working tree behind the remote." >&2
+    echo "If you really mean to delete them: ALLOW_DELETE=1 git push ..." >&2
+    exit 1
+  fi
+fi
+command -v git-lfs >/dev/null 2>&1 || { echo >&2 "\nThis repository is configured for Git LFS but 'git-lfs' was not found on your path. If you no longer wish to use Git LFS, remove this hook by deleting the 'pre-push' file in the hooks directory (set by 'core.hookspath'; usually '.git/hooks').\n"; exit 2; }
+printf '%s\n' "$input" | git lfs pre-push "$@"
