@@ -9,18 +9,12 @@
          Mockito.when(pod.getDataCenterId()).thenReturn(4L);
          Mockito.when(dataCenterDao.findById(4L)).thenReturn(zone);
  
-@@ -971,13 +971,13 @@
-         HostVO host = Mockito.mock(HostVO.class);
-         ClusterVO cluster = Mockito.mock(ClusterVO.class);
-         HostPodVO pod = Mockito.mock(HostPodVO.class);
-+        podDao = MockHostPodDao.createMockHostPodDao(3L, pod);
-         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
- 
-         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+@@ -977,7 +977,7 @@
          Mockito.when(host.getClusterId()).thenReturn(2L);
          Mockito.when(clusterDao.findById(2L)).thenReturn(cluster);
          Mockito.when(cluster.getPodId()).thenReturn(3L);
 -        Mockito.when(podDao.findById(3L)).thenReturn(pod);
++        podDao = MockHostPodDao.createMockHostPodDao(3L, pod);
          Mockito.when(pod.getDataCenterId()).thenReturn(4L);
          Mockito.when(dataCenterDao.findById(4L)).thenReturn(zone);
  
@@ -58,23 +52,16 @@
          Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
  
          storageManagerImpl.checkIfStorageAccessGroupsExistsOnCluster(clusterId, newStorageAccessGroups);
-@@ -1538,6 +1538,7 @@
- 
-         ClusterVO clusterVO = Mockito.mock(ClusterVO.class);
-         HostPodVO podVO = Mockito.mock(HostPodVO.class);
-+        podDao = MockHostPodDao.createMockHostPodDao(podId, podVO);
-         DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
- 
-         Mockito.when(clusterVO.getPodId()).thenReturn(podId);
-@@ -1549,7 +1550,6 @@
+@@ -1549,7 +1549,7 @@
          Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group8,group9");
  
          Mockito.when(clusterDao.findById(clusterId)).thenReturn(clusterVO);
 -        Mockito.when(podDao.findById(podId)).thenReturn(podVO);
++        podDao = MockHostPodDao.createMockHostPodDao(podId, podVO);
          Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
  
          CloudRuntimeException thrownException = assertThrows(CloudRuntimeException.class, () -> {
-@@ -1727,4 +1727,15 @@
+@@ -1727,4 +1727,18 @@
  
          Assert.assertFalse(result);
      }
@@ -83,28 +70,24 @@
 +        private MockHostPodDao() {
 +        }
 +
-+        public static HostPodDao createMockHostPodDao(long podId, HostPodVO pod) {
-+            HostPodDao podDao = Mockito.mock(HostPodDao.class);
-+            Mockito.when(podDao.findById(podId)).thenReturn(pod);
++        public static com.cloud.dc.dao.HostPodDao createMockHostPodDao(
++                long podId,
++                com.cloud.dc.HostPodVO pod) {
++            com.cloud.dc.dao.HostPodDao podDao =
++                    org.mockito.Mockito.mock(com.cloud.dc.dao.HostPodDao.class);
++            org.mockito.Mockito.when(podDao.findById(podId)).thenReturn(pod);
 +            return podDao;
 +        }
 +    }
  }
 --- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
 +++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
-@@ -2144,6 +2144,7 @@
-         UserVmVO vm = Mockito.mock(UserVmVO.class);
-         ClusterVO cluster = Mockito.mock(ClusterVO.class);
-         HostPodVO pod = Mockito.mock(HostPodVO.class);
-+        podDao = MockHostPodDao.createMockHostPodDao(1L, pod);
-         DataCenterVO zone = mockZone();
-         mockDiskOffering();
-         StoragePool pool = Mockito.mock(StoragePool.class);
-@@ -2151,7 +2152,6 @@
+@@ -2151,7 +2151,7 @@
          when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(1L, 2L));
          when(clusterDao.findById(1L)).thenReturn(cluster);
          when(cluster.getPodId()).thenReturn(1L);
 -        when(podDao.findById(1L)).thenReturn(pod);
++        podDao = MockHostPodDao.createMockHostPodDao(1L, pod);
          when(volumeToAttach.getDiskOfferingId()).thenReturn(1L);
          when(volumeOrchestrationService.findStoragePool(any(DiskProfile.class), eq(zone), eq(pod), eq(1L), eq(2L), eq(vm), eq(Collections.emptySet())))
                  .thenReturn(pool);
@@ -117,7 +100,7 @@
          when(volumeToAttach.getDiskOfferingId()).thenReturn(1L);
          when(volumeOrchestrationService.findStoragePool(any(DiskProfile.class), eq(zone), eq(pod), eq(null), eq(2L), eq(vm), eq(Collections.emptySet())))
                  .thenReturn(pool);
-@@ -2896,4 +2896,15 @@
+@@ -2896,4 +2896,18 @@
                      e.getMessage() != null && e.getMessage().contains("VM should be in"));
          }
      }
@@ -126,9 +109,12 @@
 +        private MockHostPodDao() {
 +        }
 +
-+        public static HostPodDao createMockHostPodDao(long podId, HostPodVO pod) {
-+            HostPodDao podDao = Mockito.mock(HostPodDao.class);
-+            Mockito.when(podDao.findById(podId)).thenReturn(pod);
++        public static com.cloud.dc.dao.HostPodDao createMockHostPodDao(
++                long podId,
++                com.cloud.dc.HostPodVO pod) {
++            com.cloud.dc.dao.HostPodDao podDao =
++                    org.mockito.Mockito.mock(com.cloud.dc.dao.HostPodDao.class);
++            org.mockito.Mockito.when(podDao.findById(podId)).thenReturn(pod);
 +            return podDao;
 +        }
 +    }
