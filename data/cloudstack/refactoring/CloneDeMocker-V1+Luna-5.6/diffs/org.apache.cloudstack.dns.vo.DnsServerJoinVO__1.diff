@@ -1,0 +1,46 @@
+--- a/server/src/test/java/org/apache/cloudstack/dns/DnsProviderManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/dns/DnsProviderManagerImplTest.java
+@@ -573,19 +573,17 @@
+ 
+     @Test
+     public void testCreateDnsServerResponseFromJoinVO() {
+-        DnsServerJoinVO join = mock(DnsServerJoinVO.class);
++        DnsServerJoinVO join = createDnsServerJoinVO();
+         when(join.getUuid()).thenReturn("uuid-1");
+         when(join.getName()).thenReturn("pdns");
+         when(join.getUrl()).thenReturn("http://pdns:8081");
+         when(join.getPort()).thenReturn(8081);
+-        when(join.getProviderType()).thenReturn(DnsProviderType.PowerDNS.toString());
+         when(join.isPublicServer()).thenReturn(false);
+         when(join.getNameServers()).thenReturn(Collections.emptyList());
+         when(join.getPublicDomainSuffix()).thenReturn(null);
+         when(join.getAccountName()).thenReturn("admin");
+         when(join.getDomainUuid()).thenReturn("domain-uuid");
+         when(join.getDomainName()).thenReturn("ROOT");
+-        when(join.getState()).thenReturn(DnsServer.State.Enabled);
+         DnsServerResponse response = manager.createDnsServerResponse(join);
+         assertNotNull(response);
+     }
+@@ -798,9 +796,7 @@
+         Pair<List<DnsServerVO>, Integer> searchPair = new Pair<>(servers, 1);
+         when(dnsServerDao.searchDnsServer(any(), anyLong(), any(), any(), any(), any())).thenReturn(searchPair);
+ 
+-        DnsServerJoinVO joinVO = mock(DnsServerJoinVO.class);
+-        when(joinVO.getProviderType()).thenReturn(DnsProviderType.PowerDNS.toString());
+-        when(joinVO.getState()).thenReturn(DnsServer.State.Enabled);
++        DnsServerJoinVO joinVO = createDnsServerJoinVO();
+         when(dnsServerJoinDao.listByUuids(any())).thenReturn(Collections.singletonList(joinVO));
+ 
+         ListResponse<DnsServerResponse> res = manager.listDnsServers(cmd);
+@@ -1656,4 +1652,11 @@
+             verify(nicDetailsDao, never()).addDetail(anyLong(), anyString(), anyString(), eq(true));
+         }
+     }
++
++    private static DnsServerJoinVO createDnsServerJoinVO() {
++        DnsServerJoinVO joinVO = mock(DnsServerJoinVO.class);
++        when(joinVO.getProviderType()).thenReturn(DnsProviderType.PowerDNS.toString());
++        when(joinVO.getState()).thenReturn(DnsServer.State.Enabled);
++        return joinVO;
++    }
+ }

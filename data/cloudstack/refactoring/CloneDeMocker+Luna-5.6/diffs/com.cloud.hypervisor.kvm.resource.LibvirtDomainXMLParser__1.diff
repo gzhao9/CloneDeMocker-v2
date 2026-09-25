@@ -1,0 +1,35 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtImportConvertedInstanceCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtImportConvertedInstanceCommandWrapperTest.java
+@@ -120,8 +120,7 @@
+         LibvirtVMDef.DiskDef.DiskFmtType type = LibvirtVMDef.DiskDef.DiskFmtType.QCOW2;
+         diskDef.defFileBasedDisk(fullPath, "test", bus, type);
+ 
+-        LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
+-        Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
++        LibvirtDomainXMLParser parser = createMockLibvirtDomainXMLParser(List.of(diskDef));
+ 
+         KVMPhysicalDisk convertedDisk1 = Mockito.mock(KVMPhysicalDisk.class);
+         Mockito.when(convertedDisk1.getName()).thenReturn("disk1");
+@@ -182,8 +181,7 @@
+             Mockito.when(destinationPool.getType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+             List<KVMPhysicalDisk> disks = List.of(sourceDisk);
+ 
+-            LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
+-            Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
++            LibvirtDomainXMLParser parser = createMockLibvirtDomainXMLParser(List.of(diskDef));
+             Mockito.doReturn(new Pair<String, String>(null, null)).when(importInstanceCommandWrapper).getNfsStoragePoolHostAndPath(destinationPool);
+ 
+             Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+@@ -213,6 +211,12 @@
+         }
+     }
+ 
++    private static LibvirtDomainXMLParser createMockLibvirtDomainXMLParser(List<LibvirtVMDef.DiskDef> diskDefinitions) {
++        LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
++        Mockito.when(parser.getDisks()).thenReturn(List.copyOf(diskDefinitions));
++        return parser;
++    }
++
+     private RemoteInstanceTO getRemoteInstanceTO(Hypervisor.HypervisorType hypervisorType) {
+         RemoteInstanceTO remoteInstanceTO = Mockito.mock(RemoteInstanceTO.class);
+         Mockito.when(remoteInstanceTO.getHypervisorType()).thenReturn(hypervisorType);

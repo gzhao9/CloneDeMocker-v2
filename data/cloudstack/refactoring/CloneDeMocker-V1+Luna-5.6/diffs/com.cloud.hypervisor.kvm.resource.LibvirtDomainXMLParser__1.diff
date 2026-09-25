@@ -1,0 +1,35 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtImportConvertedInstanceCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtImportConvertedInstanceCommandWrapperTest.java
+@@ -120,9 +120,8 @@
+         LibvirtVMDef.DiskDef.DiskFmtType type = LibvirtVMDef.DiskDef.DiskFmtType.QCOW2;
+         diskDef.defFileBasedDisk(fullPath, "test", bus, type);
+ 
+-        LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
+-        Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
+-
++
++        LibvirtDomainXMLParser parser = createMockLibvirtDomainXMLParser(diskDef);
+         KVMPhysicalDisk convertedDisk1 = Mockito.mock(KVMPhysicalDisk.class);
+         Mockito.when(convertedDisk1.getName()).thenReturn("disk1");
+         Mockito.when(temporaryPool.getPhysicalDisk(relativePath)).thenReturn(convertedDisk1);
+@@ -182,8 +181,7 @@
+             Mockito.when(destinationPool.getType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+             List<KVMPhysicalDisk> disks = List.of(sourceDisk);
+ 
+-            LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
+-            Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
++            LibvirtDomainXMLParser parser = createMockLibvirtDomainXMLParser(diskDef);
+             Mockito.doReturn(new Pair<String, String>(null, null)).when(importInstanceCommandWrapper).getNfsStoragePoolHostAndPath(destinationPool);
+ 
+             Mockito.when(Script.executePipedCommands(Mockito.anyList(), Mockito.anyLong()))
+@@ -242,4 +240,10 @@
+         Answer answer = importInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+         Assert.assertFalse(answer.getResult());
+     }
++
++    private static LibvirtDomainXMLParser createMockLibvirtDomainXMLParser(LibvirtVMDef.DiskDef diskDef) {
++        LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
++        Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
++        return parser;
++    }
+ }

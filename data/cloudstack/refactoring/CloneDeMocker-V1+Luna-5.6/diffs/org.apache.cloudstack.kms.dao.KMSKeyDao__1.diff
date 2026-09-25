@@ -1,0 +1,67 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
+@@ -111,7 +111,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testFindKMSKeyAndCheckAccess_ThrowsWhenKeyNotFound() {
+-        when(kmsKeyDao.findById(99L)).thenReturn(null);
++        kmsKeyDao = MockKMSKeyDao.createMockKMSKeyDao(99L);
+         kmsManager.findKMSKeyAndCheckAccess(99L, mock(Account.class));
+     }
+ 
+@@ -144,7 +144,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCheckKmsKeyForVolumeEncryption_ThrowsWhenKeyNotFound() {
+-        when(kmsKeyDao.findById(1L)).thenReturn(null);
++        kmsKeyDao = MockKMSKeyDao.createMockKMSKeyDao(1L);
+         kmsManager.checkKmsKeyForVolumeEncryption(mock(Account.class), 1L, null);
+     }
+ 
+@@ -278,4 +278,16 @@
+     public void testParseKeyPurpose_ThrowsForUnknownPurpose() {
+         kmsManager.parseKeyPurpose("not-a-valid-purpose");
+     }
++
++    public final class MockKMSKeyDao {
++
++        private MockKMSKeyDao() {
++        }
++
++        public static KMSKeyDao createMockKMSKeyDao(long keyId) {
++            KMSKeyDao kmsKeyDao = Mockito.mock(KMSKeyDao.class);
++            when(kmsKeyDao.findById(keyId)).thenReturn(null);
++            return kmsKeyDao;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
+@@ -119,8 +119,8 @@
+         KMSWrappedKeyVO wrappedVO = mock(KMSWrappedKeyVO.class);
+         when(wrappedVO.getKmsKeyId()).thenReturn(10L);
+         when(kmsWrappedKeyDao.findById(1L)).thenReturn(wrappedVO);
+-        when(kmsKeyDao.findById(10L)).thenReturn(null);
+-
++
++        kmsKeyDao = MockKMSKeyDao.createMockKMSKeyDao(10L);
+         kmsManager.unwrapKey(1L);
+     }
+ 
+@@ -454,4 +454,16 @@
+             verify(kmsKeyDao).remove(10L);
+         }
+     }
++
++    public final class MockKMSKeyDao {
++
++        private MockKMSKeyDao() {
++        }
++
++        public static KMSKeyDao createMockKMSKeyDao(long keyId) {
++            KMSKeyDao kmsKeyDao = Mockito.mock(KMSKeyDao.class);
++            when(kmsKeyDao.findById(keyId)).thenReturn(null);
++            return kmsKeyDao;
++        }
++    }
+ }

@@ -1,0 +1,36 @@
+--- a/server/src/test/java/com/cloud/resourcelimit/ResourceLimitManagerImplTest.java
++++ b/server/src/test/java/com/cloud/resourcelimit/ResourceLimitManagerImplTest.java
+@@ -274,9 +274,7 @@
+ 
+     @Test
+     public void testGetResourceLimitStorageTags1() {
+-        DiskOffering diskOffering = Mockito.mock(DiskOffering.class);
+-        Mockito.when(diskOffering.getTags()).thenReturn(storageTags.get(1));
+-        Mockito.when(diskOffering.getTagsArray()).thenReturn(new String[]{storageTags.get(1)});
++        DiskOffering diskOffering = createMockDiskOffering(storageTags.get(1));
+         List<String> tags = resourceLimitManager.getResourceLimitStorageTags(diskOffering);
+         Assert.assertEquals(1, tags.size());
+         Assert.assertEquals(storageTags.get(1), tags.get(0));
+@@ -307,9 +305,7 @@
+     public void testCheckVolumeResourceLimit() {
+         List<Reserver> reservations = new ArrayList<>();
+         String checkTag = storageTags.get(0);
+-        DiskOffering diskOffering = Mockito.mock(DiskOffering.class);
+-        Mockito.when(diskOffering.getTags()).thenReturn(checkTag);
+-        Mockito.when(diskOffering.getTagsArray()).thenReturn(new String[]{checkTag});
++        DiskOffering diskOffering = createMockDiskOffering(checkTag);
+         Account account = Mockito.mock(Account.class);
+         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+             resourceLimitManager.checkVolumeResourceLimit(account, true, 100L, diskOffering, reservations);
+@@ -1410,4 +1406,11 @@
+         Assert.assertEquals(EnumSet.allOf(Resource.ResourceType.class).size(), result.size());
+         Assert.assertEquals(25L, result.get(0).getMax().longValue());
+     }
++
++    private static DiskOffering createMockDiskOffering(String tags) {
++        DiskOffering diskOffering = Mockito.mock(DiskOffering.class);
++        Mockito.when(diskOffering.getTags()).thenReturn(tags);
++        Mockito.when(diskOffering.getTagsArray()).thenReturn(new String[] { tags });
++        return diskOffering;
++    }
+ }

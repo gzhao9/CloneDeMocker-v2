@@ -1,0 +1,35 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -1549,6 +1549,12 @@
+         verify(extensionCustomActionDao).remove(actionId);
+     }
+ 
++    private static MockNetworkElement createMockNetworkElement(Network network) {
++        MockNetworkElement element = mock(MockNetworkElement.class);
++        when(element.canHandleCustomAction(eq(network))).thenReturn(true);
++        return element;
++    }
++
+     private void mockCallerRole(RoleType roleType) {
+         CallContext callContextMock = mock(CallContext.class);
+         when(CallContext.current()).thenReturn(callContextMock);
+@@ -2703,8 +2709,7 @@
+         when(networkServiceMapDao.getProviderForServiceInNetwork(eq(5L), any())).thenReturn("my-extnet");
+ 
+         // element implements both NetworkElement and NetworkCustomActionProvider
+-        MockNetworkElement element = mock(MockNetworkElement.class);
+-        when(element.canHandleCustomAction(eq(network))).thenReturn(true);
++        MockNetworkElement element = createMockNetworkElement(network);
+         when(element.runCustomAction(eq(network), eq("reboot-device"), any())).thenReturn("OK: bridge bounced");
+         when(networkModel.getElementImplementingProvider("my-extnet")).thenReturn(element);
+ 
+@@ -3049,8 +3054,7 @@
+         when(networkServiceMapDao.getProviderForServiceInNetwork(eq(5L), any())).thenReturn("my-extnet");
+ 
+         // element implements both NetworkElement and NetworkCustomActionProvider but action returns null
+-        MockNetworkElement element = mock(MockNetworkElement.class);
+-        when(element.canHandleCustomAction(eq(network))).thenReturn(true);
++        MockNetworkElement element = createMockNetworkElement(network);
+         when(element.runCustomAction(eq(network), eq("unknown-action"), any())).thenReturn(null);
+         when(networkModel.getElementImplementingProvider("my-extnet")).thenReturn(element);
+ 
