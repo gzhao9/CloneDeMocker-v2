@@ -1,0 +1,196 @@
+--- a/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
+@@ -52,6 +52,7 @@
+ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+ import org.apache.cloudstack.storage.object.ObjectStore;
+ import org.apache.commons.collections.MapUtils;
++import org.junit.Before;
+ import org.junit.Assert;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+@@ -140,6 +141,8 @@
+     @Mock
+     private StoragePoolVO storagePoolVOMock;
+ 
++    private StoragePoolVO poolMock;
++
+     @Mock
+     private VolumeVO volume1VOMock;
+ 
+@@ -169,6 +172,11 @@
+ 
+     @Mock
+     DataStoreManager dataStoreMgr;
++
++    @Before
++    public void setUp() {
++        poolMock = Mockito.mock(StoragePoolVO.class);
++    }
+ 
+     @Test
+     public void createLocalStoragePoolName() {
+@@ -361,26 +369,23 @@
+ 
+     @Test
+     public void testStoragePoolHasEnoughIopsNullRequestedIops() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         List<Long> iopsList = Arrays.asList(null, 0L);
+         for (Long iops : iopsList) {
+-            assertTrue(storageManagerImpl.storagePoolHasEnoughIops(iops, pool));
++            assertTrue(storageManagerImpl.storagePoolHasEnoughIops(iops, poolMock));
+         }
+     }
+ 
+     @Test
+     public void testStoragePoolHasEnoughIopsSuccess1() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Mockito.doReturn(true).when(storageManagerImpl).storagePoolHasEnoughIops(
+-                Mockito.eq(100L), Mockito.anyList(), Mockito.eq(pool), Mockito.eq(false));
+-        assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, pool));
++                Mockito.eq(100L), Mockito.anyList(), Mockito.eq(poolMock), Mockito.eq(false));
++        assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, poolMock));
+     }
+ 
+     @Test
+     public void testStoragePoolHasEnoughIopsNoVolumesOrPool() {
+         List<Pair<Volume, DiskProfile>> list = new ArrayList<>();
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
++        Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughIops(list, poolMock));
+         list = List.of(new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
+         Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughIops(list, null));
+     }
+@@ -389,9 +394,8 @@
+     public void testStoragePoolHasEnoughIopsWithVolPoolNullIops() {
+         List<Pair<Volume, DiskProfile>> list = List.of(
+                 new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        Mockito.when(pool.getCapacityIops()).thenReturn(null);
+-        assertTrue(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
++        Mockito.when(poolMock.getCapacityIops()).thenReturn(null);
++        assertTrue(storageManagerImpl.storagePoolHasEnoughIops(list, poolMock));
+     }
+ 
+     @Test
+@@ -416,10 +420,9 @@
+ 
+     @Test
+     public void testStoragePoolHasEnoughSpaceNullSize() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         List<Long> sizeList = Arrays.asList(null, 0L);
+         for (Long size : sizeList) {
+-            assertTrue(storageManagerImpl.storagePoolHasEnoughSpace(size, pool));
++            assertTrue(storageManagerImpl.storagePoolHasEnoughSpace(size, poolMock));
+         }
+     }
+ 
+@@ -441,21 +444,20 @@
+ 
+     @Test
+     public void testIsStoragePoolCompliantWithStoragePolicy() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Mockito.when(diskOfferingDetailsDao.getDetail(1L, ApiConstants.STORAGE_POLICY))
+                 .thenReturn("policy");
+         try {
+             Mockito.doReturn(null)
+-                    .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
+-            assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, pool));
++                    .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", poolMock);
++            assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, poolMock));
+         } catch (StorageUnavailableException e) {
+             Assert.fail(e.getMessage());
+         }
+         try {
+             Mockito.doReturn(new com.cloud.agent.api.Answer(
+                             Mockito.mock(CheckDataStoreStoragePolicyComplianceCommand.class)))
+-                    .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
+-            assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, pool));
++                    .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", poolMock);
++            assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, poolMock));
+         } catch (StorageUnavailableException e) {
+             Assert.fail(e.getMessage());
+         }
+@@ -464,8 +466,8 @@
+                     new com.cloud.agent.api.Answer(Mockito.mock(CheckDataStoreStoragePolicyComplianceCommand.class),
+                             false, "");
+             Mockito.doReturn(answer)
+-                    .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
+-            Assert.assertFalse(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, pool));
++                    .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", poolMock);
++            Assert.assertFalse(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, poolMock));
+         } catch (StorageUnavailableException e) {
+             Assert.fail(e.getMessage());
+         }
+@@ -473,10 +475,9 @@
+ 
+     @Test
+     public void testGetCheckDatastorePolicyComplianceAnswerNullAnswer() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         try {
+-            Assert.assertNull(storageManagerImpl.getCheckDatastorePolicyComplianceAnswer(null, pool));
+-            Assert.assertNull(storageManagerImpl.getCheckDatastorePolicyComplianceAnswer("", pool));
++            Assert.assertNull(storageManagerImpl.getCheckDatastorePolicyComplianceAnswer(null, poolMock));
++            Assert.assertNull(storageManagerImpl.getCheckDatastorePolicyComplianceAnswer("", poolMock));
+         } catch (StorageUnavailableException e) {
+             Assert.fail(e.getMessage());
+         }
+@@ -884,51 +885,47 @@
+ 
+     @Test
+     public void testCheckPoolforSpaceForResize1() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+ 
+-        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
++        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(poolMock, allocatedSizeWithTemplate);
+         Long totalAskingSize = maxAskingSize / 2;
+ 
+-        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, false);
++        boolean result = storageManagerImpl.checkPoolforSpace(poolMock, allocatedSizeWithTemplate, totalAskingSize, false);
+         Assert.assertFalse(result);
+     }
+ 
+     @Test
+     public void testCheckPoolforSpaceForResize2() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+ 
+-        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
++        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(poolMock, allocatedSizeWithTemplate);
+         Long totalAskingSize = maxAskingSize / 2;
+ 
+-        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
++        boolean result = storageManagerImpl.checkPoolforSpace(poolMock, allocatedSizeWithTemplate, totalAskingSize, true);
+         Assert.assertFalse(result);
+     }
+ 
+     @Test
+     public void testCheckPoolforSpaceForResize3() throws NoSuchFieldException, IllegalAccessException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+ 
+-        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
++        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(poolMock, allocatedSizeWithTemplate);
+         Long totalAskingSize = maxAskingSize + 1;
+         overrideDefaultConfigValue(StorageManagerImpl.AllowVolumeReSizeBeyondAllocation, "_defaultValue", "true");
+ 
+-        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
++        boolean result = storageManagerImpl.checkPoolforSpace(poolMock, allocatedSizeWithTemplate, totalAskingSize, true);
+         Assert.assertFalse(result);
+     }
+ 
+     @Test
+     public void testCheckPoolforSpaceForResize4() throws NoSuchFieldException, IllegalAccessException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+ 
+-        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
++        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(poolMock, allocatedSizeWithTemplate);
+         Long totalAskingSize = maxAskingSize / 2;
+         overrideDefaultConfigValue(StorageManagerImpl.AllowVolumeReSizeBeyondAllocation, "_defaultValue", "true");
+ 
+-        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
++        boolean result = storageManagerImpl.checkPoolforSpace(poolMock, allocatedSizeWithTemplate, totalAskingSize, true);
+         assertTrue(result);
+     }
+ 

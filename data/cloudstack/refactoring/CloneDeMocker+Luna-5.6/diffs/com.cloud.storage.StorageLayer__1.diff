@@ -1,0 +1,126 @@
+--- a/core/src/test/java/com/cloud/storage/template/OVAProcessorTest.java
++++ b/core/src/test/java/com/cloud/storage/template/OVAProcessorTest.java
+@@ -70,8 +70,10 @@
+         String templatePath = "/tmp";
+         String templateName = "template";
+ 
+-        Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
+-        Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(1000l);
++        mockStorageLayer = MockStorageLayer.createMockStorageLayer(1000l);
++        Map<String, Object> params = new HashMap<String, Object>();
++        params.put(StorageLayer.InstanceConfigKey, mockStorageLayer);
++        processor.configure("OVA Processor", params);
+         Mockito.doThrow(new InternalErrorException("virtual size calculation failed")).when(processor).getTemplateVirtualSize(Mockito.anyString(), Mockito.anyString());
+ 
+         try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+@@ -88,8 +90,10 @@
+         long virtualSize = 2000;
+         long actualSize = 1000;
+ 
+-        Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
+-        Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(actualSize);
++        mockStorageLayer = MockStorageLayer.createMockStorageLayer(actualSize);
++        Map<String, Object> params = new HashMap<String, Object>();
++        params.put(StorageLayer.InstanceConfigKey, mockStorageLayer);
++        processor.configure("OVA Processor", params);
+         Mockito.doReturn(virtualSize).when(processor).getTemplateVirtualSize(Mockito.anyString(), Mockito.anyString());
+ 
+         try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+@@ -138,8 +142,10 @@
+         long virtualSize = 10_000_000_000L;
+         long actualSize = 5_000_000_000L;
+ 
+-        Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
+-        Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(actualSize);
++        mockStorageLayer = MockStorageLayer.createMockStorageLayer(actualSize);
++        Map<String, Object> params = new HashMap<String, Object>();
++        params.put(StorageLayer.InstanceConfigKey, mockStorageLayer);
++        processor.configure("OVA Processor", params);
+         Mockito.doReturn(virtualSize).when(processor).getTemplateVirtualSize(Mockito.anyString(), Mockito.anyString());
+ 
+         try (MockedConstruction<Script> ignored = Mockito.mockConstruction(Script.class, (mock, context) -> {
+--- a/core/src/test/java/com/cloud/storage/template/QCOW2ProcessorTest.java
++++ b/core/src/test/java/com/cloud/storage/template/QCOW2ProcessorTest.java
+@@ -55,11 +55,11 @@
+         String templatePath = "/tmp";
+         String templateName = "template";
+ 
+-        Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
++        mockStorageLayer = MockStorageLayer.createMockStorageLayer(1000L);
++        setUp();
+         File mockFile = Mockito.mock(File.class);
+ 
+         Mockito.when(mockStorageLayer.getFile(Mockito.anyString())).thenReturn(mockFile);
+-        Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(1000L);
+         Mockito.doThrow(new IOException("virtual size calculation failed")).when(processor).getTemplateVirtualSize((File)Mockito.any());
+ 
+         processor.process(templatePath, null, templateName);
+@@ -72,11 +72,13 @@
+         long virtualSize = 2000;
+         long actualSize = 1000;
+ 
+-        Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
++        mockStorageLayer = MockStorageLayer.createMockStorageLayer(actualSize);
++        Map<String, Object> params = new HashMap<String, Object>();
++        params.put(StorageLayer.InstanceConfigKey, mockStorageLayer);
++        processor.configure("VHD Processor", params);
+         File mockFile = Mockito.mock(File.class);
+ 
+         Mockito.when(mockStorageLayer.getFile(Mockito.anyString())).thenReturn(mockFile);
+-        Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(actualSize);
+         Mockito.doReturn(virtualSize).when(processor).getTemplateVirtualSize((File)Mockito.any());
+ 
+         Processor.FormatInfo info = processor.process(templatePath, null, templateName);
+--- a/core/src/test/java/com/cloud/storage/template/VhdProcessorTest.java
++++ b/core/src/test/java/com/cloud/storage/template/VhdProcessorTest.java
+@@ -59,11 +59,13 @@
+         String templatePath = "/tmp";
+         String templateName = "template";
+ 
+-        Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
++        mockStorageLayer = MockStorageLayer.createMockStorageLayer(1000L);
++        Map<String, Object> params = new HashMap<String, Object>();
++        params.put(StorageLayer.InstanceConfigKey, mockStorageLayer);
++        processor.configure("VHD Processor", params);
+         File mockFile = Mockito.mock(File.class);
+ 
+         Mockito.when(mockStorageLayer.getFile(Mockito.anyString())).thenReturn(mockFile);
+-        Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(1000L);
+         Mockito.doThrow(new IOException("virtual size calculation failed")).when(processor).getTemplateVirtualSize((File) Mockito.any());
+ 
+         processor.process(templatePath, null, templateName);
+@@ -76,11 +78,13 @@
+         long virtualSize = 2000;
+         long actualSize = 1000;
+ 
+-        Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
++        mockStorageLayer = MockStorageLayer.createMockStorageLayer(actualSize);
++        Map<String, Object> params = new HashMap<String, Object>();
++        params.put(StorageLayer.InstanceConfigKey, mockStorageLayer);
++        processor.configure("VHD Processor", params);
+         File mockFile = Mockito.mock(File.class);
+ 
+         Mockito.when(mockStorageLayer.getFile(Mockito.anyString())).thenReturn(mockFile);
+-        Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(actualSize);
+         Mockito.doReturn(virtualSize).when(processor).getTemplateVirtualSize((File) Mockito.any());
+ 
+         Processor.FormatInfo info = processor.process(templatePath, null, templateName);
+--- a/core/src/test/java/com/cloud/storage/template/MockStorageLayer.java
++++ b/core/src/test/java/com/cloud/storage/template/MockStorageLayer.java
+@@ -0,0 +1,16 @@
++package com.cloud.storage.template;
++
++import com.cloud.storage.StorageLayer;
++import org.mockito.Mockito;
++
++public final class MockStorageLayer {
++    private MockStorageLayer() {
++    }
++
++    public static StorageLayer createMockStorageLayer(long size) {
++        StorageLayer mockStorageLayer = Mockito.mock(StorageLayer.class);
++        Mockito.when(mockStorageLayer.exists(Mockito.anyString())).thenReturn(true);
++        Mockito.when(mockStorageLayer.getSize(Mockito.anyString())).thenReturn(size);
++        return mockStorageLayer;
++    }
++}

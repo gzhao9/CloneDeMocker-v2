@@ -1,0 +1,100 @@
+--- a/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
+@@ -101,6 +101,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class StorageManagerImplTest {
++    @Mock
++    private StoragePoolVO pool;
+ 
+     @Mock
+     VolumeDao _volumeDao;
+@@ -361,7 +363,6 @@
+ 
+     @Test
+     public void testStoragePoolHasEnoughIopsNullRequestedIops() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         List<Long> iopsList = Arrays.asList(null, 0L);
+         for (Long iops : iopsList) {
+             assertTrue(storageManagerImpl.storagePoolHasEnoughIops(iops, pool));
+@@ -370,7 +371,6 @@
+ 
+     @Test
+     public void testStoragePoolHasEnoughIopsSuccess1() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Mockito.doReturn(true).when(storageManagerImpl).storagePoolHasEnoughIops(
+                 Mockito.eq(100L), Mockito.anyList(), Mockito.eq(pool), Mockito.eq(false));
+         assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, pool));
+@@ -379,7 +379,6 @@
+     @Test
+     public void testStoragePoolHasEnoughIopsNoVolumesOrPool() {
+         List<Pair<Volume, DiskProfile>> list = new ArrayList<>();
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
+         list = List.of(new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
+         Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughIops(list, null));
+@@ -402,7 +401,6 @@
+         DiskProfile profile = Mockito.mock(DiskProfile.class);
+         Mockito.when(profile.getDiskOfferingId()).thenReturn(1L);
+         List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(volume, profile));
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Mockito.doReturn(true).when(storageManagerImpl)
+                 .storagePoolHasEnoughIops(100L, list, pool, true);
+         assertTrue(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
+@@ -416,7 +414,6 @@
+ 
+     @Test
+     public void testStoragePoolHasEnoughSpaceNullSize() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         List<Long> sizeList = Arrays.asList(null, 0L);
+         for (Long size : sizeList) {
+             assertTrue(storageManagerImpl.storagePoolHasEnoughSpace(size, pool));
+@@ -441,7 +438,7 @@
+ 
+     @Test
+     public void testIsStoragePoolCompliantWithStoragePolicy() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
++        // removed local mock; replaced with global field `pool`
+         Mockito.when(diskOfferingDetailsDao.getDetail(1L, ApiConstants.STORAGE_POLICY))
+                 .thenReturn("policy");
+         try {
+@@ -473,7 +470,6 @@
+ 
+     @Test
+     public void testGetCheckDatastorePolicyComplianceAnswerNullAnswer() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         try {
+             Assert.assertNull(storageManagerImpl.getCheckDatastorePolicyComplianceAnswer(null, pool));
+             Assert.assertNull(storageManagerImpl.getCheckDatastorePolicyComplianceAnswer("", pool));
+@@ -884,7 +880,6 @@
+ 
+     @Test
+     public void testCheckPoolforSpaceForResize1() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+ 
+         Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+@@ -896,7 +891,6 @@
+ 
+     @Test
+     public void testCheckPoolforSpaceForResize2() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+ 
+         Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+@@ -908,7 +902,6 @@
+ 
+     @Test
+     public void testCheckPoolforSpaceForResize3() throws NoSuchFieldException, IllegalAccessException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+ 
+         Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+@@ -921,7 +914,6 @@
+ 
+     @Test
+     public void testCheckPoolforSpaceForResize4() throws NoSuchFieldException, IllegalAccessException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+ 
+         Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);

@@ -1,0 +1,38 @@
+--- a/server/src/test/java/org/apache/cloudstack/storage/sharedfs/SharedFSServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/storage/sharedfs/SharedFSServiceImplTest.java
+@@ -470,10 +470,9 @@
+ 
+     @Test
+     public void testChangeSharedFSServiceOffering() throws ResourceUnavailableException, InsufficientCapacityException, ManagementServerException, OperationTimedoutException, NoTransitionException, VirtualMachineMigrationException {
+-        ChangeSharedFSServiceOfferingCmd cmd = mock(ChangeSharedFSServiceOfferingCmd.class);
+         Long newServiceOfferingId = 100L;
++        ChangeSharedFSServiceOfferingCmd cmd = createChangeSharedFSServiceOfferingCmd(s_sharedFSId);
+         when(cmd.getServiceOfferingId()).thenReturn(newServiceOfferingId);
+-        when(cmd.getId()).thenReturn(s_sharedFSId);
+ 
+         SharedFSVO sharedFS = getMockSharedFS();
+         ReflectionTestUtils.setField(sharedFS, "id", s_sharedFSId);
+@@ -492,10 +491,9 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testChangeSharedFSServiceOfferingInvalidState() throws ResourceUnavailableException, InsufficientCapacityException, ManagementServerException, OperationTimedoutException, VirtualMachineMigrationException {
+-        ChangeSharedFSServiceOfferingCmd cmd = mock(ChangeSharedFSServiceOfferingCmd.class);
+         Long newServiceOfferingId = 100L;
+-        when(cmd.getId()).thenReturn(s_sharedFSId);
+-
++
++        ChangeSharedFSServiceOfferingCmd cmd = createChangeSharedFSServiceOfferingCmd(s_sharedFSId);
+         SharedFSVO sharedFS = getMockSharedFS();
+         ReflectionTestUtils.setField(sharedFS, "id", s_sharedFSId);
+         ReflectionTestUtils.setField(sharedFS, "state", SharedFS.State.Starting);
+@@ -662,4 +660,10 @@
+             verify(_stateMachine, times(1)).transitTo(sharedFS, SharedFS.Event.OperationFailed, null, sharedFSDao);
+         }
+     }
++
++    private static ChangeSharedFSServiceOfferingCmd createChangeSharedFSServiceOfferingCmd(long id) {
++        ChangeSharedFSServiceOfferingCmd cmd = mock(ChangeSharedFSServiceOfferingCmd.class);
++        when(cmd.getId()).thenReturn(id);
++        return cmd;
++    }
+ }

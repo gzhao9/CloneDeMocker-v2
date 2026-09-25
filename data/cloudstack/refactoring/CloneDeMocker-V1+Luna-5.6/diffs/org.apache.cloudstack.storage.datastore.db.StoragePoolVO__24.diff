@@ -1,0 +1,99 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -155,6 +155,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class VolumeApiServiceImplTest {
++    @Mock
++    private StoragePoolVO storagePool;
+ 
+     @Spy
+     @InjectMocks
+@@ -1990,7 +1992,6 @@
+         when((volInfo.getDataStore())).thenReturn(dataStore);
+ 
+         when(volumeVoMock.getPoolId()).thenReturn(poolId);
+-        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+         when(primaryDataStoreDaoMock.findById(poolId)).thenReturn(storagePool);
+ 
+         Mockito.lenient().doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).resize(any(VolumeInfo.class));
+@@ -2024,8 +2025,8 @@
+         testResizeVolumeSetup();
+ 
+         when(storageMgr.storagePoolHasEnoughSpaceForResize(any(), nullable(Long.class), nullable(Long.class))).thenReturn(false).thenReturn(true);
+-        StoragePoolVO suitableStoragePool = Mockito.mock(StoragePoolVO.class);
+-        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = new Pair<>(Arrays.asList(suitableStoragePool), Arrays.asList(suitableStoragePool));
++        // removed local mock; replaced with global field `storagePool`
++        Pair<List<? extends StoragePool>, List<? extends StoragePool>> poolsPair = new Pair<>(Arrays.asList(storagePool), Arrays.asList(storagePool));
+         when(managementService.listStoragePoolsForSystemMigrationOfVolume(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyBoolean(), anyBoolean())).thenReturn(poolsPair);
+         doReturn(volumeInfoMock).when(volumeApiServiceImpl).migrateVolume(any());
+         when(volumeInfoMock.getId()).thenReturn(volumeMockId);
+@@ -2532,7 +2533,6 @@
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+         StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+ 
+         Long volumePoolId = 100L;
+@@ -2542,7 +2542,7 @@
+         Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+         Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+         Mockito.when(vm.getHostId()).thenReturn(vmHostId);
+-        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
++        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(storagePool);
+         Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+ 
+         Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+@@ -2567,7 +2567,6 @@
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+         StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+ 
+         Long volumePoolId = 100L;
+@@ -2577,7 +2576,7 @@
+         Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+         Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+         Mockito.when(vm.getHostId()).thenReturn(vmHostId);
+-        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
++        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(storagePool);
+         Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+ 
+         Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+@@ -2633,7 +2632,7 @@
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
++        // removed local mock; replaced with global field `storagePool`
+         StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+ 
+         Long volumePoolId = 100L;
+@@ -2643,7 +2642,7 @@
+         Mockito.when(volumeInfo.getPoolId()).thenReturn(volumePoolId);
+         Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+         Mockito.when(vm.getHostId()).thenReturn(vmHostId);
+-        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
++        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(storagePool);
+         Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+ 
+         Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);
+@@ -2673,7 +2672,6 @@
+         VolumeInfo volumeInfo = Mockito.mock(VolumeInfo.class);
+         VolumeVO vmExistingVolume = Mockito.mock(VolumeVO.class);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        StoragePoolVO volumePool = Mockito.mock(StoragePoolVO.class);
+         StoragePoolVO vmPool = Mockito.mock(StoragePoolVO.class);
+ 
+         Long volumePoolId = 100L;
+@@ -2684,7 +2682,7 @@
+         Mockito.when(vmExistingVolume.getPoolId()).thenReturn(vmPoolId);
+         Mockito.when(vm.getHostId()).thenReturn(null); // VM is stopped
+         Mockito.when(vm.getLastHostId()).thenReturn(lastHostId);
+-        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(volumePool);
++        Mockito.when(primaryDataStoreDaoMock.findById(volumePoolId)).thenReturn(storagePool);
+         Mockito.when(primaryDataStoreDaoMock.findById(vmPoolId)).thenReturn(vmPool);
+ 
+         Mockito.when(vmPool.getPoolType()).thenReturn(Storage.StoragePoolType.CLVM);

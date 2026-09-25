@@ -1,0 +1,198 @@
+--- a/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
+@@ -334,8 +334,7 @@
+ 
+     @Test
+     public void testStoragePoolHasEnoughIopsSuccess() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        Mockito.when(pool.getId()).thenReturn(1L);
++        StoragePoolVO pool = createMockStoragePoolVO();
+         Mockito.when(pool.getCapacityIops()).thenReturn(1000L);
+         Mockito.when(storagePoolDao.findById(1L)).thenReturn(pool);
+         Mockito.when(capacityManager.getUsedIops(pool)).thenReturn(500L);
+@@ -345,8 +344,7 @@
+ 
+     @Test
+     public void testStoragePoolHasEnoughIopsNegative() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        Mockito.when(pool.getId()).thenReturn(1L);
++        StoragePoolVO pool = createMockStoragePoolVO();
+         Mockito.when(pool.getCapacityIops()).thenReturn(550L);
+         Mockito.when(storagePoolDao.findById(1L)).thenReturn(pool);
+         Mockito.when(capacityManager.getUsedIops(pool)).thenReturn(500L);
+@@ -425,8 +423,7 @@
+ 
+     @Test
+     public void testStoragePoolHasEnoughSpaceCompare() {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        Mockito.when(pool.getId()).thenReturn(1L);
++        StoragePoolVO pool = createMockStoragePoolVO();
+         Mockito.when(storagePoolDao.findById(1L)).thenReturn(pool);
+         Mockito.when(capacityManager.getAllocatedPoolCapacity(pool, null)).thenReturn(2000L);
+         Mockito.doAnswer((Answer<Boolean>) invocationOnMock -> {
+@@ -484,8 +481,7 @@
+ 
+     @Test(expected = StorageUnavailableException.class)
+     public void testGetCheckDatastorePolicyComplianceAnswerNoHost() throws StorageUnavailableException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        Mockito.when(pool.getId()).thenReturn(1L);
++        StoragePoolVO pool = createMockStoragePoolVO();
+         Mockito.when(vsphereStoragePolicyDao.findById(Mockito.anyLong()))
+                 .thenReturn(Mockito.mock(VsphereStoragePolicyVO.class));
+         Mockito.doReturn(new ArrayList<>()).when(storageManagerImpl).getUpHostsInPool(Mockito.anyLong());
+@@ -494,8 +490,7 @@
+ 
+     @Test(expected = StorageUnavailableException.class)
+     public void testGetCheckDatastorePolicyComplianceAnswerAgentException() throws StorageUnavailableException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        Mockito.when(pool.getId()).thenReturn(1L);
++        StoragePoolVO pool = createMockStoragePoolVO();
+         VsphereStoragePolicyVO policy = Mockito.mock(VsphereStoragePolicyVO.class);
+         Mockito.when(policy.getPolicyId()).thenReturn("some");
+         Mockito.when(vsphereStoragePolicyDao.findById(Mockito.anyLong()))
+@@ -521,8 +516,7 @@
+ 
+     @Test
+     public void testGetCheckDatastorePolicyComplianceAnswerSuccess() throws StorageUnavailableException {
+-        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+-        Mockito.when(pool.getId()).thenReturn(1L);
++        StoragePoolVO pool = createMockStoragePoolVO();
+         VsphereStoragePolicyVO policy = Mockito.mock(VsphereStoragePolicyVO.class);
+         Mockito.when(policy.getPolicyId()).thenReturn("some");
+         Mockito.when(vsphereStoragePolicyDao.findById(Mockito.anyLong()))
+@@ -663,6 +657,12 @@
+         return primaryStorage;
+     }
+ 
++    private static StoragePoolVO createMockStoragePoolVO() {
++        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
++        Mockito.when(pool.getId()).thenReturn(1L);
++        return pool;
++    }
++
+     private void prepareTestChangeStoragePoolScope(ScopeType currentScope, StoragePoolStatus status) {
+         final DataCenterVO zone = new DataCenterVO(1L, null, null, null, null, null, null, null, null, null, DataCenter.NetworkType.Advanced, null, null);
+         StoragePoolVO primaryStorage = mockStoragePoolVOForChangeStoragePoolScope(currentScope, status);
+@@ -1055,9 +1055,9 @@
+     @Test
+     public void testNoStorageAccessGroupsOnHostAndStoragePool() {
+         HostVO host = Mockito.mock(HostVO.class);
+-        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+         long hostId = 1L;
+         long poolId = 2L;
++        StoragePoolVO storagePool = createMockStoragePoolVO();
+ 
+         Mockito.when(host.getId()).thenReturn(hostId);
+         doReturn(new String[0]).when(storageManagerImpl).getStorageAccessGroups(null, null, null, hostId);
+@@ -1075,13 +1075,13 @@
+     @Test
+     public void testHostWithStorageAccessGroupsAndStoragePoolWithoutStorageAccessGroups() {
+         HostVO host = Mockito.mock(HostVO.class);
+-        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+         long hostId = 1L;
+         long poolId = 2L;
+ 
+         Mockito.when(host.getId()).thenReturn(hostId);
+         doReturn(new String[]{"StorageAccessGroup1"}).when(storageManagerImpl).getStorageAccessGroups(null, null, null, hostId);
+ 
++        StoragePoolVO storagePool = createMockStoragePoolVO();
+         Mockito.when(storagePool.getId()).thenReturn(poolId);
+         storageManagerImpl._storagePoolAccessGroupMapDao = storagePoolAccessGroupMapDao;
+         Mockito.when(storagePoolAccessGroupMapDao.getStorageAccessGroups(poolId))
+@@ -1095,13 +1095,13 @@
+     @Test
+     public void testHostWithStorageAccessGroupsAndStoragePoolWithDifferentStorageAccessGroups() {
+         HostVO host = Mockito.mock(HostVO.class);
+-        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+         long hostId = 1L;
+         long poolId = 2L;
+ 
+         Mockito.when(host.getId()).thenReturn(hostId);
+         doReturn(new String[]{"StorageAccessGroup1"}).when(storageManagerImpl).getStorageAccessGroups(null, null, null, hostId);
+ 
++        StoragePoolVO storagePool = createMockStoragePoolVO();
+         Mockito.when(storagePool.getId()).thenReturn(poolId);
+         storageManagerImpl._storagePoolAccessGroupMapDao = storagePoolAccessGroupMapDao;
+         Mockito.when(storagePoolAccessGroupMapDao.getStorageAccessGroups(poolId))
+@@ -1115,7 +1115,7 @@
+     @Test
+     public void testHostWithStorageAccessGroupsAndStoragePoolWithMatchingStorageAccessGroups() {
+         HostVO host = Mockito.mock(HostVO.class);
+-        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO storagePool = createMockStoragePoolVO();
+         long hostId = 1L;
+         long poolId = 2L;
+ 
+@@ -1135,7 +1135,7 @@
+     @Test
+     public void testHostWithEmptySAGsOnHost() {
+         HostVO host = Mockito.mock(HostVO.class);
+-        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO storagePool = createMockStoragePoolVO();
+         long hostId = 1L;
+         long poolId = 2L;
+ 
+@@ -1154,7 +1154,7 @@
+ 
+     @Test
+     public void testVolumeReadyNoVMOrVMStoppedAndPoolsWithMatchingStorageAccessGroups() {
+-        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO destPool = createMockStoragePoolVO();
+         Volume volume = Mockito.mock(Volume.class);
+         long srcPoolId = 2L;
+         long destPoolId = 3L;
+@@ -1178,7 +1178,7 @@
+ 
+     @Test
+     public void testVolumeReadyNoVMOrVMStoppedAndPoolsWithEmptyStorageAccessGroups() {
+-        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO destPool = createMockStoragePoolVO();
+         Volume volume = Mockito.mock(Volume.class);
+         long srcPoolId = 2L;
+         long destPoolId = 3L;
+@@ -1202,7 +1202,6 @@
+ 
+     @Test
+     public void testVolumeReadyVMRunningAndHostHasCommonSAGsForBothPools() {
+-        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
+         Volume volume = Mockito.mock(Volume.class);
+         long vmId = 10L;
+         long srcPoolId = 2L;
+@@ -1212,6 +1211,7 @@
+         Mockito.when(volume.getInstanceId()).thenReturn(vmId);
+         Mockito.when(volume.getPoolId()).thenReturn(srcPoolId);
+ 
++        StoragePoolVO destPool = createMockStoragePoolVO();
+         Mockito.when(destPool.getId()).thenReturn(destPoolId);
+ 
+         List<String> srcStorageAccessGroups = Arrays.asList("StorageAccessGroup1", "StorageAccessGroup2");
+@@ -1227,9 +1227,8 @@
+ 
+     @Test
+     public void testVolumeReadyVMRunningAndHostHasCommonSAGForSourcePoolButNotDestinationPool() {
+-        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
+         Volume volume = Mockito.mock(Volume.class);
+-        StoragePoolVO srcPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO srcPool = createMockStoragePoolVO();
+         long vmId = 10L;
+         long srcPoolId = 2L;
+         long destPoolId = 3L;
+@@ -1238,6 +1237,7 @@
+         Mockito.when(volume.getInstanceId()).thenReturn(vmId);
+         Mockito.when(volume.getPoolId()).thenReturn(srcPoolId);
+ 
++        StoragePoolVO destPool = createMockStoragePoolVO();
+         Mockito.when(destPool.getId()).thenReturn(destPoolId);
+         Mockito.when(srcPool.getId()).thenReturn(destPoolId);
+         Mockito.doReturn(srcPool).when(storagePoolDao).findById(srcPoolId);
+@@ -1259,8 +1259,8 @@
+ 
+     @Test
+     public void testNoCommonHostConnected() {
+-        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
+-        StoragePoolVO srcPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO destPool = createMockStoragePoolVO();
++        StoragePoolVO srcPool = createMockStoragePoolVO();
+         Volume volume = Mockito.mock(Volume.class);
+         long vmId = 10L;
+         long srcPoolId = 2L;
