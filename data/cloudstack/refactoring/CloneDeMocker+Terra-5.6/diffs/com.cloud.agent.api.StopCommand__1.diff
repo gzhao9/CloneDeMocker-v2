@@ -1,0 +1,81 @@
+--- a/plugins/hypervisors/external/src/test/java/org/apache/cloudstack/hypervisor/external/provisioner/ExternalPathPayloadProvisionerTest.java
++++ b/plugins/hypervisors/external/src/test/java/org/apache/cloudstack/hypervisor/external/provisioner/ExternalPathPayloadProvisionerTest.java
+@@ -175,6 +175,14 @@
+         testScript.setWritable(true);
+     }
+ 
++    private static StopCommand createMockStopCommand(VirtualMachineTO vmTO) {
++        StopCommand cmd = mock(StopCommand.class);
++        when(cmd.getVirtualMachine()).thenReturn(vmTO);
++        when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
++        when(cmd.getWait()).thenReturn(30);
++        return cmd;
++    }
++
+     @Test
+     public void testLoadAccessDetails() {
+         Map<String, Map<String, String>> externalDetails = new HashMap<>();
+@@ -412,7 +420,21 @@
+ 
+     @Test
+     public void testStopInstance() {
+-        StopCommand cmd = mock(StopCommand.class);
++        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        when(vmTO.getUuid()).thenReturn("test-uuid");
++        StopCommand cmd = createMockStopCommand(vmTO);
++
++        doReturn(new Pair<>(true, "success")).when(provisioner)
++            .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
++
++        StopAnswer answer = provisioner.stopInstance("host-name", "test-extension", "test-extension.sh", cmd);
++
++        assertTrue(answer.getResult());
++    }
++
++    @Test
++    public void testRebootInstance() {
++        RebootCommand cmd = mock(RebootCommand.class);
+         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+         when(vmTO.getUuid()).thenReturn("test-uuid");
+         when(cmd.getVirtualMachine()).thenReturn(vmTO);
+@@ -422,36 +444,16 @@
+         doReturn(new Pair<>(true, "success")).when(provisioner)
+             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
+ 
+-        StopAnswer answer = provisioner.stopInstance("host-name", "test-extension", "test-extension.sh", cmd);
++        RebootAnswer answer = provisioner.rebootInstance("host-name", "test-extension", "test-extension.sh", cmd);
+ 
+         assertTrue(answer.getResult());
+     }
+ 
+     @Test
+-    public void testRebootInstance() {
+-        RebootCommand cmd = mock(RebootCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
+-        when(cmd.getVirtualMachine()).thenReturn(vmTO);
+-        when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
+-        when(cmd.getWait()).thenReturn(30);
+-
+-        doReturn(new Pair<>(true, "success")).when(provisioner)
+-            .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
+-
+-        RebootAnswer answer = provisioner.rebootInstance("host-name", "test-extension", "test-extension.sh", cmd);
+-
+-        assertTrue(answer.getResult());
+-    }
+-
+-    @Test
+     public void testExpungeInstance() {
+-        StopCommand cmd = mock(StopCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
+-        when(cmd.getVirtualMachine()).thenReturn(vmTO);
+-        when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
+-        when(cmd.getWait()).thenReturn(30);
++        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        when(vmTO.getUuid()).thenReturn("test-uuid");
++        StopCommand cmd = createMockStopCommand(vmTO);
+ 
+         doReturn(new Pair<>(true, "success")).when(provisioner)
+             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
