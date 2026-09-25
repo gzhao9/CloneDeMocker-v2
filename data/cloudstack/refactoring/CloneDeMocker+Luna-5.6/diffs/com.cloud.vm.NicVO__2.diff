@@ -1,0 +1,51 @@
+--- a/server/src/test/java/com/cloud/network/Ipv6ServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/Ipv6ServiceImplTest.java
+@@ -427,6 +427,13 @@
+         }
+     }
+ 
++    private static NicVO createMockNic(String ipv6Address, String publicReserver) {
++        NicVO nic = Mockito.mock(NicVO.class);
++        Mockito.when(nic.getIPv6Address()).thenReturn(ipv6Address);
++        Mockito.when(nic.getReserver()).thenReturn(publicReserver);
++        return nic;
++    }
++
+     private List<NicVO> mockPlaceholderNics() {
+         NicVO placeholderNic = Mockito.mock(NicVO.class);
+         Mockito.when(placeholderNic.getIPv6Address()).thenReturn(ipv6Address);
+@@ -549,8 +556,7 @@
+         Mockito.when(nicDao.listByVmId(Mockito.anyLong())).thenReturn(new ArrayList<>());
+         addresses = ipv6Service.getPublicIpv6AddressesForNetwork(Mockito.mock(Network.class));
+         Assert.assertTrue(CollectionUtils.isEmpty(addresses));
+-        NicVO nic = Mockito.mock(NicVO.class);
+-        Mockito.when(nic.getIPv6Address()).thenReturn(null);
++        NicVO nic = createMockNic(null, null);
+         List<NicVO> nics = List.of(nic);
+         Mockito.when(nicDao.listByVmId(Mockito.anyLong())).thenReturn(nics);
+         addresses = ipv6Service.getPublicIpv6AddressesForNetwork(Mockito.mock(Network.class));
+@@ -591,9 +597,7 @@
+         networks.add(network);
+         List<DomainRouterVO> routers = List.of(Mockito.mock(DomainRouterVO.class));
+         Mockito.when(domainRouterDao.findByNetwork(Mockito.anyLong())).thenReturn(routers);
+-        NicVO nic = Mockito.mock(NicVO.class);
+-        Mockito.when(nic.getIPv6Address()).thenReturn(ipv6Address);
+-        Mockito.when(nic.getReserver()).thenReturn(publicReserver);
++        NicVO nic = createMockNic(ipv6Address, publicReserver);
+         Mockito.when(nicDao.listByVmId(Mockito.anyLong())).thenReturn(List.of(nic));
+         Mockito.doReturn(networks).when(networkModel).listNetworksByVpc(Mockito.anyLong());
+         Mockito.when(networkOfferingDao.isIpv6Supported(Mockito.anyLong())).thenReturn(true);
+@@ -778,12 +782,10 @@
+     public void testRemovePublicIpv6PlaceholderNics() {
+         Network network = Mockito.mock(NetworkVO.class);
+         Mockito.when(network.getId()).thenReturn(networkId);
+-        NicVO nic = Mockito.mock(NicVO.class);
++        NicVO nic = createMockNic(ipv6Address, publicReserver);
+         Mockito.when(nic.getId()).thenReturn(nicId);
+-        Mockito.when(nic.getIPv6Address()).thenReturn(ipv6Address);
+         Mockito.when(nic.getIPv6Cidr()).thenReturn(cidr);
+         Mockito.when(nic.getIPv6Gateway()).thenReturn(gateway);
+-        Mockito.when(nic.getReserver()).thenReturn(publicReserver);
+         Mockito.when(nicDao.listPlaceholderNicsByNetworkId(Mockito.anyLong())).thenReturn(List.of(nic));
+         final List<Long> removedNics = new ArrayList<>();
+         Mockito.when(nicDao.remove(Mockito.anyLong())).thenAnswer((Answer<Boolean>) invocation -> {

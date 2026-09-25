@@ -1,0 +1,70 @@
+--- a/server/src/test/java/com/cloud/network/router/DhcpLeaseTimeoutIntegrationTest.java
++++ b/server/src/test/java/com/cloud/network/router/DhcpLeaseTimeoutIntegrationTest.java
+@@ -90,7 +90,7 @@
+         // Create common mocks
+         mockRouter = Mockito.mock(VirtualRouter.class);
+         mockVm = Mockito.mock(UserVmVO.class);
+-        mockNic = Mockito.mock(NicVO.class);
++        mockNic = MockNicVoWithMacAddress.createMockNicVo("02:00:0a:0b:0c:0d");
+         mockDc = Mockito.mock(DataCenterVO.class);
+ 
+         // Setup default mock behaviors
+@@ -100,7 +100,6 @@
+ 
+         when(mockVm.getHostName()).thenReturn("test-vm");
+ 
+-        when(mockNic.getMacAddress()).thenReturn("02:00:0a:0b:0c:0d");
+         when(mockNic.getIPv4Address()).thenReturn("10.1.1.10");
+         when(mockNic.getIPv6Address()).thenReturn(null);
+         when(mockNic.getNetworkId()).thenReturn(400L);
+--- a/server/src/test/java/com/cloud/network/router/NetworkHelperImplTest.java
++++ b/server/src/test/java/com/cloud/network/router/NetworkHelperImplTest.java
+@@ -442,8 +442,8 @@
+         nicProfile.setIPv4Address("10.0.0.1");
+         nicProfile.setMacAddress("ff-ff-ff-ff-ff-f1");
+ 
++        nicVoMock = MockNicVoWithMacAddress.createMockNicVo(peerMacAddress);
+         Mockito.when(nicDaoMock.findByIp4AddressAndNetworkId(Mockito.anyString(), Mockito.anyLong())).thenReturn(nicVoMock);
+-        Mockito.when(nicVoMock.getMacAddress()).thenReturn(peerMacAddress);
+         Mockito.when(routerDeploymentDefinitionMock.getKeepMacAddressOnPublicNic()).thenReturn(true);
+ 
+         networkHelperSpy.setPublicNicMacAddressSameAsPeerNic(nicProfile, networkMock, routerDeploymentDefinitionMock);
+@@ -458,8 +458,8 @@
+         nicProfile.setMacAddress(macAddress);
+         PublicIp publicIpMock = Mockito.mock(PublicIp.class);
+ 
++        nicVoMock = MockNicVoWithMacAddress.createMockNicVo(macAddress);
+         Mockito.when(nicDaoMock.findByIp4AddressAndNetworkId(Mockito.anyString(), Mockito.anyLong())).thenReturn(nicVoMock);
+-        Mockito.when(nicVoMock.getMacAddress()).thenReturn(macAddress);
+         Mockito.when(routerDeploymentDefinitionMock.getKeepMacAddressOnPublicNic()).thenReturn(false);
+         Mockito.when(routerDeploymentDefinitionMock.getSourceNatIP()).thenReturn(publicIpMock);
+         Mockito.doNothing().when(networkHelperSpy).configurePublicVrNicBasedOnSourceNatIp(nicProfile, publicIpMock);
+@@ -476,8 +476,8 @@
+         nicProfile.setIPv4Address("10.0.0.1");
+         nicProfile.setMacAddress(newMacAddress);
+ 
++        nicVoMock = MockNicVoWithMacAddress.createMockNicVo("ff-ff-ff-ff-ff-f1");
+         Mockito.when(nicDaoMock.findByIp4AddressAndNetworkId(Mockito.anyString(), Mockito.anyLong())).thenReturn(nicVoMock);
+-        Mockito.when(nicVoMock.getMacAddress()).thenReturn("ff-ff-ff-ff-ff-f1");
+         Mockito.when(routerDeploymentDefinitionMock.getKeepMacAddressOnPublicNic()).thenReturn(false);
+ 
+         networkHelperSpy.setPublicNicMacAddressSameAsPeerNic(nicProfile, networkMock, routerDeploymentDefinitionMock);
+--- a/server/src/test/java/com/cloud/network/router/MockNicVoWithMacAddress.java
++++ b/server/src/test/java/com/cloud/network/router/MockNicVoWithMacAddress.java
+@@ -0,0 +1,16 @@
++package com.cloud.network.router;
++
++import com.cloud.vm.NicVO;
++import org.mockito.Mockito;
++
++public final class MockNicVoWithMacAddress {
++
++    private MockNicVoWithMacAddress() {
++    }
++
++    public static NicVO createMockNicVo(String macAddress) {
++        NicVO nicVoMock = Mockito.mock(NicVO.class);
++        Mockito.when(nicVoMock.getMacAddress()).thenReturn(macAddress);
++        return nicVoMock;
++    }
++}
