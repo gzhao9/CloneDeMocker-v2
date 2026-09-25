@@ -1,0 +1,37 @@
+--- a/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/XenServerGuruTest.java
++++ b/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/XenServerGuruTest.java
+@@ -105,11 +105,10 @@
+     @Test
+     public void getCommandHostDelegationTestCommandIsStorageSubSystemCommand() {
+         CopyCommand copyCommand = Mockito.mock(CopyCommand.class);
+-        DataTO srcData = Mockito.mock(DataTO.class);
++        DataTO srcData = createMockDataTO(HypervisorType.XenServer);
+         DataTO dstData = Mockito.mock(DataTO.class);
+         Mockito.when(copyCommand.getSrcTO()).thenReturn(srcData);
+         Mockito.when(copyCommand.getDestTO()).thenReturn(dstData);
+-        Mockito.when(srcData.getHypervisorType()).thenReturn(HypervisorType.XenServer);
+ 
+         Pair<Boolean, Long> pairHostToExecuteCommand = xenServerGuru.getCommandHostDelegation(defaultHostId, copyCommand);
+ 
+@@ -121,9 +120,8 @@
+     @Test
+     public void getCommandHostDelegationTestCommandIsNotForXenHypervisor() {
+         CopyCommand copyCommand = Mockito.mock(CopyCommand.class);
+-        DataTO srcData = Mockito.mock(DataTO.class);
++        DataTO srcData = createMockDataTO(HypervisorType.Any);
+         Mockito.when(copyCommand.getSrcTO()).thenReturn(srcData);
+-        Mockito.when(srcData.getHypervisorType()).thenReturn(HypervisorType.Any);
+ 
+         Pair<Boolean, Long> pairHostToExecuteCommand = xenServerGuru.getCommandHostDelegation(defaultHostId, copyCommand);
+ 
+@@ -258,4 +256,10 @@
+         Assert.assertTrue(pairHostToExecuteCommand.first());
+         Assert.assertEquals(changedHostId, pairHostToExecuteCommand.second());
+     }
++
++    private static DataTO createMockDataTO(HypervisorType hypervisorType) {
++        DataTO srcData = Mockito.mock(DataTO.class);
++        Mockito.when(srcData.getHypervisorType()).thenReturn(hypervisorType);
++        return srcData;
++    }
+ }

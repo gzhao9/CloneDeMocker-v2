@@ -1,0 +1,45 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -655,13 +655,10 @@
+     @Test
+     public void testImportFromExternalTest() throws InsufficientServerCapacityException {
+         String vmname = "TestInstance";
+-        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
++        ImportVmCmd cmd = createMockImportVmCmd(vmname, "external");
+         when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
+-        when(cmd.getName()).thenReturn(vmname);
+         when(cmd.getUsername()).thenReturn("user");
+         when(cmd.getPassword()).thenReturn("pass");
+-        when(cmd.getImportSource()).thenReturn("external");
+-        when(cmd.getDomainId()).thenReturn(null);
+         HostVO host = Mockito.mock(HostVO.class);
+         DeployDestination mockDest = Mockito.mock(DeployDestination.class);
+         when(deploymentPlanningManager.planDeployment(any(), any(), any(), any())).thenReturn(mockDest);
+@@ -767,12 +764,8 @@
+         when(cluster.getDataCenterId()).thenReturn(zoneId);
+         when(clusterDao.findById(clusterId)).thenReturn(cluster);
+ 
+-        ImportVmCmd importVmCmd = Mockito.mock(ImportVmCmd.class);
+-
+-        when(importVmCmd.getName()).thenReturn(vmName);
+-        when(importVmCmd.getClusterId()).thenReturn(clusterId);
+-        when(importVmCmd.getDomainId()).thenReturn(null);
+-        when(importVmCmd.getImportSource()).thenReturn(VmImportService.ImportSource.VMWARE.toString());
++
++        ImportVmCmd importVmCmd = createMockImportVmCmd(vmName, VmImportService.ImportSource.VMWARE.toString());
+         when(importVmCmd.getHostIp()).thenReturn(host);
+         when(importVmCmd.getNicNetworkList()).thenReturn(Map.of("NIC 1", networkId));
+         when(importVmCmd.getConvertInstanceHostId()).thenReturn(null);
+@@ -1609,4 +1602,12 @@
+         details.put("key", "not-a-number");
+         unmanagedVMsManager.getDetailAsInteger("key", details);
+     }
++
++    private static ImportVmCmd createMockImportVmCmd(String nameReturn, String importSourceReturn) {
++        ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
++        when(cmd.getDomainId()).thenReturn(null);
++        when(cmd.getImportSource()).thenReturn(importSourceReturn);
++        when(cmd.getName()).thenReturn(nameReturn);
++        return cmd;
++    }
+ }
