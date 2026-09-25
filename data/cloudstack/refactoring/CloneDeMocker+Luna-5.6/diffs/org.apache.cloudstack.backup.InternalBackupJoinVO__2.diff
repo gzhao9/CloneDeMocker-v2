@@ -1,0 +1,103 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -422,10 +422,8 @@
+     public void getBackupJoinParentsTestIncludeRemovedAncestorMultipleAncestors() {
+         Date date = DateUtil.now();
+         doReturn(date).when(backupVoMock).getDate();
+-        InternalBackupJoinVO internalBackupJoinVoMock1 = Mockito.mock(InternalBackupJoinVO.class);
+-        doReturn(false).when(internalBackupJoinVoMock1).getEndOfChain();
+-        InternalBackupJoinVO internalBackupJoinVoMock2 = Mockito.mock(InternalBackupJoinVO.class);
+-        doReturn(false).when(internalBackupJoinVoMock2).getEndOfChain();
++        InternalBackupJoinVO internalBackupJoinVoMock1 = createMockInternalBackupJoinVo(false);
++        InternalBackupJoinVO internalBackupJoinVoMock2 = createMockInternalBackupJoinVo(false);
+         doReturn(true).when(internalBackupJoinVoMock).getEndOfChain();
+         doReturn(List.of(internalBackupJoinVoMock1, internalBackupJoinVoMock2, internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(vmId, date);
+ 
+@@ -438,10 +436,8 @@
+     public void getBackupJoinParentsTestIncludeRemovedAncestorMultipleAncestorsNoEndOfChain() {
+         Date date = DateUtil.now();
+         doReturn(date).when(backupVoMock).getDate();
+-        InternalBackupJoinVO internalBackupJoinVoMock1 = Mockito.mock(InternalBackupJoinVO.class);
+-        doReturn(false).when(internalBackupJoinVoMock1).getEndOfChain();
+-        InternalBackupJoinVO internalBackupJoinVoMock2 = Mockito.mock(InternalBackupJoinVO.class);
+-        doReturn(false).when(internalBackupJoinVoMock2).getEndOfChain();
++        InternalBackupJoinVO internalBackupJoinVoMock1 = createMockInternalBackupJoinVo(false);
++        InternalBackupJoinVO internalBackupJoinVoMock2 = createMockInternalBackupJoinVo(false);
+         doReturn(false).when(internalBackupJoinVoMock).getEndOfChain();
+         doReturn(List.of(internalBackupJoinVoMock1, internalBackupJoinVoMock2, internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listIncludingRemovedByVmIdAndBeforeDateOrderByCreatedDesc(vmId, date);
+ 
+@@ -454,10 +450,8 @@
+     public void getBackupJoinParentsTestNoRemovedAncestorMultipleAncestorsNoEndOfChain() {
+         Date date = DateUtil.now();
+         doReturn(date).when(backupVoMock).getDate();
+-        InternalBackupJoinVO internalBackupJoinVoMock1 = Mockito.mock(InternalBackupJoinVO.class);
+-        doReturn(false).when(internalBackupJoinVoMock1).getEndOfChain();
+-        InternalBackupJoinVO internalBackupJoinVoMock2 = Mockito.mock(InternalBackupJoinVO.class);
+-        doReturn(false).when(internalBackupJoinVoMock2).getEndOfChain();
++        InternalBackupJoinVO internalBackupJoinVoMock1 = createMockInternalBackupJoinVo(false);
++        InternalBackupJoinVO internalBackupJoinVoMock2 = createMockInternalBackupJoinVo(false);
+         doReturn(false).when(internalBackupJoinVoMock).getEndOfChain();
+         doReturn(List.of(internalBackupJoinVoMock1, internalBackupJoinVoMock2, internalBackupJoinVoMock)).when(internalBackupJoinDaoMock).listByBackedUpAndVmIdAndDateBeforeOrAfterOrderBy(vmId, date, true,
+                 false);
+--- a/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
+@@ -231,9 +231,9 @@
+         doReturn(BACKUP_ID).when(internalBackupStoragePoolVoMock).getBackupId();
+         doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
+         doReturn(List.of()).when(internalBackupStoragePoolDaoMock).listByBackupId(BACKUP_ID);
++        internalBackupJoinVoMock = createMockInternalBackupJoinVo(true);
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(BACKUP_ID);
+         doReturn(BACKUP_ID).when(internalBackupJoinVoMock).getId();
+-        doReturn(true).when(internalBackupJoinVoMock).getEndOfChain();
+ 
+         internalBackupServiceImplSpy.cleanupBackupMetadata(VOLUME_ID);
+ 
+@@ -250,9 +250,9 @@
+         doReturn(BACKUP_ID).when(internalBackupStoragePoolVoMock).getBackupId();
+         doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(VOLUME_ID);
+         doReturn(List.of()).when(internalBackupStoragePoolDaoMock).listByBackupId(BACKUP_ID);
++        internalBackupJoinVoMock = createMockInternalBackupJoinVo(false);
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(BACKUP_ID);
+         doReturn(BACKUP_ID).when(internalBackupJoinVoMock).getId();
+-        doReturn(false).when(internalBackupJoinVoMock).getEndOfChain();
+ 
+         internalBackupServiceImplSpy.cleanupBackupMetadata(VOLUME_ID);
+ 
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/MockInternalBackupJoinVO.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/MockInternalBackupJoinVO.java
+@@ -0,0 +1,16 @@
++package org.apache.cloudstack.backup;
++
++import static org.mockito.Mockito.doReturn;
++
++import org.mockito.Mockito;
++
++public final class MockInternalBackupJoinVO {
++    private MockInternalBackupJoinVO() {
++    }
++
++    public static InternalBackupJoinVO createMockInternalBackupJoinVo(boolean endOfChain) {
++        InternalBackupJoinVO internalBackupJoinVoMock = Mockito.mock(InternalBackupJoinVO.class);
++        doReturn(endOfChain).when(internalBackupJoinVoMock).getEndOfChain();
++        return internalBackupJoinVoMock;
++    }
++}
+--- a/server/src/test/java/org/apache/cloudstack/backup/MockInternalBackupJoinVO.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/MockInternalBackupJoinVO.java
+@@ -0,0 +1,16 @@
++package org.apache.cloudstack.backup;
++
++import static org.mockito.Mockito.doReturn;
++
++import org.mockito.Mockito;
++
++public final class MockInternalBackupJoinVO {
++    private MockInternalBackupJoinVO() {
++    }
++
++    public static InternalBackupJoinVO createMockInternalBackupJoinVo(boolean endOfChain) {
++        InternalBackupJoinVO internalBackupJoinVoMock = Mockito.mock(InternalBackupJoinVO.class);
++        doReturn(endOfChain).when(internalBackupJoinVoMock).getEndOfChain();
++        return internalBackupJoinVoMock;
++    }
++}
