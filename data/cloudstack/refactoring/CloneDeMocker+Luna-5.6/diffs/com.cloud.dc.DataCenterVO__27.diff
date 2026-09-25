@@ -1,0 +1,91 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -787,7 +787,7 @@
+     public void processHostAboutToBeRemovedWithSecurityGroupTest() {
+         HostVO hostVO = mock(HostVO.class);
+         TungstenProviderVO tungstenProvider = mock(TungstenProviderVO.class);
+-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
++        DataCenterVO dataCenterVO = createMockDataCenterVO(true);
+         NetworkVO network = mock(NetworkVO.class);
+ 
+         when(hostVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+@@ -796,7 +796,6 @@
+         when(tungstenProvider.getGateway()).thenReturn("192.168.100.100");
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+-        when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
+         when(networkDao.listByZoneSecurityGroup(anyLong())).thenReturn(List.of(network));
+ 
+         tungstenElement.processHostAboutToBeRemoved(1L);
+@@ -807,7 +806,7 @@
+     public void processHostAboutToBeRemovedWithoutSecurityGroupTest() {
+         HostVO hostVO = mock(HostVO.class);
+         TungstenProviderVO tungstenProvider = mock(TungstenProviderVO.class);
+-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
++        DataCenterVO dataCenterVO = createMockDataCenterVO(false);
+ 
+         when(hostVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProvider);
+@@ -815,7 +814,6 @@
+         when(tungstenProvider.getGateway()).thenReturn("192.168.100.100");
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+-        when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(false);
+ 
+         tungstenElement.processHostAboutToBeRemoved(1L);
+         verify(agentManager, times(1)).easySend(anyLong(), any(SetupTungstenVRouterCommand.class));
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -1536,7 +1536,7 @@
+     @Test
+     public void addTungstenVmSecurityGroupTest() {
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
++        DataCenterVO dataCenterVO = createMockDataCenterVO(true);
+         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         TungstenAnswer getTungstenSecurityGroupAnswer = mock(TungstenAnswer.class);
+@@ -1548,7 +1548,6 @@
+         TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+-        when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
+         when(securityGroupManager.getSecurityGroupsForVm(anyLong())).thenReturn(List.of(securityGroupVO));
+         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenSecurityGroupCommand.class), anyLong())).thenReturn(getTungstenSecurityGroupAnswer);
+@@ -1571,7 +1570,7 @@
+     @Test
+     public void removeTungstenVmSecurityGroupTest() {
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+-        DataCenterVO dataCenterVO = mock(DataCenterVO.class);
++        DataCenterVO dataCenterVO = createMockDataCenterVO(true);
+         SecurityGroupVO securityGroupVO = mock(SecurityGroupVO.class);
+         TungstenAnswer removeTungstenVmFromSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
+         NicVO nicVO = mock(NicVO.class);
+@@ -1580,7 +1579,6 @@
+         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+-        when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
+ 
+         assertTrue(tungstenService.removeTungstenVmSecurityGroup(vmInstanceVO));
+     }
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockDataCenterVO.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockDataCenterVO.java
+@@ -0,0 +1,16 @@
++package org.apache.cloudstack.network.tungsten.service;
++
++import com.cloud.dc.DataCenterVO;
++
++import static org.mockito.Mockito.when;
++
++public final class MockDataCenterVO {
++    private MockDataCenterVO() {
++    }
++
++    public static DataCenterVO createMockDataCenterVO(boolean securityGroupEnabled) {
++        DataCenterVO dataCenterVO = org.mockito.Mockito.mock(DataCenterVO.class);
++        when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(securityGroupEnabled);
++        return dataCenterVO;
++    }
++}

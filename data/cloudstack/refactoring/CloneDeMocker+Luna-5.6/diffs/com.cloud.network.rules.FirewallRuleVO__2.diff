@@ -1,0 +1,73 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -824,17 +824,14 @@
+     @Test
+     public void applyFWRulesWithAddEgressRuleTest() throws ResourceUnavailableException {
+         Network network = mock(Network.class);
+-        FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
+         Network publicNetwork = mock(Network.class);
+         TungstenAnswer createNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer applyNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+ 
+-        when(firewallRuleVO.getState()).thenReturn(FirewallRule.State.Add);
++        FirewallRuleVO firewallRuleVO = createMockFirewallRuleVO(FirewallRule.State.Add, FirewallRule.TrafficType.Egress);
+         when(firewallRuleVO.getSourceCidrList()).thenReturn(List.of("192.168.100.0/24"));
+         when(firewallRuleVO.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+-        when(firewallRuleVO.getPurpose()).thenReturn(FirewallRule.Purpose.Firewall);
+-        when(firewallRuleVO.getTrafficType()).thenReturn(FirewallRule.TrafficType.Egress);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(createNetworkPolicyAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(applyNetworkPolicyAnswer);
+ 
+@@ -844,21 +841,18 @@
+     @Test
+     public void applyFWRulesWithAddIngressRuleTest() throws ResourceUnavailableException {
+         Network network = mock(Network.class);
+-        FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
+         Network publicNetwork = mock(Network.class);
+         TungstenAnswer createNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer applyNetworkPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         Ip ip = mock(Ip.class);
+ 
+-        when(firewallRuleVO.getState()).thenReturn(FirewallRule.State.Add);
++        FirewallRuleVO firewallRuleVO = createMockFirewallRuleVO(FirewallRule.State.Add, FirewallRule.TrafficType.Ingress);
+         when(firewallRuleVO.getSourceCidrList()).thenReturn(List.of("192.168.100.0/24"));
+         when(firewallRuleVO.getProtocol()).thenReturn(NetUtils.ALL_PROTO);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+         when(ipAddressDao.findById(anyLong())).thenReturn(ipAddressVO);
+         when(ipAddressVO.getAddress()).thenReturn(ip);
+-        when(firewallRuleVO.getPurpose()).thenReturn(FirewallRule.Purpose.Firewall);
+-        when(firewallRuleVO.getTrafficType()).thenReturn(FirewallRule.TrafficType.Ingress);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(createNetworkPolicyAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(applyNetworkPolicyAnswer);
+ 
+@@ -868,14 +862,11 @@
+     @Test
+     public void applyFWRulesWithRevokeRuleTest() throws ResourceUnavailableException {
+         Network network = mock(Network.class);
+-        FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
++        FirewallRuleVO firewallRuleVO = createMockFirewallRuleVO(FirewallRule.State.Revoke, FirewallRule.TrafficType.Ingress);
+         Network publicNetwork = mock(Network.class);
+         TungstenAnswer deleteNetworkPolicyAnswer = mock(TungstenAnswer.class);
+ 
+-        when(firewallRuleVO.getState()).thenReturn(FirewallRule.State.Revoke);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+-        when(firewallRuleVO.getPurpose()).thenReturn(FirewallRule.Purpose.Firewall);
+-        when(firewallRuleVO.getTrafficType()).thenReturn(FirewallRule.TrafficType.Ingress);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(deleteNetworkPolicyAnswer);
+ 
+         assertTrue(tungstenElement.applyFWRules(network, List.of(firewallRuleVO)));
+@@ -962,4 +953,12 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    private static FirewallRuleVO createMockFirewallRuleVO(FirewallRule.State state, FirewallRule.TrafficType trafficType) {
++        FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
++        when(firewallRuleVO.getState()).thenReturn(state);
++        when(firewallRuleVO.getPurpose()).thenReturn(FirewallRule.Purpose.Firewall);
++        when(firewallRuleVO.getTrafficType()).thenReturn(trafficType);
++        return firewallRuleVO;
++    }
+ }

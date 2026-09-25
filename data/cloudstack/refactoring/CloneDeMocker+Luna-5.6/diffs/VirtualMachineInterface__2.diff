@@ -1,0 +1,137 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
+@@ -185,6 +185,8 @@
+ 
+     TungstenResource tungstenResource;
+ 
++    private VirtualMachineInterface virtualMachineInterfaceMock;
++
+     MockedStatic<TungstenVRouterApi> tungstenVRouterApiMocked;
+ 
+     AutoCloseable closeable;
+@@ -192,6 +194,7 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
++        virtualMachineInterfaceMock = mock(VirtualMachineInterface.class);
+         tungstenResource = new TungstenResource();
+         tungstenResource.tungstenApi = tungstenApi;
+         ReflectionTestUtils.setField(tungstenResource, "vrouterPort", "9091");
+@@ -266,10 +269,9 @@
+     @Test
+     public void executeRequestDeleteTungstenVmInterfaceCommandTest() {
+         TungstenCommand command = new DeleteTungstenVmInterfaceCommand("projectFqn", "vmi");
+-        VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+ 
+         when(tungstenApi.getTungstenObjectByName(eq(VirtualMachineInterface.class), any(), anyString())).thenReturn(
+-            virtualMachineInterface);
++            virtualMachineInterfaceMock);
+         when(tungstenApi.deleteTungstenVmInterface(any(VirtualMachineInterface.class))).thenReturn(true);
+ 
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+@@ -377,12 +379,11 @@
+         TungstenCommand command = new ClearTungstenNetworkGatewayCommand("projectFqn", "router", 1L);
+ 
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+-        VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         when(tungstenApi.getTungstenObjectByName(eq(LogicalRouter.class), any(), anyString())).thenReturn(
+             logicalRouter);
+         when(tungstenApi.deleteTungstenObject(any(LogicalRouter.class))).thenReturn(true);
+         when(tungstenApi.getTungstenObjectByName(eq(VirtualMachineInterface.class), any(), anyString())).thenReturn(
+-            virtualMachineInterface);
++            virtualMachineInterfaceMock);
+         when(tungstenApi.deleteTungstenVmInterface(any(VirtualMachineInterface.class))).thenReturn(true);
+ 
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+@@ -701,7 +702,6 @@
+         LoadbalancerPool loadbalancerPool = mock(LoadbalancerPool.class);
+         LoadbalancerMember loadbalancerMember1 = mock(LoadbalancerMember.class);
+         LoadbalancerMember loadbalancerMember2 = mock(LoadbalancerMember.class);
+-        VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         ObjectReference<ApiPropertyBase> listerner = mock(ObjectReference.class);
+         ObjectReference<ApiPropertyBase> pool = mock(ObjectReference.class);
+         ObjectReference<ApiPropertyBase> member1 = mock(ObjectReference.class);
+@@ -716,7 +716,7 @@
+         when(loadbalancerPool.getLoadbalancerMembers()).thenReturn(Arrays.asList(member1, member2));
+         when(tungstenApi.getTungstenObjectByName(eq(Loadbalancer.class), any(), anyString())).thenReturn(loadbalancer);
+         when(tungstenApi.getTungstenObjectByName(eq(VirtualMachineInterface.class), any(), anyString())).thenReturn(
+-            virtualMachineInterface);
++            virtualMachineInterfaceMock);
+         when(tungstenApi.getTungstenObject(eq(LoadbalancerListener.class), anyString())).thenReturn(
+             loadbalancerListener);
+         when(tungstenApi.getTungstenObject(eq(LoadbalancerPool.class), anyString())).thenReturn(loadbalancerPool);
+@@ -999,9 +999,8 @@
+     @Test
+     public void executeRequestListTungstenNicCommandTest() {
+         TungstenCommand command = new ListTungstenNicCommand("projectFqn", "5b3ffba2-1096-11ec-82a8-0242ac130003");
+-        VirtualMachineInterface virtualMachineInterface1 = mock(VirtualMachineInterface.class);
+         VirtualMachineInterface virtualMachineInterface2 = mock(VirtualMachineInterface.class);
+-        Answer<List<ApiObjectBase>> virtualMachineInterfacesAnswer = setupApiObjectBaseListAnswer(virtualMachineInterface1, virtualMachineInterface2);
++        Answer<List<ApiObjectBase>> virtualMachineInterfacesAnswer = setupApiObjectBaseListAnswer(virtualMachineInterfaceMock, virtualMachineInterface2);
+         when(tungstenApi.listTungstenNic(anyString(), anyString())).thenAnswer(virtualMachineInterfacesAnswer);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+@@ -1017,9 +1016,8 @@
+         VirtualMachine virtualMachine1 = mock(VirtualMachine.class);
+         VirtualMachine virtualMachine2 = mock(VirtualMachine.class);
+         Answer<List<ApiObjectBase>> virtualMachinesAnswer = setupApiObjectBaseListAnswer(virtualMachine1, virtualMachine2);
+-        VirtualMachineInterface virtualMachineInterface1 = mock(VirtualMachineInterface.class);
+         VirtualMachineInterface virtualMachineInterface2 = mock(VirtualMachineInterface.class);
+-        Answer<List<ApiObjectBase>> virtualMachineInterfacesAnswer = setupApiObjectBaseListAnswer(virtualMachineInterface1, virtualMachineInterface2);
++        Answer<List<ApiObjectBase>> virtualMachineInterfacesAnswer = setupApiObjectBaseListAnswer(virtualMachineInterfaceMock, virtualMachineInterface2);
+         NetworkPolicy networkPolicy1 = mock(NetworkPolicy.class);
+         NetworkPolicy networkPolicy2 = mock(NetworkPolicy.class);
+         Answer<List<ApiObjectBase>> networkPoliciesAnswer = setupApiObjectBaseListAnswer(networkPolicy1, networkPolicy2);
+@@ -1072,12 +1070,11 @@
+         Tag tag = mock(Tag.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         VirtualMachine virtualMachine = mock(VirtualMachine.class);
+-        VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+         doReturn(List.of(tag)).when(tungstenApi).listTungstenTag(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+         doReturn(List.of(virtualNetwork)).when(tungstenApi).getBackRefFromVirtualNetwork(eq(VirtualNetwork.class), anyList());
+         doReturn(List.of(virtualMachine)).when(tungstenApi).getBackRefFromVirtualMachine(eq(VirtualMachine.class), anyList());
+-        doReturn(List.of(virtualMachineInterface)).when(tungstenApi).getBackRefFromVirtualMachineInterface(eq(VirtualMachineInterface.class), anyList());
++        doReturn(List.of(virtualMachineInterfaceMock)).when(tungstenApi).getBackRefFromVirtualMachineInterface(eq(VirtualMachineInterface.class), anyList());
+         doReturn(List.of(networkPolicy)).when(tungstenApi).getBackRefFromNetworkPolicy(eq(NetworkPolicy.class), anyList());
+ 
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+@@ -1085,7 +1082,7 @@
+         TungstenTag tungstenTag = (TungstenTag) answer.getTungstenModelList().get(0);
+         assertEquals(virtualNetwork, tungstenTag.getVirtualNetworkList().get(0));
+         assertEquals(virtualMachine, tungstenTag.getVirtualMachineList().get(0));
+-        assertEquals(virtualMachineInterface, tungstenTag.getVirtualMachineInterfaceList().get(0));
++        assertEquals(virtualMachineInterfaceMock, tungstenTag.getVirtualMachineInterfaceList().get(0));
+         assertEquals(networkPolicy, tungstenTag.getNetworkPolicyList().get(0));
+     }
+ 
+@@ -1112,9 +1109,8 @@
+         VirtualMachine virtualMachine1 = mock(VirtualMachine.class);
+         VirtualMachine virtualMachine2 = mock(VirtualMachine.class);
+         Answer<List<ApiObjectBase>> virtualMachinesAnswer = setupApiObjectBaseListAnswer(virtualMachine1, virtualMachine2);
+-        VirtualMachineInterface virtualMachineInterface1 = mock(VirtualMachineInterface.class);
+         VirtualMachineInterface virtualMachineInterface2 = mock(VirtualMachineInterface.class);
+-        Answer<List<ApiObjectBase>> virtualMachineInterfacesAnswer = setupApiObjectBaseListAnswer(virtualMachineInterface1, virtualMachineInterface2);
++        Answer<List<ApiObjectBase>> virtualMachineInterfacesAnswer = setupApiObjectBaseListAnswer(virtualMachineInterfaceMock, virtualMachineInterface2);
+         NetworkPolicy networkPolicy1 = mock(NetworkPolicy.class);
+         NetworkPolicy networkPolicy2 = mock(NetworkPolicy.class);
+         Answer<List<ApiObjectBase>> networkPoliciesAnswer = setupApiObjectBaseListAnswer(networkPolicy1, networkPolicy2);
+@@ -1163,9 +1159,8 @@
+         VirtualMachine virtualMachine1 = mock(VirtualMachine.class);
+         VirtualMachine virtualMachine2 = mock(VirtualMachine.class);
+         Answer<List<ApiObjectBase>> virtualMachinesAnswer = setupApiObjectBaseListAnswer(virtualMachine1, virtualMachine2);
+-        VirtualMachineInterface virtualMachineInterface1 = mock(VirtualMachineInterface.class);
+         VirtualMachineInterface virtualMachineInterface2 = mock(VirtualMachineInterface.class);
+-        Answer<List<ApiObjectBase>> virtualMachineInterfacesAnswer = setupApiObjectBaseListAnswer(virtualMachineInterface1, virtualMachineInterface2);
++        Answer<List<ApiObjectBase>> virtualMachineInterfacesAnswer = setupApiObjectBaseListAnswer(virtualMachineInterfaceMock, virtualMachineInterface2);
+         NetworkPolicy networkPolicy1 = mock(NetworkPolicy.class);
+         NetworkPolicy networkPolicy2 = mock(NetworkPolicy.class);
+         Answer<List<ApiObjectBase>> networkPoliciesAnswer = setupApiObjectBaseListAnswer(networkPolicy1, networkPolicy2);
+@@ -1445,7 +1440,6 @@
+         TungstenCommand command = new DeleteTungstenRoutingLogicalRouterCommand("c2f8e1f8-10b6-11ec-82a8-0242ac130003");
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+         ObjectReference objectReference = mock(ObjectReference.class);
+-        VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+ 
+         when(tungstenApi.getTungstenObject(eq(LogicalRouter.class), anyString())).thenReturn(logicalRouter);
+         when(tungstenApi.deleteTungstenObject(any(LogicalRouter.class))).thenReturn(true);
