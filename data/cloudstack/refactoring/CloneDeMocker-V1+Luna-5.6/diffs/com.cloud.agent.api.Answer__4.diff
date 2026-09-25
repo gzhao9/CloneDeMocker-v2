@@ -1,0 +1,41 @@
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
+@@ -519,12 +519,11 @@
+         CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+         VolumeInfo volumeInfo = mock(VolumeInfo.class);
+         EndPoint endpoint = mock(EndPoint.class);
+-        Answer answer = mock(Answer.class);
+ 
+         when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
+         when(epSelector.select(volumeInfo)).thenReturn(endpoint);
++        Answer answer = createMockAnswer(true);
+         when(endpoint.sendMessage(any())).thenReturn(answer);
+-        when(answer.getResult()).thenReturn(true);
+ 
+         // Execute - should not throw exception
+         strategy.deleteCloudStackVolume(cloudStackVolume);
+@@ -554,12 +553,11 @@
+         CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+         VolumeInfo volumeInfo = mock(VolumeInfo.class);
+         EndPoint endpoint = mock(EndPoint.class);
+-        Answer answer = mock(Answer.class);
+ 
+         when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
+         when(epSelector.select(volumeInfo)).thenReturn(endpoint);
++        Answer answer = createMockAnswer(false);
+         when(endpoint.sendMessage(any())).thenReturn(answer);
+-        when(answer.getResult()).thenReturn(false);
+         when(answer.getDetails()).thenReturn("Failed to delete volume file");
+ 
+         assertThrows(CloudRuntimeException.class, () -> {
+@@ -582,4 +580,10 @@
+             strategy.deleteCloudStackVolume(cloudStackVolume);
+         });
+     }
++
++    private static Answer createMockAnswer(boolean result) {
++        Answer answer = mock(Answer.class);
++        when(answer.getResult()).thenReturn(result);
++        return answer;
++    }
+ }

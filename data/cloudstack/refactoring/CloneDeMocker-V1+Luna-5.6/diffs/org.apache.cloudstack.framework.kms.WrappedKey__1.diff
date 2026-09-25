@@ -1,0 +1,56 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
+@@ -249,8 +249,7 @@
+         when(profile.getProtocol()).thenReturn("database");
+         when(hsmProfileDao.findById(10L)).thenReturn(profile);
+ 
+-        WrappedKey wrappedKeyResult = mock(WrappedKey.class);
+-        when(wrappedKeyResult.getWrappedKeyMaterial()).thenReturn(new byte[]{1, 2, 3});
++        WrappedKey wrappedKeyResult = MockWrappedKey.createMockWrappedKey(new byte[] { 1, 2, 3 });
+         when(wrappedKeyResult.getKekId()).thenReturn("kek-label");
+         when(wrappedKeyResult.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+         when(wrappedKeyResult.getAlgorithm()).thenReturn("AES/GCM/NoPadding");
+@@ -454,4 +453,15 @@
+             verify(kmsKeyDao).remove(10L);
+         }
+     }
++
++    public final class MockWrappedKey {
++        private MockWrappedKey() {
++        }
++
++        public static WrappedKey createMockWrappedKey(byte[] wrappedKeyMaterial) {
++            WrappedKey wrappedKey = mock(WrappedKey.class);
++            when(wrappedKey.getWrappedKeyMaterial()).thenReturn(wrappedKeyMaterial);
++            return wrappedKey;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyRotationTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyRotationTest.java
+@@ -245,8 +245,7 @@
+         byte[] plainDek = "plain-dek-bytes".getBytes();
+         doReturn(plainDek).when(kmsManager).unwrapKey(wrappedKeyId);
+ 
+-        WrappedKey newWrappedKey = mock(WrappedKey.class);
+-        when(newWrappedKey.getWrappedKeyMaterial()).thenReturn("new-wrapped-blob".getBytes());
++        WrappedKey newWrappedKey = MockWrappedKey.createMockWrappedKey("new-wrapped-blob".getBytes());
+         when(kmsProvider.wrapKey(plainDek, KeyPurpose.VOLUME_ENCRYPTION, "new-kek-label", newProfileId))
+                 .thenReturn(newWrappedKey);
+ 
+@@ -384,4 +383,15 @@
+         // Verify KMS key was not updated (same profile)
+         verify(kmsKey, never()).setHsmProfileId(currentProfileId);
+     }
++
++    public final class MockWrappedKey {
++        private MockWrappedKey() {
++        }
++
++        public static WrappedKey createMockWrappedKey(byte[] wrappedKeyMaterial) {
++            WrappedKey wrappedKey = mock(WrappedKey.class);
++            when(wrappedKey.getWrappedKeyMaterial()).thenReturn(wrappedKeyMaterial);
++            return wrappedKey;
++        }
++    }
+ }

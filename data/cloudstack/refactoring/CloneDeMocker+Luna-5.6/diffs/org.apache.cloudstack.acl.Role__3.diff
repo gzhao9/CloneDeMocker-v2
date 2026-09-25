@@ -1,0 +1,54 @@
+--- a/server/src/test/java/org/apache/cloudstack/acl/RoleManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/acl/RoleManagerImplTest.java
+@@ -62,14 +62,10 @@
+     private RolePermission rolePermission3Mock;
+     @Mock
+     private Account callerAccountMock;
+-    @Mock
+-    private Role callerAccountRoleMock;
+-    @Mock
+-    private Role lessPermissionsRoleMock;
+-    @Mock
+-    private Role morePermissionsRoleMock;
+-    @Mock
+-    private Role differentPermissionsRoleMock;
++    private Role callerAccountRoleMock = createMockRole(1L);
++    private Role lessPermissionsRoleMock = createMockRole(1L);
++    private Role morePermissionsRoleMock = createMockRole(2L);
++    private Role differentPermissionsRoleMock = createMockRole(3L);
+ 
+     @Mock
+     private Account accountMock;
+@@ -84,7 +80,7 @@
+     public void setUpRoleVisibilityTests() {
+         Mockito.doReturn(List.of("api1", "api2", "api3")).when(accountManagerMock).getApiNameList();
+ 
+-        Mockito.doReturn(1L).when(callerAccountRoleMock).getId();
++        callerAccountRoleMock = createMockRole(1L);
+         Mockito.doReturn(callerAccountMock).when(roleManagerImpl).getCurrentAccount();
+         Mockito.doReturn(callerAccountRoleMock.getId()).when(callerAccountMock).getRoleId();
+ 
+@@ -94,9 +90,9 @@
+         Mockito.doReturn(RolePermissionEntity.Permission.ALLOW).when(rolePermission2Mock).getPermission();
+         Mockito.doReturn(RolePermissionEntity.Permission.DENY).when(rolePermission2MockWithDeniedPermission).getPermission();
+ 
+-        Mockito.doReturn(1L).when(lessPermissionsRoleMock).getId();
+-        Mockito.doReturn(2L).when(morePermissionsRoleMock).getId();
+-        Mockito.doReturn(3L).when(differentPermissionsRoleMock).getId();
++        lessPermissionsRoleMock = createMockRole(1L);
++        morePermissionsRoleMock = createMockRole(2L);
++        differentPermissionsRoleMock = createMockRole(3L);
+     }
+ 
+     @Before
+@@ -379,4 +375,10 @@
+         Mockito.verify(roleDaoMock).listAll();
+         Mockito.verify(roleManagerImpl).removeRolesIfNeeded(roles);
+     }
++
++    private static Role createMockRole(long id) {
++        Role role = Mockito.mock(Role.class);
++        Mockito.doReturn(id).when(role).getId();
++        return role;
++    }
+ }

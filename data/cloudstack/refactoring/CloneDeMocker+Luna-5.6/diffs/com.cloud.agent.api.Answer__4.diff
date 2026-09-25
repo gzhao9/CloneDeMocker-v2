@@ -1,0 +1,43 @@
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/service/UnifiedNASStrategyTest.java
+@@ -136,6 +136,12 @@
+         field.set(strategy, mockedField);
+     }
+ 
++    private static Answer createMockAnswer(boolean result) {
++        Answer answer = mock(Answer.class);
++        when(answer.getResult()).thenReturn(result);
++        return answer;
++    }
++
+     private class TestableUnifiedNASStrategy extends UnifiedNASStrategy {
+         public TestableUnifiedNASStrategy(OntapStorage ontapStorage,
+                                           NASFeignClient nasFeignClient,
+@@ -519,12 +525,11 @@
+         CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+         VolumeInfo volumeInfo = mock(VolumeInfo.class);
+         EndPoint endpoint = mock(EndPoint.class);
+-        Answer answer = mock(Answer.class);
++        Answer answer = createMockAnswer(true);
+ 
+         when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
+         when(epSelector.select(volumeInfo)).thenReturn(endpoint);
+         when(endpoint.sendMessage(any())).thenReturn(answer);
+-        when(answer.getResult()).thenReturn(true);
+ 
+         // Execute - should not throw exception
+         strategy.deleteCloudStackVolume(cloudStackVolume);
+@@ -554,12 +559,11 @@
+         CloudStackVolume cloudStackVolume = mock(CloudStackVolume.class);
+         VolumeInfo volumeInfo = mock(VolumeInfo.class);
+         EndPoint endpoint = mock(EndPoint.class);
+-        Answer answer = mock(Answer.class);
++        Answer answer = createMockAnswer(false);
+ 
+         when(cloudStackVolume.getVolumeInfo()).thenReturn(volumeInfo);
+         when(epSelector.select(volumeInfo)).thenReturn(endpoint);
+         when(endpoint.sendMessage(any())).thenReturn(answer);
+-        when(answer.getResult()).thenReturn(false);
+         when(answer.getDetails()).thenReturn("Failed to delete volume file");
+ 
+         assertThrows(CloudRuntimeException.class, () -> {
