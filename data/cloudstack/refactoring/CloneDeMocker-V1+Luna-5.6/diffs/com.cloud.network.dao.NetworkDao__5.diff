@@ -1,0 +1,149 @@
+--- a/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
++++ b/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
+@@ -534,8 +534,8 @@
+         long networkId = 10L;
+         NetworkVO network = mock(NetworkVO.class);
+         when(network.getId()).thenReturn(networkId);
+-        when(networkDao.findById(networkId)).thenReturn(network);
+-
++
++        networkDao = MockNetworkDao.createMockNetworkDao(networkId, network);
+         FirewallRule rule = makeRule(networkId, null, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Ingress);
+         NetworkRuleApplier applier = mock(NetworkRuleApplier.class);
+ 
+@@ -640,4 +640,18 @@
+ 
+         assertFalse(result);
+     }
++
++    public final class MockNetworkDao {
++        private MockNetworkDao() {
++        }
++
++        public static com.cloud.network.dao.NetworkDao createMockNetworkDao(
++                long networkId,
++                com.cloud.network.dao.NetworkVO network) {
++            com.cloud.network.dao.NetworkDao networkDao =
++                    Mockito.mock(com.cloud.network.dao.NetworkDao.class);
++            when(networkDao.findById(networkId)).thenReturn(network);
++            return networkDao;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/network/NetworkModelImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkModelImplTest.java
+@@ -290,7 +290,7 @@
+         when(network.getId()).thenReturn(1L);
+         when(nic.getNetworkId()).thenReturn(1L);
+         when(vm.getId()).thenReturn(10L);
+-        when(_networksDao.findById(1L)).thenReturn(network);
++        _networksDao = MockNetworkDao.createMockNetworkDao(1L, network);
+         doReturn(100).when(networkModel).getNetworkRate(1L, 10L);
+         doReturn("cloud").when(networkModel).getNetworkTag(any(), any());
+         doReturn(false).when(networkModel).isSecurityGroupSupportedInNetwork(any());
+@@ -452,4 +452,18 @@
+         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.times(1)).listAll();
+         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.never()).listBy(Mockito.anyLong());
+     }
++
++    public final class MockNetworkDao {
++        private MockNetworkDao() {
++        }
++
++        public static com.cloud.network.dao.NetworkDao createMockNetworkDao(
++                long networkId,
++                com.cloud.network.dao.NetworkVO network) {
++            com.cloud.network.dao.NetworkDao networkDao =
++                    Mockito.mock(com.cloud.network.dao.NetworkDao.class);
++            when(networkDao.findById(networkId)).thenReturn(network);
++            return networkDao;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/network/NetworkModelTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkModelTest.java
+@@ -372,7 +372,7 @@
+         NetworkVO network = mock(NetworkVO.class);
+         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+         when(network.getId()).thenReturn(id);
+-        when(networkDao.findById(network.getId())).thenReturn(network);
++        networkDao = createMockNetworkDao(network.getId(), network);
+         NetworkDomainVO networkDomainVO = mock(NetworkDomainVO.class);
+         when(networkDomainVO.getDomainId()).thenReturn(id);
+         when(networkDomainDao.getDomainNetworkMapByNetworkId(id)).thenReturn(networkDomainVO);
+@@ -394,7 +394,7 @@
+         NetworkVO network = mock(NetworkVO.class);
+         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+         when(network.getId()).thenReturn(id);
+-        when(networkDao.findById(network.getId())).thenReturn(network);
++        networkDao = MockNetworkDao.createMockNetworkDao(network.getId(), network);
+         when(domainDao.findById(caller.getDomainId())).thenReturn(mock(DomainVO.class));
+         NetworkDomainVO networkDomainVO = mock(NetworkDomainVO.class);
+         when(networkDomainVO.getDomainId()).thenReturn(id);
+@@ -414,7 +414,7 @@
+         NetworkVO network = mock(NetworkVO.class);
+         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+         when(network.getId()).thenReturn(id);
+-        when(networkDao.findById(network.getId())).thenReturn(network);
++        networkDao = MockNetworkDao.createMockNetworkDao(network.getId(), network);
+         when(domainDao.findById(caller.getDomainId())).thenReturn(mock(DomainVO.class));
+         NetworkDomainVO networkDomainVO = mock(NetworkDomainVO.class);
+         when(networkDomainVO.getDomainId()).thenReturn(id);
+@@ -423,4 +423,18 @@
+         when(domainManager.getDomainParentIds(subDomainId)).thenReturn(Set.of(0L));
+         networkModel.checkNetworkPermissions(caller, network);
+     }
++
++    public final class MockNetworkDao {
++        private MockNetworkDao() {
++        }
++
++        public static com.cloud.network.dao.NetworkDao createMockNetworkDao(
++                long networkId,
++                com.cloud.network.dao.NetworkVO network) {
++            com.cloud.network.dao.NetworkDao networkDao =
++                    Mockito.mock(com.cloud.network.dao.NetworkDao.class);
++            when(networkDao.findById(networkId)).thenReturn(network);
++            return networkDao;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -1242,7 +1242,7 @@
+         String broadcastUri = "nsx://segment";
+         when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+         when(nic.getNetworkId()).thenReturn(42L);
+-        when(networkDao.findById(42L)).thenReturn(networkVO);
++        NetworkDao networkDao = MockNetworkDao.createMockNetworkDao(42L, networkVO);
+         when(networkVO.getDomainId()).thenReturn(1L);
+         when(networkVO.getDataCenterId()).thenReturn(2L);
+         when(networkVO.getAccountId()).thenReturn(3L);
+@@ -1263,7 +1263,7 @@
+         String broadcastUri = "nsx://segment";
+         when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+         when(nic.getNetworkId()).thenReturn(42L);
+-        when(networkDao.findById(42L)).thenReturn(networkVO);
++        networkDao = MockNetworkDao.createMockNetworkDao(42L, networkVO);
+         try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+             when(ComponentContext.getDelegateComponentOfType(NsxService.class)).thenThrow(NoSuchBeanDefinitionException.class);
+             service.getNicVlanValueForExternalVm(nic);
+@@ -1378,4 +1378,18 @@
+ 
+         Assert.assertFalse(service.getAndValidateSupportForKeepMacAddressOnPublicNicParameter(false, networkOfferingVO));
+     }
++
++    public final class MockNetworkDao {
++        private MockNetworkDao() {
++        }
++
++        public static com.cloud.network.dao.NetworkDao createMockNetworkDao(
++                long networkId,
++                com.cloud.network.dao.NetworkVO network) {
++            com.cloud.network.dao.NetworkDao networkDao =
++                    Mockito.mock(com.cloud.network.dao.NetworkDao.class);
++            when(networkDao.findById(networkId)).thenReturn(network);
++            return networkDao;
++        }
++    }
+ }
