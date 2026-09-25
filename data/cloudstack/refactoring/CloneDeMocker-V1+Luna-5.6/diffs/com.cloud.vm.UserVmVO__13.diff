@@ -1,0 +1,63 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
+@@ -719,8 +719,7 @@
+ 
+     @Test
+     public void testValidateInstanceStorage_SupportedStorageType_NoException() {
+-        UserVmVO vm = mock(UserVmVO.class);
+-        when(vm.getId()).thenReturn(1L);
++        UserVmVO vm = createUserVmVo(1L);
+         VolumeVO vol = mock(VolumeVO.class);
+         when(vol.getPoolId()).thenReturn(10L);
+         when(volumeDao.findUsableVolumesForInstance(1L)).thenReturn(List.of(vol));
+@@ -733,8 +732,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateInstanceStorage_UnsupportedStorageType_Throws() {
+-        UserVmVO vm = mock(UserVmVO.class);
+-        when(vm.getId()).thenReturn(2L);
++        UserVmVO vm = createUserVmVo(2L);
+         VolumeVO vol = mock(VolumeVO.class);
+         when(vol.getPoolId()).thenReturn(20L);
+         when(volumeDao.findUsableVolumesForInstance(2L)).thenReturn(List.of(vol));
+@@ -748,8 +746,7 @@
+ 
+     @Test
+     public void testValidateInstanceStorage_NoVolumes_NoException() {
+-        UserVmVO vm = mock(UserVmVO.class);
+-        when(vm.getId()).thenReturn(3L);
++        UserVmVO vm = createUserVmVo(3L);
+         when(volumeDao.findUsableVolumesForInstance(3L)).thenReturn(Collections.emptyList());
+         when(primaryDataStoreDao.listByIds(anyList())).thenReturn(Collections.emptyList());
+ 
+@@ -1007,8 +1004,7 @@
+ 
+     @Test
+     public void testListSnapshotsByInstanceUuid_Found_ReturnsEmptyList() {
+-        UserVmVO vmVO = mock(UserVmVO.class);
+-        when(vmVO.getId()).thenReturn(1L);
++        UserVmVO vmVO = createUserVmVo(1L);
+         when(vmVO.getUuid()).thenReturn("vm-uuid");
+         when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
+         when(vmSnapshotDao.findByVm(1L)).thenReturn(Collections.emptyList());
+@@ -1046,8 +1042,7 @@
+ 
+     @Test
+     public void testListBackupsByInstanceUuid_Found_ReturnsEmptyList() {
+-        UserVmVO vmVO = mock(UserVmVO.class);
+-        when(vmVO.getId()).thenReturn(1L);
++        UserVmVO vmVO = createUserVmVo(1L);
+         when(userVmDao.findByUuid("vm-uuid")).thenReturn(vmVO);
+         when(backupDao.searchByVmIds(anyList())).thenReturn(Collections.emptyList());
+ 
+@@ -1137,4 +1132,10 @@
+     public void testListDisksByBackupUuid_AlwaysThrows() {
+         serverAdapter.listDisksByBackupUuid("backup-uuid");
+     }
++
++    private static UserVmVO createUserVmVo(long id) {
++        UserVmVO vm = mock(UserVmVO.class);
++        when(vm.getId()).thenReturn(id);
++        return vm;
++    }
+ }
