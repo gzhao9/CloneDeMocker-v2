@@ -1,0 +1,40 @@
+--- a/server/src/test/java/org/apache/cloudstack/network/router/deployment/RouterDeploymentDefinitionTest.java
++++ b/server/src/test/java/org/apache/cloudstack/network/router/deployment/RouterDeploymentDefinitionTest.java
+@@ -83,6 +83,8 @@
+     @Mock
+     protected NetrisProviderDao netrisProviderDao;
+ 
++    private final PublicIp mockSourceNatIp = mock(PublicIp.class);
++
+     protected RouterDeploymentDefinition deployment;
+ 
+ 
+@@ -645,9 +647,8 @@
+     @Test
+     public void testFindSourceNatIPPublicNw() throws InsufficientAddressCapacityException, ConcurrentOperationException {
+         // Prepare
+-        final PublicIp sourceNatIp = mock(PublicIp.class);
+         when(mockIpAddrMgr.assignSourceNatIpAddressToGuestNetwork(
+-                mockOwner, mockNw)).thenReturn(sourceNatIp);
++                mockOwner, mockNw)).thenReturn(mockSourceNatIp);
+         deployment.isPublicNetwork = true;
+ 
+         // It should be null until this method finds it
+@@ -656,15 +657,14 @@
+         deployment.findSourceNatIP();
+ 
+         // Assert
+-        assertEquals("SourceNatIP was not correctly found and set", sourceNatIp, deployment.sourceNatIp);
++        assertEquals("SourceNatIP was not correctly found and set", mockSourceNatIp, deployment.sourceNatIp);
+     }
+ 
+     @Test
+     public void testFindSourceNatIPNonPublicNw() throws InsufficientAddressCapacityException, ConcurrentOperationException {
+         // Prepare
+-        final PublicIp sourceNatIp = mock(PublicIp.class);
+         lenient().when(mockIpAddrMgr.assignSourceNatIpAddressToGuestNetwork(
+-                mockOwner, mockNw)).thenReturn(sourceNatIp);
++                mockOwner, mockNw)).thenReturn(mockSourceNatIp);
+         deployment.isPublicNetwork = false;
+ 
+         // It should be null until this method finds it

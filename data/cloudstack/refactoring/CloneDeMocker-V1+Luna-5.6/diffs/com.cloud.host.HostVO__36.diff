@@ -1,0 +1,40 @@
+--- a/engine/schema/src/test/java/com/cloud/host/dao/HostDaoImplTest.java
++++ b/engine/schema/src/test/java/com/cloud/host/dao/HostDaoImplTest.java
+@@ -200,12 +200,8 @@
+     @Test
+     public void testListDistinctHypervisorArchTypes_WithZone() {
+         Long zoneId = 123L;
+-        HostVO host1 = mock(HostVO.class);
+-        when(host1.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+-        when(host1.getArch()).thenReturn(CPU.CPUArch.amd64);
+-        HostVO host2 = mock(HostVO.class);
+-        when(host2.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+-        when(host2.getArch()).thenReturn(CPU.CPUArch.arm64);
++        HostVO host1 = createMockHost(Hypervisor.HypervisorType.XenServer, CPU.CPUArch.amd64);
++        HostVO host2 = createMockHost(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64);
+         List<HostVO> dummyHosts = Arrays.asList(host1, host2);
+         doReturn(dummyHosts).when(hostDao).search(any(SearchCriteria.class), isNull());
+         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> result = hostDao.listDistinctHypervisorArchTypes(zoneId);
+@@ -220,9 +216,7 @@
+     @Test
+     public void testListDistinctHypervisorArchTypes_WithoutZone() {
+         Long zoneId = null;
+-        HostVO host1 = mock(HostVO.class);
+-        when(host1.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+-        when(host1.getArch()).thenReturn(CPU.CPUArch.amd64);
++        HostVO host1 = createMockHost(Hypervisor.HypervisorType.VMware, CPU.CPUArch.amd64);
+         List<HostVO> dummyHosts = Collections.singletonList(host1);
+         doReturn(dummyHosts).when(hostDao).search(any(SearchCriteria.class), isNull());
+         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> result = hostDao.listDistinctHypervisorArchTypes(zoneId);
+@@ -249,4 +243,11 @@
+         Mockito.verify(sc).setParameters("clusterId", clusterId);
+         Mockito.verify(sc).setParameters("type", Host.Type.Routing);
+     }
++
++    private static HostVO createMockHost(Hypervisor.HypervisorType hypervisorType, CPU.CPUArch arch) {
++        HostVO host = mock(HostVO.class);
++        when(host.getArch()).thenReturn(arch);
++        when(host.getHypervisorType()).thenReturn(hypervisorType);
++        return host;
++    }
+ }

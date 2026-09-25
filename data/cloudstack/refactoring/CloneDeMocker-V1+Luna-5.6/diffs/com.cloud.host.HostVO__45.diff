@@ -1,0 +1,69 @@
+--- a/engine/orchestration/src/test/java/com/cloud/agent/manager/ClusteredAgentManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/agent/manager/ClusteredAgentManagerImplTest.java
+@@ -67,12 +67,11 @@
+     public void scanDirectAgentToLoadHostWithoutAttacheTest() {
+         // Arrange
+         ClusteredAgentManagerImpl clusteredAgentManagerImpl = Mockito.spy(ClusteredAgentManagerImpl.class);
+-        HostVO hostVO = mock(HostVO.class);
+         clusteredAgentManagerImpl._hostDao = _hostDao;
+         clusteredAgentManagerImpl.mgmtServiceConf = _mgmtServiceConf;
+         clusteredAgentManagerImpl._resourceMgr = mock(ResourceManagerImpl.class);
+         when(_mgmtServiceConf.getTimeout()).thenReturn(16000L);
+-        when(hostVO.getId()).thenReturn(1L);
++        HostVO hostVO = createMockHostVO(1L);
+         List hosts = new ArrayList<>();
+         hosts.add(hostVO);
+         when(_hostDao.findAndUpdateDirectAgentToLoad(anyLong(), anyLong(), anyLong())).thenReturn(hosts);
+@@ -85,11 +84,10 @@
+     @Test
+     public void scanDirectAgentToLoadHostWithForwardAttacheTest() {
+         ClusteredAgentManagerImpl clusteredAgentManagerImpl = Mockito.spy(ClusteredAgentManagerImpl.class);
+-        HostVO hostVO = mock(HostVO.class);
++        HostVO hostVO = createMockHostVO(1L);
+         clusteredAgentManagerImpl._hostDao = _hostDao;
+         clusteredAgentManagerImpl.mgmtServiceConf = _mgmtServiceConf;
+         when(_mgmtServiceConf.getTimeout()).thenReturn(16000L);
+-        when(hostVO.getId()).thenReturn(1L);
+         List hosts = new ArrayList<>();
+         hosts.add(hostVO);
+         when(_hostDao.findAndUpdateDirectAgentToLoad(anyLong(), anyLong(), anyLong())).thenReturn(hosts);
+@@ -105,12 +103,11 @@
+     public void scanDirectAgentToLoadHostWithNonForwardAttacheTest() {
+         // Arrange
+         ClusteredAgentManagerImpl clusteredAgentManagerImpl = Mockito.spy(new ClusteredAgentManagerImpl());
+-        HostVO hostVO = mock(HostVO.class);
++        HostVO hostVO = createMockHostVO(0L);
+         clusteredAgentManagerImpl._hostDao = _hostDao;
+         clusteredAgentManagerImpl.mgmtServiceConf = _mgmtServiceConf;
+         clusteredAgentManagerImpl._haMgr = mock(HighAvailabilityManagerImpl.class);
+         when(_mgmtServiceConf.getTimeout()).thenReturn(16000L);
+-        when(hostVO.getId()).thenReturn(0L);
+         List hosts = new ArrayList<>();
+         hosts.add(hostVO);
+         when(_hostDao.findAndUpdateDirectAgentToLoad(anyLong(), anyLong(), anyLong())).thenReturn(hosts);
+@@ -129,13 +126,12 @@
+     @Test
+     public void scanDirectAgentToLoadHostWithNonForwardAttacheAndDisconnectedTest() {
+         ClusteredAgentManagerImpl clusteredAgentManagerImpl = Mockito.spy(ClusteredAgentManagerImpl.class);
+-        HostVO hostVO = mock(HostVO.class);
+         clusteredAgentManagerImpl._hostDao = _hostDao;
+         clusteredAgentManagerImpl.mgmtServiceConf = _mgmtServiceConf;
+         clusteredAgentManagerImpl._haMgr = mock(HighAvailabilityManagerImpl.class);
+         clusteredAgentManagerImpl._resourceMgr = mock(ResourceManagerImpl.class);
+         when(_mgmtServiceConf.getTimeout()).thenReturn(16000L);
+-        when(hostVO.getId()).thenReturn(0L);
++        HostVO hostVO = createMockHostVO(0L);
+         List hosts = new ArrayList<>();
+         hosts.add(hostVO);
+         when(_hostDao.findAndUpdateDirectAgentToLoad(anyLong(), anyLong(), anyLong())).thenReturn(hosts);
+@@ -147,4 +143,10 @@
+         verify(clusteredAgentManagerImpl).investigate(agentAttache);
+         verify(clusteredAgentManagerImpl).loadDirectlyConnectedHost(hostVO, false);
+     }
++
++    private static HostVO createMockHostVO(long hostId) {
++        HostVO hostVO = mock(HostVO.class);
++        when(hostVO.getId()).thenReturn(hostId);
++        return hostVO;
++    }
+ }
