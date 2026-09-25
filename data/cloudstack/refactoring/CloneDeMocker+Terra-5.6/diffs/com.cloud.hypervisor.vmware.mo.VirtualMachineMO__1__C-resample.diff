@@ -1,0 +1,111 @@
+--- a/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/guru/VMwareGuruTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/guru/VMwareGuruTest.java
+@@ -319,30 +319,35 @@
+         Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
+         Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
+         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+-        VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+         HostMO hostMo = Mockito.mock(HostMO.class);
+-        Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMo).getPowerState();
+-        Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
++        List<DatastoreMO> datastores = new ArrayList<>();
++        VirtualMachineMO vmMo = createMockVirtualMachineMo(hostMo, datastores);
+         UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
+         Mockito.doReturn("CentOS").when(instance).getOperatingSystem();
+         Mockito.doReturn("test-cluster").when(instance).getClusterName();
+         when(VmwareHelper.getUnmanagedInstance(hostMo, vmMo)).thenReturn(instance);
+-        List<DatastoreMO> datastores = new ArrayList<>();
++
++        try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
++            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
++            Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
++            Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
++            Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
++        }); MockedConstruction<VmwareContext> ignored2 = Mockito.mockConstruction(VmwareContext.class, withSettings().spiedInstance(vmwareContext), (mockVmwareContext, contextVmwareContext) -> {
++            Mockito.doReturn(vimClient).when(mockVmwareContext).getVimClient();
++            Mockito.doReturn(mor).when(mockVmwareContext).getRootFolder();
++        }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
++            Mockito.doReturn(vmMo).when(mockDatacenterMO).findVm(vmName);
++        })) {
++            vMwareGuru.getHypervisorVMOutOfBandAndCloneIfRequired(hostIp, vmName, params);
++        }
++    }
++
++    private static VirtualMachineMO createMockVirtualMachineMo(HostMO hostMo, List<DatastoreMO> datastores) {
++        VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
++        Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMo).getPowerState();
++        Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
+         Mockito.doReturn(datastores).when(vmMo).getAllDatastores();
+-
+-        try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+-            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
+-            Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+-            Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+-            Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+-        }); MockedConstruction<VmwareContext> ignored2 = Mockito.mockConstruction(VmwareContext.class, withSettings().spiedInstance(vmwareContext), (mockVmwareContext, contextVmwareContext) -> {
+-            Mockito.doReturn(vimClient).when(mockVmwareContext).getVimClient();
+-            Mockito.doReturn(mor).when(mockVmwareContext).getRootFolder();
+-        }); MockedConstruction<DatacenterMO> ignored3 = Mockito.mockConstruction(DatacenterMO.class, withSettings().spiedInstance(dataCenterMO), (mockDatacenterMO, contextDatacenterMO) -> {
+-            Mockito.doReturn(vmMo).when(mockDatacenterMO).findVm(vmName);
+-        })) {
+-            vMwareGuru.getHypervisorVMOutOfBandAndCloneIfRequired(hostIp, vmName, params);
+-        }
++        return vmMo;
+     }
+ 
+     @Test(expected=CloudRuntimeException.class)
+@@ -366,20 +371,17 @@
+         Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
+         Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
+         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+-        VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+         HostMO hostMo = Mockito.mock(HostMO.class);
+-        Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMo).getPowerState();
+-        Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
+         Mockito.doReturn(mor).when(hostMo).getHyperHostOwnerResourcePool();
+         UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
+         Mockito.doReturn("CentOS").when(instance).getOperatingSystem();
+         Mockito.doReturn("test-cluster").when(instance).getClusterName();
+-        when(VmwareHelper.getUnmanagedInstance(hostMo, vmMo)).thenReturn(instance);
+         DatastoreMO datastoreMO = Mockito.mock(DatastoreMO.class);
+         Mockito.doReturn(mor).when(datastoreMO).getMor();
+         List<DatastoreMO> datastores = new ArrayList<>();
+         datastores.add(datastoreMO);
+-        Mockito.doReturn(datastores).when(vmMo).getAllDatastores();
++        VirtualMachineMO vmMo = createMockVirtualMachineMo(hostMo, datastores);
++        when(VmwareHelper.getUnmanagedInstance(hostMo, vmMo)).thenReturn(instance);
+         Mockito.lenient().doReturn(false).when(vmMo).createFullClone(anyString(), any(ManagedObjectReference.class), any(ManagedObjectReference.class), any(ManagedObjectReference.class), any(Storage.ProvisioningType.class));
+ 
+         try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+@@ -420,17 +422,14 @@
+         Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
+         Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
+         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+-        VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+         HostMO hostMo = Mockito.mock(HostMO.class);
+-        Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMo).getPowerState();
+-        Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
+         Mockito.doReturn(mor).when(hostMo).getHyperHostOwnerResourcePool();
+         Mockito.doReturn(mor).when(hostMo).getMor();
+         DatastoreMO datastoreMO = Mockito.mock(DatastoreMO.class);
+         Mockito.doReturn(mor).when(datastoreMO).getMor();
+         List<DatastoreMO> datastores = new ArrayList<>();
+         datastores.add(datastoreMO);
+-        Mockito.doReturn(datastores).when(vmMo).getAllDatastores();
++        VirtualMachineMO vmMo = createMockVirtualMachineMo(hostMo, datastores);
+         Mockito.lenient().doReturn(true).when(vmMo).createFullClone(anyString(), any(ManagedObjectReference.class), any(ManagedObjectReference.class), any(ManagedObjectReference.class), any(Storage.ProvisioningType.class));
+         UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
+         Mockito.doReturn("CentOS").when(instance).getOperatingSystem();
+@@ -647,4 +646,12 @@
+         Mockito.when(configSummary.getMemorySizeMB()).thenReturn(1024);
+         vMwareGuru.checkSourceVmResourcesAgainstSelectedOfferingResources(virtualMachineMO, 2, 1500, 2048);
+     }
++
++    private static VirtualMachineMO createMockVirtualMachineMo(HostMO hostMo, List<DatastoreMO> datastores) {
++        VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
++        Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMo).getPowerState();
++        Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
++        Mockito.doReturn(datastores).when(vmMo).getAllDatastores();
++        return vmMo;
++    }
+ }
