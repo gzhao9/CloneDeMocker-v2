@@ -1,0 +1,50 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -150,6 +150,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class BackupManagerTest {
++    @Mock
++    private BackupScheduleVO schedule;
+     @Spy
+     @InjectMocks
+     BackupManagerImpl backupManager = new BackupManagerImpl();
+@@ -638,7 +640,6 @@
+         when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
+         when(offering.getProvider()).thenReturn("test");
+ 
+-        BackupScheduleVO schedule = mock(BackupScheduleVO.class);
+         when(backupScheduleDao.findByVMAndIntervalType(vmId, DateUtil.IntervalType.DAILY)).thenReturn(schedule);
+ 
+         backupManager.configureBackupSchedule(cmd);
+@@ -1954,10 +1955,9 @@
+         overrideBackupFrameworkConfigValue();
+         Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+ 
+-        BackupScheduleVO schedule1 = Mockito.mock(BackupScheduleVO.class);
+         BackupScheduleVO schedule2 = Mockito.mock(BackupScheduleVO.class);
+-        List<BackupScheduleVO> schedules = List.of(schedule1, schedule2);
+-
++
++        List<BackupScheduleVO> schedules = List.of(schedule, schedule2);
+         SearchBuilder<BackupScheduleVO> searchBuilder = Mockito.mock(SearchBuilder.class);
+         SearchCriteria<BackupScheduleVO> searchCriteria = Mockito.mock(SearchCriteria.class);
+         BackupScheduleVO entity = Mockito.mock(BackupScheduleVO.class);
+@@ -1971,7 +1971,7 @@
+         List<BackupSchedule> result = backupManager.listBackupSchedules(cmd);
+ 
+         assertEquals(2, result.size());
+-        assertTrue(result.contains(schedule1));
++        assertTrue(result.contains(schedule));
+         assertTrue(result.contains(schedule2));
+     }
+ 
+@@ -1989,7 +1989,7 @@
+         overrideBackupFrameworkConfigValue();
+         Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+ 
+-        BackupScheduleVO schedule = Mockito.mock(BackupScheduleVO.class);
++        // removed local mock; replaced with global field `schedule`
+         List<BackupScheduleVO> schedules = List.of(schedule);
+ 
+         SearchBuilder<BackupScheduleVO> searchBuilder = Mockito.mock(SearchBuilder.class);

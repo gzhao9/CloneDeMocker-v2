@@ -1,0 +1,37 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
+@@ -492,9 +492,8 @@
+         Mockito.when(result.isSuccess()).thenReturn(true);
+         Mockito.when(result.getResult()).thenReturn("result");
+ 
+-        AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback = Mockito.mock(AsyncCallbackDispatcher.class);
+-        Mockito.when(callback.getResult()).thenReturn(result);
+-
++
++        AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback = createMockAsyncCallbackDispatcher(result);
+         webhookServiceImpl.deliveryCompleteCallback(callback, context);
+ 
+         Mockito.verify(webhookDeliveryDao, Mockito.times(1)).persist(Mockito.any(WebhookDeliveryVO.class));
+@@ -507,9 +506,8 @@
+         CompletableFuture<WebhookDeliveryThread.WebhookDeliveryResult> future = Mockito.mock(CompletableFuture.class);
+ 
+         Mockito.when(context.getFuture()).thenReturn(future);
+-        AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback = Mockito.mock(AsyncCallbackDispatcher.class);
+-        Mockito.when(callback.getResult()).thenReturn(result);
+-
++
++        AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback = createMockAsyncCallbackDispatcher(result);
+         webhookServiceImpl.manualDeliveryCompleteCallback(callback, context);
+ 
+         Mockito.verify(future, Mockito.times(1)).complete(result);
+@@ -670,4 +668,10 @@
+ 
+         Mockito.verify(cache, Mockito.times(1)).invalidate(123L);
+     }
++
++    private static AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> createMockAsyncCallbackDispatcher(WebhookDeliveryThread.WebhookDeliveryResult result) {
++        AsyncCallbackDispatcher<WebhookServiceImpl, WebhookDeliveryThread.WebhookDeliveryResult> callback = Mockito.mock(AsyncCallbackDispatcher.class);
++        Mockito.when(callback.getResult()).thenReturn(result);
++        return callback;
++    }
+ }

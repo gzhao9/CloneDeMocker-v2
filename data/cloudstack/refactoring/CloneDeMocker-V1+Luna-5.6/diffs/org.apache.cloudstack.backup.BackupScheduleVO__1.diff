@@ -1,0 +1,54 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -711,9 +711,8 @@
+         when(accountManager.getAccount(accountId)).thenReturn(accountVOMock);
+         when(accountVOMock.getDomainId()).thenReturn(domainId);
+ 
+-        BackupScheduleVO schedule = mock(BackupScheduleVO.class);
++        BackupScheduleVO schedule = createMockBackupScheduleVO(2);
+         when(backupScheduleDao.findById(scheduleId)).thenReturn(schedule);
+-        when(schedule.getMaxBackups()).thenReturn(2);
+ 
+         VolumeVO volume = mock(VolumeVO.class);
+         when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+@@ -1854,8 +1853,8 @@
+ 
+     @Test
+     public void deleteOldestBackupFromScheduleIfRequiredTestSkipDeletionWhenRetentionIsEqualToZero() throws ResourceAllocationException {
++        backupScheduleVOMock = createMockBackupScheduleVO(0);
+         Mockito.when(backupScheduleDao.findById(1L)).thenReturn(backupScheduleVOMock);
+-        Mockito.when(backupScheduleVOMock.getMaxBackups()).thenReturn(0);
+         backupManager.deleteOldestBackupFromScheduleIfRequired(1L, 1L);
+         Mockito.verify(backupManager, Mockito.never()).deleteExcessBackups(Mockito.anyList(), Mockito.anyInt(), Mockito.anyLong());
+     }
+@@ -1863,8 +1862,7 @@
+     @Test
+     public void deleteOldestBackupFromScheduleIfRequiredTestSkipDeletionWhenAmountOfBackupsToBeDeletedIsLessThanOne() throws ResourceAllocationException {
+         List<BackupVO> backups = List.of(Mockito.mock(BackupVO.class), Mockito.mock(BackupVO.class));
+-        Mockito.when(backupScheduleDao.findById(1L)).thenReturn(backupScheduleVOMock);
+-        Mockito.when(backupScheduleVOMock.getMaxBackups()).thenReturn(2);
++        Mockito.when(backupScheduleDao.findById(1L)).thenReturn(createMockBackupScheduleVO(2));
+         Mockito.when(backupDao.listBySchedule(1L)).thenReturn(backups);
+         backupManager.deleteOldestBackupFromScheduleIfRequired(1L, 1L);
+         Mockito.verify(backupManager, Mockito.never()).deleteExcessBackups(Mockito.anyList(), Mockito.anyInt(), Mockito.anyLong());
+@@ -1873,8 +1871,7 @@
+     @Test
+     public void deleteOldestBackupFromScheduleIfRequiredTestDeleteBackupsWhenRequired() throws ResourceAllocationException {
+         List<BackupVO> backups = List.of(Mockito.mock(BackupVO.class), Mockito.mock(BackupVO.class));
+-        Mockito.when(backupScheduleDao.findById(1L)).thenReturn(backupScheduleVOMock);
+-        Mockito.when(backupScheduleVOMock.getMaxBackups()).thenReturn(1);
++        Mockito.when(backupScheduleDao.findById(1L)).thenReturn(createMockBackupScheduleVO(1));
+         Mockito.when(backupDao.listBySchedule(1L)).thenReturn(backups);
+         Mockito.doNothing().when(backupManager).deleteExcessBackups(Mockito.anyList(), Mockito.anyInt(), Mockito.anyLong());
+         backupManager.deleteOldestBackupFromScheduleIfRequired(1L, 1L);
+@@ -2874,4 +2871,10 @@
+         verify(backupOfferingDao).persist(any());
+         verify(backupOfferingDetailsDao, never()).saveDetails(any());
+     }
++
++    private static BackupScheduleVO createMockBackupScheduleVO(int maxBackups) {
++        BackupScheduleVO schedule = mock(BackupScheduleVO.class);
++        when(schedule.getMaxBackups()).thenReturn(maxBackups);
++        return schedule;
++    }
+ }
