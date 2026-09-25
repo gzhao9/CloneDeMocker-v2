@@ -1,0 +1,65 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -341,7 +341,6 @@
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         Ip ip = mock(Ip.class);
+-        LoadBalancingRule loadBalancingRule1 = mock(LoadBalancingRule.class);
+         LoadBalancerVMMapVO loadBalancerVMMapVO = mock(LoadBalancerVMMapVO.class);
+         LoadBalancerVO loadBalancerVO = mock(LoadBalancerVO.class);
+         LoadBalancingRule.LbStickinessPolicy lbStickinessPolicy = mock(LoadBalancingRule.LbStickinessPolicy.class);
+@@ -366,13 +365,8 @@
+         latest.setSecretKey("secretkey");
+         when(ApiDBUtils.searchForLatestUserKeyPair(Mockito.anyLong())).thenReturn(latest);
+         when(lbStickinessPolicy.getParams()).thenReturn(pairList);
+-        when(loadBalancingRule1.getId()).thenReturn(1L);
+-        when(loadBalancingRule1.getState()).thenReturn(FirewallRule.State.Add);
+-        when(loadBalancingRule1.getAlgorithm()).thenReturn("roundrobin");
+-        when(loadBalancingRule1.getSourcePortStart()).thenReturn(443);
+-        when(loadBalancingRule1.getDefaultPortStart()).thenReturn(443);
++        LoadBalancingRule loadBalancingRule1 = createMockLoadBalancingRule(ip, lbStickinessPolicyList, 443);
+         when(loadBalancingRule1.getStickinessPolicies()).thenReturn(lbStickinessPolicyList);
+-        when(loadBalancingRule1.getSourceIp()).thenReturn(ip);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+         when(ipAddressVO.getAddress()).thenReturn(ip);
+@@ -397,7 +391,6 @@
+         Network network = mock(Network.class);
+         Network publicNetwork = mock(Network.class);
+         Ip ip = mock(Ip.class);
+-        LoadBalancingRule loadBalancingRule1 = mock(LoadBalancingRule.class);
+         LoadBalancerVMMapVO loadBalancerVMMapVO = mock(LoadBalancerVMMapVO.class);
+         LoadBalancerVO loadBalancerVO = mock(LoadBalancerVO.class);
+         LoadBalancingRule.LbStickinessPolicy lbStickinessPolicy = mock(LoadBalancingRule.LbStickinessPolicy.class);
+@@ -416,13 +409,7 @@
+ 
+         when(lbStickinessPolicy.getMethodName()).thenReturn("AppCookie");
+         when(lbStickinessPolicy.getParams()).thenReturn(pairList);
+-        when(loadBalancingRule1.getId()).thenReturn(1L);
+-        when(loadBalancingRule1.getState()).thenReturn(FirewallRule.State.Add);
+-        when(loadBalancingRule1.getAlgorithm()).thenReturn("roundrobin");
+-        when(loadBalancingRule1.getSourcePortStart()).thenReturn(80);
+-        when(loadBalancingRule1.getDefaultPortStart()).thenReturn(443);
+-        when(loadBalancingRule1.getStickinessPolicies()).thenReturn(lbStickinessPolicyList);
+-        when(loadBalancingRule1.getSourceIp()).thenReturn(ip);
++         LoadBalancingRule loadBalancingRule1 = createMockLoadBalancingRule(ip, lbStickinessPolicyList, 80);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), any())).thenReturn(publicNetwork);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+         when(ipAddressVO.getAddress()).thenReturn(ip);
+@@ -962,4 +949,16 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    private static LoadBalancingRule createMockLoadBalancingRule(Ip sourceIp, List<LoadBalancingRule.LbStickinessPolicy> stickinessPolicies, int sourcePortStart) {
++        LoadBalancingRule loadBalancingRule = mock(LoadBalancingRule.class);
++        when(loadBalancingRule.getAlgorithm()).thenReturn("roundrobin");
++        when(loadBalancingRule.getDefaultPortStart()).thenReturn(443);
++        when(loadBalancingRule.getId()).thenReturn(1L);
++        when(loadBalancingRule.getSourceIp()).thenReturn(sourceIp);
++        when(loadBalancingRule.getSourcePortStart()).thenReturn(sourcePortStart);
++        when(loadBalancingRule.getState()).thenReturn(FirewallRule.State.Add);
++        when(loadBalancingRule.getStickinessPolicies()).thenReturn(new ArrayList<>(stickinessPolicies));
++        return loadBalancingRule;
++    }
+ }

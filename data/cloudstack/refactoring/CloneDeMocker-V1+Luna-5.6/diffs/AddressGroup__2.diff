@@ -1,0 +1,47 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -1250,15 +1250,14 @@
+     @Test
+     public void createTungstenAddressGroupTest() {
+         TungstenAnswer createTungstenAddressGroupAnswer = MockTungstenAnswerFactory.get(true);
+-        AddressGroup addressGroup = mock(AddressGroup.class);
+         SubnetListType subnetListType = mock(SubnetListType.class);
+         SubnetType subnetType = mock(SubnetType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenAddressGroupCommand.class), anyLong())).thenReturn(createTungstenAddressGroupAnswer);
++        AddressGroup addressGroup = createMockAddressGroup(subnetListType);
+         when(createTungstenAddressGroupAnswer.getApiObjectBase()).thenReturn(addressGroup);
+-        when(addressGroup.getPrefix()).thenReturn(subnetListType);
+         when(subnetListType.getSubnet()).thenReturn(List.of(subnetType));
+ 
+         assertNotNull(tungstenService.createTungstenAddressGroup(1L, "test", "192.168.100.0", 24));
+@@ -1415,15 +1414,14 @@
+     @Test
+     public void listTungstenAddressGroupTest() {
+         TungstenAnswer listTungstenAddressGroupAnswer = MockTungstenAnswerFactory.get(true);
+-        AddressGroup addressGroup = mock(AddressGroup.class);
+         SubnetListType subnetListType = mock(SubnetListType.class);
+         SubnetType subnetType = mock(SubnetType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenAddressGroupCommand.class), anyLong())).thenReturn(listTungstenAddressGroupAnswer);
++        AddressGroup addressGroup = createMockAddressGroup(subnetListType);
+         doReturn(List.of(addressGroup)).when(listTungstenAddressGroupAnswer).getApiObjectBaseList();
+-        when(addressGroup.getPrefix()).thenReturn(subnetListType);
+         when(subnetListType.getSubnet()).thenReturn(
+                 List.of(subnetType));
+ 
+@@ -1668,4 +1666,10 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    private static AddressGroup createMockAddressGroup(SubnetListType subnetListType) {
++        AddressGroup addressGroup = mock(AddressGroup.class);
++        when(addressGroup.getPrefix()).thenReturn(subnetListType);
++        return addressGroup;
++    }
+ }
