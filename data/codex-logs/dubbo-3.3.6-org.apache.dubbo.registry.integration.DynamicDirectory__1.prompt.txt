@@ -1,0 +1,22 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.registry.integration.DynamicDirectory`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java :: test  (mock variable `directory`)
+     DynamicDirectory directory = Mockito.mock(DynamicDirectory.class);
+     Mockito.when(directory.getAllInvokers()).thenReturn(invokers);
+2. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java :: test  (mock variable `serviceDiscoveryDirectory`)
+     DynamicDirectory serviceDiscoveryDirectory = Mockito.mock(DynamicDirectory.class);
+     Mockito.when(serviceDiscoveryDirectory.getAllInvokers()).thenReturn(serviceDiscoveryInvokers);
+     Mockito.verify(serviceDiscoveryDirectory, Mockito.atLeastOnce()).setInvokersChangedListener(argument.capture());
+3. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java :: testDecide  (mock variable `directory`)
+     DynamicDirectory directory = Mockito.mock(DynamicDirectory.class);
+     Mockito.when(directory.getAllInvokers()).thenReturn(invokers);
+4. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java :: testDecide  (mock variable `serviceDiscoveryDirectory`)
+     DynamicDirectory serviceDiscoveryDirectory = Mockito.mock(DynamicDirectory.class);
+     Mockito.when(serviceDiscoveryDirectory.getAllInvokers()).thenReturn(serviceDiscoveryInvokers);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.registry.integration.DynamicDirectory.getAllInvokers()).thenReturn(java.util.List<org.apache.dubbo.rpc.Invoker<?>>)

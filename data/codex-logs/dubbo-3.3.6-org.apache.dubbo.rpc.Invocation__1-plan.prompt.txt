@@ -1,0 +1,73 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.rpc.Invocation`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testInvokerGeneric  (mock variable `invocation`)
+     invocation = mock(RpcInvocation.class);
+     given(invocation.getMethodName()).willReturn("$enumlength");
+     given(invocation.getParameterTypes()).willReturn(new Class<?>[] { Enum.class });
+     given(invocation.getArguments()).willReturn(new Object[] { "hello" });
+2. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testResultHasException  (mock variable `invocation`)
+     invocation = mock(RpcInvocation.class);
+     given(invocation.getMethodName()).willReturn("enumlength");
+     given(invocation.getParameterTypes()).willReturn(new Class<?>[] { Enum.class });
+     given(invocation.getArguments()).willReturn(new Object[] { "hello" });
+3. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testInvokerJsonPojoSerialization  (mock variable `invocation`)
+     invocation = mock(RpcInvocation.class);
+     given(invocation.getMethodName()).willReturn("enumlength");
+     given(invocation.getParameterTypes()).willReturn(new Class<?>[] { Type[].class });
+     given(invocation.getArguments()).willReturn(new Object[] { "hello" });
+4. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testInvokerNonJsonEnumSerialization  (mock variable `invocation`)
+     invocation = mock(RpcInvocation.class);
+     given(invocation.getMethodName()).willReturn("enumlength");
+     given(invocation.getParameterTypes()).willReturn(new Class<?>[] { Type[].class });
+     given(invocation.getArguments()).willReturn(new Object[] { "hello" });
+5. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testInvokerNonJsonNonPojoSerialization  (mock variable `invocation`)
+     invocation = mock(RpcInvocation.class);
+     given(invocation.getMethodName()).willReturn("echo");
+     given(invocation.getParameterTypes()).willReturn(new Class<?>[] { String.class });
+     given(invocation.getArguments()).willReturn(new Object[] { "hello" });
+6. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testInvokerNonJsonPojoSerialization  (mock variable `invocation`)
+     invocation = mock(RpcInvocation.class);
+     given(invocation.getMethodName()).willReturn("echo");
+     given(invocation.getParameterTypes()).willReturn(new Class<?>[] { String.class });
+     given(invocation.getArguments()).willReturn(new Object[] { "hello" });
+7. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ContextFilterTest.java :: testSetContext  (mock variable `invocation`)
+     invocation = mock(Invocation.class);
+     given(invocation.getMethodName()).willReturn("$enumlength");
+     given(invocation.getParameterTypes()).willReturn(new Class<?>[] { Enum.class });
+     given(invocation.getArguments()).willReturn(new Object[] { "hello" });
+     given(invocation.getObjectAttachments()).willReturn(null);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.rpc.Invocation.getArguments()).thenReturn(java.lang.Object[])
+     when(org.apache.dubbo.rpc.Invocation.getMethodName()).thenReturn(java.lang.String)
+     when(org.apache.dubbo.rpc.Invocation.getParameterTypes()).thenReturn(java.lang.Class<?>[])
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/MockInvocationWithMethodDetails.java
+package org.apache.dubbo.rpc.filter;
+
+import org.apache.dubbo.rpc.Invocation;
+import org.mockito.Mockito;
+
+import static org.mockito.BDDMockito.given;
+
+public class MockInvocationWithMethodDetails {
+
+    public static <T extends Invocation> T createMockInvocation(
+            Class<T> invocationType, String methodName, Class<?>[] parameterTypes) {
+        T invocation = Mockito.mock(invocationType);
+        given(invocation.getMethodName()).willReturn(methodName);
+        given(invocation.getParameterTypes()).willReturn(parameterTypes);
+        given(invocation.getArguments()).willReturn(new Object[] {"hello"});
+        return invocation;
+    }
+}
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

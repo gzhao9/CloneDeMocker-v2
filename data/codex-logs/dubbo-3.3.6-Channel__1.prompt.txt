@@ -1,0 +1,25 @@
+This Java project's tests contain duplicated mock setup for `Channel`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyChannelTest.java :: testSend  (mock variable `channel`)
+     private Channel channel = Mockito.mock(Channel.class);
+     Mockito.when(channel.eventLoop()).thenReturn(Mockito.mock(EventLoop.class));
+     Mockito.when(channel.alloc()).thenReturn(PooledByteBufAllocator.DEFAULT);
+     Mockito.when(channel.writeAndFlush(Mockito.any())).thenReturn(future);
+     Mockito.when(channel.newPromise()).thenReturn(future);
+     Mockito.when(channel.newPromise()).thenReturn(channelPromise);
+2. dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyClientHandlerTest.java :: test  (mock variable `channel`)
+     Channel channel = Mockito.mock(Channel.class);
+     Mockito.when(channel.isActive()).thenReturn(true);
+     Mockito.when(channel.eventLoop()).thenReturn(new NioEventLoopGroup().next());
+     Mockito.when(channel.alloc()).thenReturn(PooledByteBufAllocator.DEFAULT);
+     when(channel.writeAndFlush(any())).thenReturn(future);
+     when(channel.newPromise()).thenReturn(future);
+     Mockito.verify(channel, Mockito.times(1)).writeAndFlush(requestArgumentCaptor.capture());
+
+Statements shared by all of them:
+     when(Channel.alloc()).thenReturn(PooledByteBufAllocator.DEFAULT)
+     when(Channel.newPromise()).thenReturn(future)

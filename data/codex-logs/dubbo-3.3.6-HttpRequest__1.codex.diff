@@ -1,0 +1,46 @@
+diff --git a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/HttpProcessHandlerTest.java b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/HttpProcessHandlerTest.java
+index 9919557..ee4b19a 100644
+--- a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/HttpProcessHandlerTest.java
++++ b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/HttpProcessHandlerTest.java
+@@ -28,7 +28,6 @@ import io.netty.handler.codec.http.HttpMethod;
+ import io.netty.handler.codec.http.HttpRequest;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.ArgumentCaptor;
+-import org.mockito.Mockito;
+ 
+ import static org.hamcrest.MatcherAssert.assertThat;
+ import static org.hamcrest.Matchers.equalTo;
+@@ -60,9 +59,7 @@ class HttpProcessHandlerTest {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         ChannelFuture future = mock(ChannelFuture.class);
+         when(context.writeAndFlush(any(FullHttpResponse.class))).thenReturn(future);
+-        HttpRequest message = Mockito.mock(HttpRequest.class);
+-        when(message.uri()).thenReturn("localhost:80/greeting");
+-        when(message.method()).thenReturn(HttpMethod.GET);
++        HttpRequest message = mockGetRequest("localhost:80/greeting");
+         HttpProcessHandler handler = new HttpProcessHandler(
+                 FrameworkModel.defaultModel(),
+                 QosConfiguration.builder()
+@@ -81,9 +78,7 @@ class HttpProcessHandlerTest {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         ChannelFuture future = mock(ChannelFuture.class);
+         when(context.writeAndFlush(any(FullHttpResponse.class))).thenReturn(future);
+-        HttpRequest message = Mockito.mock(HttpRequest.class);
+-        when(message.uri()).thenReturn("localhost:80/test");
+-        when(message.method()).thenReturn(HttpMethod.GET);
++        HttpRequest message = mockGetRequest("localhost:80/test");
+         HttpProcessHandler handler = new HttpProcessHandler(
+                 FrameworkModel.defaultModel(),
+                 QosConfiguration.builder()
+@@ -96,4 +91,11 @@ class HttpProcessHandlerTest {
+         FullHttpResponse response = captor.getValue();
+         assertThat(response.status().code(), equalTo(404));
+     }
++
++    private HttpRequest mockGetRequest(String uri) {
++        HttpRequest message = mock(HttpRequest.class);
++        when(message.uri()).thenReturn(uri);
++        when(message.method()).thenReturn(HttpMethod.GET);
++        return message;
++    }
+ }

@@ -1,0 +1,21 @@
+This Java project's tests contain duplicated mock setup for `java.net.ProxySelector`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RedirectHandlerTests.java :: sameHostRedirectKeepsAllHeaders  (mock variable `proxySelector`)
+     // Setup proxy selector
+ProxySelector proxySelector = mock(ProxySelector.class);
+     when(proxySelector.select(any(URI.class))).thenReturn(Collections.singletonList(proxy));
+2. components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RedirectHandlerTests.java :: crossHostRedirectWithProxyKeepsProxyAuth  (mock variable `proxySelector`)
+     // Setup proxy selector with active proxy
+ProxySelector proxySelector = mock(ProxySelector.class);
+     when(proxySelector.select(any(URI.class))).thenReturn(Collections.singletonList(proxy));
+3. components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RedirectHandlerTests.java :: crossHostRedirectWithDirectProxyStripsProxyAuth  (mock variable `proxySelector`)
+     // Setup proxy selector with DIRECT proxy (no proxy)
+ProxySelector proxySelector = mock(ProxySelector.class);
+     when(proxySelector.select(any(URI.class))).thenReturn(Collections.singletonList(Proxy.NO_PROXY));
+
+Statements shared by all of them:
+     when(java.net.ProxySelector.select(any(URI.class))).thenReturn(java.util.List<java.net.Proxy>)

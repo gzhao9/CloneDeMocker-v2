@@ -1,0 +1,66 @@
+diff --git a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/command/util/ServiceCheckUtilsTest.java b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/command/util/ServiceCheckUtilsTest.java
+index 268ee97..6b02dd2 100644
+--- a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/command/util/ServiceCheckUtilsTest.java
++++ b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/command/util/ServiceCheckUtilsTest.java
+@@ -51,6 +51,12 @@ class ServiceCheckUtilsTest {
+     private final ModuleServiceRepository repository =
+             ApplicationModel.defaultModel().getDefaultModule().getServiceRepository();
+ 
++    private static ClusterInvoker createMockClusterInvoker(Directory<?> directory) {
++        ClusterInvoker invoker = Mockito.mock(ClusterInvoker.class);
++        Mockito.when(invoker.getDirectory()).thenReturn(directory);
++        return invoker;
++    }
++
+     @Test
+     void testIsRegistered() {
+         DemoService demoServiceImpl = new DemoServiceImpl();
+@@ -96,10 +102,9 @@ class ServiceCheckUtilsTest {
+             Mockito.when(registry.getUrl()).thenReturn(URL.valueOf(registry1));
+             MigrationInvoker<?> migrationInvoker = Mockito.mock(MigrationInvoker.class);
+             Mockito.when(migrationInvoker.getMigrationStep()).thenReturn(MigrationStep.FORCE_APPLICATION);
+-            ClusterInvoker serviceDiscoveryInvoker = Mockito.mock(ClusterInvoker.class);
+-            Mockito.when(migrationInvoker.getServiceDiscoveryInvoker()).thenReturn(serviceDiscoveryInvoker);
+             Directory<?> sdDirectory = Mockito.mock(Directory.class);
+-            Mockito.when(serviceDiscoveryInvoker.getDirectory()).thenReturn(sdDirectory);
++            ClusterInvoker serviceDiscoveryInvoker = createMockClusterInvoker(sdDirectory);
++            Mockito.when(migrationInvoker.getServiceDiscoveryInvoker()).thenReturn(serviceDiscoveryInvoker);
+             List sdInvokers = Mockito.mock(List.class);
+             Mockito.when(sdDirectory.getAllInvokers()).thenReturn(sdInvokers);
+             Mockito.when(sdInvokers.size()).thenReturn(5);
+@@ -111,18 +116,16 @@ class ServiceCheckUtilsTest {
+             Mockito.when(registry.getUrl()).thenReturn(URL.valueOf(registry2));
+             MigrationInvoker<?> migrationInvoker = Mockito.mock(MigrationInvoker.class);
+             Mockito.when(migrationInvoker.getMigrationStep()).thenReturn(MigrationStep.APPLICATION_FIRST);
+-            ClusterInvoker serviceDiscoveryInvoker = Mockito.mock(ClusterInvoker.class);
+-            Mockito.when(migrationInvoker.getServiceDiscoveryInvoker()).thenReturn(serviceDiscoveryInvoker);
+             Directory<?> sdDirectory = Mockito.mock(Directory.class);
+-            Mockito.when(serviceDiscoveryInvoker.getDirectory()).thenReturn(sdDirectory);
++            ClusterInvoker serviceDiscoveryInvoker = createMockClusterInvoker(sdDirectory);
++            Mockito.when(migrationInvoker.getServiceDiscoveryInvoker()).thenReturn(serviceDiscoveryInvoker);
+             List sdInvokers = Mockito.mock(List.class);
+             Mockito.when(sdDirectory.getAllInvokers()).thenReturn(sdInvokers);
+             Mockito.when(sdInvokers.size()).thenReturn(0);
+ 
+-            ClusterInvoker invoker = Mockito.mock(ClusterInvoker.class);
+-            Mockito.when(migrationInvoker.getInvoker()).thenReturn(invoker);
+             Directory<?> directory = Mockito.mock(Directory.class);
+-            Mockito.when(invoker.getDirectory()).thenReturn(directory);
++            ClusterInvoker invoker = createMockClusterInvoker(directory);
++            Mockito.when(migrationInvoker.getInvoker()).thenReturn(invoker);
+             List invokers = Mockito.mock(List.class);
+             Mockito.when(directory.getAllInvokers()).thenReturn(invokers);
+             Mockito.when(invokers.size()).thenReturn(10);
+@@ -134,10 +137,9 @@ class ServiceCheckUtilsTest {
+             Mockito.when(registry.getUrl()).thenReturn(URL.valueOf(registry3));
+             MigrationInvoker<?> migrationInvoker = Mockito.mock(MigrationInvoker.class);
+             Mockito.when(migrationInvoker.getMigrationStep()).thenReturn(MigrationStep.FORCE_INTERFACE);
+-            ClusterInvoker invoker = Mockito.mock(ClusterInvoker.class);
+-            Mockito.when(migrationInvoker.getInvoker()).thenReturn(invoker);
+             Directory<?> directory = Mockito.mock(Directory.class);
+-            Mockito.when(invoker.getDirectory()).thenReturn(directory);
++            ClusterInvoker invoker = createMockClusterInvoker(directory);
++            Mockito.when(migrationInvoker.getInvoker()).thenReturn(invoker);
+             List invokers = Mockito.mock(List.class);
+             Mockito.when(directory.getAllInvokers()).thenReturn(invokers);
+             Mockito.when(invokers.size()).thenReturn(10);

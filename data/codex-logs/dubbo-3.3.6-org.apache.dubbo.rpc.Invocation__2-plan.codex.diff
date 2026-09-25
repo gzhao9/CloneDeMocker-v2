@@ -1,0 +1,74 @@
+diff --git a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ExecuteLimitFilterTest.java b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ExecuteLimitFilterTest.java
+index 97c7229..238da59 100644
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ExecuteLimitFilterTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ExecuteLimitFilterTest.java
+@@ -47,8 +47,8 @@ class ExecuteLimitFilterTest {
+         when(invoker.invoke(any(Invocation.class))).thenReturn(new AppResponse("result"));
+         when(invoker.getUrl()).thenReturn(URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1"));
+ 
+-        Invocation invocation = Mockito.mock(Invocation.class);
+-        when(invocation.getMethodName()).thenReturn("testNoExecuteLimitInvoke");
++        Invocation invocation = MockInvocationWithMethodName.createMockInvocationWithMethodName(
++                Invocation.class, "testNoExecuteLimitInvoke");
+ 
+         Result result = executeLimitFilter.invoke(invoker, invocation);
+         Assertions.assertEquals("result", result.getValue());
+@@ -61,8 +61,8 @@ class ExecuteLimitFilterTest {
+         when(invoker.getUrl())
+                 .thenReturn(URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&executes=10"));
+ 
+-        Invocation invocation = Mockito.mock(Invocation.class);
+-        when(invocation.getMethodName()).thenReturn("testExecuteLimitInvoke");
++        Invocation invocation = MockInvocationWithMethodName.createMockInvocationWithMethodName(
++                Invocation.class, "testExecuteLimitInvoke");
+ 
+         Result result = executeLimitFilter.invoke(invoker, invocation);
+         Assertions.assertEquals("result", result.getValue());
+@@ -76,8 +76,8 @@ class ExecuteLimitFilterTest {
+         URL url = URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&executes=10");
+         when(invoker.getUrl()).thenReturn(url);
+ 
+-        Invocation invocation = Mockito.mock(Invocation.class);
+-        when(invocation.getMethodName()).thenReturn("testExecuteLimitInvokeWitException");
++        Invocation invocation = MockInvocationWithMethodName.createMockInvocationWithMethodName(
++                Invocation.class, "testExecuteLimitInvokeWitException");
+ 
+         try {
+             executeLimitFilter.invoke(invoker, invocation);
+@@ -96,8 +96,8 @@ class ExecuteLimitFilterTest {
+         int totalExecute = 20;
+         final AtomicInteger failed = new AtomicInteger(0);
+ 
+-        final Invocation invocation = Mockito.mock(RpcInvocation.class);
+-        when(invocation.getMethodName()).thenReturn("testMoreThanExecuteLimitInvoke");
++        final Invocation invocation = MockInvocationWithMethodName.createMockInvocationWithMethodName(
++                RpcInvocation.class, "testMoreThanExecuteLimitInvoke");
+ 
+         URL url = URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&executes=" + maxExecute);
+         final Invoker<ExecuteLimitFilter> invoker = new BlockMyInvoker<>(url, 1000);
+diff --git a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TimeoutFilterTest.java b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TimeoutFilterTest.java
+index 878d2b7..7836e40 100644
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TimeoutFilterTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TimeoutFilterTest.java
+@@ -45,8 +45,8 @@ class TimeoutFilterTest {
+                 .thenReturn(
+                         URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&timeout=" + timeout));
+ 
+-        Invocation invocation = Mockito.mock(Invocation.class);
+-        when(invocation.getMethodName()).thenReturn("testInvokeWithoutTimeout");
++        Invocation invocation = MockInvocationWithMethodName.createMockInvocationWithMethodName(
++                Invocation.class, "testInvokeWithoutTimeout");
+ 
+         Result result = timeoutFilter.invoke(invoker, invocation);
+         Assertions.assertEquals("result", result.getValue());
+@@ -59,8 +59,8 @@ class TimeoutFilterTest {
+         URL url = URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&timeout=" + timeout);
+         Invoker invoker = new BlockMyInvoker(url, (timeout + 100));
+ 
+-        Invocation invocation = Mockito.mock(RpcInvocation.class);
+-        when(invocation.getMethodName()).thenReturn("testInvokeWithTimeout");
++        Invocation invocation = MockInvocationWithMethodName.createMockInvocationWithMethodName(
++                RpcInvocation.class, "testInvokeWithTimeout");
+ 
+         Result result = timeoutFilter.invoke(invoker, invocation);
+         Assertions.assertEquals("Dubbo", result.getValue());

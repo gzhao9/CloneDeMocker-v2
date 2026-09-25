@@ -1,0 +1,111 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.registry.NotifyListener`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testServiceListenerNotification  (mock variable `demoServiceListener`)
+     NotifyListener demoServiceListener = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener.getConsumerUrl()).thenReturn(consumerURL);
+     Mockito.verify(demoServiceListener, Mockito.times(1)).notify(captor.capture());
+     Mockito.verify(demoServiceListener, Mockito.times(2)).notify(app2_captor.capture());
+2. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testServiceListenerNotification  (mock variable `demoService2Listener`)
+     NotifyListener demoService2Listener = Mockito.mock(NotifyListener.class);
+     when(demoService2Listener.getConsumerUrl()).thenReturn(consumerURL2);
+     Mockito.verify(demoService2Listener, Mockito.times(1)).notify(captor2.capture());
+     Mockito.verify(demoService2Listener, Mockito.times(2)).notify(app2_captor2.capture());
+3. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testServiceListenerNotification  (mock variable `demoService3Listener`)
+     // test service listener still get notified when added after instance notification.
+NotifyListener demoService3Listener = Mockito.mock(NotifyListener.class);
+     when(demoService3Listener.getConsumerUrl()).thenReturn(consumerURL3);
+     Mockito.verify(demoService3Listener, Mockito.times(1)).notify(Mockito.anyList());
+4. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testMultiServiceListenerNotification  (mock variable `demoServiceListener1`)
+     NotifyListener demoServiceListener1 = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener1.getConsumerUrl()).thenReturn(consumerURL);
+     Mockito.verify(demoServiceListener1, Mockito.times(1)).notify(captor.capture());
+     Mockito.verify(demoServiceListener1, Mockito.times(2)).notify(app2_captor.capture());
+5. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testMultiServiceListenerNotification  (mock variable `demoServiceListener2`)
+     NotifyListener demoServiceListener2 = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener2.getConsumerUrl()).thenReturn(consumerURL);
+6. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testMultiServiceListenerNotification  (mock variable `demoService2Listener1`)
+     NotifyListener demoService2Listener1 = Mockito.mock(NotifyListener.class);
+     when(demoService2Listener1.getConsumerUrl()).thenReturn(consumerURL2);
+     Mockito.verify(demoService2Listener1, Mockito.times(1)).notify(captor2.capture());
+     Mockito.verify(demoService2Listener1, Mockito.times(2)).notify(app2_captor2.capture());
+7. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testMultiServiceListenerNotification  (mock variable `demoService2Listener2`)
+     NotifyListener demoService2Listener2 = Mockito.mock(NotifyListener.class);
+     when(demoService2Listener2.getConsumerUrl()).thenReturn(consumerURL2);
+8. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testMultiServiceListenerNotification  (mock variable `demoService3Listener`)
+     // test service listener still get notified when added after instance notification.
+NotifyListener demoService3Listener = Mockito.mock(NotifyListener.class);
+     when(demoService3Listener.getConsumerUrl()).thenReturn(consumerURL3);
+     Mockito.verify(demoService3Listener, Mockito.times(1)).notify(Mockito.anyList());
+9. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testSubscribeMultipleProtocols  (mock variable `demoServiceListener1`)
+     // no protocol specified, consume all instances
+NotifyListener demoServiceListener1 = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener1.getConsumerUrl()).thenReturn(noProtocolConsumerURL);
+     Mockito.verify(demoServiceListener1, Mockito.times(1)).notify(default_protocol_captor.capture());
+10. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testSubscribeMultipleProtocols  (mock variable `demoServiceListener2`)
+     // multiple protocols specified
+NotifyListener demoServiceListener2 = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener2.getConsumerUrl()).thenReturn(multipleProtocolsConsumerURL);
+     Mockito.verify(demoServiceListener2, Mockito.times(1)).notify(multi_protocols_captor.capture());
+11. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testSubscribeMultipleProtocols  (mock variable `demoServiceListener3`)
+     // one protocol specified
+NotifyListener demoServiceListener3 = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener3.getConsumerUrl()).thenReturn(singleProtocolsConsumerURL);
+     Mockito.verify(demoServiceListener3, Mockito.times(1)).notify(single_protocols_captor.capture());
+12. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testServiceListenerNotification  (mock variable `demoServiceListener`)
+     NotifyListener demoServiceListener = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener.getConsumerUrl()).thenReturn(consumerURL);
+     Mockito.verify(demoServiceListener, Mockito.times(1)).notify(captor.capture());
+     Mockito.verify(demoServiceListener, Mockito.times(2)).notify(app2_captor.capture());
+13. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testServiceListenerNotification  (mock variable `demoService2Listener`)
+     NotifyListener demoService2Listener = Mockito.mock(NotifyListener.class);
+     when(demoService2Listener.getConsumerUrl()).thenReturn(consumerURL2);
+     Mockito.verify(demoService2Listener, Mockito.times(1)).notify(captor2.capture());
+     Mockito.verify(demoService2Listener, Mockito.times(2)).notify(app2_captor2.capture());
+14. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testServiceListenerNotification  (mock variable `demoService3Listener`)
+     // test service listener still get notified when added after instance notification.
+NotifyListener demoService3Listener = Mockito.mock(NotifyListener.class);
+     when(demoService3Listener.getConsumerUrl()).thenReturn(consumerURL3);
+     Mockito.verify(demoService3Listener, Mockito.times(1)).notify(Mockito.anyList());
+15. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testMultiServiceListenerNotification  (mock variable `demoServiceListener1`)
+     NotifyListener demoServiceListener1 = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener1.getConsumerUrl()).thenReturn(consumerURL);
+     Mockito.verify(demoServiceListener1, Mockito.times(1)).notify(captor.capture());
+     Mockito.verify(demoServiceListener1, Mockito.times(2)).notify(app2_captor.capture());
+16. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testMultiServiceListenerNotification  (mock variable `demoServiceListener2`)
+     NotifyListener demoServiceListener2 = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener2.getConsumerUrl()).thenReturn(consumerURL);
+17. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testMultiServiceListenerNotification  (mock variable `demoService2Listener1`)
+     NotifyListener demoService2Listener1 = Mockito.mock(NotifyListener.class);
+     when(demoService2Listener1.getConsumerUrl()).thenReturn(consumerURL2);
+     Mockito.verify(demoService2Listener1, Mockito.times(1)).notify(captor2.capture());
+     Mockito.verify(demoService2Listener1, Mockito.times(2)).notify(app2_captor2.capture());
+18. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testMultiServiceListenerNotification  (mock variable `demoService2Listener2`)
+     NotifyListener demoService2Listener2 = Mockito.mock(NotifyListener.class);
+     when(demoService2Listener2.getConsumerUrl()).thenReturn(consumerURL2);
+19. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testMultiServiceListenerNotification  (mock variable `demoService3Listener`)
+     // test service listener still get notified when added after instance notification.
+NotifyListener demoService3Listener = Mockito.mock(NotifyListener.class);
+     when(demoService3Listener.getConsumerUrl()).thenReturn(consumerURL3);
+     Mockito.verify(demoService3Listener, Mockito.times(1)).notify(Mockito.anyList());
+20. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testSubscribeMultipleProtocols  (mock variable `demoServiceListener1`)
+     // no protocol specified, consume all instances
+NotifyListener demoServiceListener1 = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener1.getConsumerUrl()).thenReturn(noProtocolConsumerURL);
+     Mockito.verify(demoServiceListener1, Mockito.times(1)).notify(default_protocol_captor.capture());
+21. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testSubscribeMultipleProtocols  (mock variable `demoServiceListener2`)
+     // multiple protocols specified
+NotifyListener demoServiceListener2 = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener2.getConsumerUrl()).thenReturn(multipleProtocolsConsumerURL);
+     Mockito.verify(demoServiceListener2, Mockito.times(1)).notify(multi_protocols_captor.capture());
+22. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testSubscribeMultipleProtocols  (mock variable `demoServiceListener3`)
+     // one protocol specified
+NotifyListener demoServiceListener3 = Mockito.mock(NotifyListener.class);
+     when(demoServiceListener3.getConsumerUrl()).thenReturn(singleProtocolsConsumerURL);
+     Mockito.verify(demoServiceListener3, Mockito.times(1)).notify(single_protocols_captor.capture());
+
+Statements shared by all of them:
+     when(org.apache.dubbo.registry.NotifyListener.getConsumerUrl()).thenReturn(org.apache.dubbo.common.URL)

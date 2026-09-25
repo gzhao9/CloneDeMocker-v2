@@ -1,0 +1,41 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.rpc.Invocation`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java :: testAuthFailedWhenNoAccessKeyPair  (mock variable `invocation`)
+     Invocation invocation = mock(RpcInvocation.class);
+     when(invocation.getObjectAttachment(Constants.REQUEST_SIGNATURE_KEY)).thenReturn("dubbo");
+     when(invocation.getObjectAttachment(Constants.AK_KEY)).thenReturn("ak");
+     when(invocation.getObjectAttachment(CommonConstants.CONSUMER)).thenReturn("test-consumer");
+     when(invocation.getObjectAttachment(Constants.REQUEST_TIMESTAMP_KEY)).thenReturn(System.currentTimeMillis());
+2. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java :: testAuthFailedWhenParameterError  (mock variable `invocation`)
+     Invocation invocation = mock(RpcInvocation.class);
+     when(invocation.getObjectAttachment(Constants.AK_KEY)).thenReturn("ak");
+     when(invocation.getObjectAttachment(CommonConstants.CONSUMER)).thenReturn("test-consumer");
+     when(invocation.getObjectAttachment(Constants.REQUEST_TIMESTAMP_KEY)).thenReturn(currentTimeMillis);
+     when(invocation.getMethodName()).thenReturn(method);
+     when(invocation.getArguments()).thenReturn(fakeParams);
+     when(invocation.getObjectAttachment(Constants.REQUEST_SIGNATURE_KEY)).thenReturn(sign);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.rpc.Invocation.getObjectAttachment(java.lang.String)).thenReturn(java.lang.String)
+     when(org.apache.dubbo.rpc.Invocation.getObjectAttachment(java.lang.String)).thenReturn(long)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java
+
+    private static Invocation createMockInvocation(String requestSignature, long requestTimestamp) {
+        Invocation invocation = mock(RpcInvocation.class);
+        when(invocation.getObjectAttachment(Constants.REQUEST_SIGNATURE_KEY)).thenReturn(requestSignature);
+        when(invocation.getObjectAttachment(Constants.AK_KEY)).thenReturn("ak");
+        when(invocation.getObjectAttachment(CommonConstants.CONSUMER)).thenReturn("test-consumer");
+        when(invocation.getObjectAttachment(Constants.REQUEST_TIMESTAMP_KEY)).thenReturn(requestTimestamp);
+        return invocation;
+    }
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

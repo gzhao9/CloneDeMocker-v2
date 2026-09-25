@@ -1,0 +1,86 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.rpc.Invoker`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-compatible/src/test/java/org/apache/dubbo/rpc/filter/GenericImplFilterTest.java :: testInvokeWithException  (mock variable `invoker`)
+     Invoker invoker = Mockito.mock(Invoker.class);
+     when(invoker.invoke(any(Invocation.class))).thenReturn(AsyncRpcResult.newDefaultAsyncResult(mockRpcResult, invocation));
+     when(invoker.getUrl()).thenReturn(url);
+     when(invoker.getInterface()).thenReturn(DemoService.class);
+2. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testInvokerGeneric  (mock variable `invoker`)
+     invoker = mock(Invoker.class);
+     given(invoker.isAvailable()).willReturn(true);
+     given(invoker.getInterface()).willReturn(DemoService.class);
+     given(invoker.invoke(invocation)).willReturn(result);
+     given(invoker.getUrl()).willReturn(url);
+3. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testResultHasException  (mock variable `invoker`)
+     invoker = mock(Invoker.class);
+     given(invoker.isAvailable()).willReturn(true);
+     given(invoker.getInterface()).willReturn(DemoService.class);
+     given(invoker.invoke(invocation)).willReturn(result);
+     given(invoker.getUrl()).willReturn(url);
+4. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testInvokerJsonPojoSerialization  (mock variable `invoker`)
+     invoker = mock(Invoker.class);
+     given(invoker.isAvailable()).willReturn(true);
+     given(invoker.getInterface()).willReturn(DemoService.class);
+     given(invoker.invoke(invocation)).willReturn(defaultAsyncResult);
+     given(invoker.getUrl()).willReturn(url);
+5. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testInvokerNonJsonEnumSerialization  (mock variable `invoker`)
+     invoker = mock(Invoker.class);
+     given(invoker.isAvailable()).willReturn(true);
+     given(invoker.getInterface()).willReturn(DemoService.class);
+     given(invoker.invoke(invocation)).willReturn(defaultAsyncResult);
+     given(invoker.getUrl()).willReturn(url);
+6. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testInvokerNonJsonNonPojoSerialization  (mock variable `invoker`)
+     invoker = mock(Invoker.class);
+     given(invoker.isAvailable()).willReturn(true);
+     given(invoker.getInterface()).willReturn(DemoService.class);
+     given(invoker.invoke(invocation)).willReturn(result);
+     given(invoker.getUrl()).willReturn(url);
+7. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/CompatibleFilterFilterTest.java :: testInvokerNonJsonPojoSerialization  (mock variable `invoker`)
+     invoker = mock(Invoker.class);
+     given(invoker.isAvailable()).willReturn(true);
+     given(invoker.getInterface()).willReturn(DemoService.class);
+     given(invoker.invoke(invocation)).willReturn(result);
+     given(invoker.getUrl()).willReturn(url);
+8. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/GenericFilterTest.java :: testInvokeWithDefault  (mock variable `invoker`)
+     Invoker invoker = Mockito.mock(Invoker.class);
+     when(invoker.invoke(any(Invocation.class))).thenReturn(AsyncRpcResult.newDefaultAsyncResult(new Person("person", 10), invocation));
+     when(invoker.getUrl()).thenReturn(url);
+     when(invoker.getInterface()).thenReturn(DemoService.class);
+9. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/GenericFilterTest.java :: testInvokeWithJavaException  (mock variable `invoker`)
+     Invoker invoker = Mockito.mock(Invoker.class);
+     when(invoker.invoke(any(Invocation.class))).thenReturn(new AppResponse(new Person("person", 10)));
+     when(invoker.getUrl()).thenReturn(url);
+     when(invoker.getInterface()).thenReturn(DemoService.class);
+10. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/GenericFilterTest.java :: testInvokeWithMethodNamtNot$Invoke  (mock variable `invoker`)
+     Invoker invoker = Mockito.mock(Invoker.class);
+     when(invoker.invoke(any(Invocation.class))).thenReturn(new AppResponse(new Person("person", 10)));
+     when(invoker.getUrl()).thenReturn(url);
+     when(invoker.getInterface()).thenReturn(DemoService.class);
+11. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/GenericFilterTest.java :: testInvokeWithMethodArgumentSizeIsNot3  (mock variable `invoker`)
+     Invoker invoker = Mockito.mock(Invoker.class);
+     when(invoker.invoke(any(Invocation.class))).thenReturn(new AppResponse(new Person("person", 10)));
+     when(invoker.getUrl()).thenReturn(url);
+     when(invoker.getInterface()).thenReturn(DemoService.class);
+12. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/GenericImplFilterTest.java :: testInvoke  (mock variable `invoker`)
+     Invoker invoker = Mockito.mock(Invoker.class);
+     when(invoker.invoke(any(Invocation.class))).thenReturn(AsyncRpcResult.newDefaultAsyncResult(mockRpcResult, invocation));
+     when(invoker.getUrl()).thenReturn(url);
+     when(invoker.getInterface()).thenReturn(DemoService.class);
+13. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/GenericImplFilterTest.java :: testInvokeWithException1  (mock variable `invoker`)
+     Invoker invoker = Mockito.mock(Invoker.class);
+     when(invoker.invoke(any(Invocation.class))).thenReturn(AsyncRpcResult.newDefaultAsyncResult(mockRpcResult, invocation));
+     when(invoker.getUrl()).thenReturn(url);
+     when(invoker.getInterface()).thenReturn(DemoService.class);
+14. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/GenericImplFilterTest.java :: testInvokeWithException2  (mock variable `invoker`)
+     Invoker invoker = Mockito.mock(Invoker.class);
+     when(invoker.invoke(any(Invocation.class))).thenReturn(AsyncRpcResult.newDefaultAsyncResult(mockRpcResult, invocation));
+     when(invoker.getUrl()).thenReturn(url);
+     when(invoker.getInterface()).thenReturn(DemoService.class);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.rpc.Invoker.getInterface()).thenReturn(java.lang.Class<org.apache.dubbo.rpc.support.DemoService>)
+     when(org.apache.dubbo.rpc.Invoker.getUrl()).thenReturn(org.apache.dubbo.common.URL)

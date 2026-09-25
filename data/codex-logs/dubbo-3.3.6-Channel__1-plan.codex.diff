@@ -1,0 +1,60 @@
+diff --git a/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyChannelTest.java b/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyChannelTest.java
+index 3d51c14..408bbf3 100644
+--- a/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyChannelTest.java
++++ b/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyChannelTest.java
+@@ -23,7 +23,6 @@ import org.apache.dubbo.remoting.RemotingException;
+ 
+ import java.net.InetSocketAddress;
+ 
+-import io.netty.buffer.PooledByteBufAllocator;
+ import io.netty.channel.Channel;
+ import io.netty.channel.ChannelPromise;
+ import io.netty.channel.EventLoop;
+@@ -78,14 +77,13 @@ class NettyChannelTest {
+ 
+     @Test
+     void testSend() throws Exception {
++        ChannelPromise future = Mockito.mock(ChannelPromise.class);
++        channel = MockChannelWithAllocatorAndPromise.createMockChannel(future);
+         Mockito.when(channel.eventLoop()).thenReturn(Mockito.mock(EventLoop.class));
+-        Mockito.when(channel.alloc()).thenReturn(PooledByteBufAllocator.DEFAULT);
+         NettyChannel nettyChannel = NettyChannel.getOrAddChannel(channel, url, channelHandler);
+-        ChannelPromise future = Mockito.mock(ChannelPromise.class);
+         Mockito.when(future.await(1000)).thenReturn(true);
+         Mockito.when(future.cause()).thenReturn(null);
+         Mockito.when(channel.writeAndFlush(Mockito.any())).thenReturn(future);
+-        Mockito.when(channel.newPromise()).thenReturn(future);
+         Mockito.when(future.addListener(Mockito.any())).thenReturn(future);
+         nettyChannel.send("msg", true);
+ 
+diff --git a/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyClientHandlerTest.java b/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyClientHandlerTest.java
+index 8db75f0..3126235 100644
+--- a/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyClientHandlerTest.java
++++ b/dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyClientHandlerTest.java
+@@ -21,7 +21,6 @@ import org.apache.dubbo.common.url.component.ServiceConfigURL;
+ import org.apache.dubbo.remoting.ChannelHandler;
+ import org.apache.dubbo.remoting.exchange.Request;
+ 
+-import io.netty.buffer.PooledByteBufAllocator;
+ import io.netty.channel.Channel;
+ import io.netty.channel.ChannelHandlerContext;
+ import io.netty.channel.ChannelPromise;
+@@ -42,16 +41,14 @@ class NettyClientHandlerTest {
+         URL url = new ServiceConfigURL("dubbo", "127.0.0.1", 20901);
+         ChannelHandler handler = Mockito.mock(ChannelHandler.class);
+         ChannelHandlerContext ctx = Mockito.mock(ChannelHandlerContext.class);
+-        Channel channel = Mockito.mock(Channel.class);
++        ChannelPromise future = mock(ChannelPromise.class);
++        Channel channel = MockChannelWithAllocatorAndPromise.createMockChannel(future);
+         Mockito.when(ctx.channel()).thenReturn(channel);
+         Mockito.when(channel.isActive()).thenReturn(true);
+         Mockito.when(channel.eventLoop()).thenReturn(new NioEventLoopGroup().next());
+-        Mockito.when(channel.alloc()).thenReturn(PooledByteBufAllocator.DEFAULT);
+ 
+-        ChannelPromise future = mock(ChannelPromise.class);
+         when(channel.writeAndFlush(any())).thenReturn(future);
+         when(future.cause()).thenReturn(null);
+-        when(channel.newPromise()).thenReturn(future);
+         when(future.addListener(Mockito.any())).thenReturn(future);
+ 
+         NettyClientHandler nettyClientHandler = new NettyClientHandler(url, handler);

@@ -1,0 +1,24 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.rpc.Invocation`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java :: testAuthFailedWhenNoAccessKeyPair  (mock variable `invocation`)
+     Invocation invocation = mock(RpcInvocation.class);
+     when(invocation.getObjectAttachment(Constants.REQUEST_SIGNATURE_KEY)).thenReturn("dubbo");
+     when(invocation.getObjectAttachment(Constants.AK_KEY)).thenReturn("ak");
+     when(invocation.getObjectAttachment(CommonConstants.CONSUMER)).thenReturn("test-consumer");
+     when(invocation.getObjectAttachment(Constants.REQUEST_TIMESTAMP_KEY)).thenReturn(System.currentTimeMillis());
+2. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java :: testAuthFailedWhenParameterError  (mock variable `invocation`)
+     Invocation invocation = mock(RpcInvocation.class);
+     when(invocation.getObjectAttachment(Constants.AK_KEY)).thenReturn("ak");
+     when(invocation.getObjectAttachment(CommonConstants.CONSUMER)).thenReturn("test-consumer");
+     when(invocation.getObjectAttachment(Constants.REQUEST_TIMESTAMP_KEY)).thenReturn(currentTimeMillis);
+     when(invocation.getMethodName()).thenReturn(method);
+     when(invocation.getArguments()).thenReturn(fakeParams);
+     when(invocation.getObjectAttachment(Constants.REQUEST_SIGNATURE_KEY)).thenReturn(sign);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.rpc.Invocation.getObjectAttachment(java.lang.String)).thenReturn(java.lang.String)
+     when(org.apache.dubbo.rpc.Invocation.getObjectAttachment(java.lang.String)).thenReturn(long)

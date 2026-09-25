@@ -1,0 +1,28 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.common.logger.Logger`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeErrorTypeAwareLoggerTest.java :: testSuccessLogger  (mock variable `successLogger`)
+     Logger successLogger = mock(Logger.class);
+     when(successLogger.isErrorEnabled()).thenReturn(true);
+     when(successLogger.isWarnEnabled()).thenReturn(true);
+     verify(successLogger).error(anyString());
+     verify(successLogger).warn(anyString());
+2. dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeLoggerTest.java :: testSuccessLogger  (mock variable `successLogger`)
+     Logger successLogger = mock(Logger.class);
+     Mockito.when(successLogger.isErrorEnabled()).thenReturn(true);
+     Mockito.when(successLogger.isWarnEnabled()).thenReturn(true);
+     Mockito.when(successLogger.isInfoEnabled()).thenReturn(true);
+     Mockito.when(successLogger.isDebugEnabled()).thenReturn(true);
+     Mockito.when(successLogger.isTraceEnabled()).thenReturn(true);
+     verify(successLogger).error(anyString());
+     verify(successLogger).warn(anyString());
+     verify(successLogger).info(anyString());
+     verify(successLogger).debug(anyString());
+     verify(successLogger).trace(anyString());
+
+Statements shared by all of them:
+     when(org.apache.dubbo.common.logger.Logger.isErrorEnabled()).thenReturn(boolean)
+     when(org.apache.dubbo.common.logger.Logger.isWarnEnabled()).thenReturn(boolean)

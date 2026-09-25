@@ -1,0 +1,96 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.registry.client.ServiceDiscovery`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerTest.java :: testRevisionFailureOnNotification  (mock variable `serviceDiscovery`)
+     serviceDiscovery = Mockito.mock(ServiceDiscovery.class);
+     when(serviceDiscovery.getUrl()).thenReturn(registryURL);
+     when(serviceDiscovery.getRemoteMetadata(eq("111"), anyList())).thenReturn(metadataInfo_111);
+     when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenReturn(metadataInfo_222);
+     when(serviceDiscovery.getRemoteMetadata(eq("333"), anyList())).thenReturn(metadataInfo_333);
+     when(serviceDiscovery.getRemoteMetadata(eq("444"), anyList())).thenReturn(MetadataInfo.EMPTY);
+     when(serviceDiscovery.getRemoteMetadata(eq("555"), anyList())).thenReturn(metadataInfo_555_tri);
+     when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenAnswer(new Answer<MetadataInfo>() {
+
+    @Override
+    public MetadataInfo answer(InvocationOnMock invocationOnMock) throws Throwable {
+        if (Thread.currentThread().getName().contains("Dubbo-framework-metadata-retry")) {
+            return metadataInfo_222;
+        }
+        return MetadataInfo.EMPTY;
+    }
+});
+2. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/ServiceInstancesChangedListenerWithoutEmptyProtectTest.java :: testRevisionFailureOnNotification  (mock variable `serviceDiscovery`)
+     serviceDiscovery = Mockito.mock(ServiceDiscovery.class);
+     when(serviceDiscovery.getUrl()).thenReturn(registryURL);
+     when(serviceDiscovery.getRemoteMetadata(eq("111"), anyList())).thenReturn(metadataInfo_111);
+     when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenReturn(metadataInfo_222);
+     when(serviceDiscovery.getRemoteMetadata(eq("333"), anyList())).thenReturn(metadataInfo_333);
+     when(serviceDiscovery.getRemoteMetadata(eq("444"), anyList())).thenReturn(MetadataInfo.EMPTY);
+     when(serviceDiscovery.getRemoteMetadata(eq("555"), anyList())).thenReturn(metadataInfo_555_tri);
+     when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenAnswer(new Answer<MetadataInfo>() {
+
+    @Override
+    public MetadataInfo answer(InvocationOnMock invocationOnMock) throws Throwable {
+        if (Thread.currentThread().getName().contains("Dubbo-framework-metadata-retry")) {
+            return metadataInfo_222;
+        }
+        return MetadataInfo.EMPTY;
+    }
+});
+
+Statements shared by all of them:
+     when(org.apache.dubbo.registry.client.ServiceDiscovery.getRemoteMetadata(eq("111"), anyList())).thenReturn(org.apache.dubbo.metadata.MetadataInfo)
+     when(org.apache.dubbo.registry.client.ServiceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenAnswer(new Answer<MetadataInfo>() {
+
+    @Override
+    public MetadataInfo answer(InvocationOnMock invocationOnMock) throws Throwable {
+        if (Thread.currentThread().getName().contains("Dubbo-framework-metadata-retry")) {
+            return metadataInfo_222;
+        }
+        return MetadataInfo.EMPTY;
+    }
+})
+     when(org.apache.dubbo.registry.client.ServiceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenReturn(org.apache.dubbo.metadata.MetadataInfo)
+     when(org.apache.dubbo.registry.client.ServiceDiscovery.getRemoteMetadata(eq("333"), anyList())).thenReturn(org.apache.dubbo.metadata.MetadataInfo)
+     when(org.apache.dubbo.registry.client.ServiceDiscovery.getRemoteMetadata(eq("444"), anyList())).thenReturn(org.apache.dubbo.metadata.MetadataInfo)
+     when(org.apache.dubbo.registry.client.ServiceDiscovery.getRemoteMetadata(eq("555"), anyList())).thenReturn(org.apache.dubbo.metadata.MetadataInfo)
+     when(org.apache.dubbo.registry.client.ServiceDiscovery.getUrl()).thenReturn(org.apache.dubbo.common.URL)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/event/listener/MockServiceDiscoveryWithMetadata.java
+package org.apache.dubbo.registry.client.event.listener;
+
+import org.apache.dubbo.common.URL;
+import org.apache.dubbo.metadata.MetadataInfo;
+import org.apache.dubbo.registry.client.ServiceDiscovery;
+
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
+public class MockServiceDiscoveryWithMetadata {
+
+    public static ServiceDiscovery createMockServiceDiscovery(
+            URL registryURL,
+            MetadataInfo metadataInfo111,
+            MetadataInfo metadataInfo222,
+            MetadataInfo metadataInfo333,
+            MetadataInfo metadataInfo555Tri) {
+        ServiceDiscovery serviceDiscovery = org.mockito.Mockito.mock(ServiceDiscovery.class);
+        when(serviceDiscovery.getUrl()).thenReturn(registryURL);
+        when(serviceDiscovery.getRemoteMetadata(eq("111"), anyList())).thenReturn(metadataInfo111);
+        when(serviceDiscovery.getRemoteMetadata(eq("222"), anyList())).thenReturn(metadataInfo222);
+        when(serviceDiscovery.getRemoteMetadata(eq("333"), anyList())).thenReturn(metadataInfo333);
+        when(serviceDiscovery.getRemoteMetadata(eq("444"), anyList())).thenReturn(MetadataInfo.EMPTY);
+        when(serviceDiscovery.getRemoteMetadata(eq("555"), anyList())).thenReturn(metadataInfo555Tri);
+        return serviceDiscovery;
+    }
+}
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

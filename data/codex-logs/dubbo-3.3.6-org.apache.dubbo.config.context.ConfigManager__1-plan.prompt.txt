@@ -1,0 +1,44 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.config.context.ConfigManager`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java :: testConsumerUrlWithoutProtocol  (mock variable `configManager`)
+     ConfigManager configManager = mock(ConfigManager.class);
+     when(configManager.getApplicationOrElseThrow()).thenReturn(applicationConfig);
+2. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java :: testConsumerUrlWithProtocol  (mock variable `configManager`)
+     ConfigManager configManager = mock(ConfigManager.class);
+     when(configManager.getApplicationOrElseThrow()).thenReturn(applicationConfig);
+3. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java :: testReferWithoutGroup  (mock variable `configManager`)
+     ConfigManager configManager = mock(ConfigManager.class);
+     when(configManager.getApplicationOrElseThrow()).thenReturn(applicationConfig);
+4. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java :: testReferWithGroup  (mock variable `configManager`)
+     ConfigManager configManager = mock(ConfigManager.class);
+     when(configManager.getApplicationOrElseThrow()).thenReturn(applicationConfig);
+5. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java :: testInterceptInvokerForMigrationRuleListener  (mock variable `configManager`)
+     ConfigManager configManager = mock(ConfigManager.class);
+     when(configManager.getApplicationOrElseThrow()).thenReturn(applicationConfig);
+6. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java :: testInterceptInvokerForCustomRegistryProtocolListener  (mock variable `configManager`)
+     ConfigManager configManager = mock(ConfigManager.class);
+     when(configManager.getApplicationOrElseThrow()).thenReturn(applicationConfig);
+7. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java :: testRegisterConsumerUrl  (mock variable `configManager`)
+     ConfigManager configManager = mock(ConfigManager.class);
+     when(configManager.getApplicationOrElseThrow()).thenReturn(applicationConfig);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.config.context.ConfigManager.getApplicationOrElseThrow()).thenReturn(org.apache.dubbo.config.ApplicationConfig)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java
+
+    private static ConfigManager createMockConfigManager(ApplicationConfig applicationConfig) {
+        ConfigManager configManager = mock(ConfigManager.class);
+        when(configManager.getApplicationOrElseThrow()).thenReturn(applicationConfig);
+        return configManager;
+    }
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

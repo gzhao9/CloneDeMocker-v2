@@ -1,0 +1,63 @@
+diff --git a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java
+index 4168851..b1ad467 100644
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java
+@@ -42,6 +42,7 @@ import java.util.Map;
+ 
+ import org.junit.jupiter.api.AfterEach;
+ import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.Mockito;
+ 
+@@ -65,6 +66,13 @@ import static org.mockito.Mockito.when;
+ 
+ class RegistryProtocolTest {
+ 
++    private MigrationInvoker<?> migrationInvoker;
++
++    @BeforeEach
++    void setUp() {
++        migrationInvoker = mock(MigrationInvoker.class);
++    }
++
+     @AfterEach
+     public void tearDown() throws IOException {
+         Mockito.framework().clearInlineMocks();
+@@ -371,8 +379,6 @@ class RegistryProtocolTest {
+         attributes.put(REFER_KEY, refer);
+         URL url = serviceConfigURL.addAttributes(attributes);
+ 
+-        MigrationInvoker<?> clusterInvoker = mock(MigrationInvoker.class);
+-
+         Map<String, Object> consumerAttribute = new HashMap<>(url.getAttributes());
+         consumerAttribute.remove(REFER_KEY);
+         URL consumerUrl = new ServiceConfigURL(
+@@ -402,8 +408,8 @@ class RegistryProtocolTest {
+                 .thenReturn(registryProtocolListeners);
+         url = url.setScopeModel(moduleModel);
+ 
+-        registryProtocol.interceptInvoker(clusterInvoker, url, consumerUrl);
+-        verify(migrationRuleListener, times(1)).onRefer(registryProtocol, clusterInvoker, consumerUrl, url);
++        registryProtocol.interceptInvoker(migrationInvoker, url, consumerUrl);
++        verify(migrationRuleListener, times(1)).onRefer(registryProtocol, migrationInvoker, consumerUrl, url);
+     }
+ 
+     /**
+@@ -439,7 +445,6 @@ class RegistryProtocolTest {
+         URL url = serviceConfigURL.addAttributes(attributes);
+ 
+         RegistryProtocol registryProtocol = new RegistryProtocol();
+-        MigrationInvoker<?> clusterInvoker = mock(MigrationInvoker.class);
+ 
+         Map<String, Object> consumerAttribute = new HashMap<>(url.getAttributes());
+         consumerAttribute.remove(REFER_KEY);
+@@ -469,7 +474,7 @@ class RegistryProtocolTest {
+                 .thenReturn(registryProtocolListeners);
+         url = url.setScopeModel(moduleModel);
+ 
+-        registryProtocol.interceptInvoker(clusterInvoker, url, consumerUrl);
++        registryProtocol.interceptInvoker(migrationInvoker, url, consumerUrl);
+ 
+         Assertions.assertEquals(
+                 1, CountRegistryProtocolListener.getReferCounter().get());

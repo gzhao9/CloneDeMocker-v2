@@ -1,0 +1,39 @@
+diff --git a/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/DataSourceStatusCheckerTest.java b/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/DataSourceStatusCheckerTest.java
+index 7edf411..faf2f7c 100644
+--- a/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/DataSourceStatusCheckerTest.java
++++ b/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/DataSourceStatusCheckerTest.java
+@@ -60,6 +60,12 @@ class DataSourceStatusCheckerTest {
+         Mockito.reset(applicationContext);
+     }
+ 
++    private static Connection createMockConnection(boolean typeInfoNextResult) throws SQLException {
++        Connection connection = mock(Connection.class, Answers.RETURNS_DEEP_STUBS);
++        given(connection.getMetaData().getTypeInfo().next()).willReturn(typeInfoNextResult);
++        return connection;
++    }
++
+     @Test
+     void testWithoutApplicationContext() {
+         Status status = dataSourceStatusChecker.check();
+@@ -82,9 +88,8 @@ class DataSourceStatusCheckerTest {
+     void testWithDatasourceHasNextResult() throws SQLException {
+         Map<String, DataSource> map = new HashMap<String, DataSource>();
+         DataSource dataSource = mock(DataSource.class);
+-        Connection connection = mock(Connection.class, Answers.RETURNS_DEEP_STUBS);
++        Connection connection = createMockConnection(true);
+         given(dataSource.getConnection()).willReturn(connection);
+-        given(connection.getMetaData().getTypeInfo().next()).willReturn(true);
+ 
+         map.put("mockDatabase", dataSource);
+         given(applicationContext.getBeansOfType(eq(DataSource.class), anyBoolean(), anyBoolean()))
+@@ -98,9 +103,8 @@ class DataSourceStatusCheckerTest {
+     void testWithDatasourceNotHasNextResult() throws SQLException {
+         Map<String, DataSource> map = new HashMap<String, DataSource>();
+         DataSource dataSource = mock(DataSource.class);
+-        Connection connection = mock(Connection.class, Answers.RETURNS_DEEP_STUBS);
++        Connection connection = createMockConnection(false);
+         given(dataSource.getConnection()).willReturn(connection);
+-        given(connection.getMetaData().getTypeInfo().next()).willReturn(false);
+ 
+         map.put("mockDatabase", dataSource);
+         given(applicationContext.getBeansOfType(eq(DataSource.class), anyBoolean(), anyBoolean()))

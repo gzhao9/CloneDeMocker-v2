@@ -1,0 +1,113 @@
+diff --git a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ExecuteLimitFilterTest.java b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ExecuteLimitFilterTest.java
+index 97c7229..2cf3811 100644
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ExecuteLimitFilterTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/ExecuteLimitFilterTest.java
+@@ -43,9 +43,9 @@ class ExecuteLimitFilterTest {
+ 
+     @Test
+     void testNoExecuteLimitInvoke() {
+-        Invoker invoker = Mockito.mock(Invoker.class);
++        Invoker invoker = MockInvokerWithUrl.createMockInvoker(
++                URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1"));
+         when(invoker.invoke(any(Invocation.class))).thenReturn(new AppResponse("result"));
+-        when(invoker.getUrl()).thenReturn(URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1"));
+ 
+         Invocation invocation = Mockito.mock(Invocation.class);
+         when(invocation.getMethodName()).thenReturn("testNoExecuteLimitInvoke");
+@@ -56,10 +56,9 @@ class ExecuteLimitFilterTest {
+ 
+     @Test
+     void testExecuteLimitInvoke() {
+-        Invoker invoker = Mockito.mock(Invoker.class);
++        Invoker invoker = MockInvokerWithUrl.createMockInvoker(
++                URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&executes=10"));
+         when(invoker.invoke(any(Invocation.class))).thenReturn(new AppResponse("result"));
+-        when(invoker.getUrl())
+-                .thenReturn(URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&executes=10"));
+ 
+         Invocation invocation = Mockito.mock(Invocation.class);
+         when(invocation.getMethodName()).thenReturn("testExecuteLimitInvoke");
+@@ -70,11 +69,9 @@ class ExecuteLimitFilterTest {
+ 
+     @Test
+     void testExecuteLimitInvokeWithException() {
+-        Invoker invoker = Mockito.mock(Invoker.class);
+-        doThrow(new RpcException()).when(invoker).invoke(any(Invocation.class));
+-
+         URL url = URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&executes=10");
+-        when(invoker.getUrl()).thenReturn(url);
++        Invoker invoker = MockInvokerWithUrl.createMockInvoker(url);
++        doThrow(new RpcException()).when(invoker).invoke(any(Invocation.class));
+ 
+         Invocation invocation = Mockito.mock(Invocation.class);
+         when(invocation.getMethodName()).thenReturn("testExecuteLimitInvokeWitException");
+diff --git a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/GenericImplFilterTest.java b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/GenericImplFilterTest.java
+index 222a258..595a001 100644
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/GenericImplFilterTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/GenericImplFilterTest.java
+@@ -151,9 +151,8 @@ class GenericImplFilterTest {
+ 
+         URL url = URL.valueOf("test://test:11/org.apache.dubbo.rpc.support.DemoService?"
+                 + "accesslog=true&group=dubbo&version=1.1&generic=true");
+-        Invoker invoker = Mockito.mock(Invoker.class);
++        Invoker invoker = MockInvokerWithUrl.createMockInvoker(url);
+         when(invoker.invoke(any(Invocation.class))).thenReturn(new AppResponse(new Person("person", 10)));
+-        when(invoker.getUrl()).thenReturn(url);
+ 
+         genericImplFilter.invoke(invoker, invocation);
+         Assertions.assertEquals("true", invocation.getAttachment(GENERIC_KEY));
+diff --git a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TimeoutFilterTest.java b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TimeoutFilterTest.java
+index 878d2b7..867ffdb 100644
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TimeoutFilterTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TimeoutFilterTest.java
+@@ -39,11 +39,9 @@ class TimeoutFilterTest {
+     void testInvokeWithoutTimeout() {
+         int timeout = 3000;
+ 
+-        Invoker invoker = Mockito.mock(Invoker.class);
++        Invoker invoker = MockInvokerWithUrl.createMockInvoker(
++                URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&timeout=" + timeout));
+         when(invoker.invoke(any(Invocation.class))).thenReturn(new AppResponse("result"));
+-        when(invoker.getUrl())
+-                .thenReturn(
+-                        URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&timeout=" + timeout));
+ 
+         Invocation invocation = Mockito.mock(Invocation.class);
+         when(invocation.getMethodName()).thenReturn("testInvokeWithoutTimeout");
+diff --git a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TokenFilterTest.java b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TokenFilterTest.java
+index a53f4ef..723e143 100644
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TokenFilterTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/filter/TokenFilterTest.java
+@@ -42,9 +42,8 @@ class TokenFilterTest {
+     void testInvokeWithToken() throws Exception {
+         String token = "token";
+ 
+-        Invoker invoker = Mockito.mock(Invoker.class);
+         URL url = URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&token=" + token);
+-        when(invoker.getUrl()).thenReturn(url);
++        Invoker invoker = MockInvokerWithUrl.createMockInvoker(url);
+         when(invoker.invoke(any(Invocation.class))).thenReturn(new AppResponse("result"));
+ 
+         Invocation invocation = Mockito.mock(Invocation.class);
+@@ -59,9 +58,8 @@ class TokenFilterTest {
+         Assertions.assertThrows(RpcException.class, () -> {
+             String token = "token";
+ 
+-            Invoker invoker = Mockito.mock(Invoker.class);
+             URL url = URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&token=" + token);
+-            when(invoker.getUrl()).thenReturn(url);
++            Invoker invoker = MockInvokerWithUrl.createMockInvoker(url);
+             when(invoker.invoke(any(Invocation.class))).thenReturn(new AppResponse("result"));
+ 
+             Map<String, Object> attachments = new HashMap<>();
+@@ -78,9 +76,8 @@ class TokenFilterTest {
+         Assertions.assertThrows(RpcException.class, () -> {
+             String token = "token";
+ 
+-            Invoker invoker = Mockito.mock(Invoker.class);
+             URL url = URL.valueOf("test://test:11/test?accesslog=true&group=dubbo&version=1.1&token=" + token);
+-            when(invoker.getUrl()).thenReturn(url);
++            Invoker invoker = MockInvokerWithUrl.createMockInvoker(url);
+             when(invoker.invoke(any(Invocation.class))).thenReturn(new AppResponse("result"));
+ 
+             Invocation invocation = Mockito.mock(Invocation.class);

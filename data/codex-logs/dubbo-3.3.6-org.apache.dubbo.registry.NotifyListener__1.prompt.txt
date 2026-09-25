@@ -1,0 +1,22 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.registry.NotifyListener`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/ServiceDiscoveryRegistryTest.java :: testSubscribeURLs  (mock variable `testServiceListener2`)
+     // different interface mapping to the same apps
+NotifyListener testServiceListener2 = mock(NotifyListener.class);
+     when(testServiceListener2.getConsumerUrl()).thenReturn(url2);
+2. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/ServiceDiscoveryRegistryTest.java :: testUnsubscribe  (mock variable `testServiceListener2`)
+     NotifyListener testServiceListener2 = mock(NotifyListener.class);
+     when(testServiceListener2.getConsumerUrl()).thenReturn(url2);
+3. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/ServiceDiscoveryRegistryTest.java :: testSubscribeURLs  (mock variable `testServiceListener`)
+     private static NotifyListener testServiceListener = mock(NotifyListener.class);
+     when(testServiceListener.getConsumerUrl()).thenReturn(url);
+     verify(testServiceListener, times(1)).addServiceListener(instanceListener);
+     verify(testServiceListener, times(1)).addServiceListener(multiAppsInstanceListener);
+     verify(testServiceListener).notify(captor.capture());
+
+Statements shared by all of them:
+     when(org.apache.dubbo.registry.NotifyListener.getConsumerUrl()).thenReturn(org.apache.dubbo.common.URL)

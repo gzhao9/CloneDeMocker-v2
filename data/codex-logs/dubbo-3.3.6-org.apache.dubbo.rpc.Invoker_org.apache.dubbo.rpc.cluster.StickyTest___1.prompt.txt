@@ -1,0 +1,24 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.rpc.Invoker<org.apache.dubbo.rpc.cluster.StickyTest>`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/StickyTest.java :: testSticky  (mock variable `invoker1`)
+     private Invoker<StickyTest> invoker1 = mock(Invoker.class);
+     given(invoker1.invoke(invocation)).willReturn(result);
+     given(invoker1.isAvailable()).willReturn(true);
+     given(invoker1.getUrl()).willReturn(url.setPort(1));
+     given(invoker1.getInterface()).willReturn(StickyTest.class);
+2. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/StickyTest.java :: testSticky  (mock variable `invoker2`)
+     private Invoker<StickyTest> invoker2 = mock(Invoker.class);
+     given(invoker2.invoke(invocation)).willReturn(result);
+     given(invoker2.isAvailable()).willReturn(true);
+     given(invoker2.getUrl()).willReturn(url.setPort(2));
+     given(invoker2.getInterface()).willReturn(StickyTest.class);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.rpc.Invoker<org.apache.dubbo.rpc.cluster.StickyTest>.getInterface()).thenReturn(java.lang.Class<org.apache.dubbo.rpc.cluster.StickyTest>)
+     when(org.apache.dubbo.rpc.Invoker<org.apache.dubbo.rpc.cluster.StickyTest>.getUrl()).thenReturn(org.apache.dubbo.common.URL)
+     when(org.apache.dubbo.rpc.Invoker<org.apache.dubbo.rpc.cluster.StickyTest>.invoke(org.apache.dubbo.rpc.RpcInvocation)).thenReturn(org.apache.dubbo.rpc.Result)
+     when(org.apache.dubbo.rpc.Invoker<org.apache.dubbo.rpc.cluster.StickyTest>.isAvailable()).thenReturn(boolean)

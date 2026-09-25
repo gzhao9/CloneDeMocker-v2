@@ -1,0 +1,22 @@
+This Java project's tests contain duplicated mock setup for `java.net.InetAddress`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java :: shouldShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndNotMatchWhiteList  (mock variable `addr`)
+     InetAddress addr = mock(InetAddress.class);
+     when(addr.isLoopbackAddress()).thenReturn(false);
+     when(addr.getHostAddress()).thenReturn("179.23.44.1");
+2. dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java :: shouldNotShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndMatchWhiteList  (mock variable `addr`)
+     InetAddress addr = mock(InetAddress.class);
+     when(addr.isLoopbackAddress()).thenReturn(false);
+     when(addr.getHostAddress()).thenReturn("175.23.44.1");
+3. dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java :: shouldNotShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndMatchWhiteListRange  (mock variable `addr`)
+     InetAddress addr = mock(InetAddress.class);
+     when(addr.isLoopbackAddress()).thenReturn(false);
+     when(addr.getHostAddress()).thenReturn("192.168.1.199");
+
+Statements shared by all of them:
+     when(java.net.InetAddress.getHostAddress()).thenReturn(java.lang.String)
+     when(java.net.InetAddress.isLoopbackAddress()).thenReturn(boolean)

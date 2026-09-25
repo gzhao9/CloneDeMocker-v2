@@ -1,0 +1,19 @@
+This Java project's tests contain duplicated mock setup for `java.net.NetworkInterface`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-common/src/test/java/org/apache/dubbo/common/utils/NetUtilsInterfaceDisplayNameHasMetaCharactersTest.java :: testIgnoreGivenInterfaceNameWithMetaCharacters  (mock variable `mockIgnoredNetif`)
+     NetworkInterface mockIgnoredNetif = Mockito.mock(NetworkInterface.class);
+     Mockito.when(mockIgnoredNetif.isUp()).thenReturn(true);
+     Mockito.when(mockIgnoredNetif.getDisplayName()).thenReturn(IGNORED_DISPLAY_NAME_HAS_METACHARACTERS);
+2. dubbo-common/src/test/java/org/apache/dubbo/common/utils/NetUtilsInterfaceDisplayNameHasMetaCharactersTest.java :: testIgnoreGivenInterfaceNameWithMetaCharacters  (mock variable `mockSelectedNetif`)
+     NetworkInterface mockSelectedNetif = Mockito.mock(NetworkInterface.class);
+     Mockito.when(mockSelectedNetif.isUp()).thenReturn(true);
+     Mockito.when(mockSelectedNetif.getDisplayName()).thenReturn(SELECTED_DISPLAY_NAME);
+     Mockito.when(mockSelectedNetif.getInetAddresses()).thenReturn(mockEnumAddrs);
+
+Statements shared by all of them:
+     when(java.net.NetworkInterface.getDisplayName()).thenReturn(java.lang.String)
+     when(java.net.NetworkInterface.isUp()).thenReturn(boolean)

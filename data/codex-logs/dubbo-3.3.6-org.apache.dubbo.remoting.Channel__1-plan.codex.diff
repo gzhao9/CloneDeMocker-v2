@@ -1,0 +1,56 @@
+diff --git a/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/transport/AbstractCodecTest.java b/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/transport/AbstractCodecTest.java
+index 7b559f2..c36c0df 100644
+--- a/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/transport/AbstractCodecTest.java
++++ b/dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/transport/AbstractCodecTest.java
+@@ -38,8 +38,7 @@ class AbstractCodecTest {
+ 
+     @Test
+     void testCheckPayloadDefault8M() throws Exception {
+-        Channel channel = mock(Channel.class);
+-        given(channel.getUrl()).willReturn(URL.valueOf("dubbo://1.1.1.1"));
++        Channel channel = createMockChannel(URL.valueOf("dubbo://1.1.1.1"));
+ 
+         AbstractCodec.checkPayload(channel, 1 * 1024 * 1024);
+ 
+@@ -58,8 +57,7 @@ class AbstractCodecTest {
+ 
+     @Test
+     void testCheckProviderPayload() throws Exception {
+-        Channel channel = mock(Channel.class);
+-        given(channel.getUrl()).willReturn(URL.valueOf("dubbo://1.1.1.1"));
++        Channel channel = createMockChannel(URL.valueOf("dubbo://1.1.1.1"));
+ 
+         AbstractCodec.checkPayload(channel, 1024 * 1024 + 1, 1024 * 1024);
+ 
+@@ -86,8 +84,7 @@ class AbstractCodecTest {
+ 
+     @Test
+     void tesCheckPayloadMinusPayloadNoLimit() throws Exception {
+-        Channel channel = mock(Channel.class);
+-        given(channel.getUrl()).willReturn(URL.valueOf("dubbo://1.1.1.1?payload=-1"));
++        Channel channel = createMockChannel(URL.valueOf("dubbo://1.1.1.1?payload=-1"));
+ 
+         AbstractCodec.checkPayload(channel, 15 * 1024 * 1024);
+ 
+@@ -98,9 +95,8 @@ class AbstractCodecTest {
+     void testIsClientSide() {
+         AbstractCodec codec = getAbstractCodec();
+ 
+-        Channel channel = mock(Channel.class);
++        Channel channel = createMockChannel(URL.valueOf("dubbo://172.24.157.13:9103"));
+         given(channel.getRemoteAddress()).willReturn(new InetSocketAddress("172.24.157.13", 9103));
+-        given(channel.getUrl()).willReturn(URL.valueOf("dubbo://172.24.157.13:9103"));
+         assertThat(codec.isClientSide(channel), is(true));
+         assertThat(codec.isServerSide(channel), is(false));
+ 
+@@ -122,4 +118,10 @@ class AbstractCodecTest {
+         };
+         return codec;
+     }
++
++    private static Channel createMockChannel(URL url) {
++        Channel channel = mock(Channel.class);
++        given(channel.getUrl()).willReturn(url);
++        return channel;
++    }
+ }

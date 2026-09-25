@@ -1,0 +1,41 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.qos.api.CommandContext`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/command/impl/SerializeCheckStatusTest.java :: testNotify  (mock variable `commandContext1`)
+     CommandContext commandContext1 = Mockito.mock(CommandContext.class);
+     Mockito.when(commandContext1.isHttp()).thenReturn(false);
+2. dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/command/impl/SerializeCheckStatusTest.java :: testNotify  (mock variable `commandContext2`)
+     CommandContext commandContext2 = Mockito.mock(CommandContext.class);
+     Mockito.when(commandContext2.isHttp()).thenReturn(true);
+3. dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/command/impl/SerializeWarnedClassesTest.java :: test  (mock variable `commandContext1`)
+     CommandContext commandContext1 = Mockito.mock(CommandContext.class);
+     Mockito.when(commandContext1.isHttp()).thenReturn(false);
+4. dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/command/impl/SerializeWarnedClassesTest.java :: test  (mock variable `commandContext2`)
+     CommandContext commandContext2 = Mockito.mock(CommandContext.class);
+     Mockito.when(commandContext2.isHttp()).thenReturn(true);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.qos.api.CommandContext.isHttp()).thenReturn(boolean)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/command/impl/MockCommandContext.java
+package org.apache.dubbo.qos.command.impl;
+
+import org.apache.dubbo.qos.api.CommandContext;
+import org.mockito.Mockito;
+
+public class MockCommandContext {
+    public static CommandContext createMockCommandContext(boolean isHttpReturn) {
+        CommandContext commandContext = Mockito.mock(CommandContext.class);
+        Mockito.when(commandContext.isHttp()).thenReturn(isHttpReturn);
+        return commandContext;
+    }
+}
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

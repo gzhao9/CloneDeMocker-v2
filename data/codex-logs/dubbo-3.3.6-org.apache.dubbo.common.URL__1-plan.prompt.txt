@@ -1,0 +1,241 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.common.URL`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java :: test  (mock variable `consumerURL`)
+     URL consumerURL = Mockito.mock(URL.class);
+     Mockito.when(consumerURL.getServiceInterface()).thenReturn("Test");
+     Mockito.when(consumerURL.getGroup()).thenReturn("Group");
+     Mockito.when(consumerURL.getVersion()).thenReturn("0.0.0");
+     Mockito.when(consumerURL.getServiceKey()).thenReturn("Group/Test:0.0.0");
+     Mockito.when(consumerURL.getDisplayServiceKey()).thenReturn("Test:0.0.0");
+     Mockito.when(consumerURL.getOrDefaultApplicationModel()).thenReturn(ApplicationModel.defaultModel());
+2. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java :: testDecide  (mock variable `consumerURL`)
+     URL consumerURL = Mockito.mock(URL.class);
+     Mockito.when(consumerURL.getServiceInterface()).thenReturn("Test");
+     Mockito.when(consumerURL.getGroup()).thenReturn("Group");
+     Mockito.when(consumerURL.getVersion()).thenReturn("0.0.0");
+     Mockito.when(consumerURL.getServiceKey()).thenReturn("Group/Test:0.0.0");
+     Mockito.when(consumerURL.getDisplayServiceKey()).thenReturn("Test:0.0.0");
+     Mockito.when(consumerURL.getOrDefaultApplicationModel()).thenReturn(ApplicationModel.defaultModel());
+
+Statements shared by all of them:
+     when(org.apache.dubbo.common.URL.getDisplayServiceKey()).thenReturn(java.lang.String)
+     when(org.apache.dubbo.common.URL.getGroup()).thenReturn(java.lang.String)
+     when(org.apache.dubbo.common.URL.getOrDefaultApplicationModel()).thenReturn(org.apache.dubbo.rpc.model.ApplicationModel)
+     when(org.apache.dubbo.common.URL.getServiceInterface()).thenReturn(java.lang.String)
+     when(org.apache.dubbo.common.URL.getServiceKey()).thenReturn(java.lang.String)
+     when(org.apache.dubbo.common.URL.getVersion()).thenReturn(java.lang.String)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java
+        URL consumerURL = createMockConsumerUrl();
+
+        Mockito.when(invoker.getUrl()).thenReturn(consumerURL);
+        Mockito.when(serviceDiscoveryInvoker.getUrl()).thenReturn(consumerURL);
+
+        MigrationInvoker<?> migrationInvoker =
+                new MigrationInvoker<>(registryProtocol, null, null, DemoService.class, null, consumerURL);
+
+        MigrationRule migrationRule = Mockito.mock(MigrationRule.class);
+        Mockito.when(migrationRule.getForce(Mockito.any())).thenReturn(true);
+        migrationInvoker.migrateToForceInterfaceInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_INTERFACE);
+        migrationInvoker.invoke(null);
+        Mockito.verify(invoker, Mockito.times(1)).invoke(null);
+
+        migrationInvoker.migrateToForceApplicationInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_APPLICATION);
+        migrationInvoker.invoke(null);
+        Mockito.verify(serviceDiscoveryInvoker, Mockito.times(1)).invoke(null);
+
+        Mockito.when(migrationRule.getThreshold(Mockito.any())).thenReturn(1.0f);
+        migrationInvoker.migrateToApplicationFirstInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.APPLICATION_FIRST);
+        migrationInvoker.invoke(null);
+        Mockito.verify(serviceDiscoveryInvoker, Mockito.times(2)).invoke(null);
+
+        Mockito.when(migrationRule.getThreshold(Mockito.any())).thenReturn(2.0f);
+        migrationInvoker.migrateToApplicationFirstInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.APPLICATION_FIRST);
+        migrationInvoker.invoke(null);
+        Mockito.verify(invoker, Mockito.times(2)).invoke(null);
+
+        Mockito.when(migrationRule.getForce(Mockito.any())).thenReturn(false);
+        Mockito.when(migrationRule.getThreshold(Mockito.any())).thenReturn(1.0f);
+        migrationInvoker.migrateToForceInterfaceInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_INTERFACE);
+        migrationInvoker.invoke(null);
+        Mockito.verify(invoker, Mockito.times(3)).invoke(null);
+
+        migrationInvoker.migrateToForceInterfaceInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_INTERFACE);
+        migrationInvoker.invoke(null);
+        Mockito.verify(invoker, Mockito.times(4)).invoke(null);
+
+        Mockito.when(migrationRule.getThreshold(Mockito.any())).thenReturn(2.0f);
+        migrationInvoker.migrateToForceApplicationInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_APPLICATION);
+        migrationInvoker.invoke(null);
+        Mockito.verify(invoker, Mockito.times(5)).invoke(null);
+
+        Mockito.when(migrationRule.getThreshold(Mockito.any())).thenReturn(1.0f);
+        migrationInvoker.migrateToForceApplicationInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_APPLICATION);
+        migrationInvoker.invoke(null);
+        Mockito.verify(serviceDiscoveryInvoker, Mockito.times(3)).invoke(null);
+
+        migrationInvoker.migrateToForceApplicationInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_APPLICATION);
+        migrationInvoker.invoke(null);
+        Mockito.verify(serviceDiscoveryInvoker, Mockito.times(4)).invoke(null);
+
+        Mockito.when(migrationRule.getThreshold(Mockito.any())).thenReturn(2.0f);
+        migrationInvoker.migrateToForceInterfaceInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_INTERFACE);
+        migrationInvoker.invoke(null);
+        Mockito.verify(serviceDiscoveryInvoker, Mockito.times(5)).invoke(null);
+
+        Mockito.when(migrationRule.getThreshold(Mockito.any())).thenReturn(2.0f);
+        Mockito.when(migrationRule.getForce(Mockito.any())).thenReturn(true);
+        migrationInvoker.migrateToForceInterfaceInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_INTERFACE);
+        migrationInvoker.invoke(null);
+        Mockito.verify(invoker, Mockito.times(6)).invoke(null);
+
+        migrationInvoker.migrateToForceApplicationInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_APPLICATION);
+        migrationInvoker.invoke(null);
+        Mockito.verify(serviceDiscoveryInvoker, Mockito.times(6)).invoke(null);
+
+        Mockito.when(migrationRule.getForce(Mockito.any())).thenReturn(false);
+        migrationInvoker.migrateToForceInterfaceInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_INTERFACE);
+        migrationInvoker.invoke(null);
+        Mockito.verify(serviceDiscoveryInvoker, Mockito.times(7)).invoke(null);
+        Assertions.assertNull(migrationInvoker.getInvoker());
+
+        Mockito.when(migrationRule.getForce(Mockito.any())).thenReturn(true);
+        migrationInvoker.migrateToForceInterfaceInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_INTERFACE);
+
+        Mockito.when(migrationRule.getForce(Mockito.any())).thenReturn(false);
+        migrationInvoker.migrateToForceApplicationInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.FORCE_APPLICATION);
+        migrationInvoker.invoke(null);
+        Mockito.verify(invoker, Mockito.times(7)).invoke(null);
+        Assertions.assertNull(migrationInvoker.getServiceDiscoveryInvoker());
+
+        ArgumentCaptor<InvokersChangedListener> argument = ArgumentCaptor.forClass(InvokersChangedListener.class);
+        Mockito.verify(serviceDiscoveryDirectory, Mockito.atLeastOnce()).setInvokersChangedListener(argument.capture());
+
+        Mockito.when(migrationRule.getThreshold(Mockito.any())).thenReturn(1.0f);
+        migrationInvoker.migrateToApplicationFirstInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.APPLICATION_FIRST);
+        for (int i = 0; i < 20; i++) {
+            migrationInvoker.invoke(null);
+        }
+        Mockito.verify(serviceDiscoveryInvoker, Mockito.times(27)).invoke(null);
+
+        serviceDiscoveryInvokers.remove(1);
+        Mockito.when(serviceDiscoveryInvoker.hasProxyInvokers()).thenReturn(false);
+        argument.getAllValues().get(argument.getAllValues().size() - 1).onChange();
+
+        for (int i = 0; i < 20; i++) {
+            migrationInvoker.invoke(null);
+        }
+        Mockito.verify(invoker, Mockito.times(27)).invoke(null);
+
+        serviceDiscoveryInvokers.add(Mockito.mock(Invoker.class));
+        Mockito.when(serviceDiscoveryInvoker.hasProxyInvokers()).thenReturn(true);
+        argument.getAllValues().get(argument.getAllValues().size() - 1).onChange();
+
+        Mockito.when(migrationRule.getProportion(Mockito.any())).thenReturn(50);
+        migrationInvoker.setMigrationRule(migrationRule);
+        for (int i = 0; i < 1000; i++) {
+            migrationInvoker.invoke(null);
+        }
+        Mockito.verify(serviceDiscoveryInvoker, Mockito.atMost(1026)).invoke(null);
+        Mockito.verify(invoker, Mockito.atLeast(28)).invoke(null);
+
+        Mockito.when(migrationRule.getDelay(Mockito.any())).thenReturn(1);
+        long currentTimeMillis = System.currentTimeMillis();
+        migrationInvoker.migrateToForceApplicationInvoker(migrationRule);
+        Assertions.assertTrue(System.currentTimeMillis() - currentTimeMillis >= 2000);
+    }
+
+    @SuppressWarnings("all")
+    @Test
+    void testDecide() {
+        RegistryProtocol registryProtocol = Mockito.mock(RegistryProtocol.class);
+
+        ClusterInvoker invoker = Mockito.mock(ClusterInvoker.class);
+        ClusterInvoker serviceDiscoveryInvoker = Mockito.mock(ClusterInvoker.class);
+
+        DynamicDirectory directory = Mockito.mock(DynamicDirectory.class);
+        DynamicDirectory serviceDiscoveryDirectory = Mockito.mock(DynamicDirectory.class);
+
+        Mockito.when(invoker.getDirectory()).thenReturn(directory);
+        Mockito.when(serviceDiscoveryInvoker.getDirectory()).thenReturn(serviceDiscoveryDirectory);
+
+        Mockito.when(invoker.isAvailable()).thenReturn(true);
+        Mockito.when(serviceDiscoveryInvoker.isAvailable()).thenReturn(true);
+
+        Mockito.when(invoker.hasProxyInvokers()).thenReturn(true);
+        Mockito.when(serviceDiscoveryInvoker.hasProxyInvokers()).thenReturn(true);
+
+        List<Invoker<?>> invokers = new LinkedList<>();
+        invokers.add(Mockito.mock(Invoker.class));
+        invokers.add(Mockito.mock(Invoker.class));
+        List<Invoker<?>> serviceDiscoveryInvokers = new LinkedList<>();
+        serviceDiscoveryInvokers.add(Mockito.mock(Invoker.class));
+        serviceDiscoveryInvokers.add(Mockito.mock(Invoker.class));
+        Mockito.when(directory.getAllInvokers()).thenReturn(invokers);
+        Mockito.when(serviceDiscoveryDirectory.getAllInvokers()).thenReturn(serviceDiscoveryInvokers);
+
+        Mockito.when(registryProtocol.getInvoker(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(invoker);
+        Mockito.when(registryProtocol.getServiceDiscoveryInvoker(
+                        Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenReturn(serviceDiscoveryInvoker);
+
+        URL consumerURL = createMockConsumerUrl();
+
+        Mockito.when(invoker.getUrl()).thenReturn(consumerURL);
+        Mockito.when(serviceDiscoveryInvoker.getUrl()).thenReturn(consumerURL);
+
+        MigrationInvoker<?> migrationInvoker =
+                new MigrationInvoker<>(registryProtocol, null, null, DemoService.class, null, consumerURL);
+
+        MigrationRule migrationRule = Mockito.mock(MigrationRule.class);
+        Mockito.when(migrationRule.getForce(Mockito.any())).thenReturn(true);
+        migrationInvoker.migrateToApplicationFirstInvoker(migrationRule);
+        migrationInvoker.setMigrationStep(MigrationStep.APPLICATION_FIRST);
+        migrationInvoker.invoke(null);
+        Mockito.verify(serviceDiscoveryInvoker, Mockito.times(1)).invoke(null);
+
+        Mockito.when(serviceDiscoveryInvoker.isAvailable()).thenReturn(false);
+        migrationInvoker.invoke(null);
+        Mockito.verify(invoker, Mockito.times(1)).invoke(null);
+
+        Mockito.when(serviceDiscoveryInvoker.isAvailable()).thenReturn(true);
+        migrationInvoker.invoke(null);
+        Mockito.verify(serviceDiscoveryInvoker, Mockito.times(2)).invoke(null);
+    }
+
+    @Test
+    void testConcurrency() {
+        // 独立线程
+
+        // 独立线程invoker状态切换
+
+    }
+
+    private static URL createMockConsumerUrl() {
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

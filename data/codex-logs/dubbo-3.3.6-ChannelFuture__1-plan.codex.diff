@@ -1,0 +1,82 @@
+diff --git a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java
+index f8a1935..8f78897 100644
+--- a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java
++++ b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java
+@@ -28,6 +28,7 @@ import io.netty.channel.Channel;
+ import io.netty.channel.ChannelFuture;
+ import io.netty.channel.ChannelFutureListener;
+ import io.netty.channel.ChannelHandlerContext;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.ArgumentCaptor;
+ 
+@@ -40,6 +41,13 @@ import static org.mockito.Mockito.verify;
+ import static org.mockito.Mockito.when;
+ 
+ class ForeignHostPermitHandlerTest {
++    private ChannelFuture channelFuture;
++
++    @BeforeEach
++    void setUp() {
++        channelFuture = mock(ChannelFuture.class);
++    }
++
+     @Test
+     void shouldShowIpNotPermittedMsg_GivenAcceptForeignIpFalseAndEmptyWhiteList() throws Exception {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+@@ -49,8 +57,7 @@ class ForeignHostPermitHandlerTest {
+         when(addr.isLoopbackAddress()).thenReturn(false);
+         InetSocketAddress address = new InetSocketAddress(addr, 12345);
+         when(channel.remoteAddress()).thenReturn(address);
+-        ChannelFuture future = mock(ChannelFuture.class);
+-        when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(future);
++        when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(channelFuture);
+         ForeignHostPermitHandler handler = new ForeignHostPermitHandler(QosConfiguration.builder()
+                 .acceptForeignIp(false)
+                 .acceptForeignIpWhitelist(StringUtils.EMPTY_STRING)
+@@ -62,7 +69,7 @@ class ForeignHostPermitHandlerTest {
+         assertThat(
+                 new String(captor.getValue().array()),
+                 containsString("Foreign Ip Not Permitted, Consider Config It In Whitelist"));
+-        verify(future).addListener(ChannelFutureListener.CLOSE);
++        verify(channelFuture).addListener(ChannelFutureListener.CLOSE);
+     }
+ 
+     @Test
+@@ -75,8 +82,7 @@ class ForeignHostPermitHandlerTest {
+         when(addr.getHostAddress()).thenReturn("179.23.44.1");
+         InetSocketAddress address = new InetSocketAddress(addr, 12345);
+         when(channel.remoteAddress()).thenReturn(address);
+-        ChannelFuture future = mock(ChannelFuture.class);
+-        when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(future);
++        when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(channelFuture);
+         ForeignHostPermitHandler handler = new ForeignHostPermitHandler(QosConfiguration.builder()
+                 .acceptForeignIp(false)
+                 .acceptForeignIpWhitelist("175.23.44.1 ,  192.168.1.192/26")
+@@ -89,7 +95,7 @@ class ForeignHostPermitHandlerTest {
+         assertThat(
+                 new String(captor.getValue().array()),
+                 containsString("Foreign Ip Not Permitted, Consider Config It In Whitelist"));
+-        verify(future).addListener(ChannelFutureListener.CLOSE);
++        verify(channelFuture).addListener(ChannelFutureListener.CLOSE);
+     }
+ 
+     @Test
+@@ -136,8 +142,7 @@ class ForeignHostPermitHandlerTest {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         Channel channel = mock(Channel.class);
+         when(context.channel()).thenReturn(channel);
+-        ChannelFuture future = mock(ChannelFuture.class);
+-        when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(future);
++        when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(channelFuture);
+         ForeignHostPermitHandler handler = new ForeignHostPermitHandler(QosConfiguration.builder()
+                 .acceptForeignIp(false)
+                 .acceptForeignIpWhitelist("175.23.44.1 ,  192.168.1.192/26")
+@@ -145,6 +150,6 @@ class ForeignHostPermitHandlerTest {
+                 .build());
+ 
+         handler.handlerAdded(context);
+-        verify(future, never()).addListener(ChannelFutureListener.CLOSE);
++        verify(channelFuture, never()).addListener(ChannelFutureListener.CLOSE);
+     }
+ }

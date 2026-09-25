@@ -1,0 +1,72 @@
+diff --git a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/HttpProcessHandlerTest.java b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/HttpProcessHandlerTest.java
+index 9919557..b82e85b 100644
+--- a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/HttpProcessHandlerTest.java
++++ b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/HttpProcessHandlerTest.java
+@@ -41,14 +41,13 @@ class HttpProcessHandlerTest {
+     @Test
+     void test1() throws Exception {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+-        ChannelFuture future = mock(ChannelFuture.class);
+-        when(context.writeAndFlush(any(FullHttpResponse.class))).thenReturn(future);
++        ChannelFuture future = mockResponseFuture(context);
+         HttpRequest message = Mockito.mock(HttpRequest.class);
+         when(message.uri()).thenReturn("test");
+         HttpProcessHandler handler = new HttpProcessHandler(
+                 FrameworkModel.defaultModel(), QosConfiguration.builder().build());
+         handler.channelRead0(context, message);
+-        verify(future).addListener(ChannelFutureListener.CLOSE);
++        verifyCloseListener(future);
+         ArgumentCaptor<FullHttpResponse> captor = ArgumentCaptor.forClass(FullHttpResponse.class);
+         verify(context).writeAndFlush(captor.capture());
+         FullHttpResponse response = captor.getValue();
+@@ -58,8 +57,7 @@ class HttpProcessHandlerTest {
+     @Test
+     void test2() throws Exception {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+-        ChannelFuture future = mock(ChannelFuture.class);
+-        when(context.writeAndFlush(any(FullHttpResponse.class))).thenReturn(future);
++        ChannelFuture future = mockResponseFuture(context);
+         HttpRequest message = Mockito.mock(HttpRequest.class);
+         when(message.uri()).thenReturn("localhost:80/greeting");
+         when(message.method()).thenReturn(HttpMethod.GET);
+@@ -69,7 +67,7 @@ class HttpProcessHandlerTest {
+                         .anonymousAccessPermissionLevel(PermissionLevel.NONE.name())
+                         .build());
+         handler.channelRead0(context, message);
+-        verify(future).addListener(ChannelFutureListener.CLOSE);
++        verifyCloseListener(future);
+         ArgumentCaptor<FullHttpResponse> captor = ArgumentCaptor.forClass(FullHttpResponse.class);
+         verify(context).writeAndFlush(captor.capture());
+         FullHttpResponse response = captor.getValue();
+@@ -79,8 +77,7 @@ class HttpProcessHandlerTest {
+     @Test
+     void test3() throws Exception {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+-        ChannelFuture future = mock(ChannelFuture.class);
+-        when(context.writeAndFlush(any(FullHttpResponse.class))).thenReturn(future);
++        ChannelFuture future = mockResponseFuture(context);
+         HttpRequest message = Mockito.mock(HttpRequest.class);
+         when(message.uri()).thenReturn("localhost:80/test");
+         when(message.method()).thenReturn(HttpMethod.GET);
+@@ -90,10 +87,20 @@ class HttpProcessHandlerTest {
+                         .anonymousAccessPermissionLevel(PermissionLevel.NONE.name())
+                         .build());
+         handler.channelRead0(context, message);
+-        verify(future).addListener(ChannelFutureListener.CLOSE);
++        verifyCloseListener(future);
+         ArgumentCaptor<FullHttpResponse> captor = ArgumentCaptor.forClass(FullHttpResponse.class);
+         verify(context).writeAndFlush(captor.capture());
+         FullHttpResponse response = captor.getValue();
+         assertThat(response.status().code(), equalTo(404));
+     }
++
++    private ChannelFuture mockResponseFuture(ChannelHandlerContext context) {
++        ChannelFuture future = mock(ChannelFuture.class);
++        when(context.writeAndFlush(any(FullHttpResponse.class))).thenReturn(future);
++        return future;
++    }
++
++    private void verifyCloseListener(ChannelFuture future) {
++        verify(future).addListener(ChannelFutureListener.CLOSE);
++    }
+ }

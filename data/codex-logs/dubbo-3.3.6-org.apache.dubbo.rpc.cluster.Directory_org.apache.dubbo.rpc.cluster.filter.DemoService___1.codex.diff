@@ -1,0 +1,89 @@
+diff --git a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/BroadCastClusterInvokerTest.java b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/BroadCastClusterInvokerTest.java
+index 5e63e97..85b355a 100644
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/BroadCastClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/BroadCastClusterInvokerTest.java
+@@ -73,7 +73,7 @@ class BroadCastClusterInvokerTest {
+ 
+     @Test
+     void testNormal() {
+-        given(dic.list(invocation)).willReturn(Arrays.asList(invoker1, invoker2, invoker3, invoker4));
++        stubDirectoryInvokers();
+         // Every invoker will be called
+         clusterInvoker.invoke(invocation);
+         assertTrue(invoker1.isInvoked());
+@@ -84,7 +84,7 @@ class BroadCastClusterInvokerTest {
+ 
+     @Test
+     void testEx() {
+-        given(dic.list(invocation)).willReturn(Arrays.asList(invoker1, invoker2, invoker3, invoker4));
++        stubDirectoryInvokers();
+         invoker1.invokeThrowEx();
+         assertThrows(RpcException.class, () -> {
+             clusterInvoker.invoke(invocation);
+@@ -99,7 +99,7 @@ class BroadCastClusterInvokerTest {
+ 
+     @Test
+     void testFailPercent() {
+-        given(dic.list(invocation)).willReturn(Arrays.asList(invoker1, invoker2, invoker3, invoker4));
++        stubDirectoryInvokers();
+         // We set the failure percentage to 75, which means that when the number of call failures is 4*(75/100) = 3,
+         // an exception will be thrown directly and subsequent invokers will not be called.
+         url = url.addParameter("broadcast.fail.percent", 75);
+@@ -116,6 +116,10 @@ class BroadCastClusterInvokerTest {
+         assertTrue(invoker3.isInvoked());
+         assertFalse(invoker4.isInvoked());
+     }
++
++    private void stubDirectoryInvokers() {
++        given(dic.list(invocation)).willReturn(Arrays.asList(invoker1, invoker2, invoker3, invoker4));
++    }
+ }
+ 
+ class MockInvoker implements Invoker<DemoService> {
+diff --git a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailSafeClusterInvokerTest.java b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailSafeClusterInvokerTest.java
+index 54f4f84..ac46f24 100644
+--- a/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailSafeClusterInvokerTest.java
++++ b/dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailSafeClusterInvokerTest.java
+@@ -57,12 +57,7 @@ class FailSafeClusterInvokerTest {
+     public void setUp() throws Exception {
+         RpcContext.removeServiceContext();
+ 
+-        dic = mock(Directory.class);
+-
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+-        given(dic.list(invocation)).willReturn(invokers);
+-        given(dic.getInterface()).willReturn(DemoService.class);
++        stubDirectory(invokers);
+         invocation.setMethodName("method1");
+ 
+         invokers.add(invoker);
+@@ -80,6 +75,14 @@ class FailSafeClusterInvokerTest {
+         given(invoker.getInterface()).willReturn(DemoService.class);
+     }
+ 
++    private void stubDirectory(List<Invoker<DemoService>> directoryInvokers) {
++        dic = mock(Directory.class);
++        given(dic.getUrl()).willReturn(url);
++        given(dic.getConsumerUrl()).willReturn(url);
++        given(dic.list(invocation)).willReturn(directoryInvokers);
++        given(dic.getInterface()).willReturn(DemoService.class);
++    }
++
+     // TODO assert error log
+     @Test
+     void testInvokeException() {
+@@ -100,12 +103,7 @@ class FailSafeClusterInvokerTest {
+ 
+     @Test
+     void testNoInvoke() {
+-        dic = mock(Directory.class);
+-
+-        given(dic.getUrl()).willReturn(url);
+-        given(dic.getConsumerUrl()).willReturn(url);
+-        given(dic.list(invocation)).willReturn(null);
+-        given(dic.getInterface()).willReturn(DemoService.class);
++        stubDirectory(null);
+ 
+         invocation.setMethodName("method1");
+ 

@@ -1,0 +1,24 @@
+This Java project's tests contain duplicated mock setup for `com.microsoft.kiota.serialization.SerializationWriter`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. components/abstractions/src/test/java/com/microsoft/kiota/RequestInformationTest.java :: SetsParsableContent  (mock variable `writerMock`)
+     final SerializationWriter writerMock = mock(SerializationWriter.class);
+     verify(writerMock, times(1)).writeObjectValue(any(), any(TestEntity.class));
+     verify(writerMock, never()).writeCollectionOfObjectValues(anyString(), any(ArrayList.class));
+2. components/abstractions/src/test/java/com/microsoft/kiota/RequestInformationTest.java :: SetsParsableContentCollection  (mock variable `writerMock`)
+     final SerializationWriter writerMock = mock(SerializationWriter.class);
+     verify(writerMock, never()).writeObjectValue(any(), any(TestEntity.class));
+     verify(writerMock, times(1)).writeCollectionOfObjectValues(any(), any(Iterable.class));
+3. components/abstractions/src/test/java/com/microsoft/kiota/RequestInformationTest.java :: SetsScalarContentCollection  (mock variable `writerMock`)
+     final SerializationWriter writerMock = mock(SerializationWriter.class);
+     verify(writerMock, never()).writeStringValue(any(), anyString());
+     verify(writerMock, times(1)).writeCollectionOfPrimitiveValues(any(), any(Iterable.class));
+4. components/abstractions/src/test/java/com/microsoft/kiota/RequestInformationTest.java :: SetsScalarContent  (mock variable `writerMock`)
+     final SerializationWriter writerMock = mock(SerializationWriter.class);
+     verify(writerMock, times(1)).writeStringValue(any(), anyString());
+     verify(writerMock, never()).writeCollectionOfPrimitiveValues(any(), any(Iterable.class));
+5. components/abstractions/src/test/java/com/microsoft/kiota/RequestInformationTest.java :: SetsBoundaryOnMultipartBody  (mock variable `writerMock`)
+     final SerializationWriter writerMock = mock(SerializationWriter.class);

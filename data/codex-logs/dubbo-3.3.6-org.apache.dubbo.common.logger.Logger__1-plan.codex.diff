@@ -1,0 +1,79 @@
+diff --git a/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeErrorTypeAwareLoggerTest.java b/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeErrorTypeAwareLoggerTest.java
+index be23099..2583396 100644
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeErrorTypeAwareLoggerTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeErrorTypeAwareLoggerTest.java
+@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Assertions;
+ import org.junit.jupiter.api.Test;
+ 
+ import static org.apache.dubbo.common.constants.LoggerCodeConstants.REGISTRY_ADDRESS_INVALID;
+-import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.ArgumentMatchers.anyString;
+ import static org.mockito.Mockito.doThrow;
+ import static org.mockito.Mockito.mock;
+@@ -38,24 +37,12 @@ import static org.mockito.Mockito.when;
+ class FailsafeErrorTypeAwareLoggerTest {
+     @Test
+     void testFailsafeErrorTypeAwareForLoggingMethod() {
+-        Logger failLogger = mock(Logger.class);
++        Logger failLogger = MockFailingLogger.createMockFailingLogger();
+         FailsafeErrorTypeAwareLogger failsafeLogger = new FailsafeErrorTypeAwareLogger(failLogger);
+ 
+-        doThrow(new RuntimeException()).when(failLogger).error(anyString());
+-        doThrow(new RuntimeException()).when(failLogger).warn(anyString());
+-        doThrow(new RuntimeException()).when(failLogger).info(anyString());
+-        doThrow(new RuntimeException()).when(failLogger).debug(anyString());
+-        doThrow(new RuntimeException()).when(failLogger).trace(anyString());
+-
+         failsafeLogger.error(REGISTRY_ADDRESS_INVALID, "Registry center", "May be it's offline.", "error");
+         failsafeLogger.warn(REGISTRY_ADDRESS_INVALID, "Registry center", "May be it's offline.", "warn");
+ 
+-        doThrow(new RuntimeException()).when(failLogger).error(any(Throwable.class));
+-        doThrow(new RuntimeException()).when(failLogger).warn(any(Throwable.class));
+-        doThrow(new RuntimeException()).when(failLogger).info(any(Throwable.class));
+-        doThrow(new RuntimeException()).when(failLogger).debug(any(Throwable.class));
+-        doThrow(new RuntimeException()).when(failLogger).trace(any(Throwable.class));
+-
+         failsafeLogger.error(
+                 REGISTRY_ADDRESS_INVALID, "Registry center", "May be it's offline.", "error", new Exception("error"));
+         failsafeLogger.warn(
+diff --git a/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeLoggerTest.java b/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeLoggerTest.java
+index 65de0c9..0276727 100644
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeLoggerTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/logger/support/FailsafeLoggerTest.java
+@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Assertions;
+ import org.junit.jupiter.api.Test;
+ import org.mockito.Mockito;
+ 
+-import static org.mockito.ArgumentMatchers.any;
+ import static org.mockito.ArgumentMatchers.anyString;
+ import static org.mockito.Mockito.doThrow;
+ import static org.mockito.Mockito.mock;
+@@ -31,27 +30,15 @@ import static org.mockito.Mockito.verify;
+ class FailsafeLoggerTest {
+     @Test
+     void testFailSafeForLoggingMethod() {
+-        Logger failLogger = mock(Logger.class);
++        Logger failLogger = MockFailingLogger.createMockFailingLogger();
+         FailsafeLogger failsafeLogger = new FailsafeLogger(failLogger);
+ 
+-        doThrow(new RuntimeException()).when(failLogger).error(anyString());
+-        doThrow(new RuntimeException()).when(failLogger).warn(anyString());
+-        doThrow(new RuntimeException()).when(failLogger).info(anyString());
+-        doThrow(new RuntimeException()).when(failLogger).debug(anyString());
+-        doThrow(new RuntimeException()).when(failLogger).trace(anyString());
+-
+         failsafeLogger.error("error");
+         failsafeLogger.warn("warn");
+         failsafeLogger.info("info");
+         failsafeLogger.debug("debug");
+         failsafeLogger.trace("info");
+ 
+-        doThrow(new RuntimeException()).when(failLogger).error(any(Throwable.class));
+-        doThrow(new RuntimeException()).when(failLogger).warn(any(Throwable.class));
+-        doThrow(new RuntimeException()).when(failLogger).info(any(Throwable.class));
+-        doThrow(new RuntimeException()).when(failLogger).debug(any(Throwable.class));
+-        doThrow(new RuntimeException()).when(failLogger).trace(any(Throwable.class));
+-
+         failsafeLogger.error(new Exception("error"));
+         failsafeLogger.warn(new Exception("warn"));
+         failsafeLogger.info(new Exception("info"));

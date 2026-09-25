@@ -1,0 +1,71 @@
+diff --git a/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java b/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java
+index 76402ad..407c3f2 100644
+--- a/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java
++++ b/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java
+@@ -34,7 +34,7 @@ public class TripleMutinySubscriberTest {
+     void testSubscribeBindsDownstreamAndRequests() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream = Mockito.mock(CallStreamObserver.class);
++        CallStreamObserver<String> downstream = mockDownstream();
+ 
+         subscriber.onSubscribe(subscription); // bind subscription
+         subscriber.subscribe(downstream); // bind downstream
+@@ -46,7 +46,7 @@ public class TripleMutinySubscriberTest {
+     void testOnNextPassesItemAndRequestsNext() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream = Mockito.mock(CallStreamObserver.class);
++        CallStreamObserver<String> downstream = mockDownstream();
+ 
+         subscriber.onSubscribe(subscription);
+         subscriber.subscribe(downstream);
+@@ -61,7 +61,7 @@ public class TripleMutinySubscriberTest {
+     void testOnErrorMarksDoneAndPropagates() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream = Mockito.mock(CallStreamObserver.class);
++        CallStreamObserver<String> downstream = mockDownstream();
+         RuntimeException error = new RuntimeException("boom");
+ 
+         subscriber.onSubscribe(subscription);
+@@ -76,7 +76,7 @@ public class TripleMutinySubscriberTest {
+     void testOnCompleteMarksDoneAndNotifies() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream = Mockito.mock(CallStreamObserver.class);
++        CallStreamObserver<String> downstream = mockDownstream();
+ 
+         subscriber.onSubscribe(subscription);
+         subscriber.subscribe(downstream);
+@@ -102,8 +102,8 @@ public class TripleMutinySubscriberTest {
+     void testSubscribeTwiceDoesNotRebind() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream1 = Mockito.mock(CallStreamObserver.class);
+-        CallStreamObserver<String> downstream2 = Mockito.mock(CallStreamObserver.class);
++        CallStreamObserver<String> downstream1 = mockDownstream();
++        CallStreamObserver<String> downstream2 = mockDownstream();
+ 
+         subscriber.onSubscribe(subscription);
+         subscriber.subscribe(downstream1);
+@@ -131,7 +131,7 @@ public class TripleMutinySubscriberTest {
+     void testOnNextAfterDoneDoesNothing() {
+         TestingSubscriber<String> subscriber = new TestingSubscriber<>();
+         Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+-        CallStreamObserver<String> downstream = Mockito.mock(CallStreamObserver.class);
++        CallStreamObserver<String> downstream = mockDownstream();
+ 
+         subscriber.onSubscribe(subscription);
+         subscriber.subscribe(downstream);
+@@ -142,5 +142,10 @@ public class TripleMutinySubscriberTest {
+         Mockito.verify(downstream, Mockito.never()).onNext("after-done");
+     }
+ 
++    @SuppressWarnings("unchecked")
++    private static CallStreamObserver<String> mockDownstream() {
++        return Mockito.mock(CallStreamObserver.class);
++    }
++
+     static class TestingSubscriber<T> extends AbstractTripleMutinySubscriber<T> {}
+ }

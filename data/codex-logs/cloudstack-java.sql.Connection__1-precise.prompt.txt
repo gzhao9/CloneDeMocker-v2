@@ -1,0 +1,101 @@
+This Java project's tests contain duplicated mock setup for `java.sql.Connection`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java :: testDropColumn  (mock variable `connectionMock`)
+     @Mock
+private Connection connectionMock;
+     when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatementMock);
+     verify(connectionMock, times(1)).prepareStatement(anyString());
+2. engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java :: testDropColumnWhenexecuteUpdateResultsInException  (mock variable `connectionMock`)
+     @Mock
+private Connection connectionMock;
+     when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatementMock);
+     verify(connectionMock, times(1)).prepareStatement(anyString());
+3. engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java :: testPerformDataMigration  (mock variable `conn`)
+     @Mock
+private Connection conn;
+     Mockito.when(conn.prepareStatement(anyString())).thenReturn(preparedStatement);
+4. engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java :: testPerformDataMigration  (mock variable `conn`)
+     @Mock
+private Connection conn;
+     when(conn.prepareStatement(anyString())).thenReturn(selectStmt);
+     verify(conn).prepareStatement("SELECT sp.id, v.account_id, v.domain_id FROM snapshot_policy sp, volumes v WHERE sp.volume_id = v.id AND (sp.account_id IS NULL AND sp.domain_id IS NULL)");
+     verify(conn).prepareStatement("SELECT bs.id, vm.account_id, vm.domain_id FROM backup_schedule bs, vm_instance vm WHERE bs.vm_id = vm.id AND (bs.account_id IS NULL AND bs.domain_id IS NULL)");
+
+Statements shared by all of them:
+     when(java.sql.Connection.prepareStatement(anyString())).thenReturn(java.sql.PreparedStatement)
+
+Exact sources of the listed test methods (as they are now):
+--- 1. testDropColumn ---
+@Test
+public void testDropColumn() throws Exception {
+    when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatementMock);
+    Connection conn = connectionMock;
+    String tableName = "tableName";
+    String columnName = "columnName";
+    dao.dropColumn(conn, tableName, columnName);
+    verify(connectionMock, times(1)).prepareStatement(anyString());
+    verify(preparedStatementMock, times(0)).executeQuery();
+    verify(preparedStatementMock, times(1)).executeUpdate();
+    verify(preparedStatementMock, times(1)).close();
+    verify(loggerMock, times(1)).debug(anyString());
+    verify(loggerMock, times(0)).warn(anyString(), any(Throwable.class));
+}
+--- 2. testDropColumnWhenexecuteUpdateResultsInException ---
+@Test
+public void testDropColumnWhenexecuteUpdateResultsInException() throws Exception {
+    SQLException sqlException = new SQLException();
+    when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatementMock);
+    when(preparedStatementMock.executeUpdate()).thenThrow(sqlException);
+    Connection conn = connectionMock;
+    String tableName = "tableName";
+    String columnName = "columnName";
+    dao.dropColumn(conn, tableName, columnName);
+    verify(connectionMock, times(1)).prepareStatement(anyString());
+    verify(preparedStatementMock, times(1)).executeUpdate();
+    verify(preparedStatementMock, times(1)).close();
+    verify(loggerMock, times(0)).debug(anyString());
+    verify(loggerMock, times(1)).warn(anyString(), eq(sqlException));
+}
+--- 3. testPerformDataMigration ---
+@Test
+public void testPerformDataMigration() throws SQLException {
+    try (MockedStatic<DbUpgradeUtils> ignored = Mockito.mockStatic(DbUpgradeUtils.class)) {
+        DbUpgradeUtils dbUpgradeUtils = Mockito.mock(DbUpgradeUtils.class);
+        when(dbUpgradeUtils.getTableColumnType(conn, "configuration", "scope")).thenReturn("varchar(255)");
+        try (MockedStatic<TransactionLegacy> ignored2 = Mockito.mockStatic(TransactionLegacy.class)) {
+            TransactionLegacy txn = Mockito.mock(TransactionLegacy.class);
+            when(TransactionLegacy.currentTxn()).thenReturn(txn);
+            PreparedStatement pstmt = Mockito.mock(PreparedStatement.class);
+            String sql = "UPDATE configuration\n" + "SET new_scope =" + "     CASE" + "         WHEN scope = 'Global' THEN 1" + "         WHEN scope = 'Zone' THEN 2" + "         WHEN scope = 'Cluster' THEN 4" + "         WHEN scope = 'StoragePool' THEN 8" + "         WHEN scope = 'ManagementServer' THEN 16" + "         WHEN scope = 'ImageStore' THEN 32" + "         WHEN scope = 'Domain' THEN 64" + "         WHEN scope = 'Account' THEN 128" + "         ELSE 0" + "     END WHERE scope IS NOT NULL;";
+            when(txn.prepareAutoCloseStatement(sql)).thenReturn(pstmt);
+            PreparedStatement preparedStatement = Mockito.mock(PreparedStatement.class);
+            ResultSet resultSet = Mockito.mock(ResultSet.class);
+            Mockito.when(resultSet.next()).thenReturn(false);
+            Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
+            Mockito.when(conn.prepareStatement(anyString())).thenReturn(preparedStatement);
+            upgrade.performDataMigration(conn);
+            Mockito.verify(pstmt, Mockito.times(1)).executeUpdate();
+        }
+    }
+}
+--- 4. testPerformDataMigration ---
+@Test
+public void testPerformDataMigration() throws SQLException {
+    when(conn.prepareStatement(anyString())).thenReturn(selectStmt);
+    when(selectStmt.executeQuery()).thenReturn(resultSet);
+    when(resultSet.next()).thenReturn(false);
+    upgrade.performDataMigration(conn);
+    verify(conn).prepareStatement("SELECT sp.id, v.account_id, v.domain_id FROM snapshot_policy sp, volumes v WHERE sp.volume_id = v.id AND (sp.account_id IS NULL AND sp.domain_id IS NULL)");
+    verify(conn).prepareStatement("SELECT bs.id, vm.account_id, vm.domain_id FROM backup_schedule bs, vm_instance vm WHERE bs.vm_id = vm.id AND (bs.account_id IS NULL AND bs.domain_id IS NULL)");
+}
+
+Environment (already configured; fixing it is not part of the task):
+- Build tool: Maven. Module(s): engine/schema. Affected test classes: DatabaseAccessObjectTest, Upgrade42040to42100Test, Upgrade42100to42200Test.
+- The local Maven repository is preset through MAVEN_OPTS; do not pass -Dmaven.repo.local.
+- The shell is PowerShell: quote any -D argument that contains a comma or a dot.
+
+Working rules: read only the parts of files you need (search or line ranges), and keep command output short -- do not print whole large files or full build logs; show only errors or test summaries. Deliver the change as edits in this working tree.

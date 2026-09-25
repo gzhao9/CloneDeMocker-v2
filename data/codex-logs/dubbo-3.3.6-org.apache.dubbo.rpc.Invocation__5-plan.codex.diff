@@ -1,0 +1,49 @@
+diff --git a/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java b/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java
+index 725b0e4..15327b4 100644
+--- a/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java
++++ b/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java
+@@ -27,6 +27,7 @@ import org.apache.dubbo.rpc.Result;
+ import org.apache.dubbo.rpc.RpcInvocation;
+ import org.apache.dubbo.rpc.model.FrameworkModel;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import static org.junit.jupiter.api.Assertions.assertNull;
+@@ -40,14 +41,20 @@ import static org.mockito.Mockito.verify;
+ import static org.mockito.Mockito.when;
+ 
+ class ProviderAuthFilterTest {
++    private Invocation invocationMock;
++
++    @BeforeEach
++    void setUp() {
++        invocationMock = mock(RpcInvocation.class);
++    }
++
+     @Test
+     void testAuthDisabled() {
+         URL url = mock(URL.class);
+         Invoker invoker = mock(Invoker.class);
+-        Invocation invocation = mock(RpcInvocation.class);
+         when(invoker.getUrl()).thenReturn(url);
+         ProviderAuthFilter providerAuthFilter = new ProviderAuthFilter(FrameworkModel.defaultModel());
+-        providerAuthFilter.invoke(invoker, invocation);
++        providerAuthFilter.invoke(invoker, invocationMock);
+         verify(url, never()).getParameter(eq(Constants.AUTHENTICATOR_KEY), eq(Constants.DEFAULT_AUTHENTICATOR));
+     }
+ 
+@@ -60,11 +67,10 @@ class ProviderAuthFilterTest {
+                 .addParameter(Constants.AUTHENTICATOR_KEY, "accesskey")
+                 .addParameter(Constants.AUTH_KEY, true);
+         Invoker invoker = mock(Invoker.class);
+-        Invocation invocation = mock(RpcInvocation.class);
+         when(invoker.getUrl()).thenReturn(url);
+         ProviderAuthFilter providerAuthFilter = new ProviderAuthFilter(FrameworkModel.defaultModel());
+-        providerAuthFilter.invoke(invoker, invocation);
+-        verify(invocation, atLeastOnce()).getAttachment(anyString());
++        providerAuthFilter.invoke(invoker, invocationMock);
++        verify(invocationMock, atLeastOnce()).getAttachment(anyString());
+     }
+ 
+     @Test

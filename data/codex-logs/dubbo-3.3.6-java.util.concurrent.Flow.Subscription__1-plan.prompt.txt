@@ -1,0 +1,44 @@
+This Java project's tests contain duplicated mock setup for `java.util.concurrent.Flow.Subscription`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java :: testSubscribeBindsDownstreamAndRequests  (mock variable `subscription`)
+     Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+     Mockito.verify(subscription).request(1);
+2. dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java :: testOnNextPassesItemAndRequestsNext  (mock variable `subscription`)
+     Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+     // 1st in subscribe, 2nd in onNext
+Mockito.verify(subscription, Mockito.times(2)).request(1);
+3. dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java :: testOnErrorMarksDoneAndPropagates  (mock variable `subscription`)
+     Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+4. dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java :: testOnCompleteMarksDoneAndNotifies  (mock variable `subscription`)
+     Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+5. dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java :: testCancelCancelsSubscription  (mock variable `subscription`)
+     Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+     Mockito.verify(subscription).cancel();
+6. dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java :: testSubscribeTwiceDoesNotRebind  (mock variable `subscription`)
+     Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+7. dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java :: testOnSubscribeTwiceCancelsSecond  (mock variable `sub1`)
+     Flow.Subscription sub1 = Mockito.mock(Flow.Subscription.class);
+     Mockito.verify(sub1, Mockito.never()).cancel();
+8. dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java :: testOnNextAfterDoneDoesNothing  (mock variable `subscription`)
+     Flow.Subscription subscription = Mockito.mock(Flow.Subscription.class);
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java
+import org.junit.jupiter.api.BeforeEach;
+// in dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/TripleMutinySubscriberTest.java
+    private Flow.Subscription sharedSubscription;
+
+    @BeforeEach
+    void setUp() {
+        sharedSubscription = Mockito.mock(Flow.Subscription.class);
+    }
+
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

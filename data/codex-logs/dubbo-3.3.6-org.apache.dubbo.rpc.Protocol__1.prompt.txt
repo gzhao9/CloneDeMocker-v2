@@ -1,0 +1,21 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.rpc.Protocol`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/protocol/ProtocolListenerWrapperTest.java :: testLoadingListenerForLocalReference  (mock variable `protocolWithoutListener`)
+     Protocol protocolWithoutListener = mock(Protocol.class);
+     when(protocolWithoutListener.refer(DemoService.class, urlWithoutListener)).thenReturn(invokerWithoutListener);
+2. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/protocol/ProtocolListenerWrapperTest.java :: testLoadingListenerForLocalReference  (mock variable `protocol`)
+     Protocol protocol = mock(Protocol.class);
+     when(protocol.refer(DemoService.class, urlWithListener)).thenReturn(invokerWithListener);
+3. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/protocol/ProtocolListenerWrapperTest.java :: testLoadingListenerForRemoteReference  (mock variable `protocolWithoutListener`)
+     Protocol protocolWithoutListener = mock(Protocol.class);
+     when(protocolWithoutListener.refer(DemoService.class, urlWithoutListener)).thenReturn(invokerWithoutListener);
+4. dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/protocol/ProtocolListenerWrapperTest.java :: testLoadingListenerForRemoteReference  (mock variable `protocol`)
+     Protocol protocol = mock(Protocol.class);
+     when(protocol.refer(DemoService.class, urlWithListener)).thenReturn(invokerWithListener);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.rpc.Protocol.refer(java.lang.Class<org.apache.dubbo.rpc.proxy.DemoService>, org.apache.dubbo.common.URL)).thenReturn(org.apache.dubbo.rpc.protocol.AbstractInvoker<org.apache.dubbo.rpc.proxy.DemoService>)

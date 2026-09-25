@@ -1,0 +1,40 @@
+This Java project's tests contain duplicated mock setup for `NamingService`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosNamingServiceWrapperTest.java :: testSubscribe  (mock variable `namingService`)
+     NamingService namingService = Mockito.mock(NamingService.class);
+     Mockito.verify(namingService, Mockito.times(1)).subscribe("service_name", "test", eventListener);
+     Mockito.verify(namingService, Mockito.times(2)).subscribe("service_name", "test", eventListener);
+     Mockito.verify(namingService, Mockito.times(1)).unsubscribe("service_name", "test", eventListener);
+     Mockito.verify(namingService, Mockito.times(1)).unsubscribe("service_name", "test", eventListener);
+     Mockito.verify(namingService, Mockito.times(0)).unsubscribe("service_name", "mock", eventListener);
+2. dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosNamingServiceWrapperTest.java :: testSubscribeMultiManager  (mock variable `namingService1`)
+     NamingService namingService1 = Mockito.mock(NamingService.class);
+     Mockito.verify(namingService1, Mockito.times(1)).subscribe("service_name", "test", eventListener);
+     Mockito.verify(namingService1, Mockito.times(2)).subscribe("service_name", "test", eventListener);
+     Mockito.verify(namingService1, Mockito.times(1)).unsubscribe("service_name", "test", eventListener);
+     Mockito.verify(namingService1, Mockito.times(1)).unsubscribe("service_name", "test", eventListener);
+     Mockito.verify(namingService1, Mockito.times(0)).unsubscribe("service_name", "mock", eventListener);
+3. dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosNamingServiceWrapperTest.java :: testRegisterNacos2_0_x  (mock variable `namingService`)
+     NamingService namingService = Mockito.mock(NamingService.class);
+4. dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosNamingServiceWrapperTest.java :: testRegisterNacos2_1_xClient2_1_xServer  (mock variable `namingService`)
+     NamingService namingService = Mockito.mock(NamingService.class);
+5. dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosNamingServiceWrapperTest.java :: testUnregister  (mock variable `namingService`)
+     NamingService namingService = Mockito.mock(NamingService.class);
+6. dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosNamingServiceWrapperTest.java :: testConcurrency  (mock variable `namingService`)
+     NamingService namingService = Mockito.mock(NamingService.class);
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-registry/dubbo-registry-nacos/src/test/java/org/apache/dubbo/registry/nacos/NacosNamingServiceWrapperTest.java
+    private NamingService mockNamingService() {
+        return Mockito.mock(NamingService.class);
+    }
+
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

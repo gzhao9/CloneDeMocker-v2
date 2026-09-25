@@ -1,0 +1,45 @@
+diff --git a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java
+index f8a1935..d3f8b11 100644
+--- a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java
++++ b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/ForeignHostPermitHandlerTest.java
+@@ -49,8 +49,7 @@ class ForeignHostPermitHandlerTest {
+         when(addr.isLoopbackAddress()).thenReturn(false);
+         InetSocketAddress address = new InetSocketAddress(addr, 12345);
+         when(channel.remoteAddress()).thenReturn(address);
+-        ChannelFuture future = mock(ChannelFuture.class);
+-        when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(future);
++        ChannelFuture future = mockWriteAndFlush(context);
+         ForeignHostPermitHandler handler = new ForeignHostPermitHandler(QosConfiguration.builder()
+                 .acceptForeignIp(false)
+                 .acceptForeignIpWhitelist(StringUtils.EMPTY_STRING)
+@@ -75,8 +74,7 @@ class ForeignHostPermitHandlerTest {
+         when(addr.getHostAddress()).thenReturn("179.23.44.1");
+         InetSocketAddress address = new InetSocketAddress(addr, 12345);
+         when(channel.remoteAddress()).thenReturn(address);
+-        ChannelFuture future = mock(ChannelFuture.class);
+-        when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(future);
++        ChannelFuture future = mockWriteAndFlush(context);
+         ForeignHostPermitHandler handler = new ForeignHostPermitHandler(QosConfiguration.builder()
+                 .acceptForeignIp(false)
+                 .acceptForeignIpWhitelist("175.23.44.1 ,  192.168.1.192/26")
+@@ -136,8 +134,7 @@ class ForeignHostPermitHandlerTest {
+         ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         Channel channel = mock(Channel.class);
+         when(context.channel()).thenReturn(channel);
+-        ChannelFuture future = mock(ChannelFuture.class);
+-        when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(future);
++        ChannelFuture future = mockWriteAndFlush(context);
+         ForeignHostPermitHandler handler = new ForeignHostPermitHandler(QosConfiguration.builder()
+                 .acceptForeignIp(false)
+                 .acceptForeignIpWhitelist("175.23.44.1 ,  192.168.1.192/26")
+@@ -147,4 +144,10 @@ class ForeignHostPermitHandlerTest {
+         handler.handlerAdded(context);
+         verify(future, never()).addListener(ChannelFutureListener.CLOSE);
+     }
++
++    private ChannelFuture mockWriteAndFlush(ChannelHandlerContext context) {
++        ChannelFuture future = mock(ChannelFuture.class);
++        when(context.writeAndFlush(any(ByteBuf.class))).thenReturn(future);
++        return future;
++    }
+ }

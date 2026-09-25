@@ -1,0 +1,22 @@
+This Java project's tests contain duplicated mock setup for `ChannelPromise`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyChannelTest.java :: testSend  (mock variable `future`)
+     ChannelPromise future = Mockito.mock(ChannelPromise.class);
+     Mockito.when(future.await(1000)).thenReturn(true);
+     Mockito.when(future.cause()).thenReturn(null);
+     Mockito.when(future.addListener(Mockito.any())).thenReturn(future);
+     Mockito.when(future.cause()).thenReturn(exception);
+     Mockito.when(future.await(1000)).thenReturn(false);
+     Mockito.when(future.cause()).thenReturn(null);
+2. dubbo-remoting/dubbo-remoting-netty4/src/test/java/org/apache/dubbo/remoting/transport/netty4/NettyClientHandlerTest.java :: test  (mock variable `future`)
+     ChannelPromise future = mock(ChannelPromise.class);
+     when(future.cause()).thenReturn(null);
+     when(future.addListener(Mockito.any())).thenReturn(future);
+
+Statements shared by all of them:
+     when(ChannelPromise.addListener(Mockito.any())).thenReturn(future)
+     when(ChannelPromise.cause()).thenReturn(null)

@@ -1,0 +1,29 @@
+This Java project's tests contain duplicated mock setup for `java.sql.Connection`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/DataSourceStatusCheckerTest.java :: testWithDatasourceHasNextResult  (mock variable `connection`)
+     Connection connection = mock(Connection.class, Answers.RETURNS_DEEP_STUBS);
+     given(connection.getMetaData().getTypeInfo().next()).willReturn(true);
+2. dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/DataSourceStatusCheckerTest.java :: testWithDatasourceNotHasNextResult  (mock variable `connection`)
+     Connection connection = mock(Connection.class, Answers.RETURNS_DEEP_STUBS);
+     given(connection.getMetaData().getTypeInfo().next()).willReturn(false);
+
+Statements shared by all of them:
+     when(java.sql.Connection.getMetaData.getTypeInfo.next()).thenReturn(boolean)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/DataSourceStatusCheckerTest.java
+
+    private static Connection createMockConnection(boolean typeInfoNextResult) throws SQLException {
+        Connection connection = mock(Connection.class, Answers.RETURNS_DEEP_STUBS);
+        given(connection.getMetaData().getTypeInfo().next()).willReturn(typeInfoNextResult);
+        return connection;
+    }
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

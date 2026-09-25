@@ -1,0 +1,77 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.rpc.cluster.ClusterInvoker`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java :: test  (mock variable `invoker`)
+     ClusterInvoker invoker = Mockito.mock(ClusterInvoker.class);
+     Mockito.when(invoker.getDirectory()).thenReturn(directory);
+     Mockito.when(invoker.isAvailable()).thenReturn(true);
+     Mockito.when(invoker.hasProxyInvokers()).thenReturn(true);
+     Mockito.when(invoker.getUrl()).thenReturn(consumerURL);
+     Mockito.verify(invoker, Mockito.times(1)).invoke(null);
+     Mockito.verify(invoker, Mockito.times(2)).invoke(null);
+     Mockito.verify(invoker, Mockito.times(3)).invoke(null);
+     Mockito.verify(invoker, Mockito.times(4)).invoke(null);
+     Mockito.verify(invoker, Mockito.times(5)).invoke(null);
+     Mockito.verify(invoker, Mockito.times(6)).invoke(null);
+     Mockito.verify(invoker, Mockito.times(7)).invoke(null);
+     Mockito.verify(invoker, Mockito.times(27)).invoke(null);
+     Mockito.verify(invoker, Mockito.atLeast(28)).invoke(null);
+2. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java :: test  (mock variable `serviceDiscoveryInvoker`)
+     ClusterInvoker serviceDiscoveryInvoker = Mockito.mock(ClusterInvoker.class);
+     Mockito.when(serviceDiscoveryInvoker.getDirectory()).thenReturn(serviceDiscoveryDirectory);
+     Mockito.when(serviceDiscoveryInvoker.isAvailable()).thenReturn(true);
+     Mockito.when(serviceDiscoveryInvoker.hasProxyInvokers()).thenReturn(true);
+     Mockito.when(serviceDiscoveryInvoker.getUrl()).thenReturn(consumerURL);
+     Mockito.verify(serviceDiscoveryInvoker, Mockito.times(1)).invoke(null);
+     Mockito.verify(serviceDiscoveryInvoker, Mockito.times(2)).invoke(null);
+     Mockito.verify(serviceDiscoveryInvoker, Mockito.times(3)).invoke(null);
+     Mockito.verify(serviceDiscoveryInvoker, Mockito.times(4)).invoke(null);
+     Mockito.verify(serviceDiscoveryInvoker, Mockito.times(5)).invoke(null);
+     Mockito.verify(serviceDiscoveryInvoker, Mockito.times(6)).invoke(null);
+     Mockito.verify(serviceDiscoveryInvoker, Mockito.times(7)).invoke(null);
+     Mockito.verify(serviceDiscoveryInvoker, Mockito.times(27)).invoke(null);
+     Mockito.when(serviceDiscoveryInvoker.hasProxyInvokers()).thenReturn(false);
+     Mockito.when(serviceDiscoveryInvoker.hasProxyInvokers()).thenReturn(true);
+     Mockito.verify(serviceDiscoveryInvoker, Mockito.atMost(1026)).invoke(null);
+3. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java :: testDecide  (mock variable `invoker`)
+     ClusterInvoker invoker = Mockito.mock(ClusterInvoker.class);
+     Mockito.when(invoker.getDirectory()).thenReturn(directory);
+     Mockito.when(invoker.isAvailable()).thenReturn(true);
+     Mockito.when(invoker.hasProxyInvokers()).thenReturn(true);
+     Mockito.when(invoker.getUrl()).thenReturn(consumerURL);
+     Mockito.verify(invoker, Mockito.times(1)).invoke(null);
+4. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java :: testDecide  (mock variable `serviceDiscoveryInvoker`)
+     ClusterInvoker serviceDiscoveryInvoker = Mockito.mock(ClusterInvoker.class);
+     Mockito.when(serviceDiscoveryInvoker.getDirectory()).thenReturn(serviceDiscoveryDirectory);
+     Mockito.when(serviceDiscoveryInvoker.isAvailable()).thenReturn(true);
+     Mockito.when(serviceDiscoveryInvoker.hasProxyInvokers()).thenReturn(true);
+     Mockito.when(serviceDiscoveryInvoker.getUrl()).thenReturn(consumerURL);
+     Mockito.verify(serviceDiscoveryInvoker, Mockito.times(1)).invoke(null);
+     Mockito.when(serviceDiscoveryInvoker.isAvailable()).thenReturn(false);
+     Mockito.when(serviceDiscoveryInvoker.isAvailable()).thenReturn(true);
+     Mockito.verify(serviceDiscoveryInvoker, Mockito.times(2)).invoke(null);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.rpc.cluster.ClusterInvoker.getDirectory()).thenReturn(org.apache.dubbo.registry.integration.DynamicDirectory)
+     when(org.apache.dubbo.rpc.cluster.ClusterInvoker.getUrl()).thenReturn(org.apache.dubbo.common.URL)
+     when(org.apache.dubbo.rpc.cluster.ClusterInvoker.hasProxyInvokers()).thenReturn(boolean)
+     when(org.apache.dubbo.rpc.cluster.ClusterInvoker.isAvailable()).thenReturn(boolean)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationInvokerTest.java
+
+    private static ClusterInvoker createMockClusterInvoker(DynamicDirectory directory) {
+        ClusterInvoker invoker = Mockito.mock(ClusterInvoker.class);
+        Mockito.when(invoker.getDirectory()).thenReturn(directory);
+        Mockito.when(invoker.isAvailable()).thenReturn(true);
+        Mockito.when(invoker.hasProxyInvokers()).thenReturn(true);
+        return invoker;
+    }
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

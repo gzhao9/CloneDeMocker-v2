@@ -1,0 +1,41 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.rpc.cluster.Directory<org.apache.dubbo.rpc.cluster.filter.DemoService>`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/BroadCastClusterInvokerTest.java :: testNormal  (mock variable `dic`)
+     dic = mock(Directory.class);
+     given(dic.getUrl()).willReturn(url);
+     given(dic.getConsumerUrl()).willReturn(url);
+     given(dic.getInterface()).willReturn(DemoService.class);
+     given(dic.list(invocation)).willReturn(Arrays.asList(invoker1, invoker2, invoker3, invoker4));
+2. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/BroadCastClusterInvokerTest.java :: testEx  (mock variable `dic`)
+     dic = mock(Directory.class);
+     given(dic.getUrl()).willReturn(url);
+     given(dic.getConsumerUrl()).willReturn(url);
+     given(dic.getInterface()).willReturn(DemoService.class);
+     given(dic.list(invocation)).willReturn(Arrays.asList(invoker1, invoker2, invoker3, invoker4));
+3. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/BroadCastClusterInvokerTest.java :: testFailPercent  (mock variable `dic`)
+     dic = mock(Directory.class);
+     given(dic.getUrl()).willReturn(url);
+     given(dic.getConsumerUrl()).willReturn(url);
+     given(dic.getInterface()).willReturn(DemoService.class);
+     given(dic.list(invocation)).willReturn(Arrays.asList(invoker1, invoker2, invoker3, invoker4));
+     given(dic.getConsumerUrl()).willReturn(url);
+4. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/FailSafeClusterInvokerTest.java :: testNoInvoke  (mock variable `dic`)
+     dic = mock(Directory.class);
+     given(dic.getUrl()).willReturn(url);
+     given(dic.getConsumerUrl()).willReturn(url);
+     given(dic.list(invocation)).willReturn(invokers);
+     given(dic.getInterface()).willReturn(DemoService.class);
+     dic = mock(Directory.class);
+     given(dic.getUrl()).willReturn(url);
+     given(dic.getConsumerUrl()).willReturn(url);
+     given(dic.list(invocation)).willReturn(null);
+     given(dic.getInterface()).willReturn(DemoService.class);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.rpc.cluster.Directory<org.apache.dubbo.rpc.cluster.filter.DemoService>.getConsumerUrl()).thenReturn(org.apache.dubbo.common.URL)
+     when(org.apache.dubbo.rpc.cluster.Directory<org.apache.dubbo.rpc.cluster.filter.DemoService>.getInterface()).thenReturn(java.lang.Class<org.apache.dubbo.rpc.cluster.filter.DemoService>)
+     when(org.apache.dubbo.rpc.cluster.Directory<org.apache.dubbo.rpc.cluster.filter.DemoService>.getUrl()).thenReturn(org.apache.dubbo.common.URL)

@@ -1,0 +1,45 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.config.nested.ExporterConfig.ZipkinConfig`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-metrics/dubbo-tracing/src/test/java/org/apache/dubbo/tracing/exporter/zipkin/ZipkinSpanExporterTest.java :: getSpanExporter  (mock variable `zipkinConfig`)
+     ExporterConfig.ZipkinConfig zipkinConfig = mock(ExporterConfig.ZipkinConfig.class);
+     when(zipkinConfig.getEndpoint()).thenReturn("http://localhost:9411/api/v2/spans");
+     when(zipkinConfig.getConnectTimeout()).thenReturn(Duration.ofSeconds(5));
+     when(zipkinConfig.getReadTimeout()).thenReturn(Duration.ofSeconds(5));
+2. dubbo-metrics/dubbo-tracing/src/test/java/org/apache/dubbo/tracing/exporter/zipkin/ZipkinSpanHandlerTest.java :: getSpanHandler  (mock variable `zipkinConfig`)
+     ExporterConfig.ZipkinConfig zipkinConfig = mock(ExporterConfig.ZipkinConfig.class);
+     when(zipkinConfig.getEndpoint()).thenReturn("http://localhost:9411/api/v2/spans");
+     when(zipkinConfig.getConnectTimeout()).thenReturn(Duration.ofSeconds(5));
+
+Statements shared by all of them:
+     when(org.apache.dubbo.config.nested.ExporterConfig.ZipkinConfig.getConnectTimeout()).thenReturn(java.time.Duration)
+     when(org.apache.dubbo.config.nested.ExporterConfig.ZipkinConfig.getEndpoint()).thenReturn(java.lang.String)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-metrics/dubbo-tracing/src/test/java/org/apache/dubbo/tracing/exporter/zipkin/MockZipkinConfig.java
+package org.apache.dubbo.tracing.exporter.zipkin;
+
+import org.apache.dubbo.config.nested.ExporterConfig;
+
+import java.time.Duration;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+public class MockZipkinConfig {
+
+    public static ExporterConfig.ZipkinConfig createMockZipkinConfig() {
+        ExporterConfig.ZipkinConfig zipkinConfig = mock(ExporterConfig.ZipkinConfig.class);
+        when(zipkinConfig.getEndpoint()).thenReturn("http://localhost:9411/api/v2/spans");
+        when(zipkinConfig.getConnectTimeout()).thenReturn(Duration.ofSeconds(5));
+        return zipkinConfig;
+    }
+}
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

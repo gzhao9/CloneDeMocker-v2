@@ -1,0 +1,89 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.rpc.Invoker`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java :: testAddMenu  (mock variable `firstInvoker`)
+     private Invoker firstInvoker = mock(Invoker.class);
+     firstInvoker = mock(Invoker.class);
+     given(firstInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "first"));
+     given(firstInvoker.getInterface()).willReturn(MenuService.class);
+     given(firstInvoker.invoke(invocation)).willReturn(new AppResponse());
+     given(firstInvoker.isAvailable()).willReturn(true);
+2. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java :: testInvokerToNoInvokerAvailableException  (mock variable `firstInvoker`)
+     private Invoker firstInvoker = mock(Invoker.class);
+     firstInvoker = mock(Invoker.class);
+     given(firstInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "first"));
+     given(firstInvoker.getInterface()).willReturn(MenuService.class);
+     given(firstInvoker.invoke(invocation)).willReturn(new AppResponse());
+     given(firstInvoker.isAvailable()).willReturn(true);
+     given(firstInvoker.invoke(invocation)).willThrow(new RpcException(RpcException.NO_INVOKER_AVAILABLE_AFTER_FILTER));
+3. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java :: testInvokerToException  (mock variable `firstInvoker`)
+     private Invoker firstInvoker = mock(Invoker.class);
+     firstInvoker = mock(Invoker.class);
+     given(firstInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "first"));
+     given(firstInvoker.getInterface()).willReturn(MenuService.class);
+     given(firstInvoker.invoke(invocation)).willReturn(new AppResponse());
+     given(firstInvoker.isAvailable()).willReturn(true);
+     given(firstInvoker.invoke(invocation)).willThrow(new RpcException(RpcException.NETWORK_EXCEPTION));
+4. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java :: testGetMenuResultHasException  (mock variable `firstInvoker`)
+     private Invoker firstInvoker = mock(Invoker.class);
+     firstInvoker = mock(Invoker.class);
+     given(firstInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "first"));
+     given(firstInvoker.getInterface()).willReturn(MenuService.class);
+     given(firstInvoker.invoke(invocation)).willReturn(new AppResponse());
+     given(firstInvoker.isAvailable()).willReturn(true);
+5. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java :: testAddMenu  (mock variable `secondInvoker`)
+     private Invoker secondInvoker = mock(Invoker.class);
+     secondInvoker = mock(Invoker.class);
+     given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+     given(secondInvoker.getInterface()).willReturn(MenuService.class);
+     given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
+     given(secondInvoker.isAvailable()).willReturn(true);
+6. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java :: testInvokerToNoInvokerAvailableException  (mock variable `secondInvoker`)
+     private Invoker secondInvoker = mock(Invoker.class);
+     secondInvoker = mock(Invoker.class);
+     given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+     given(secondInvoker.getInterface()).willReturn(MenuService.class);
+     given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
+     given(secondInvoker.isAvailable()).willReturn(true);
+     given(secondInvoker.invoke(invocation)).willThrow(new RpcException(RpcException.NO_INVOKER_AVAILABLE_AFTER_FILTER));
+7. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java :: testInvokerToException  (mock variable `secondInvoker`)
+     private Invoker secondInvoker = mock(Invoker.class);
+     secondInvoker = mock(Invoker.class);
+     given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+     given(secondInvoker.getInterface()).willReturn(MenuService.class);
+     given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
+     given(secondInvoker.isAvailable()).willReturn(true);
+     given(secondInvoker.invoke(invocation)).willThrow(new RpcException(RpcException.NETWORK_EXCEPTION));
+8. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java :: testGetMenuResultHasException  (mock variable `secondInvoker`)
+     private Invoker secondInvoker = mock(Invoker.class);
+     secondInvoker = mock(Invoker.class);
+     given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+     given(secondInvoker.getInterface()).willReturn(MenuService.class);
+     given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
+     given(secondInvoker.isAvailable()).willReturn(true);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.rpc.Invoker.getInterface()).thenReturn(java.lang.Class<org.apache.dubbo.rpc.cluster.support.MenuService>)
+     when(org.apache.dubbo.rpc.Invoker.getUrl()).thenReturn(org.apache.dubbo.common.URL)
+     when(org.apache.dubbo.rpc.Invoker.invoke(org.apache.dubbo.rpc.Invocation)).thenReturn(org.apache.dubbo.rpc.AppResponse)
+     when(org.apache.dubbo.rpc.Invoker.isAvailable()).thenReturn(boolean)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/support/MergeableClusterInvokerTest.java
+
+    private static Invoker createMockSecondInvoker(URL url, Invocation invocation) {
+        Invoker secondInvoker = mock(Invoker.class);
+        given(secondInvoker.getUrl()).willReturn(url.addParameter(GROUP_KEY, "second"));
+        given(secondInvoker.getInterface()).willReturn(MenuService.class);
+        given(secondInvoker.invoke(invocation)).willReturn(new AppResponse());
+        given(secondInvoker.isAvailable()).willReturn(true);
+        return secondInvoker;
+    }
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

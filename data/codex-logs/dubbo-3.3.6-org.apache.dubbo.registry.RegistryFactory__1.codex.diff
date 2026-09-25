@@ -1,0 +1,115 @@
+diff --git a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java
+index 4168851..e25c075 100644
+--- a/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java
++++ b/dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/integration/RegistryProtocolTest.java
+@@ -100,7 +100,6 @@ class RegistryProtocolTest {
+         attributes.put("key1", "value1");
+         URL url = serviceConfigURL.addAttributes(attributes);
+ 
+-        RegistryFactory registryFactory = mock(RegistryFactory.class);
+         Registry registry = mock(Registry.class);
+ 
+         RegistryProtocol registryProtocol = new RegistryProtocol();
+@@ -121,7 +120,7 @@ class RegistryProtocolTest {
+                 .thenReturn(registryProtocolListeners);
+         url = url.setScopeModel(moduleModel);
+ 
+-        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registry);
++        RegistryFactory registryFactory = mockRegistryFactory(registryProtocol, url, registry);
+ 
+         Cluster cluster = mock(Cluster.class);
+ 
+@@ -168,8 +167,6 @@ class RegistryProtocolTest {
+         attributes.put("key1", "value1");
+         URL url = serviceConfigURL.addAttributes(attributes);
+ 
+-        RegistryFactory registryFactory = mock(RegistryFactory.class);
+-
+         RegistryProtocol registryProtocol = new RegistryProtocol();
+         Registry registry = mock(Registry.class);
+ 
+@@ -189,7 +186,7 @@ class RegistryProtocolTest {
+                 .thenReturn(registryProtocolListeners);
+         url = url.setScopeModel(moduleModel);
+ 
+-        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registry);
++        RegistryFactory registryFactory = mockRegistryFactory(registryProtocol, url, registry);
+ 
+         Cluster cluster = mock(Cluster.class);
+ 
+@@ -237,7 +234,6 @@ class RegistryProtocolTest {
+         attributes.put(REFER_KEY, refer);
+         URL url = serviceConfigURL.addAttributes(attributes);
+ 
+-        RegistryFactory registryFactory = mock(RegistryFactory.class);
+         Registry registry = mock(Registry.class);
+ 
+         MigrationRuleListener migrationRuleListener = mock(MigrationRuleListener.class);
+@@ -256,10 +252,10 @@ class RegistryProtocolTest {
+         Mockito.when(extensionLoaderMock.getActivateExtension(url, REGISTRY_PROTOCOL_LISTENER_KEY))
+                 .thenReturn(registryProtocolListeners);
+         Mockito.when(moduleModel.getExtensionLoader(RegistryFactory.class)).thenReturn(extensionLoaderMock);
+-        Mockito.when(extensionLoaderMock.getAdaptiveExtension()).thenReturn(registryFactory);
+         url = url.setScopeModel(moduleModel);
+ 
+-        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registry);
++        RegistryFactory registryFactory = mockRegistryFactory(registryProtocol, url, registry);
++        Mockito.when(extensionLoaderMock.getAdaptiveExtension()).thenReturn(registryFactory);
+ 
+         Invoker<?> invoker = registryProtocol.refer(DemoService.class, url);
+ 
+@@ -304,7 +300,6 @@ class RegistryProtocolTest {
+         attributes.put(REFER_KEY, refer);
+         URL url = serviceConfigURL.addAttributes(attributes);
+ 
+-        RegistryFactory registryFactory = mock(RegistryFactory.class);
+         Registry registry = mock(Registry.class);
+ 
+         MigrationRuleListener migrationRuleListener = mock(MigrationRuleListener.class);
+@@ -323,10 +318,10 @@ class RegistryProtocolTest {
+         Mockito.when(extensionLoaderMock.getActivateExtension(url, REGISTRY_PROTOCOL_LISTENER_KEY))
+                 .thenReturn(registryProtocolListeners);
+         Mockito.when(moduleModel.getExtensionLoader(RegistryFactory.class)).thenReturn(extensionLoaderMock);
+-        Mockito.when(extensionLoaderMock.getAdaptiveExtension()).thenReturn(registryFactory);
+         url = url.setScopeModel(moduleModel);
+ 
+-        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registry);
++        RegistryFactory registryFactory = mockRegistryFactory(registryProtocol, url, registry);
++        Mockito.when(extensionLoaderMock.getAdaptiveExtension()).thenReturn(registryFactory);
+ 
+         Invoker<?> invoker = registryProtocol.refer(DemoService.class, url);
+ 
+@@ -504,7 +499,6 @@ class RegistryProtocolTest {
+         attributes.put("key1", "value1");
+         URL url = serviceConfigURL.addAttributes(attributes);
+ 
+-        RegistryFactory registryFactory = mock(RegistryFactory.class);
+         Registry registry = mock(Registry.class);
+ 
+         ModuleModel moduleModel = Mockito.spy(ApplicationModel.defaultModel().getDefaultModule());
+@@ -514,12 +508,12 @@ class RegistryProtocolTest {
+                 .setApplication(new ApplicationConfig("application1"));
+         ExtensionLoader extensionLoaderMock = mock(ExtensionLoader.class);
+         Mockito.when(moduleModel.getExtensionLoader(RegistryFactory.class)).thenReturn(extensionLoaderMock);
+-        Mockito.when(extensionLoaderMock.getAdaptiveExtension()).thenReturn(registryFactory);
+         url = url.setScopeModel(moduleModel);
+ 
+         RegistryProtocol registryProtocol = new RegistryProtocol();
+ 
+-        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registry);
++        RegistryFactory registryFactory = mockRegistryFactory(registryProtocol, url, registry);
++        Mockito.when(extensionLoaderMock.getAdaptiveExtension()).thenReturn(registryFactory);
+ 
+         Cluster cluster = mock(Cluster.class);
+ 
+@@ -544,4 +538,10 @@ class RegistryProtocolTest {
+ 
+         verify(registry, times(1)).register(registeredConsumerUrl);
+     }
++
++    private RegistryFactory mockRegistryFactory(RegistryProtocol registryProtocol, URL url, Registry registry) {
++        RegistryFactory registryFactory = mock(RegistryFactory.class);
++        when(registryFactory.getRegistry(registryProtocol.getRegistryUrl(url))).thenReturn(registry);
++        return registryFactory;
++    }
+ }

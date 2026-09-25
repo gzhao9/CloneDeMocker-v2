@@ -1,0 +1,27 @@
+This Java project's tests contain duplicated mock setup for `Response`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java :: testGetRetryAfterHandlesNegativeValues  (mock variable `mockResponse`)
+     // Create a mock response with a Retry-After header that will fail parsing
+Response mockResponse = mock(Response.class);
+     when(mockResponse.header("Retry-After")).thenReturn("invalid");
+     when(mockResponse.code()).thenReturn(429);
+2. components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java :: testRetryRequestHandlesNegativeRetryInterval  (mock variable `mockResponse`)
+     // Create mocks
+Response mockResponse = mock(Response.class);
+     // Setup mock behaviors
+when(mockResponse.code()).thenReturn(429);
+     when(mockResponse.header("Retry-After")).thenReturn("invalid");
+3. components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java :: testRetryRequestWithNegativeRetryIntervalAppliesRandomDelay  (mock variable `mockResponse`)
+     // Create mocks
+Response mockResponse = mock(Response.class);
+     // Setup mock behaviors to force negative retry interval
+when(mockResponse.code()).thenReturn(503);
+     when(mockResponse.header("Retry-After")).thenReturn("invalid");
+
+Statements shared by all of them:
+     when(Response.code()).thenReturn(int)
+     when(Response.header(java.lang.String)).thenReturn(java.lang.String)

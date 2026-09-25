@@ -1,0 +1,68 @@
+diff --git a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/NetUtilsInterfaceDisplayNameHasMetaCharactersTest.java b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/NetUtilsInterfaceDisplayNameHasMetaCharactersTest.java
+index 7ffba23..04a5e2a 100644
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/NetUtilsInterfaceDisplayNameHasMetaCharactersTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/NetUtilsInterfaceDisplayNameHasMetaCharactersTest.java
+@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
+ import org.mockito.MockedStatic;
+ import org.mockito.Mockito;
+ 
++import static org.apache.dubbo.common.utils.NetUtilsTestSupport.mockInetAddress;
+ import static org.junit.jupiter.api.Assertions.assertTrue;
+ 
+ class NetUtilsInterfaceDisplayNameHasMetaCharactersTest {
+@@ -59,7 +60,7 @@ class NetUtilsInterfaceDisplayNameHasMetaCharactersTest {
+                 }
+             };
+ 
+-            InetAddress mockSelectedAddr = Mockito.mock(InetAddress.class);
++            InetAddress mockSelectedAddr = mockInetAddress(SELECTED_HOST_ADDR, false);
+             InetAddress[] mockAddrs = {mockSelectedAddr};
+             Enumeration<InetAddress> mockEnumAddrs = new Enumeration<InetAddress>() {
+                 private int i = 0;
+@@ -92,8 +93,6 @@ class NetUtilsInterfaceDisplayNameHasMetaCharactersTest {
+             Mockito.when(mockSelectedNetif.getDisplayName()).thenReturn(SELECTED_DISPLAY_NAME);
+             Mockito.when(mockSelectedNetif.getInetAddresses()).thenReturn(mockEnumAddrs);
+ 
+-            Mockito.when(mockSelectedAddr.isLoopbackAddress()).thenReturn(false);
+-            Mockito.when(mockSelectedAddr.getHostAddress()).thenReturn(SELECTED_HOST_ADDR);
+             Mockito.when(mockSelectedAddr.isReachable(Mockito.anyInt())).thenReturn(true);
+ 
+             this.setIgnoredInterfaces(IGNORED_DISPLAY_NAME_HAS_METACHARACTERS);
+diff --git a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/NetUtilsTest.java b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/NetUtilsTest.java
+index d5818d9..db8313c 100644
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/NetUtilsTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/NetUtilsTest.java
+@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
+ import org.junit.jupiter.api.Disabled;
+ import org.junit.jupiter.api.Test;
+ 
++import static org.apache.dubbo.common.utils.NetUtilsTestSupport.mockInetAddress;
+ import static org.hamcrest.MatcherAssert.assertThat;
+ import static org.hamcrest.Matchers.equalTo;
+ import static org.hamcrest.Matchers.greaterThan;
+@@ -115,20 +116,15 @@ class NetUtilsTest {
+     @Test
+     void testIsValidAddress() {
+         assertFalse(NetUtils.isValidV4Address((InetAddress) null));
+-        InetAddress address = mock(InetAddress.class);
+-        when(address.isLoopbackAddress()).thenReturn(true);
++        InetAddress address = mockInetAddress(null, true);
+         assertFalse(NetUtils.isValidV4Address(address));
+-        address = mock(InetAddress.class);
+-        when(address.getHostAddress()).thenReturn("localhost");
++        address = mockInetAddress("localhost", false);
+         assertFalse(NetUtils.isValidV4Address(address));
+-        address = mock(InetAddress.class);
+-        when(address.getHostAddress()).thenReturn("0.0.0.0");
++        address = mockInetAddress("0.0.0.0", false);
+         assertFalse(NetUtils.isValidV4Address(address));
+-        address = mock(InetAddress.class);
+-        when(address.getHostAddress()).thenReturn("127.0.0.1");
++        address = mockInetAddress("127.0.0.1", false);
+         assertFalse(NetUtils.isValidV4Address(address));
+-        address = mock(InetAddress.class);
+-        when(address.getHostAddress()).thenReturn("1.2.3.4");
++        address = mockInetAddress("1.2.3.4", false);
+         assertTrue(NetUtils.isValidV4Address(address));
+     }
+ 

@@ -1,0 +1,38 @@
+diff --git a/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/SpringStatusCheckerTest.java b/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/SpringStatusCheckerTest.java
+index 4678e41..df6fd57 100644
+--- a/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/SpringStatusCheckerTest.java
++++ b/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/SpringStatusCheckerTest.java
+@@ -41,6 +41,12 @@ class SpringStatusCheckerTest {
+         // initMocks(this);
+     }
+ 
++    private static ApplicationLifeCycle createMockApplicationLifeCycle(boolean running) {
++        ApplicationLifeCycle applicationLifeCycle = mock(ApplicationLifeCycle.class);
++        given(applicationLifeCycle.isRunning()).willReturn(running);
++        return applicationLifeCycle;
++    }
++
+     @AfterEach
+     public void tearDown() throws Exception {
+         // Mockito.reset(applicationContext);
+@@ -56,9 +62,8 @@ class SpringStatusCheckerTest {
+ 
+     @Test
+     void testWithLifeCycleRunning() {
+-        ApplicationLifeCycle applicationLifeCycle = mock(ApplicationLifeCycle.class);
++        ApplicationLifeCycle applicationLifeCycle = createMockApplicationLifeCycle(true);
+         given(applicationLifeCycle.getConfigLocations()).willReturn(new String[] {"test1", "test2"});
+-        given(applicationLifeCycle.isRunning()).willReturn(true);
+ 
+         SpringStatusChecker springStatusChecker = new SpringStatusChecker(applicationLifeCycle);
+         Status status = springStatusChecker.check();
+@@ -69,8 +74,7 @@ class SpringStatusCheckerTest {
+ 
+     @Test
+     void testWithoutLifeCycleRunning() {
+-        ApplicationLifeCycle applicationLifeCycle = mock(ApplicationLifeCycle.class);
+-        given(applicationLifeCycle.isRunning()).willReturn(false);
++        ApplicationLifeCycle applicationLifeCycle = createMockApplicationLifeCycle(false);
+ 
+         SpringStatusChecker springStatusChecker = new SpringStatusChecker(applicationLifeCycle);
+         Status status = springStatusChecker.check();

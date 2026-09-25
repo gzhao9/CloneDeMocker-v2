@@ -1,0 +1,59 @@
+diff --git a/components/abstractions/src/test/java/com/microsoft/kiota/MultiPartBodyTest.java b/components/abstractions/src/test/java/com/microsoft/kiota/MultiPartBodyTest.java
+index 3549ef2..e5c69c4 100644
+--- a/components/abstractions/src/test/java/com/microsoft/kiota/MultiPartBodyTest.java
++++ b/components/abstractions/src/test/java/com/microsoft/kiota/MultiPartBodyTest.java
+@@ -12,6 +12,8 @@ import com.microsoft.kiota.serialization.SerializationWriter;
+ import org.junit.jupiter.api.Test;
+ 
+ class MultiPartBodyTest {
++    private final SerializationWriter serializationWriter = mock(SerializationWriter.class);
++
+     private static <T> T nullValue() {
+         return java.util.Collections.<String, T>emptyMap().get("missing");
+     }
+@@ -38,17 +40,15 @@ class MultiPartBodyTest {
+     @Test
+     void requiresRequestAdapter() {
+         final MultipartBody multipartBody = new MultipartBody();
+-        final SerializationWriter writer = mock(SerializationWriter.class);
+-        assertThrows(IllegalStateException.class, () -> multipartBody.serialize(writer));
++        assertThrows(IllegalStateException.class, () -> multipartBody.serialize(serializationWriter));
+     }
+ 
+     @Test
+     void requiresPartsForSerialization() {
+         final MultipartBody multipartBody = new MultipartBody();
+-        final SerializationWriter writer = mock(SerializationWriter.class);
+         final RequestAdapter requestAdapter = mock(RequestAdapter.class);
+         multipartBody.requestAdapter = requestAdapter;
+-        assertThrows(IllegalStateException.class, () -> multipartBody.serialize(writer));
++        assertThrows(IllegalStateException.class, () -> multipartBody.serialize(serializationWriter));
+     }
+ 
+     @Test
+@@ -76,21 +76,19 @@ class MultiPartBodyTest {
+     @Test
+     void notAddFilename() {
+         final MultipartBody multipartBody = new MultipartBody();
+-        final SerializationWriter writer = mock(SerializationWriter.class);
+         multipartBody.requestAdapter = mock(RequestAdapter.class);
+         multipartBody.addOrReplacePart("foo", "bar", "baz");
+-        multipartBody.serialize(writer);
+-        verify(writer).writeStringValue("Content-Disposition", "form-data; name=\"foo\"");
++        multipartBody.serialize(serializationWriter);
++        verify(serializationWriter).writeStringValue("Content-Disposition", "form-data; name=\"foo\"");
+     }
+ 
+     @Test
+     void addFilename() {
+         final MultipartBody multipartBody = new MultipartBody();
+-        final SerializationWriter writer = mock(SerializationWriter.class);
+         multipartBody.requestAdapter = mock(RequestAdapter.class);
+         multipartBody.addOrReplacePart("foo", "bar", "baz", "image.png");
+-        multipartBody.serialize(writer);
+-        verify(writer)
++        multipartBody.serialize(serializationWriter);
++        verify(serializationWriter)
+                 .writeStringValue(
+                         "Content-Disposition", "form-data; name=\"foo\"; filename=\"image.png\"");
+     }

@@ -1,0 +1,62 @@
+diff --git a/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/MutinyServerCallsTest.java b/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/MutinyServerCallsTest.java
+index 58bb7b1..7d94876 100644
+--- a/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/MutinyServerCallsTest.java
++++ b/dubbo-plugin/dubbo-mutiny/src/test/java/org/apache/dubbo/mutiny/MutinyServerCallsTest.java
+@@ -27,6 +27,7 @@ import java.util.function.Function;
+ 
+ import io.smallrye.mutiny.Multi;
+ import io.smallrye.mutiny.Uni;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import static org.junit.jupiter.api.Assertions.assertEquals;
+@@ -43,34 +44,37 @@ import static org.mockito.Mockito.verify;
+  */
+ public class MutinyServerCallsTest {
+ 
++    private StreamObserver<String> oneToOneResponseObserver;
++
++    @BeforeEach
++    void setUp() {
++        oneToOneResponseObserver = mock(StreamObserver.class);
++    }
++
+     @Test
+     void testOneToOne_success() {
+-        StreamObserver<String> responseObserver = mock(StreamObserver.class);
+-
+         Function<Uni<String>, Uni<String>> func = reqUni -> reqUni.onItem().transform(i -> i + "-resp");
+ 
+-        MutinyServerCalls.oneToOne("req", responseObserver, func);
++        MutinyServerCalls.oneToOne("req", oneToOneResponseObserver, func);
+ 
+         // responseObserver
+-        verify(responseObserver, times(1)).onNext("req-resp");
+-        verify(responseObserver, times(1)).onCompleted();
+-        verify(responseObserver, never()).onError(any());
++        verify(oneToOneResponseObserver, times(1)).onNext("req-resp");
++        verify(oneToOneResponseObserver, times(1)).onCompleted();
++        verify(oneToOneResponseObserver, never()).onError(any());
+     }
+ 
+     @Test
+     void testOneToOne_exception() {
+-        StreamObserver<String> responseObserver = mock(StreamObserver.class);
+-
+         // mock func error
+         Function<Uni<String>, Uni<String>> func = reqUni -> {
+             throw new RuntimeException("fail");
+         };
+ 
+-        MutinyServerCalls.oneToOne("req", responseObserver, func);
++        MutinyServerCalls.oneToOne("req", oneToOneResponseObserver, func);
+ 
+-        verify(responseObserver, times(1)).onError(any());
+-        verify(responseObserver, never()).onNext(any());
+-        verify(responseObserver, never()).onCompleted();
++        verify(oneToOneResponseObserver, times(1)).onError(any());
++        verify(oneToOneResponseObserver, never()).onNext(any());
++        verify(oneToOneResponseObserver, never()).onCompleted();
+     }
+ 
+     @Test

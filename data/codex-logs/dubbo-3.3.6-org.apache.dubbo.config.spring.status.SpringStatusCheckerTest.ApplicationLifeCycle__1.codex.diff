@@ -1,0 +1,38 @@
+diff --git a/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/SpringStatusCheckerTest.java b/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/SpringStatusCheckerTest.java
+index 4678e41..2e4f51b 100644
+--- a/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/SpringStatusCheckerTest.java
++++ b/dubbo-config/dubbo-config-spring/src/test/java/org/apache/dubbo/config/spring/status/SpringStatusCheckerTest.java
+@@ -56,9 +56,8 @@ class SpringStatusCheckerTest {
+ 
+     @Test
+     void testWithLifeCycleRunning() {
+-        ApplicationLifeCycle applicationLifeCycle = mock(ApplicationLifeCycle.class);
++        ApplicationLifeCycle applicationLifeCycle = mockApplicationLifeCycle(true);
+         given(applicationLifeCycle.getConfigLocations()).willReturn(new String[] {"test1", "test2"});
+-        given(applicationLifeCycle.isRunning()).willReturn(true);
+ 
+         SpringStatusChecker springStatusChecker = new SpringStatusChecker(applicationLifeCycle);
+         Status status = springStatusChecker.check();
+@@ -69,8 +68,7 @@ class SpringStatusCheckerTest {
+ 
+     @Test
+     void testWithoutLifeCycleRunning() {
+-        ApplicationLifeCycle applicationLifeCycle = mock(ApplicationLifeCycle.class);
+-        given(applicationLifeCycle.isRunning()).willReturn(false);
++        ApplicationLifeCycle applicationLifeCycle = mockApplicationLifeCycle(false);
+ 
+         SpringStatusChecker springStatusChecker = new SpringStatusChecker(applicationLifeCycle);
+         Status status = springStatusChecker.check();
+@@ -78,6 +76,12 @@ class SpringStatusCheckerTest {
+         assertThat(status.getLevel(), is(Status.Level.ERROR));
+     }
+ 
++    private ApplicationLifeCycle mockApplicationLifeCycle(boolean running) {
++        ApplicationLifeCycle applicationLifeCycle = mock(ApplicationLifeCycle.class);
++        given(applicationLifeCycle.isRunning()).willReturn(running);
++        return applicationLifeCycle;
++    }
++
+     interface ApplicationLifeCycle extends Lifecycle, ApplicationContext {
+         String[] getConfigLocations();
+     }

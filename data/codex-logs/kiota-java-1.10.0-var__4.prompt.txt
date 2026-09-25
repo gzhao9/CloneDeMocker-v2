@@ -1,0 +1,17 @@
+This Java project's tests contain duplicated mock setup for `var`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. components/abstractions/src/test/java/com/microsoft/kiota/serialization/SerializationHelpersTest.java :: serializesObject  (mock variable `mockSerializationWriter`)
+     final var mockSerializationWriter = mock(SerializationWriter.class);
+     when(mockSerializationWriter.getSerializedContent()).thenReturn(new ByteArrayInputStream("{'id':'123'}".getBytes(_charset)));
+     verify(mockSerializationWriter, times(1)).writeObjectValue(eq(""), any(Parsable.class));
+2. components/abstractions/src/test/java/com/microsoft/kiota/serialization/SerializationHelpersTest.java :: serializesObjectCollection  (mock variable `mockSerializationWriter`)
+     final var mockSerializationWriter = mock(SerializationWriter.class);
+     when(mockSerializationWriter.getSerializedContent()).thenReturn(new ByteArrayInputStream("[{'id':'123'}]".getBytes(_charset)));
+     verify(mockSerializationWriter, times(1)).writeCollectionOfObjectValues(eq(""), any());
+
+Statements shared by all of them:
+     when(var.getSerializedContent()).thenReturn(java.io.ByteArrayInputStream)

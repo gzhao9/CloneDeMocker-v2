@@ -1,0 +1,42 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.remoting.Channel`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/HelpTelnetHandlerTest.java :: test  (mock variable `channel`)
+     Channel channel = Mockito.mock(Channel.class);
+     Mockito.when(channel.getUrl()).thenReturn(URL.valueOf("dubbo://127.0.0.1:12345"));
+2. dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/StatusTelnetHandlerTest.java :: test  (mock variable `channel`)
+     Channel channel = Mockito.mock(Channel.class);
+     Mockito.when(channel.getUrl()).thenReturn(URL.valueOf("dubbo://127.0.0.1:12345"));
+     Mockito.when(channel.getUrl()).thenReturn(URL.valueOf("dubbo://127.0.0.1:12345?status=load,memory"));
+3. dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/TelnetHandlerAdapterTest.java :: testTelnet  (mock variable `channel`)
+     Channel channel = Mockito.mock(Channel.class);
+     Mockito.when(channel.getUrl()).thenReturn(url);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.remoting.Channel.getUrl()).thenReturn(org.apache.dubbo.common.URL)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-remoting/dubbo-remoting-api/src/test/java/org/apache/dubbo/remoting/telnet/support/MockChannel.java
+package org.apache.dubbo.remoting.telnet.support;
+
+import org.apache.dubbo.common.URL;
+import org.apache.dubbo.remoting.Channel;
+
+import org.mockito.Mockito;
+
+public class MockChannel {
+
+    public static Channel createMockChannel(URL url) {
+        Channel channel = Mockito.mock(Channel.class);
+        Mockito.when(channel.getUrl()).thenReturn(url);
+        return channel;
+    }
+}
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

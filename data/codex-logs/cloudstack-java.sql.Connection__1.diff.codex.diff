@@ -1,0 +1,64 @@
+diff --git a/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java b/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java
+index 0c5a99c..4325251 100644
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java
+@@ -410,7 +410,7 @@ public class DatabaseAccessObjectTest {
+ 
+     @Test
+     public void testDropColumn() throws Exception {
+-        when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatementMock);
++        MockConnectionHelper.prepareStatementReturns(connectionMock, preparedStatementMock);
+ 
+         Connection conn = connectionMock;
+         String tableName = "tableName";
+@@ -495,7 +495,7 @@ public class DatabaseAccessObjectTest {
+     @Test
+     public void testDropColumnWhenexecuteUpdateResultsInException() throws Exception {
+         SQLException sqlException = new SQLException();
+-        when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatementMock);
++        MockConnectionHelper.prepareStatementReturns(connectionMock, preparedStatementMock);
+         when(preparedStatementMock.executeUpdate()).thenThrow(sqlException);
+ 
+         Connection conn = connectionMock;
+diff --git a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java
+index 5a2b55f..c0094b2 100644
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java
+@@ -16,7 +16,6 @@
+ // under the License.
+ package com.cloud.upgrade.dao;
+ 
+-import static org.mockito.ArgumentMatchers.anyString;
+ import static org.mockito.Mockito.when;
+ 
+ import java.sql.Connection;
+@@ -71,7 +70,7 @@ public class Upgrade42040to42100Test {
+                 ResultSet resultSet = Mockito.mock(ResultSet.class);
+                 Mockito.when(resultSet.next()).thenReturn(false);
+                 Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
+-                Mockito.when(conn.prepareStatement(anyString())).thenReturn(preparedStatement);
++                MockConnectionHelper.prepareStatementReturns(conn, preparedStatement);
+                 upgrade.performDataMigration(conn);
+ 
+                 Mockito.verify(pstmt, Mockito.times(1)).executeUpdate();
+diff --git a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java
+index cff34fb..b52c11e 100644
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java
+@@ -16,7 +16,6 @@
+ // under the License.
+ package com.cloud.upgrade.dao;
+ 
+-import static org.mockito.ArgumentMatchers.anyString;
+ import static org.mockito.Mockito.verify;
+ import static org.mockito.Mockito.when;
+ import static org.mockito.Mockito.times;
+@@ -182,7 +181,7 @@ public class Upgrade42100to42200Test {
+ 
+     @Test
+     public void testPerformDataMigration() throws SQLException {
+-        when(conn.prepareStatement(anyString())).thenReturn(selectStmt);
++        MockConnectionHelper.prepareStatementReturns(conn, selectStmt);
+         when(selectStmt.executeQuery()).thenReturn(resultSet);
+         when(resultSet.next()).thenReturn(false);
+ 

@@ -1,0 +1,21 @@
+This Java project's tests contain duplicated mock setup for `com.microsoft.kiota.http.middleware.options.RetryHandlerOption`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java :: testRetryRequestHandlesNegativeRetryInterval  (mock variable `mockOption`)
+     RetryHandlerOption mockOption = mock(RetryHandlerOption.class);
+     when(mockOption.maxRetries()).thenReturn(3);
+     when(mockOption.delay()).thenReturn(3L);
+     when(mockOption.shouldRetry()).thenReturn((delay, executionCount, request, response) -> true);
+2. components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java :: testRetryRequestWithNegativeRetryIntervalAppliesRandomDelay  (mock variable `mockOption`)
+     RetryHandlerOption mockOption = mock(RetryHandlerOption.class);
+     when(mockOption.maxRetries()).thenReturn(5);
+     when(mockOption.delay()).thenReturn(1L);
+     when(mockOption.shouldRetry()).thenReturn((delay, executionCount, request, response) -> true);
+
+Statements shared by all of them:
+     when(com.microsoft.kiota.http.middleware.options.RetryHandlerOption.delay()).thenReturn(long)
+     when(com.microsoft.kiota.http.middleware.options.RetryHandlerOption.maxRetries()).thenReturn(int)
+     when(com.microsoft.kiota.http.middleware.options.RetryHandlerOption.shouldRetry()).thenReturn((delay, executionCount, request, response) -> true)

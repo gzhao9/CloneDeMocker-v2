@@ -1,0 +1,50 @@
+diff --git a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/protocol/dubbo/FutureFilterTest.java b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/protocol/dubbo/FutureFilterTest.java
+index 188c7f6..07e161b 100644
+--- a/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/protocol/dubbo/FutureFilterTest.java
++++ b/dubbo-rpc/dubbo-rpc-api/src/test/java/org/apache/dubbo/rpc/protocol/dubbo/FutureFilterTest.java
+@@ -52,15 +52,10 @@ class FutureFilterTest {
+ 
+     @Test
+     void testSyncCallback() {
+-        @SuppressWarnings("unchecked")
+-        Invoker<DemoService> invoker = mock(Invoker.class);
+-        given(invoker.isAvailable()).willReturn(true);
+-        given(invoker.getInterface()).willReturn(DemoService.class);
+         AppResponse result = new AppResponse();
+         result.setValue("High");
+-        given(invoker.invoke(invocation)).willReturn(result);
+         URL url = URL.valueOf("test://test:11/test?group=dubbo&version=1.1");
+-        given(invoker.getUrl()).willReturn(url);
++        Invoker<DemoService> invoker = mockInvoker(result, url);
+ 
+         Result filterResult = eventFilter.invoke(invoker, invocation);
+         assertEquals("High", filterResult.getValue());
+@@ -69,17 +64,22 @@ class FutureFilterTest {
+     @Test
+     void testSyncCallbackHasException() throws RpcException, Throwable {
+         Assertions.assertThrows(RuntimeException.class, () -> {
+-            @SuppressWarnings("unchecked")
+-            Invoker<DemoService> invoker = mock(Invoker.class);
+-            given(invoker.isAvailable()).willReturn(true);
+-            given(invoker.getInterface()).willReturn(DemoService.class);
+             AppResponse result = new AppResponse();
+             result.setException(new RuntimeException());
+-            given(invoker.invoke(invocation)).willReturn(result);
+             URL url = URL.valueOf("test://test:11/test?group=dubbo&version=1.1&onthrow.method=echo");
+-            given(invoker.getUrl()).willReturn(url);
++            Invoker<DemoService> invoker = mockInvoker(result, url);
+ 
+             eventFilter.invoke(invoker, invocation).recreate();
+         });
+     }
++
++    @SuppressWarnings("unchecked")
++    private Invoker<DemoService> mockInvoker(AppResponse result, URL url) {
++        Invoker<DemoService> invoker = mock(Invoker.class);
++        given(invoker.isAvailable()).willReturn(true);
++        given(invoker.getInterface()).willReturn(DemoService.class);
++        given(invoker.invoke(invocation)).willReturn(result);
++        given(invoker.getUrl()).willReturn(url);
++        return invoker;
++    }
+ }

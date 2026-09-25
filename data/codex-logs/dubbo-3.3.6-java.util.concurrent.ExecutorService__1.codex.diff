@@ -1,0 +1,44 @@
+diff --git a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ExecutorUtilTest.java b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ExecutorUtilTest.java
+index 8924f78..e0fd158 100644
+--- a/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ExecutorUtilTest.java
++++ b/dubbo-common/src/test/java/org/apache/dubbo/common/utils/ExecutorUtilTest.java
+@@ -47,9 +47,9 @@ class ExecutorUtilTest {
+ 
+     @Test
+     void testGracefulShutdown1() throws Exception {
+-        ExecutorService executor = Mockito.mock(ExecutorService.class);
++        ExecutorService executor = mockExecutorService();
+         when(executor.isTerminated()).thenReturn(false, true);
+-        when(executor.awaitTermination(20, TimeUnit.MILLISECONDS)).thenReturn(false);
++        mockAwaitTermination(executor, 20, false);
+         ExecutorUtil.gracefulShutdown(executor, 20);
+         verify(executor).shutdown();
+         verify(executor).shutdownNow();
+@@ -57,10 +57,10 @@ class ExecutorUtilTest {
+ 
+     @Test
+     void testGracefulShutdown2() throws Exception {
+-        ExecutorService executor = Mockito.mock(ExecutorService.class);
++        ExecutorService executor = mockExecutorService();
+         when(executor.isTerminated()).thenReturn(false, false, false);
+-        when(executor.awaitTermination(20, TimeUnit.MILLISECONDS)).thenReturn(false);
+-        when(executor.awaitTermination(10, TimeUnit.MILLISECONDS)).thenReturn(false, true);
++        mockAwaitTermination(executor, 20, false);
++        mockAwaitTermination(executor, 10, false, true);
+         ExecutorUtil.gracefulShutdown(executor, 20);
+ 
+         await().untilAsserted(() -> verify(executor, times(2)).awaitTermination(10, TimeUnit.MILLISECONDS));
+@@ -84,4 +84,13 @@ class ExecutorUtilTest {
+         url = ExecutorUtil.setThreadName(url, "default-name");
+         assertThat(url.getParameter(THREAD_NAME_KEY), equalTo("custom-thread-localhost:1234"));
+     }
++
++    private ExecutorService mockExecutorService() {
++        return Mockito.mock(ExecutorService.class);
++    }
++
++    private void mockAwaitTermination(ExecutorService executor, long timeout, boolean result, Boolean... subsequentResults)
++            throws InterruptedException {
++        when(executor.awaitTermination(timeout, TimeUnit.MILLISECONDS)).thenReturn(result, subsequentResults);
++    }
+ }

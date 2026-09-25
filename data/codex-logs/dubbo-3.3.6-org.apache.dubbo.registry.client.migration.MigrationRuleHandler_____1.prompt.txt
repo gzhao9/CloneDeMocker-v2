@@ -1,0 +1,20 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.registry.client.migration.MigrationRuleHandler<?>`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationRuleListenerTest.java :: test  (mock variable `handler`)
+     MigrationRuleHandler<?> handler = Mockito.mock(MigrationRuleHandler.class, Mockito.withSettings().verboseLogging());
+     Mockito.verify(handler).doMigrate(Mockito.any());
+     Mockito.verify(handler, Mockito.times(2)).doMigrate(Mockito.any());
+2. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationRuleListenerTest.java :: testWithInitAndNoLocalRule  (mock variable `handler`)
+     MigrationRuleHandler<?> handler = Mockito.mock(MigrationRuleHandler.class, Mockito.withSettings().verboseLogging());
+     // check migration happened after invoker referred
+Mockito.verify(handler, Mockito.times(1)).doMigrate(MigrationRule.getInitRule());
+3. dubbo-registry/dubbo-registry-api/src/test/java/org/apache/dubbo/registry/client/migration/MigrationRuleListenerTest.java :: testWithConfigurationListenerAndLocalRule  (mock variable `handler`)
+     MigrationRuleHandler<?> handler = Mockito.mock(MigrationRuleHandler.class, Mockito.withSettings().verboseLogging());
+     Mockito.verify(handler, Mockito.times(1)).doMigrate(captor.capture());
+     Mockito.verify(handler, Mockito.times(1)).doMigrate(Mockito.any());
+     Mockito.verify(handler, Mockito.times(2)).doMigrate(Mockito.any());
+     Mockito.verify(handler, Mockito.times(2)).doMigrate(captor_event.capture());

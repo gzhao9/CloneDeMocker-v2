@@ -1,0 +1,60 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.rpc.Invoker`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ConsumerSignFilterTest.java :: testAuthDisabled  (mock variable `invoker`)
+     Invoker invoker = mock(Invoker.class);
+     when(invoker.getUrl()).thenReturn(url);
+2. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ConsumerSignFilterTest.java :: testAuthEnabled  (mock variable `invoker`)
+     Invoker invoker = mock(Invoker.class);
+     when(invoker.getUrl()).thenReturn(url);
+3. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java :: testAuthDisabled  (mock variable `invoker`)
+     Invoker invoker = mock(Invoker.class);
+     when(invoker.getUrl()).thenReturn(url);
+4. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java :: testAuthEnabled  (mock variable `invoker`)
+     Invoker invoker = mock(Invoker.class);
+     when(invoker.getUrl()).thenReturn(url);
+5. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java :: testAuthFailed  (mock variable `invoker`)
+     Invoker invoker = mock(Invoker.class);
+     when(invoker.getUrl()).thenReturn(url);
+6. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java :: testAuthFailedWhenNoSignature  (mock variable `invoker`)
+     Invoker invoker = mock(Invoker.class);
+     when(invoker.getUrl()).thenReturn(url);
+7. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java :: testAuthFailedWhenNoAccessKeyPair  (mock variable `invoker`)
+     Invoker invoker = mock(Invoker.class);
+     when(invoker.getUrl()).thenReturn(url);
+8. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java :: testAuthFailedWhenParameterError  (mock variable `invoker`)
+     Invoker invoker = mock(Invoker.class);
+     when(invoker.getUrl()).thenReturn(url);
+9. dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ProviderAuthFilterTest.java :: testAuthSuccessfully  (mock variable `invoker`)
+     Invoker invoker = mock(Invoker.class);
+     when(invoker.getUrl()).thenReturn(url);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.rpc.Invoker.getUrl()).thenReturn(org.apache.dubbo.common.URL)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/MockInvoker.java
+package org.apache.dubbo.auth.filter;
+
+import org.apache.dubbo.common.URL;
+import org.apache.dubbo.rpc.Invoker;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+public class MockInvoker {
+
+    public static Invoker createMockInvoker(URL url) {
+        Invoker invoker = mock(Invoker.class);
+        when(invoker.getUrl()).thenReturn(url);
+        return invoker;
+    }
+}
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

@@ -1,0 +1,44 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.common.utils.Log`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-common/src/test/java/org/apache/dubbo/common/utils/LogUtilTest.java :: testCheckNoError  (mock variable `log`)
+     Log log = mock(Log.class);
+     when(log.getLogLevel()).thenReturn(Level.ERROR);
+     when(log.getLogLevel()).thenReturn(Level.INFO);
+2. dubbo-common/src/test/java/org/apache/dubbo/common/utils/LogUtilTest.java :: testFindLevel  (mock variable `log`)
+     Log log = mock(Log.class);
+     when(log.getLogLevel()).thenReturn(Level.ERROR);
+3. dubbo-common/src/test/java/org/apache/dubbo/common/utils/LogUtilTest.java :: testFindLevelWithThreadName  (mock variable `log`)
+     Log log = mock(Log.class);
+     when(log.getLogLevel()).thenReturn(Level.ERROR);
+     when(log.getLogThread()).thenReturn("thread-1");
+     log = mock(Log.class);
+     when(log.getLogLevel()).thenReturn(Level.ERROR);
+     when(log.getLogThread()).thenReturn("thread-2");
+4. dubbo-common/src/test/java/org/apache/dubbo/common/utils/LogUtilTest.java :: testFindMessage2  (mock variable `log`)
+     Log log = mock(Log.class);
+     when(log.getLogMessage()).thenReturn("message");
+     when(log.getLogLevel()).thenReturn(Level.ERROR);
+     log = mock(Log.class);
+     when(log.getLogMessage()).thenReturn("message");
+     when(log.getLogLevel()).thenReturn(Level.INFO);
+
+Statements shared by all of them:
+     when(org.apache.dubbo.common.utils.Log.getLogLevel()).thenReturn(org.apache.dubbo.common.logger.Level)
+
+Planned refactoring -- follow this plan:
+1. Add this reusable helper (place it as indicated):
+// in dubbo-common/src/test/java/org/apache/dubbo/common/utils/LogUtilTest.java
+
+    private static Log createMockLog(Level logLevel) {
+        Log log = mock(Log.class);
+        when(log.getLogLevel()).thenReturn(logLevel);
+        return log;
+    }
+
+2. In every listed test method, replace the duplicated mock statements with the new code (call the helper, or use the shared mock), adapting arguments to each test; keep everything else unchanged.
+
+Environment (already configured; fixing it is not part of the task): Maven's local repository and Gradle's user home are preset; the shell is PowerShell, so quote -D arguments that contain a comma or a dot. Keep command output short (errors and test summaries only).

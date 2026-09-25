@@ -1,0 +1,69 @@
+diff --git a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/CtrlCHandlerTest.java b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/CtrlCHandlerTest.java
+index 0ed5175..34b7132 100644
+--- a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/CtrlCHandlerTest.java
++++ b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/CtrlCHandlerTest.java
+@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
+ import io.netty.buffer.Unpooled;
+ import io.netty.channel.ChannelHandlerContext;
+ import io.netty.util.CharsetUtil;
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import static org.mockito.Mockito.mock;
+@@ -34,40 +35,44 @@ public class CtrlCHandlerTest {
+ 
+     private byte[] RESPONSE_SEQUENCE = new byte[] {(byte) 0xff, (byte) 0xfc, 0x06};
+ 
++    private ChannelHandlerContext channelHandlerContext;
++
++    @BeforeEach
++    void setUp() {
++        channelHandlerContext = mock(ChannelHandlerContext.class);
++    }
++
+     @Test
+     void testMatchedExactly() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         CtrlCHandler ctrlCHandler = new CtrlCHandler();
+-        ctrlCHandler.channelRead(context, Unpooled.wrappedBuffer(CTRLC_BYTES_SEQUENCE));
+-        verify(context).writeAndFlush(Unpooled.wrappedBuffer(RESPONSE_SEQUENCE));
+-        verify(context)
++        ctrlCHandler.channelRead(channelHandlerContext, Unpooled.wrappedBuffer(CTRLC_BYTES_SEQUENCE));
++        verify(channelHandlerContext).writeAndFlush(Unpooled.wrappedBuffer(RESPONSE_SEQUENCE));
++        verify(channelHandlerContext)
+                 .writeAndFlush(Unpooled.wrappedBuffer(
+                         (QosConstants.BR_STR + QosProcessHandler.PROMPT).getBytes(CharsetUtil.UTF_8)));
+     }
+ 
+     @Test
+     void testMatchedNotExactly() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         CtrlCHandler ctrlCHandler = new CtrlCHandler();
+         // before 'ctrl c', user typed other command like 'help'
+         String arbitraryCommand = "help";
+         byte[] commandBytes = arbitraryCommand.getBytes(StandardCharsets.UTF_8);
+-        ctrlCHandler.channelRead(context, Unpooled.wrappedBuffer(commandBytes, CTRLC_BYTES_SEQUENCE));
+-        verify(context).writeAndFlush(Unpooled.wrappedBuffer(RESPONSE_SEQUENCE));
+-        verify(context)
++        ctrlCHandler.channelRead(channelHandlerContext, Unpooled.wrappedBuffer(commandBytes, CTRLC_BYTES_SEQUENCE));
++        verify(channelHandlerContext).writeAndFlush(Unpooled.wrappedBuffer(RESPONSE_SEQUENCE));
++        verify(channelHandlerContext)
+                 .writeAndFlush(Unpooled.wrappedBuffer(
+                         (QosConstants.BR_STR + QosProcessHandler.PROMPT).getBytes(CharsetUtil.UTF_8)));
+     }
+ 
+     @Test
+     void testNotMatched() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
+         CtrlCHandler ctrlCHandler = new CtrlCHandler();
+         String arbitraryCommand = "help" + QosConstants.BR_STR;
+         byte[] commandBytes = arbitraryCommand.getBytes(StandardCharsets.UTF_8);
+-        ctrlCHandler.channelRead(context, Unpooled.wrappedBuffer(commandBytes));
+-        verify(context, never()).writeAndFlush(Unpooled.wrappedBuffer(RESPONSE_SEQUENCE));
+-        verify(context, never())
++        ctrlCHandler.channelRead(channelHandlerContext, Unpooled.wrappedBuffer(commandBytes));
++        verify(channelHandlerContext, never()).writeAndFlush(Unpooled.wrappedBuffer(RESPONSE_SEQUENCE));
++        verify(channelHandlerContext, never())
+                 .writeAndFlush(Unpooled.wrappedBuffer(
+                         (QosConstants.BR_STR + QosProcessHandler.PROMPT).getBytes(CharsetUtil.UTF_8)));
+     }

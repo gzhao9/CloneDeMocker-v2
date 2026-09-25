@@ -1,0 +1,40 @@
+diff --git a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/CtrlCHandlerTest.java b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/CtrlCHandlerTest.java
+index 0ed5175..5582bfd 100644
+--- a/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/CtrlCHandlerTest.java
++++ b/dubbo-plugin/dubbo-qos/src/test/java/org/apache/dubbo/qos/server/handler/CtrlCHandlerTest.java
+@@ -36,7 +36,7 @@ public class CtrlCHandlerTest {
+ 
+     @Test
+     void testMatchedExactly() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
++        ChannelHandlerContext context = createContext();
+         CtrlCHandler ctrlCHandler = new CtrlCHandler();
+         ctrlCHandler.channelRead(context, Unpooled.wrappedBuffer(CTRLC_BYTES_SEQUENCE));
+         verify(context).writeAndFlush(Unpooled.wrappedBuffer(RESPONSE_SEQUENCE));
+@@ -47,7 +47,7 @@ public class CtrlCHandlerTest {
+ 
+     @Test
+     void testMatchedNotExactly() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
++        ChannelHandlerContext context = createContext();
+         CtrlCHandler ctrlCHandler = new CtrlCHandler();
+         // before 'ctrl c', user typed other command like 'help'
+         String arbitraryCommand = "help";
+@@ -61,7 +61,7 @@ public class CtrlCHandlerTest {
+ 
+     @Test
+     void testNotMatched() throws Exception {
+-        ChannelHandlerContext context = mock(ChannelHandlerContext.class);
++        ChannelHandlerContext context = createContext();
+         CtrlCHandler ctrlCHandler = new CtrlCHandler();
+         String arbitraryCommand = "help" + QosConstants.BR_STR;
+         byte[] commandBytes = arbitraryCommand.getBytes(StandardCharsets.UTF_8);
+@@ -71,4 +71,8 @@ public class CtrlCHandlerTest {
+                 .writeAndFlush(Unpooled.wrappedBuffer(
+                         (QosConstants.BR_STR + QosProcessHandler.PROMPT).getBytes(CharsetUtil.UTF_8)));
+     }
++
++    private ChannelHandlerContext createContext() {
++        return mock(ChannelHandlerContext.class);
++    }
+ }

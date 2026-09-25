@@ -1,0 +1,17 @@
+This Java project's tests contain duplicated mock setup for `org.apache.dubbo.rpc.cluster.router.mesh.route.MeshEnvListener`: the same mocking statements are repeated across the test methods listed below (a mock clone).
+
+Refactor the test code to remove this duplication -- for example by extracting a reusable helper method or a shared mock field -- and make every listed test method use it.
+Requirements: keep every test's behaviour identical (same tests, same assertions, same outcome); change test sources only, never production code or build files; keep the project compiling. You may build the project and run the affected tests (Maven) to check your change.
+
+Duplicated mock usages:
+1. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/router/mesh/route/MeshRuleManagerTest.java :: testRegister3  (mock variable `meshEnvListener1`)
+     MeshEnvListener meshEnvListener1 = Mockito.mock(MeshEnvListener.class);
+     when(meshEnvListener1.isEnable()).thenReturn(false);
+2. dubbo-cluster/src/test/java/org/apache/dubbo/rpc/cluster/router/mesh/route/MeshRuleManagerTest.java :: testRegister3  (mock variable `meshEnvListener2`)
+     MeshEnvListener meshEnvListener2 = Mockito.mock(MeshEnvListener.class);
+     when(meshEnvListener2.isEnable()).thenReturn(true);
+     verify(meshEnvListener2, times(1)).onSubscribe("dubbo-demo", meshAppRuleListener);
+     verify(meshEnvListener2, times(1)).onUnSubscribe("dubbo-demo");
+
+Statements shared by all of them:
+     when(org.apache.dubbo.rpc.cluster.router.mesh.route.MeshEnvListener.isEnable()).thenReturn(boolean)

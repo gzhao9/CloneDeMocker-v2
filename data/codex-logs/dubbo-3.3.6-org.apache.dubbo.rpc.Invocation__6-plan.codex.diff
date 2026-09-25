@@ -1,0 +1,50 @@
+diff --git a/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ConsumerSignFilterTest.java b/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ConsumerSignFilterTest.java
+index 59dbef5..c6c98d1 100644
+--- a/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ConsumerSignFilterTest.java
++++ b/dubbo-plugin/dubbo-auth/src/test/java/org/apache/dubbo/auth/filter/ConsumerSignFilterTest.java
+@@ -23,6 +23,7 @@ import org.apache.dubbo.rpc.Invocation;
+ import org.apache.dubbo.rpc.Invoker;
+ import org.apache.dubbo.rpc.model.FrameworkModel;
+ 
++import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ 
+ import static org.mockito.ArgumentMatchers.anyString;
+@@ -35,15 +36,21 @@ import static org.mockito.Mockito.when;
+ 
+ class ConsumerSignFilterTest {
+ 
++    private Invocation sharedInvocation;
++
++    @BeforeEach
++    void setUp() {
++        sharedInvocation = mock(Invocation.class);
++    }
++
+     @Test
+     void testAuthDisabled() {
+         URL url = mock(URL.class);
+         Invoker invoker = mock(Invoker.class);
+-        Invocation invocation = mock(Invocation.class);
+         when(invoker.getUrl()).thenReturn(url);
+         ConsumerSignFilter consumerSignFilter = new ConsumerSignFilter(FrameworkModel.defaultModel());
+-        consumerSignFilter.invoke(invoker, invocation);
+-        verify(invocation, never()).setAttachment(eq(Constants.REQUEST_SIGNATURE_KEY), anyString());
++        consumerSignFilter.invoke(invoker, sharedInvocation);
++        verify(sharedInvocation, never()).setAttachment(eq(Constants.REQUEST_SIGNATURE_KEY), anyString());
+     }
+ 
+     @Test
+@@ -55,10 +62,9 @@ class ConsumerSignFilterTest {
+                 .addParameter(Constants.AUTHENTICATOR_KEY, "accesskey")
+                 .addParameter(Constants.AUTH_KEY, true);
+         Invoker invoker = mock(Invoker.class);
+-        Invocation invocation = mock(Invocation.class);
+         when(invoker.getUrl()).thenReturn(url);
+         ConsumerSignFilter consumerSignFilter = new ConsumerSignFilter(FrameworkModel.defaultModel());
+-        consumerSignFilter.invoke(invoker, invocation);
+-        verify(invocation, times(1)).setAttachment(eq(Constants.REQUEST_SIGNATURE_KEY), anyString());
++        consumerSignFilter.invoke(invoker, sharedInvocation);
++        verify(sharedInvocation, times(1)).setAttachment(eq(Constants.REQUEST_SIGNATURE_KEY), anyString());
+     }
+ }

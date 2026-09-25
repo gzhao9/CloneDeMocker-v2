@@ -1,0 +1,51 @@
+diff --git a/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RedirectHandlerTests.java b/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RedirectHandlerTests.java
+index 59277d8..7083326 100644
+--- a/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RedirectHandlerTests.java
++++ b/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RedirectHandlerTests.java
+@@ -133,10 +133,8 @@ public class RedirectHandlerTests {
+                         .body(ResponseBody.create("", MediaType.parse("text/plain")))
+                         .build();
+ 
+-        // Setup proxy selector
+-        ProxySelector proxySelector = mock(ProxySelector.class);
+         Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("proxy.example.com", 8080));
+-        when(proxySelector.select(any(URI.class))).thenReturn(Collections.singletonList(proxy));
++        ProxySelector proxySelector = proxySelectorReturning(proxy);
+ 
+         RedirectHandlerOption option = new RedirectHandlerOption();
+         Request result =
+@@ -168,10 +166,8 @@ public class RedirectHandlerTests {
+                         .body(ResponseBody.create("", MediaType.parse("text/plain")))
+                         .build();
+ 
+-        // Setup proxy selector with active proxy
+-        ProxySelector proxySelector = mock(ProxySelector.class);
+         Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("proxy.example.com", 8080));
+-        when(proxySelector.select(any(URI.class))).thenReturn(Collections.singletonList(proxy));
++        ProxySelector proxySelector = proxySelectorReturning(proxy);
+ 
+         RedirectHandlerOption option = new RedirectHandlerOption();
+         Request result =
+@@ -204,10 +200,7 @@ public class RedirectHandlerTests {
+                         .body(ResponseBody.create("", MediaType.parse("text/plain")))
+                         .build();
+ 
+-        // Setup proxy selector with DIRECT proxy (no proxy)
+-        ProxySelector proxySelector = mock(ProxySelector.class);
+-        when(proxySelector.select(any(URI.class)))
+-                .thenReturn(Collections.singletonList(Proxy.NO_PROXY));
++        ProxySelector proxySelector = proxySelectorReturning(Proxy.NO_PROXY);
+ 
+         RedirectHandlerOption option = new RedirectHandlerOption();
+         Request result =
+@@ -384,4 +377,10 @@ public class RedirectHandlerTests {
+         assertNull(result.header("X-Api-Key")); // stripped by custom scrubber
+         assertNotNull(result.header("X-Safe-Header")); // kept (not in scrub list)
+     }
++
++    private ProxySelector proxySelectorReturning(Proxy proxy) {
++        ProxySelector proxySelector = mock(ProxySelector.class);
++        when(proxySelector.select(any(URI.class))).thenReturn(Collections.singletonList(proxy));
++        return proxySelector;
++    }
+ }

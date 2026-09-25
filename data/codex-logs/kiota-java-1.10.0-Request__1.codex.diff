@@ -1,0 +1,52 @@
+diff --git a/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java b/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java
+index 747252b..c202f39 100644
+--- a/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java
++++ b/components/http/okHttp/src/test/java/com/microsoft/kiota/http/middleware/RetryHandlerTest.java
+@@ -33,6 +33,13 @@ class RetryHandlerTest {
+         retryHandler = new RetryHandler();
+     }
+ 
++    private Request createMockRequest(String method) {
++        Request mockRequest = mock(Request.class);
++        when(mockRequest.method()).thenReturn(method);
++        when(mockRequest.body()).thenReturn(null);
++        return mockRequest;
++    }
++
+     private static Stream<Arguments> retryAfterHeaderValues() {
+         return Stream.of(
+                 // Single values
+@@ -88,15 +95,13 @@ class RetryHandlerTest {
+     void testRetryRequestHandlesNegativeRetryInterval() {
+         // Create mocks
+         Response mockResponse = mock(Response.class);
+-        Request mockRequest = mock(Request.class);
++        Request mockRequest = createMockRequest("GET");
+         RetryHandlerOption mockOption = mock(RetryHandlerOption.class);
+         Span mockSpan = mock(Span.class);
+ 
+         // Setup mock behaviors
+         when(mockResponse.code()).thenReturn(429);
+         when(mockResponse.header("Retry-After")).thenReturn("invalid");
+-        when(mockRequest.method()).thenReturn("GET");
+-        when(mockRequest.body()).thenReturn(null);
+         when(mockOption.maxRetries()).thenReturn(3);
+         when(mockOption.delay()).thenReturn(3L);
+         when(mockOption.shouldRetry())
+@@ -117,15 +122,13 @@ class RetryHandlerTest {
+     void testRetryRequestWithNegativeRetryIntervalAppliesRandomDelay() {
+         // Create mocks
+         Response mockResponse = mock(Response.class);
+-        Request mockRequest = mock(Request.class);
++        Request mockRequest = createMockRequest("POST");
+         RetryHandlerOption mockOption = mock(RetryHandlerOption.class);
+         Span mockSpan = mock(Span.class);
+ 
+         // Setup mock behaviors to force negative retry interval
+         when(mockResponse.code()).thenReturn(503);
+         when(mockResponse.header("Retry-After")).thenReturn("invalid");
+-        when(mockRequest.method()).thenReturn("POST");
+-        when(mockRequest.body()).thenReturn(null);
+         when(mockOption.maxRetries()).thenReturn(5);
+         when(mockOption.delay()).thenReturn(1L);
+         when(mockOption.shouldRetry())
