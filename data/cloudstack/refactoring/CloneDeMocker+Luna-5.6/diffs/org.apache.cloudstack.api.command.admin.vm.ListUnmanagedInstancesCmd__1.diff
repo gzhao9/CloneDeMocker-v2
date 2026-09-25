@@ -1,0 +1,49 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -273,6 +273,8 @@
+     @Mock
+     private UnmanagedInstanceTO unmanagedInstanceMock;
+ 
++    private ListUnmanagedInstancesCmd listUnmanagedInstancesCmd;
++
+     private static final long virtualMachineId = 1L;
+ 
+     private AutoCloseable closeable;
+@@ -284,6 +286,7 @@
+     @Before
+     public void setUp() throws Exception {
+         closeable = MockitoAnnotations.openMocks(this);
++        listUnmanagedInstancesCmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
+         actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
+         BDDMockito.given(ActionEventUtils.onStartedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyLong(), anyString(), anyBoolean(), anyLong()))
+                 .willReturn(1L);
+@@ -432,17 +435,15 @@
+ 
+     @Test
+     public void listUnmanagedInstancesTest() {
+-        ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
+-        unmanagedVMsManager.listUnmanagedInstances(cmd);
++        unmanagedVMsManager.listUnmanagedInstances(listUnmanagedInstancesCmd);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void listUnmanagedInstancesInvalidHypervisorTest() {
+-        ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
+         ClusterVO cluster = new ClusterVO(1, 1, "Cluster");
+         cluster.setHypervisorType(Hypervisor.HypervisorType.XenServer.toString());
+         when(clusterDao.findById(anyLong())).thenReturn(cluster);
+-        unmanagedVMsManager.listUnmanagedInstances(cmd);
++        unmanagedVMsManager.listUnmanagedInstances(listUnmanagedInstancesCmd);
+     }
+ 
+     @Test(expected = PermissionDeniedException.class)
+@@ -451,8 +452,7 @@
+         AccountVO account = new AccountVO("user", 1L, "", Account.Type.NORMAL, "uuid");
+         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
+         CallContext.register(user, account);
+-        ListUnmanagedInstancesCmd cmd = Mockito.mock(ListUnmanagedInstancesCmd.class);
+-        unmanagedVMsManager.listUnmanagedInstances(cmd);
++        unmanagedVMsManager.listUnmanagedInstances(listUnmanagedInstancesCmd);
+     }
+ 
+     @Test

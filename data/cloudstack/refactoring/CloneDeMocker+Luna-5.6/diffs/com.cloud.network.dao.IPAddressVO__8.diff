@@ -1,0 +1,102 @@
+--- a/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
++++ b/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
+@@ -102,6 +102,8 @@
+     @Mock
+     IPAddressDao _ipAddressDao;
+ 
++    private IPAddressVO ipAddressMock;
++
+     @Spy
+     @InjectMocks
+     FirewallManagerImpl _firewallMgr;
+@@ -118,6 +120,7 @@
+     @Before
+     public void initMocks() {
+         closeable = MockitoAnnotations.openMocks(this);
++        ipAddressMock = Mockito.mock(IPAddressVO.class);
+ 
+         fwRule50to150 = createFirewallRule(50, 150, Purpose.Firewall);
+         fwRule100to200 = createFirewallRule(100, 150, Purpose.Firewall);
+@@ -411,15 +414,13 @@
+ 
+     @Test
+     public void testValidateFirewallRuleForVpcIpReturnsNetworkId() {
+-        IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+-        Long result = _firewallMgr.validateFirewallRuleForVpcIp(ipAddress, 99L);
++        Long result = _firewallMgr.validateFirewallRuleForVpcIp(ipAddressMock, 99L);
+         Assert.assertEquals(Long.valueOf(99L), result);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcIpThrowsWhenNetworkIdNull() {
+-        IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+-        _firewallMgr.validateFirewallRuleForVpcIp(ipAddress, null);
++        _firewallMgr.validateFirewallRuleForVpcIp(ipAddressMock, null);
+     }
+ 
+     @Test
+@@ -537,33 +538,29 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcThrowsWhenVpcIdNullAndNotSystemRule() {
+         Account caller = Mockito.mock(Account.class);
+-        IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+-        _firewallMgr.validateFirewallRuleForVpc(caller, ipAddress, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, null, FirewallRule.TrafficType.Ingress);
++        _firewallMgr.validateFirewallRuleForVpc(caller, ipAddressMock, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, null, FirewallRule.TrafficType.Ingress);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcThrowsWhenActiveVpcNotFound() {
+         Account caller = Mockito.mock(Account.class);
+-        IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         when(_vpcMgr.getActiveVpc(10L)).thenReturn(null);
+-        _firewallMgr.validateFirewallRuleForVpc(caller, ipAddress, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
++        _firewallMgr.validateFirewallRuleForVpc(caller, ipAddressMock, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcThrowsWhenFirewallServiceNotSupported() {
+         Account caller = Mockito.mock(Account.class);
+-        IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         Vpc vpc = Mockito.mock(Vpc.class);
+         when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpc);
+         _firewallMgr._firewallElements = Collections.emptyList();
+ 
+-        _firewallMgr.validateFirewallRuleForVpc(caller, ipAddress, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
++        _firewallMgr.validateFirewallRuleForVpc(caller, ipAddressMock, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateFirewallRuleForVpcThrowsOnUnsupportedProtocol() {
+         Account caller = Mockito.mock(Account.class);
+-        IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         Vpc vpc = Mockito.mock(Vpc.class);
+         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> firewallCaps = new HashMap<>();
+@@ -578,13 +575,12 @@
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+         _firewallMgr._firewallElements = List.of(fwProvider);
+ 
+-        _firewallMgr.validateFirewallRuleForVpc(caller, ipAddress, 80, 80, "gre", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
++        _firewallMgr.validateFirewallRuleForVpc(caller, ipAddressMock, 80, 80, "gre", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
+     }
+ 
+     @Test
+     public void testValidateFirewallRuleForVpcSucceedsWithSupportedProtocolAndTrafficType() {
+         Account caller = Mockito.mock(Account.class);
+-        IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         Vpc vpc = Mockito.mock(Vpc.class);
+         FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> firewallCaps = new HashMap<>();
+@@ -600,9 +596,9 @@
+         _firewallMgr._firewallElements = List.of(fwProvider);
+ 
+         // Should not throw
+-        _firewallMgr.validateFirewallRuleForVpc(caller, ipAddress, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
+-
+-        verify(_accountMgr, times(1)).checkAccess(caller, null, true, ipAddress);
++        _firewallMgr.validateFirewallRuleForVpc(caller, ipAddressMock, 80, 80, "tcp", Purpose.Firewall, FirewallRuleType.User, 10L, FirewallRule.TrafficType.Ingress);
++
++        verify(_accountMgr, times(1)).checkAccess(caller, null, true, ipAddressMock);
+     }
+ 
+     @Test

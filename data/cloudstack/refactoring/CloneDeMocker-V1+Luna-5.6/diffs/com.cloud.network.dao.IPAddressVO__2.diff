@@ -1,0 +1,75 @@
+--- a/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
++++ b/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
+@@ -454,10 +454,10 @@
+     }
+ 
+     private void prepareForCheckIfIpResourceCountShouldBeUpdatedTests() {
++        ipAddressVoMock = MockIPAddressVO.createMockIPAddressVO(IpAddress.State.Allocating);
+         Mockito.when(ipAddressVoMock.getAssociatedWithNetworkId()).thenReturn(1L);
+         Mockito.when(ipAddressVoMock.getVpcId()).thenReturn(1L);
+         doReturn(false).when(ipAddressManager).isIpDedicated(Mockito.any());
+-        Mockito.when(ipAddressVoMock.getState()).thenReturn(IpAddress.State.Allocating);
+     }
+ 
+     @Test
+@@ -484,8 +484,8 @@
+     @Test
+     public void checkIfIpResourceCountShouldBeUpdatedTestIpIsReservedReturnFalse() {
+         prepareForCheckIfIpResourceCountShouldBeUpdatedTests();
+-        Mockito.when(ipAddressVoMock.getState()).thenReturn(IpAddress.State.Reserved);
+-
++
++        ipAddressVoMock = MockIPAddressVO.createMockIPAddressVO(IpAddress.State.Reserved);
+         boolean result = ipAddressManager.checkIfIpResourceCountShouldBeUpdated(ipAddressVoMock);
+ 
+         Assert.assertFalse(result);
+@@ -640,4 +640,17 @@
+ 
+         assertFalse(result);
+     }
++
++    public final class MockIPAddressVO {
++        private MockIPAddressVO() {
++        }
++
++        public static com.cloud.network.dao.IPAddressVO createMockIPAddressVO(
++                com.cloud.network.IpAddress.State state) {
++            com.cloud.network.dao.IPAddressVO ipAddressVO =
++                    Mockito.mock(com.cloud.network.dao.IPAddressVO.class);
++            Mockito.when(ipAddressVO.getState()).thenReturn(state);
++            return ipAddressVO;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/network/Ipv6AddressManagerTest.java
++++ b/server/src/test/java/com/cloud/network/Ipv6AddressManagerTest.java
+@@ -230,10 +230,9 @@
+ 
+     private void setAcquireGuestIpv6AddressTest(boolean isIPAvailable, State state) {
+         mockNetwork();
+-        IPAddressVO ipVo = Mockito.mock(IPAddressVO.class);
+         Mockito.doReturn(isIPAvailable).when(networkModel).areThereIPv6AddressAvailableInNetwork(Mockito.anyLong());
++        IPAddressVO ipVo = MockIPAddressVO.createMockIPAddressVO(state);
+         Mockito.doReturn(ipVo).when(ipAddressDao).findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString());
+-        Mockito.when(ipVo.getState()).thenReturn(state);
+     }
+ 
+     @Test
+@@ -264,4 +263,17 @@
+         String requestedIpv6 = setCheckIfCanAllocateIpv6AddresscTest("2001:db8:13f::1c00:4aff:fe00:fe", false, false);
+         ip6Manager.acquireGuestIpv6Address(network, requestedIpv6);
+     }
++
++    public final class MockIPAddressVO {
++        private MockIPAddressVO() {
++        }
++
++        public static com.cloud.network.dao.IPAddressVO createMockIPAddressVO(
++                com.cloud.network.IpAddress.State state) {
++            com.cloud.network.dao.IPAddressVO ipAddressVO =
++                    Mockito.mock(com.cloud.network.dao.IPAddressVO.class);
++            Mockito.when(ipAddressVO.getState()).thenReturn(state);
++            return ipAddressVO;
++        }
++    }
+ }

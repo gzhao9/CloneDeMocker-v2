@@ -1,0 +1,56 @@
+--- a/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
++++ b/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
+@@ -454,10 +454,10 @@
+     }
+ 
+     private void prepareForCheckIfIpResourceCountShouldBeUpdatedTests() {
++        ipAddressVoMock = IPAddressVOMockFactory.createMockIPAddressVO(IpAddress.State.Allocating);
+         Mockito.when(ipAddressVoMock.getAssociatedWithNetworkId()).thenReturn(1L);
+         Mockito.when(ipAddressVoMock.getVpcId()).thenReturn(1L);
+         doReturn(false).when(ipAddressManager).isIpDedicated(Mockito.any());
+-        Mockito.when(ipAddressVoMock.getState()).thenReturn(IpAddress.State.Allocating);
+     }
+ 
+     @Test
+@@ -484,7 +484,7 @@
+     @Test
+     public void checkIfIpResourceCountShouldBeUpdatedTestIpIsReservedReturnFalse() {
+         prepareForCheckIfIpResourceCountShouldBeUpdatedTests();
+-        Mockito.when(ipAddressVoMock.getState()).thenReturn(IpAddress.State.Reserved);
++        ipAddressVoMock = IPAddressVOMockFactory.createMockIPAddressVO(IpAddress.State.Reserved);
+ 
+         boolean result = ipAddressManager.checkIfIpResourceCountShouldBeUpdated(ipAddressVoMock);
+ 
+--- a/server/src/test/java/com/cloud/network/Ipv6AddressManagerTest.java
++++ b/server/src/test/java/com/cloud/network/Ipv6AddressManagerTest.java
+@@ -230,10 +230,9 @@
+ 
+     private void setAcquireGuestIpv6AddressTest(boolean isIPAvailable, State state) {
+         mockNetwork();
+-        IPAddressVO ipVo = Mockito.mock(IPAddressVO.class);
++        IPAddressVO ipVo = IPAddressVOMockFactory.createMockIPAddressVO(state);
+         Mockito.doReturn(isIPAvailable).when(networkModel).areThereIPv6AddressAvailableInNetwork(Mockito.anyLong());
+         Mockito.doReturn(ipVo).when(ipAddressDao).findByIpAndSourceNetworkId(Mockito.anyLong(), Mockito.anyString());
+-        Mockito.when(ipVo.getState()).thenReturn(state);
+     }
+ 
+     @Test
+--- a/server/src/test/java/com/cloud/network/IPAddressVOMockFactory.java
++++ b/server/src/test/java/com/cloud/network/IPAddressVOMockFactory.java
+@@ -0,0 +1,16 @@
++package com.cloud.network;
++
++import com.cloud.network.dao.IPAddressVO;
++import org.mockito.Mockito;
++
++public final class IPAddressVOMockFactory {
++
++    private IPAddressVOMockFactory() {
++    }
++
++    public static IPAddressVO createMockIPAddressVO(IpAddress.State state) {
++        IPAddressVO ipAddressVoMock = Mockito.mock(IPAddressVO.class);
++        Mockito.when(ipAddressVoMock.getState()).thenReturn(state);
++        return ipAddressVoMock;
++    }
++}

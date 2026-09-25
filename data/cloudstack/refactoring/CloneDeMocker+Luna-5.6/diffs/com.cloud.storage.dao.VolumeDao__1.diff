@@ -1,0 +1,120 @@
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
+@@ -241,7 +241,7 @@
+         VolumeVO volume2 = mock(VolumeVO.class);
+         Mockito.when(volume2.getState()).thenReturn(Volume.State.Ready);
+         Mockito.when(volume2.getSize()).thenReturn(200L);
+-        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume1, volume2));
++        volumeDao = createMockVolumeDao(vmId, List.of(volume1, volume2));
+ 
+         BackupAnswer answer = mock(BackupAnswer.class);
+         Mockito.when(answer.getResult()).thenReturn(true);
+@@ -468,7 +468,7 @@
+         Mockito.when(hostVol.getPoolId()).thenReturn(2L);
+         VolumeVO smpVol = mock(VolumeVO.class);
+         Mockito.when(smpVol.getPoolId()).thenReturn(3L);
+-        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(nfsVol, hostVol, smpVol));
++        volumeDao = createMockVolumeDao(vmId, List.of(nfsVol, hostVol, smpVol));
+ 
+         StoragePoolVO nfs = mock(StoragePoolVO.class);
+         Mockito.when(nfs.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+@@ -497,7 +497,7 @@
+         Mockito.when(nfsVol.getPoolId()).thenReturn(1L);
+         VolumeVO rbdVol = mock(VolumeVO.class);
+         Mockito.when(rbdVol.getPoolId()).thenReturn(9L);
+-        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(nfsVol, rbdVol));
++        volumeDao = createMockVolumeDao(vmId, List.of(nfsVol, rbdVol));
+ 
+         StoragePoolVO nfs = mock(StoragePoolVO.class);
+         Mockito.when(nfs.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+@@ -517,7 +517,7 @@
+         Mockito.when(vm.getId()).thenReturn(vmId);
+         VolumeVO vol = mock(VolumeVO.class);
+         Mockito.when(vol.getPoolId()).thenReturn(1L);
+-        Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(vol));
++        volumeDao = createMockVolumeDao(vmId, List.of(vol));
+         Mockito.when(storagePoolDao.findById(1L)).thenReturn(null);
+ 
+         Assert.assertFalse(nasBackupProvider.allVolumesOnCheckpointCapableStorage(vm));
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -716,7 +716,7 @@
+         when(schedule.getMaxBackups()).thenReturn(2);
+ 
+         VolumeVO volume = mock(VolumeVO.class);
+-        when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
++        volumeDao = createMockVolumeDao(vmId, List.of(volume));
+         when(volume.getState()).thenReturn(Volume.State.Ready);
+         when(volumeApiService.getVolumePhysicalSize(null, null, null)).thenReturn(newBackupSize);
+ 
+@@ -821,7 +821,7 @@
+         when(vm.getAccountId()).thenReturn(accountId);
+ 
+         VolumeVO volume = mock(VolumeVO.class);
+-        when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
++        volumeDao = createMockVolumeDao(vmId, List.of(volume));
+         when(volume.getState()).thenReturn(Volume.State.Ready);
+         when(volumeApiService.getVolumePhysicalSize(null, null, null)).thenReturn(size);
+ 
+@@ -2124,7 +2124,7 @@
+         when(offering.getProvider()).thenReturn("testbackupprovider");
+ 
+         VolumeVO volume = mock(VolumeVO.class);
+-        when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volume));
++        volumeDao = createMockVolumeDao(vmId, Collections.singletonList(volume));
+ 
+         BackupProvider backupProvider = mock(BackupProvider.class);
+         when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(true);
+@@ -2256,7 +2256,7 @@
+         when(vm.getBackupVolumeList()).thenReturn(Collections.emptyList());
+ 
+         VolumeVO volume = mock(VolumeVO.class);
+-        when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volume));
++        volumeDao = createMockVolumeDao(vmId, Collections.singletonList(volume));
+ 
+         when(backupDao.findById(backupId)).thenReturn(backup);
+         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/MockVolumeDao.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/MockVolumeDao.java
+@@ -0,0 +1,19 @@
++package org.apache.cloudstack.backup;
++
++import java.util.List;
++
++import org.mockito.Mockito;
++
++import com.cloud.storage.VolumeVO;
++import com.cloud.storage.dao.VolumeDao;
++
++public final class MockVolumeDao {
++    private MockVolumeDao() {
++    }
++
++    public static VolumeDao createMockVolumeDao(Long instanceId, List<VolumeVO> volumes) {
++        VolumeDao volumeDao = Mockito.mock(VolumeDao.class);
++        Mockito.when(volumeDao.findByInstance(instanceId)).thenReturn((List<?>) volumes);
++        return volumeDao;
++    }
++}
+--- a/server/src/test/java/org/apache/cloudstack/backup/MockVolumeDao.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/MockVolumeDao.java
+@@ -0,0 +1,19 @@
++package org.apache.cloudstack.backup;
++
++import java.util.List;
++
++import org.mockito.Mockito;
++
++import com.cloud.storage.VolumeVO;
++import com.cloud.storage.dao.VolumeDao;
++
++public final class MockVolumeDao {
++    private MockVolumeDao() {
++    }
++
++    public static VolumeDao createMockVolumeDao(Long instanceId, List<VolumeVO> volumes) {
++        VolumeDao volumeDao = Mockito.mock(VolumeDao.class);
++        Mockito.when(volumeDao.findByInstance(instanceId)).thenReturn((List<?>) volumes);
++        return volumeDao;
++    }
++}

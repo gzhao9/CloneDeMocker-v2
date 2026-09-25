@@ -1,0 +1,40 @@
+--- a/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
++++ b/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
+@@ -355,7 +355,6 @@
+     @Test
+     public void testValidateFirewallRuleVpcWithoutAssociatedNetworkUsesVpcCapabilities() {
+         final Account caller = Mockito.mock(Account.class);
+-        final IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         final NetworkVO network = Mockito.mock(NetworkVO.class);
+         final FirewallServiceProvider firewallServiceProvider = Mockito.mock(FirewallServiceProvider.class);
+         final Map<Capability, String> firewallCaps = new HashMap<>();
+@@ -366,7 +365,7 @@
+         firewallCaps.put(Capability.SupportedEgressProtocols, "tcp,udp,icmp");
+         capabilities.put(Service.Firewall, firewallCaps);
+ 
+-        when(ipAddress.getVpcId()).thenReturn(10L);
++        final IPAddressVO ipAddress = createMockIpAddress(10L);
+         when(_networkModel.getNetwork(2L)).thenReturn(network);
+         when(network.getVpcId()).thenReturn(10L);
+         when(routedIpv4Manager.isVirtualRouterGateway(network)).thenReturn(false);
+@@ -382,8 +381,7 @@
+ 
+     @Test
+     public void testIsVpcIpAddressReturnsTrueWhenVpcIdPresent() {
+-        IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+-        when(ipAddress.getVpcId()).thenReturn(5L);
++        IPAddressVO ipAddress = createMockIpAddress(5L);
+         Assert.assertTrue(_firewallMgr.isVpcIpAddress(ipAddress));
+     }
+ 
+@@ -723,4 +721,10 @@
+         when(_ipAddressDao.findById(1L)).thenReturn(null);
+         _firewallMgr.getSourceIpForIngressRule(1L);
+     }
++
++    private static IPAddressVO createMockIpAddress(long vpcId) {
++        final IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
++        when(ipAddress.getVpcId()).thenReturn(vpcId);
++        return ipAddress;
++    }
+ }
