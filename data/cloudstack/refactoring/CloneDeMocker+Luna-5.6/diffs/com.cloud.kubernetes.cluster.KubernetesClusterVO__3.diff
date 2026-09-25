@@ -1,0 +1,35 @@
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
+@@ -211,17 +211,15 @@
+     @Test(expected = PermissionDeniedException.class)
+     public void testValidateKubernetesClusterScaleSizeStoppedCluster() {
+         Long size = 2L;
+-        KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
++        KubernetesClusterVO clusterVO = createMockKubernetesClusterVO(KubernetesCluster.State.Stopped);
+         Mockito.when(clusterVO.getNodeCount()).thenReturn(size);
+-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Stopped);
+         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 3L, 100, Mockito.mock(DataCenter.class));
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateKubernetesClusterScaleSizeZeroNewSize() {
+         Long size = 2L;
+-        KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
+-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
++        KubernetesClusterVO clusterVO = createMockKubernetesClusterVO(KubernetesCluster.State.Running);
+         Mockito.when(clusterVO.getNodeCount()).thenReturn(size);
+         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 0L, 100, Mockito.mock(DataCenter.class));
+     }
+@@ -274,6 +272,12 @@
+         Mockito.when(templateJoinDao.newTemplateView(Mockito.any(VMTemplateVO.class), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(TemplateJoinVO.class)));
+         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 4L, 10, Mockito.mock(DataCenter.class));
+ 
++    }
++
++    private static KubernetesClusterVO createMockKubernetesClusterVO(KubernetesCluster.State state) {
++        KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
++        Mockito.when(clusterVO.getState()).thenReturn(state);
++        return clusterVO;
+     }
+ 
+     @Before

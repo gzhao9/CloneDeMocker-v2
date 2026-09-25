@@ -1,0 +1,63 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -1615,8 +1615,7 @@
+         String errorMsg = "Error!";
+         Map<String, String> details = Map.of("key", "value");
+ 
+-        UpdateCustomActionCmd cmd = mock(UpdateCustomActionCmd.class);
+-        when(cmd.getId()).thenReturn(actionId);
++        UpdateCustomActionCmd cmd = createMockUpdateCustomActionCmd(actionId);
+         when(cmd.getDescription()).thenReturn(newDescription);
+         when(cmd.getResourceType()).thenReturn(newResourceType);
+         when(cmd.getAllowedRoleTypes()).thenReturn(newRoles);
+@@ -1649,8 +1648,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testUpdateCustomAction_ActionNotFound_ThrowsException() {
+-        UpdateCustomActionCmd cmd = mock(UpdateCustomActionCmd.class);
+-        when(cmd.getId()).thenReturn(99L);
++        UpdateCustomActionCmd cmd = createMockUpdateCustomActionCmd(99L);
+         when(extensionCustomActionDao.findById(99L)).thenReturn(null);
+ 
+         extensionsManager.updateCustomAction(cmd);
+@@ -1658,8 +1656,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testUpdateCustomAction_InvalidResourceType_ThrowsException() {
+-        UpdateCustomActionCmd cmd = mock(UpdateCustomActionCmd.class);
+-        when(cmd.getId()).thenReturn(1L);
++        UpdateCustomActionCmd cmd = createMockUpdateCustomActionCmd(1L);
+         ExtensionCustomActionVO action = mock(ExtensionCustomActionVO.class);
+         when(extensionCustomActionDao.findById(1L)).thenReturn(action);
+         when(cmd.getResourceType()).thenReturn("InvalidType");
+@@ -1669,8 +1666,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testUpdateCustomAction_InvalidRoleType_ThrowsException() {
+-        UpdateCustomActionCmd cmd = mock(UpdateCustomActionCmd.class);
+-        when(cmd.getId()).thenReturn(1L);
++        UpdateCustomActionCmd cmd = createMockUpdateCustomActionCmd(1L);
+         ExtensionCustomActionVO action = mock(ExtensionCustomActionVO.class);
+         when(extensionCustomActionDao.findById(1L)).thenReturn(action);
+         when(cmd.getAllowedRoleTypes()).thenReturn(List.of("NotARole"));
+@@ -1680,8 +1676,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testUpdateCustomAction_DaoUpdateFails_ThrowsException() {
+-        UpdateCustomActionCmd cmd = mock(UpdateCustomActionCmd.class);
+-        when(cmd.getId()).thenReturn(1L);
++        UpdateCustomActionCmd cmd = createMockUpdateCustomActionCmd(1L);
+         when(cmd.getDescription()).thenReturn("desc");
+         ExtensionCustomActionVO action = mock(ExtensionCustomActionVO.class);
+         when(extensionCustomActionDao.findById(1L)).thenReturn(action);
+@@ -3062,4 +3057,10 @@
+         assertTrue(resp.getResult().get(ApiConstants.DETAILS).contains("Action failed"));
+     }
+ 
++
++    private static UpdateCustomActionCmd createMockUpdateCustomActionCmd(long id) {
++        UpdateCustomActionCmd cmd = mock(UpdateCustomActionCmd.class);
++        when(cmd.getId()).thenReturn(id);
++        return cmd;
++    }
+ }

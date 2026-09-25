@@ -1,0 +1,93 @@
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
+@@ -297,7 +297,7 @@
+ 
+     @Test
+     public void addVmsToCluster() {
+-        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
++        KubernetesClusterVO cluster = MockKubernetesClusterVO.createMockKubernetesClusterVO(KubernetesCluster.ClusterType.ExternalManaged);
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+         AddVirtualMachinesToKubernetesClusterCmd cmd = Mockito.mock(AddVirtualMachinesToKubernetesClusterCmd.class);
+         List<Long> vmIds = Arrays.asList(1L, 2L, 3L);
+@@ -305,7 +305,6 @@
+         Mockito.when(cmd.getId()).thenReturn(1L);
+         Mockito.when(cmd.getVmIds()).thenReturn(vmIds);
+         Mockito.when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class));
+-        Mockito.when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
+         Mockito.when(vmInstanceDao.findById(Mockito.anyLong())).thenReturn(vm);
+         Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
+         Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(1L, vmIds)).thenReturn(Collections.emptyList());
+@@ -314,14 +313,13 @@
+ 
+     @Test
+     public void removeVmsFromCluster() {
+-        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+         RemoveVirtualMachinesFromKubernetesClusterCmd cmd = Mockito.mock(RemoveVirtualMachinesFromKubernetesClusterCmd.class);
+         List<Long> vmIds = Arrays.asList(1L, 2L, 3L);
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+         Mockito.when(cmd.getVmIds()).thenReturn(vmIds);
+         Mockito.when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class));
+-        Mockito.when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
++        KubernetesClusterVO cluster = MockKubernetesClusterVO.createMockKubernetesClusterVO(KubernetesCluster.ClusterType.ExternalManaged);
+         Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
+         Assert.assertTrue(kubernetesClusterManager.removeVmsFromCluster(cmd).size() > 0);
+     }
+@@ -914,4 +912,16 @@
+         Mockito.verify(kubernetesClusterAffinityGroupMapDao).listAffinityGroupIdsByClusterIdAndNodeType(1L, WORKER.name());
+     }
+ 
++
++    public final class MockKubernetesClusterVO {
++        private MockKubernetesClusterVO() {
++        }
++
++        public static KubernetesClusterVO createMockKubernetesClusterVO(
++                KubernetesCluster.ClusterType clusterType) {
++            KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
++            Mockito.when(cluster.getClusterType()).thenReturn(clusterType);
++            return cluster;
++        }
++    }
+ }
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesServiceHelperImplTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesServiceHelperImplTest.java
+@@ -83,9 +83,8 @@
+         KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
+         Mockito.when(map.getClusterId()).thenReturn(1L);
+         Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(map);
+-        KubernetesClusterVO kubernetesCluster = Mockito.mock(KubernetesClusterVO.class);
++        KubernetesClusterVO kubernetesCluster = MockKubernetesClusterVO.createMockKubernetesClusterVO(KubernetesCluster.ClusterType.CloudManaged);
+         Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(kubernetesCluster);
+-        Mockito.when(kubernetesCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.CloudManaged);
+         kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
+     }
+ 
+@@ -97,9 +96,8 @@
+         KubernetesClusterVmMapVO map = Mockito.mock(KubernetesClusterVmMapVO.class);
+         Mockito.when(map.getClusterId()).thenReturn(1L);
+         Mockito.when(kubernetesClusterVmMapDao.findByVmId(1L)).thenReturn(map);
+-        KubernetesClusterVO kubernetesCluster = Mockito.mock(KubernetesClusterVO.class);
++        KubernetesClusterVO kubernetesCluster = MockKubernetesClusterVO.createMockKubernetesClusterVO(KubernetesCluster.ClusterType.ExternalManaged);
+         Mockito.when(kubernetesClusterDao.findById(1L)).thenReturn(kubernetesCluster);
+-        Mockito.when(kubernetesCluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
+         kubernetesServiceHelper.checkVmCanBeDestroyed(vm);
+     }
+ 
+@@ -400,4 +398,16 @@
+         Assert.assertEquals(1, result.size());
+         Assert.assertEquals(Arrays.asList(1L, 2L, 3L), result.get("CONTROL"));
+     }
++
++    public final class MockKubernetesClusterVO {
++        private MockKubernetesClusterVO() {
++        }
++
++        public static KubernetesClusterVO createMockKubernetesClusterVO(
++                KubernetesCluster.ClusterType clusterType) {
++            KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
++            Mockito.when(cluster.getClusterType()).thenReturn(clusterType);
++            return cluster;
++        }
++    }
+ }
