@@ -1,0 +1,35 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -1669,9 +1669,8 @@
+     @Test
+     public void processPrepareExternalProvisioning_nonExternalHypervisor_noAction() throws OperationTimedoutException, AgentUnavailableException {
+         Host host = mock(Host.class);
+-        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+         VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+-        when(vmProfile.getTemplate()).thenReturn(template);
++        VirtualMachineProfile vmProfile = createVirtualMachineProfile(template);
+         when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
+         virtualMachineManagerImpl.processPrepareExternalProvisioning(true, host, vmProfile, mock(DataCenter.class));
+         verify(agentManagerMock, never()).send(anyLong(), any(Command.class));
+@@ -1680,9 +1679,8 @@
+     @Test
+     public void processPrepareExternalProvisioning_externalHypervisor_sendsCommand() throws OperationTimedoutException, AgentUnavailableException {
+         Host host = mock(Host.class);
+-        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+         VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+-        when(vmProfile.getTemplate()).thenReturn(template);
++        VirtualMachineProfile vmProfile = createVirtualMachineProfile(template);
+         NicTO[] nics = new NicTO[]{mock(NicTO.class)};
+         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+         when(vmTO.getNics()).thenReturn(nics);
+@@ -2241,4 +2239,10 @@
+         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
+     }
+ 
++
++    private static VirtualMachineProfile createVirtualMachineProfile(VirtualMachineTemplate template) {
++        VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
++        when(vmProfile.getTemplate()).thenReturn(template);
++        return vmProfile;
++    }
+ }
