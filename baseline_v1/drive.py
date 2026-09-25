@@ -381,8 +381,10 @@ if __name__ == "__main__":
     # CloudStack's build runs `bash` (exec-maven-plugin in engine/schema). A lane started outside
     # a Git Bash shell (WMI, Task Scheduler) has only Git\cmd on PATH, so every build failed in
     # 5 s and the MCI was recorded as FAILED_BEHAVIORAL_EQUIVALENCE (A, 2026-09-25 17:39-18:15).
-    if os.name == "nt" and not shutil.which("bash"):
-        for extra in (r"C:\Program Files\Git\bin", r"C:\Program Files\Git\usr\bin"):
+    # Git bash goes first even when some bash is found: C:\Windows\System32\bash.exe (WSL) can
+    # shadow it and cannot run the build's scripts (D-005).
+    if os.name == "nt":
+        for extra in (r"C:\Program Files\Git\usr\bin", r"C:\Program Files\Git\bin"):
             if Path(extra, "bash.exe").is_file():
                 os.environ["PATH"] = extra + os.pathsep + os.environ.get("PATH", "")
         if not shutil.which("bash"):
