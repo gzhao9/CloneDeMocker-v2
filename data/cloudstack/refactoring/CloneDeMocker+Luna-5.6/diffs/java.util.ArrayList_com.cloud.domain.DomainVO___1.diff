@@ -1,0 +1,36 @@
+--- a/server/src/test/java/com/cloud/user/DomainManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/DomainManagerImplTest.java
+@@ -344,20 +344,18 @@
+     @Test (expected = InvalidParameterValueException.class)
+     public void validateUniqueDomainNameTestExistingNameThrowsException() {
+         SearchCriteria scMock = Mockito.mock(SearchCriteria.class);
+-        ArrayList<DomainVO> listMock = Mockito.mock(ArrayList.class);
++        ArrayList<DomainVO> listMock = createMockDomainVoList(false);
+         Mockito.doReturn(scMock).when(domainDaoMock).createSearchCriteria();
+         Mockito.doReturn(listMock).when(domainDaoMock).search(Mockito.any(SearchCriteria.class), Mockito.any());
+-        Mockito.doReturn(false).when(listMock).isEmpty();
+         domainManager.validateUniqueDomainName("test", 1L);
+     }
+ 
+     @Test
+     public void validateUniqueDomainNameTestUniqueNameDoesNotThrowException() {
+         SearchCriteria scMock = Mockito.mock(SearchCriteria.class);
+-        ArrayList<DomainVO> listMock = Mockito.mock(ArrayList.class);
++        ArrayList<DomainVO> listMock = createMockDomainVoList(true);
+         Mockito.doReturn(scMock).when(domainDaoMock).createSearchCriteria();
+         Mockito.doReturn(listMock).when(domainDaoMock).search(Mockito.any(SearchCriteria.class), Mockito.any());
+-        Mockito.doReturn(true).when(listMock).isEmpty();
+         domainManager.validateUniqueDomainName("testUnique", 1L);
+         Mockito.verify(domainDaoMock).createSearchCriteria();
+         Mockito.verify(scMock).addAnd("name", SearchCriteria.Op.EQ, "testUnique");
+@@ -415,4 +413,10 @@
+         }
+     }
+ 
++    private static ArrayList<DomainVO> createMockDomainVoList(boolean isEmptyReturn) {
++        ArrayList<DomainVO> listMock = Mockito.mock(ArrayList.class);
++        Mockito.doReturn(isEmptyReturn).when(listMock).isEmpty();
++        return listMock;
++    }
++
+ }
