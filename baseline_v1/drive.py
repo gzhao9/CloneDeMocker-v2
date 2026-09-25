@@ -14,6 +14,17 @@ paths. Two lanes share one working tree, so pushes are serialised with a lock fi
 that cannot publish keeps running: the rows are on disk and the next sync carries them.
 
 Anything skipped or failing goes to validation/results/pair-issues.log, for the morning.
+
+Several lanes on one project, on one host: give each the same direction and its own slice,
+
+    python baseline_v1/drive.py --lane L1 --reverse --slice 0/3 ... cloudstack
+    python baseline_v1/drive.py --lane L2 --reverse --slice 1/3 ... cloudstack
+    python baseline_v1/drive.py --lane L3 --reverse --slice 2/3 ... cloudstack
+
+Slice K/N takes the MCIs whose crc32(id) % N == K, so the lanes never pick the same MCI. Slice 0
+keeps the workspace `pair-<project>`; the others get `pair-<project>-<lane>`. Row writes on the
+host are serialised by baseline_v1/rowlock.py. `--start 0.5` begins the walk half-way in, for a
+machine joining a project that others already walk from both ends.
 """
 from __future__ import annotations
 
@@ -23,11 +34,14 @@ import os
 import subprocess
 import sys
 import time
+import zlib
 from datetime import datetime
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
+
+from baseline_v1.rowlock import RowLock  # noqa: E402
 
 RESULTS = REPO / "validation" / "results"
 RUNIDS = RESULTS / "pair-runids.json"
@@ -112,12 +126,13 @@ def sync(lane: str, project: str, note: str) -> bool:
                 time.sleep(5 * attempt)
                 continue
             ok = True
-            for rel in files:
-                merge_with_remote(base, rel)
-                blob = git("hash-object", "-w", "--", rel).stdout.strip()
-                if not blob or plumb("update-index", "--add", "--cacheinfo", f"100644,{blob},{rel}").returncode != 0:
-                    ok = False
-                    break
+            with RowLock():                    # another lane on this host may be recording a row
+                for rel in files:
+                    merge_with_remote(base, rel)
+                    blob = git("hash-object", "-w", "--", rel).stdout.strip()
+                    if not blob or plumb("update-index", "--add", "--cacheinfo", f"100644,{blob},{rel}").returncode != 0:
+                        ok = False
+                        break
             tree = plumb("write-tree").stdout.strip() if ok else ""
             if not tree:
                 issue(lane, f"{project}: building the commit failed; not publishing")
@@ -191,7 +206,7 @@ def merge_with_remote(base: str, rel: str) -> None:
                 writer.writerows(mine + extra)
 
 
-ROUTE: dict = {"reverse": False, "round1": None}
+ROUTE: dict = {"reverse": False, "round1": None, "slice": (0, 1), "start": 0.0}
 ROUND1_SETUP = "CloneDeMocker+Terra-5.6"
 _remote_cache: dict = {"at": 0.0}
 
@@ -232,6 +247,9 @@ def make_should_run(project: str):
         })
 
     def should_run(mci_id: str) -> bool:
+        k, n = ROUTE["slice"]
+        if n > 1 and zlib.crc32(mci_id.encode("utf-8")) % n != k:
+            return False                                  # another lane on this host has it
         try:
             refresh()
         except Exception:  # noqa: BLE001 - offline: fall back to the last view
@@ -282,6 +300,8 @@ def run_id_for(project: str) -> str:
 def worker(lane: str, projects: list[str]) -> None:
     from baseline_v1 import run_pair
     run_pair.load_env()
+    run_pair.LANES_ON_HOST = ROUTE["slice"][1]
+    run_pair.LANE = lane
     for project in projects:
         try:
             run_id = run_id_for(project)
@@ -296,8 +316,10 @@ def worker(lane: str, projects: list[str]) -> None:
                 sync(lane, proj, f"{count['n']} MCIs")
 
         for attempt in range(2):                     # a second pass retries tool errors once
+            k, n = ROUTE["slice"]
             summary = run_pair.run_project(run_id, project, after_mci=after,
-                                           should_run=make_should_run(project), reverse=ROUTE["reverse"])
+                                           should_run=make_should_run(project), reverse=ROUTE["reverse"],
+                                           start=ROUTE["start"], workspace_suffix=lane if k else "")
             sync(lane, project, "pass end")
             if not summary["remaining"]:
                 break
@@ -313,7 +335,8 @@ def supervise(lane: str, projects: list[str]) -> None:
     while True:
         roots = [a for name in projects if name in PROJECT_ROOTS for a in ("--root", f"{name}={PROJECT_ROOTS[name]}")]
         route = ((["--reverse"] if ROUTE["reverse"] else []) + (["--round1-failures", ROUTE["round1"]] if ROUTE["round1"] else [])
-                 + (["--inherit-round1-env"] if ROUTE.get("inherit_env") else []))
+                 + (["--inherit-round1-env"] if ROUTE.get("inherit_env") else [])
+                 + ["--slice", "{}/{}".format(*ROUTE["slice"]), "--start", str(ROUTE["start"])])
         child = subprocess.Popen([sys.executable, __file__, "--lane", lane, "--worker", *roots, *route, *projects],
                                  cwd=REPO, stdout=log, stderr=subprocess.STDOUT)
         code = child.wait()
@@ -340,11 +363,20 @@ if __name__ == "__main__":
     parser.add_argument("--inherit-round1-env", action="store_true",
                         help="with --round1-failures only: MCIs round 1 graded ENVIRONMENT_NOT_READY "
                              "keep that verdict for V2 and V1 (flagged inheritedFromRound1), not re-run")
+    parser.add_argument("--slice", default="0/1",
+                        help="K/N: this lane takes MCIs with crc32(id) %% N == K (N lanes on one host)")
+    parser.add_argument("--start", type=float, default=0.0,
+                        help="0..1: begin the walk this far into the MCI list, wrapping around")
     parser.add_argument("projects", nargs="+")
     args = parser.parse_args()
     ROUTE["reverse"] = args.reverse
     ROUTE["round1"] = args.round1_failures
     ROUTE["inherit_env"] = args.inherit_round1_env
+    k, _, n = args.slice.partition("/")
+    ROUTE["slice"] = (int(k), int(n or 1))
+    if not 0 <= ROUTE["slice"][0] < ROUTE["slice"][1]:
+        parser.error("--slice K/N needs 0 <= K < N")
+    ROUTE["start"] = args.start
     for pair in args.root:
         name, _, path = pair.partition("=")
         PROJECT_ROOTS[name] = path

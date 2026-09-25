@@ -50,6 +50,7 @@ from studio.harness import HarnessEvidence  # noqa: E402
 from studio.model_provider import ModelProvider, ModelResult  # noqa: E402
 from studio.refactoring_agent import RefactoringAgent  # noqa: E402
 from baseline_v1.v1_agent import V1RefactoringAgent  # noqa: E402
+from baseline_v1.rowlock import RowLock  # noqa: E402
 
 canonical_store.MODEL_DISPLAY_NAMES.setdefault("gpt-5.6-luna", "Luna 5.6")
 
@@ -73,10 +74,16 @@ class PairV1Agent(V1RefactoringAgent):
 HARNESS_V2 = canonical_store.HARNESS_CLONEDEMOCKER
 HARNESS_V1 = "CloneDeMocker-V1"
 LOG = REPO / "validation" / "results" / "pair-run.log"
+# Lanes running on this host at once (drive.py --slice K/N sets N). Rows run under N > 1 carry
+# it as `lanesOnHost`: concurrent builds slow each other, so their seconds are not comparable
+# with single-lane rows, though V2 and V1 of one MCI still share the same conditions.
+LANES_ON_HOST = 1
+LANE = ""
 
 
 def log(message: str) -> None:
-    line = f"{datetime.now().strftime('%m-%d %H:%M:%S')} {message}"
+    tag = f"[{LANE}] " if LANES_ON_HOST > 1 else ""
+    line = f"{datetime.now().strftime('%m-%d %H:%M:%S')} {tag}{message}"
     print(line, flush=True)
     LOG.parent.mkdir(parents=True, exist_ok=True)
     with LOG.open("a", encoding="utf-8") as handle:
@@ -134,6 +141,8 @@ class TimedProvider(ModelProvider):
 def record(project: str, mci_id: str, result: dict, run_id: str, model: str, harness: str) -> str:
     entry = canonical_store.entry_from_agent_result(mci_id, result)
     entry["host"] = socket.gethostname()
+    if LANES_ON_HOST > 1:
+        entry["lanesOnHost"] = LANES_ON_HOST
     for key in ("usageRefactoring", "usageAudit"):
         if key in result:
             entry[key] = result[key]
@@ -157,8 +166,9 @@ def record(project: str, mci_id: str, result: dict, run_id: str, model: str, har
     # moment; opening it then fails with EINVAL/EACCES. Retry instead of losing the MCI.
     for attempt in range(1, 6):
         try:
-            canonical_store.merge(project=project, repository_root=REPO, entries=[entry], detection_source=None,
-                                  diff_lookup=lookup, model=model, harness=harness, use_mock=False)
+            with RowLock():
+                canonical_store.merge(project=project, repository_root=REPO, entries=[entry], detection_source=None,
+                                      diff_lookup=lookup, model=model, harness=harness, use_mock=False)
             break
         except OSError as error:
             if attempt == 5 or error.errno not in (13, 22):
@@ -185,8 +195,9 @@ def inherit_round1(project: str, mci_id: str, round1_row: dict, harness: str, mo
         "inheritedFromRound1": "round-1 baseline could not be established; verdict kept, not re-run",
         "host": socket.gethostname(),
     }
-    canonical_store.merge(project=project, repository_root=REPO, entries=[entry], detection_source=None,
-                          diff_lookup={}, model=model, harness=harness, use_mock=False)
+    with RowLock():
+        canonical_store.merge(project=project, repository_root=REPO, entries=[entry], detection_source=None,
+                              diff_lookup={}, model=model, harness=harness, use_mock=False)
     log(f"  {'V2' if harness == HARNESS_V2 else 'V1'} {mci_id}: ENVIRONMENT_NOT_READY inherited from round 1")
 
 
@@ -200,19 +211,25 @@ def done_ids(project: str, model: str, harness: str) -> set[str]:
 
 
 def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: int = 0,
-                after_mci=None, should_run=None, reverse: bool = False) -> dict:
+                after_mci=None, should_run=None, reverse: bool = False, start: float = 0.0,
+                workspace_suffix: str = "") -> dict:
     """Run every MCI of one detection run through V2 then V1. Resumable: MCIs already in both
     datasets are skipped. `after_mci(project, mci_id)` runs after each MCI (the driver syncs there).
     `should_run(mci_id)` is asked right before each MCI, so routing and work another machine has
     already published are decided on current data, not on a list frozen at start. `reverse`
-    walks the list from the end (two machines sharing a project start at opposite ends)."""
+    walks the list from the end (two machines sharing a project start at opposite ends). `start`
+    (0..1) begins that walk part-way in and wraps around, so a third or fourth machine can start
+    in the middle. `workspace_suffix` gives a second lane on the same host its own copy."""
     service = DetectionService(REPO)
     _, raw = service.load_raw_detection(run_id)
     ordered = [item["id"] for item in service._indexed_instances(raw)]
     if reverse:
         ordered.reverse()
+    if start:
+        cut = int(len(ordered) * start) % max(len(ordered), 1)
+        ordered = ordered[cut:] + ordered[:cut]
     base = RefactoringAgent._openai_provider("default")
-    workspace = f"pair-{project}"
+    workspace = f"pair-{project}" + (f"-{workspace_suffix}" if workspace_suffix else "")
 
     v2_done = done_ids(project, model, HARNESS_V2)
     v1_done = done_ids(project, model, HARNESS_V1)
