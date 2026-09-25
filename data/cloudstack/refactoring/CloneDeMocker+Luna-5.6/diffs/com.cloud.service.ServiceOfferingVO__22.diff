@@ -1,0 +1,42 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
+@@ -240,10 +240,7 @@
+ 
+     @Test
+     public void testGetDetailsForInstanceCreation_CustomizedOffering_WithSpeed_DoesNotAddDefaultCpuSpeed() {
+-        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        when(offering.isCustomized()).thenReturn(true);
+-        when(offering.getCpu()).thenReturn(2);
+-        when(offering.getRamSize()).thenReturn(1024);
++        ServiceOfferingVO offering = createMockServiceOffering(true, 2, 1024);
+         when(offering.getSpeed()).thenReturn(2000);
+ 
+         Vm request = mock(Vm.class);
+@@ -652,13 +649,10 @@
+ 
+     @Test
+     public void testGetServiceOfferingFromRequest_NotCustomized_CpuMemoryMatch_ReturnsOffering() {
+-        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
++        ServiceOfferingVO offering = createMockServiceOffering(false, 2, 1024);
+         Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid4")).thenReturn(offering);
+         doNothing().when(accountService).checkAccess(eq(account), eq(offering), any());
+-        when(offering.isCustomized()).thenReturn(false);
+-        when(offering.getCpu()).thenReturn(2);
+-        when(offering.getRamSize()).thenReturn(1024);
+         DataCenterVO zone = mock(DataCenterVO.class);
+ 
+         assertEquals(offering, serverAdapter.getServiceOfferingFromRequest(zone, account, "uuid4", 2, 1024));
+@@ -1137,4 +1131,12 @@
+     public void testListDisksByBackupUuid_AlwaysThrows() {
+         serverAdapter.listDisksByBackupUuid("backup-uuid");
+     }
++
++    private static ServiceOfferingVO createMockServiceOffering(boolean customized, int cpu, int ramSize) {
++        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
++        when(offering.isCustomized()).thenReturn(customized);
++        when(offering.getCpu()).thenReturn(cpu);
++        when(offering.getRamSize()).thenReturn(ramSize);
++        return offering;
++    }
+ }
