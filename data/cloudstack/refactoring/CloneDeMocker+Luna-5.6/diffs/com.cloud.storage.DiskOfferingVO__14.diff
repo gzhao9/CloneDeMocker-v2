@@ -1,0 +1,42 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -478,10 +478,9 @@
+     public void getCustomDiskOfferingIdForVolumeUploadReturnsDefaultOfferingWhenAccessibleAndEncryptionNotRequired() {
+         Account owner = Mockito.mock(Account.class);
+         DataCenter zone = Mockito.mock(DataCenter.class);
+-        DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
++        DiskOfferingVO defaultOffering = createMockDiskOfferingVO(11L);
+ 
+         Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Active);
+-        Mockito.when(defaultOffering.getId()).thenReturn(11L);
+         Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+ 
+         Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, false);
+@@ -540,13 +539,12 @@
+         DataCenter zone = Mockito.mock(DataCenter.class);
+         DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+         DiskOfferingVO deniedOffering = Mockito.mock(DiskOfferingVO.class);
+-        DiskOfferingVO allowedOffering = Mockito.mock(DiskOfferingVO.class);
++        DiskOfferingVO allowedOffering = createMockDiskOfferingVO(24L);
+ 
+         Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Active);
+         Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+         Mockito.doThrow(new PermissionDeniedException("default denied")).when(_configMgr).checkDiskOfferingAccess(owner, defaultOffering, zone);
+ 
+-        Mockito.when(allowedOffering.getId()).thenReturn(24L);
+         Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(deniedOffering, allowedOffering));
+         Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(owner, deniedOffering, zone);
+ 
+@@ -2715,6 +2713,12 @@
+         }
+     }
+ 
++    private static DiskOfferingVO createMockDiskOfferingVO(long offeringId) {
++        DiskOfferingVO offering = Mockito.mock(DiskOfferingVO.class);
++        Mockito.when(offering.getId()).thenReturn(offeringId);
++        return offering;
++    }
++
+ // =====================================================================
+ // VMware ROOT-volume resize / offering-change: VM power_state-lag tests
+ //
