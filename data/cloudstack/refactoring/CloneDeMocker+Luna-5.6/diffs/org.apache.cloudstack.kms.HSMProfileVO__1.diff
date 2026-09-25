@@ -1,0 +1,118 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplAccessTest.java
+@@ -213,8 +213,7 @@
+ 
+     @Test(expected = PermissionDeniedException.class)
+     public void testCheckHSMProfileAccess_DeniesNonRootModifyOfSystemProfile() {
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getIsPublic()).thenReturn(true);
++        HSMProfileVO profile = org.apache.cloudstack.kms.MockHSMProfile.createMockHSMProfile(true);
+ 
+         Account caller = mock(Account.class);
+         when(caller.getId()).thenReturn(1L);
+@@ -225,8 +224,7 @@
+ 
+     @Test
+     public void testCheckHSMProfileAccess_AllowsRootModifyOfSystemProfile() {
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getIsPublic()).thenReturn(true);
++        HSMProfileVO profile = MockHSMProfile.createMockHSMProfile(true);
+ 
+         Account caller = mock(Account.class);
+         when(caller.getId()).thenReturn(1L);
+@@ -237,24 +235,21 @@
+ 
+     @Test
+     public void testCheckHSMProfileAccess_AllowsReadAccessToSystemProfileForAllUsers() {
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getIsPublic()).thenReturn(true);
++        HSMProfileVO profile = MockHSMProfile.createMockHSMProfile(true);
+ 
+         kmsManager.checkHSMProfileAccess(mock(Account.class), profile, false);
+     }
+ 
+     @Test
+     public void testCheckHSMProfileAccess_DelegatesToAclForOwnedProfile() {
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getIsPublic()).thenReturn(false);
++        HSMProfileVO profile = MockHSMProfile.createMockHSMProfile(false);
+ 
+         kmsManager.checkHSMProfileAccess(mock(Account.class), profile, true);
+     }
+ 
+     @Test(expected = PermissionDeniedException.class)
+     public void testCheckHSMProfileAccess_ThrowsWhenAclDeniesOwnedProfile() {
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getIsPublic()).thenReturn(false);
++        HSMProfileVO profile = MockHSMProfile.createMockHSMProfile(false);
+ 
+         Account caller = mock(Account.class);
+         doThrow(new PermissionDeniedException("denied"))
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplHSMTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplHSMTest.java
+@@ -382,8 +382,7 @@
+      */
+     @Test
+     public void testValidateProfileScopeForOwner_PublicAllowsAnyOwner() {
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getIsPublic()).thenReturn(true);
++        HSMProfileVO profile = org.apache.cloudstack.kms.MockHSMProfile.createMockHSMProfile(true);
+ 
+         kmsManager.validateProfileScopeForOwner(profile, 200L, 9L);
+     }
+@@ -393,8 +392,7 @@
+      */
+     @Test
+     public void testValidateProfileScopeForOwner_DomainScopedAllowsSameDomain() {
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getIsPublic()).thenReturn(false);
++        HSMProfileVO profile = MockHSMProfile.createMockHSMProfile(false);
+         when(profile.getAccountId()).thenReturn(-1L);
+         when(profile.getDomainId()).thenReturn(5L);
+ 
+@@ -406,8 +404,7 @@
+      */
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateProfileScopeForOwner_DomainScopedRejectsOtherDomain() {
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getIsPublic()).thenReturn(false);
++        HSMProfileVO profile = MockHSMProfile.createMockHSMProfile(false);
+         when(profile.getAccountId()).thenReturn(-1L);
+         when(profile.getDomainId()).thenReturn(5L);
+         when(profile.getName()).thenReturn("domain-profile");
+@@ -420,8 +417,7 @@
+      */
+     @Test
+     public void testValidateProfileScopeForOwner_AccountOwnedAllowsSameAccount() {
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getIsPublic()).thenReturn(false);
++        HSMProfileVO profile = MockHSMProfile.createMockHSMProfile(false);
+         when(profile.getAccountId()).thenReturn(200L);
+ 
+         kmsManager.validateProfileScopeForOwner(profile, 200L, 5L);
+@@ -432,8 +428,7 @@
+      */
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateProfileScopeForOwner_AccountOwnedRejectsOtherAccount() {
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getIsPublic()).thenReturn(false);
++        HSMProfileVO profile = MockHSMProfile.createMockHSMProfile(false);
+         when(profile.getAccountId()).thenReturn(200L);
+         when(profile.getName()).thenReturn("account-profile");
+ 
+--- a/server/src/test/java/org/apache/cloudstack/kms/MockHSMProfile.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/MockHSMProfile.java
+@@ -0,0 +1,13 @@
++package org.apache.cloudstack.kms;
++
++import static org.mockito.Mockito.when;
++
++import org.mockito.Mockito;
++
++public class MockHSMProfile {
++    public static HSMProfileVO createMockHSMProfile(boolean isPublic) {
++        HSMProfileVO profile = Mockito.mock(HSMProfileVO.class);
++        when(profile.getIsPublic()).thenReturn(isPublic);
++        return profile;
++    }
++}

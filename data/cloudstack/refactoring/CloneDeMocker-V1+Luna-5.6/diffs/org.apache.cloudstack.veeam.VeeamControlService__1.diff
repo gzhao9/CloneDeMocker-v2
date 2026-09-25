@@ -1,0 +1,78 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/sso/SsoServiceTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/sso/SsoServiceTest.java
+@@ -128,14 +128,13 @@
+     @Test
+     public void testHandleTokenRejectsInvalidCredentials() throws Exception {
+         final SsoService service = new SsoService();
+-        final VeeamControlService controlService = mock(VeeamControlService.class);
++        final VeeamControlService controlService = createMockVeeamControlService("wrong", false);
+         service.veeamControlService = controlService;
+         final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/sso/oauth/token");
+         final MockHttpServletResponse response = new MockHttpServletResponse();
+         request.setParameter("grant_type", "password");
+         request.setParameter("username", "veeam");
+         request.setParameter("password", "wrong");
+-        when(controlService.validateCredentials("veeam", "wrong")).thenReturn(false);
+ 
+         service.handle(request, response, "/sso/oauth/token", Negotiation.OutFormat.JSON,
+                 new VeeamControlServlet(Collections.emptyList()));
+@@ -147,14 +146,13 @@
+     @Test
+     public void testHandleTokenReturnsServerErrorWhenTokenIssuanceFails() throws Exception {
+         final SsoService service = new SsoService();
+-        final VeeamControlService controlService = mock(VeeamControlService.class);
++        final VeeamControlService controlService = createMockVeeamControlService("secret", true);
+         service.veeamControlService = controlService;
+         final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/sso/oauth/token");
+         final MockHttpServletResponse response = new MockHttpServletResponse();
+         request.setParameter("grant_type", "password");
+         request.setParameter("username", "veeam");
+         request.setParameter("password", "secret");
+-        when(controlService.validateCredentials("veeam", "secret")).thenReturn(true);
+         when(controlService.getHmacSecret()).thenReturn(null);
+ 
+         service.handle(request, response, "/sso/oauth/token", Negotiation.OutFormat.JSON,
+@@ -167,14 +165,13 @@
+     @Test
+     public void testHandleTokenIssuesTokenWithDefaultScopes() throws Exception {
+         final SsoService service = new SsoService();
+-        final VeeamControlService controlService = mock(VeeamControlService.class);
++        final VeeamControlService controlService = createMockVeeamControlService("secret", true);
+         service.veeamControlService = controlService;
+         final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/sso/oauth/token");
+         final MockHttpServletResponse response = new MockHttpServletResponse();
+         request.setParameter("grant_type", "password");
+         request.setParameter("username", "veeam");
+         request.setParameter("password", "secret");
+-        when(controlService.validateCredentials("veeam", "secret")).thenReturn(true);
+         when(controlService.getHmacSecret()).thenReturn("very-secret");
+ 
+         service.handle(request, response, "/sso/oauth/token", Negotiation.OutFormat.JSON,
+@@ -199,7 +196,7 @@
+     @Test
+     public void testHandleTokenHonorsCustomScope() throws Exception {
+         final SsoService service = new SsoService();
+-        final VeeamControlService controlService = mock(VeeamControlService.class);
++        final VeeamControlService controlService = createMockVeeamControlService("secret", true);
+         service.veeamControlService = controlService;
+         final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/sso/oauth/token");
+         final MockHttpServletResponse response = new MockHttpServletResponse();
+@@ -207,7 +204,6 @@
+         request.setParameter("username", "veeam");
+         request.setParameter("password", "secret");
+         request.setParameter("scope", "custom-scope");
+-        when(controlService.validateCredentials("veeam", "secret")).thenReturn(true);
+         when(controlService.getHmacSecret()).thenReturn("very-secret");
+ 
+         service.handle(request, response, "/sso/oauth/token", Negotiation.OutFormat.JSON,
+@@ -216,4 +212,10 @@
+         assertEquals(200, response.getStatus());
+         assertTrue(response.getContentAsString().contains("\"scope\":\"custom-scope\""));
+     }
++
++    private static VeeamControlService createMockVeeamControlService(String password, boolean validationResult) {
++        final VeeamControlService controlService = mock(VeeamControlService.class);
++        when(controlService.validateCredentials("veeam", password)).thenReturn(validationResult);
++        return controlService;
++    }
+ }

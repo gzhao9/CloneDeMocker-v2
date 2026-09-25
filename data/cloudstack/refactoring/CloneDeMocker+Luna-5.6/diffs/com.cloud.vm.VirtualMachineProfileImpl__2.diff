@@ -1,0 +1,121 @@
+--- a/plugins/deployment-planners/implicit-dedication/src/test/java/org/apache/cloudstack/implicitplanner/ImplicitPlannerTest.java
++++ b/plugins/deployment-planners/implicit-dedication/src/test/java/org/apache/cloudstack/implicitplanner/ImplicitPlannerTest.java
+@@ -102,6 +102,8 @@
+ @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
+ public class ImplicitPlannerTest {
+ 
++    private VirtualMachineProfileImpl sharedVmProfile;
++
+     @Inject
+     ImplicitDedicationPlanner planner = new ImplicitDedicationPlanner();
+     @Inject
+@@ -163,6 +165,7 @@
+     @Before
+     public void setUp() {
+         ComponentContext.initComponentsLifeCycle();
++        sharedVmProfile = mock(VirtualMachineProfileImpl.class);
+ 
+         acct.setType(Account.Type.NORMAL);
+         acct.setAccountName("user1");
+@@ -197,15 +200,14 @@
+ 
+     @Test
+     public void checkStrictModeWithCurrentAccountVmsPresent() throws InsufficientServerCapacityException {
+-        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
+         DataCenterDeployment plan = mock(DataCenterDeployment.class);
+         ExcludeList avoids = new ExcludeList();
+ 
+-        initializeForTest(vmProfile, plan);
++        initializeForTest(sharedVmProfile, plan);
+ 
+         initializeForImplicitPlannerTest(false);
+ 
+-        List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
++        List<Long> clusterList = planner.orderClusters(sharedVmProfile, plan, avoids);
+ 
+         // Validations.
+         // Check cluster 2 and 3 are not in the cluster list.
+@@ -224,17 +226,16 @@
+     @Test
+     public void checkStrictModeHostWithCurrentAccountVmsFull() throws InsufficientServerCapacityException {
+         @SuppressWarnings("unchecked")
+-        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
+         DataCenterDeployment plan = mock(DataCenterDeployment.class);
+         ExcludeList avoids = new ExcludeList();
+ 
+-        initializeForTest(vmProfile, plan);
++        initializeForTest(sharedVmProfile, plan);
+ 
+         initializeForImplicitPlannerTest(false);
+ 
+         // Mark the host 5 with current account vms to be in avoid list.
+         avoids.addHost(5L);
+-        List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
++        List<Long> clusterList = planner.orderClusters(sharedVmProfile, plan, avoids);
+ 
+         // Validations.
+         // Check cluster 1 and 3 are not in the cluster list.
+@@ -253,18 +254,17 @@
+     @Test
+     public void checkStrictModeNoHostsAvailable() throws InsufficientServerCapacityException {
+         @SuppressWarnings("unchecked")
+-        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
+         DataCenterDeployment plan = mock(DataCenterDeployment.class);
+         ExcludeList avoids = new ExcludeList();
+ 
+-        initializeForTest(vmProfile, plan);
++        initializeForTest(sharedVmProfile, plan);
+ 
+         initializeForImplicitPlannerTest(false);
+ 
+         // Mark the host 5 and 6 to be in avoid list.
+         avoids.addHost(5L);
+         avoids.addHost(6L);
+-        List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
++        List<Long> clusterList = planner.orderClusters(sharedVmProfile, plan, avoids);
+ 
+         // Validations.
+         // Check cluster list is empty.
+@@ -274,18 +274,17 @@
+     @Test
+     public void checkPreferredModePreferredHostAvailable() throws InsufficientServerCapacityException {
+         @SuppressWarnings("unchecked")
+-        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
+         DataCenterDeployment plan = mock(DataCenterDeployment.class);
+         ExcludeList avoids = new ExcludeList();
+ 
+-        initializeForTest(vmProfile, plan);
++        initializeForTest(sharedVmProfile, plan);
+ 
+         initializeForImplicitPlannerTest(true);
+ 
+         // Mark the host 5 and 6 to be in avoid list.
+         avoids.addHost(5L);
+         avoids.addHost(6L);
+-        List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
++        List<Long> clusterList = planner.orderClusters(sharedVmProfile, plan, avoids);
+ 
+         // Validations.
+         // Check cluster 1 and 2 are not in the cluster list.
+@@ -304,11 +303,10 @@
+     @Test
+     public void checkPreferredModeNoHostsAvailable() throws InsufficientServerCapacityException {
+         @SuppressWarnings("unchecked")
+-        VirtualMachineProfileImpl vmProfile = mock(VirtualMachineProfileImpl.class);
+         DataCenterDeployment plan = mock(DataCenterDeployment.class);
+         ExcludeList avoids = new ExcludeList();
+ 
+-        initializeForTest(vmProfile, plan);
++        initializeForTest(sharedVmProfile, plan);
+ 
+         initializeForImplicitPlannerTest(false);
+ 
+@@ -316,7 +314,7 @@
+         avoids.addHost(5L);
+         avoids.addHost(6L);
+         avoids.addHost(7L);
+-        List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
++        List<Long> clusterList = planner.orderClusters(sharedVmProfile, plan, avoids);
+ 
+         // Validations.
+         // Check cluster list is empty.

@@ -1,0 +1,255 @@
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplHSMTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplHSMTest.java
+@@ -160,11 +160,10 @@
+     public void testCreateHSMProfileResponse_PopulatesDetails() {
+         Long profileId = 10L;
+ 
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
++        HSMProfileVO profile = MockHSMProfileVO.createMockHsmProfile("PKCS11");
+         when(profile.getId()).thenReturn(profileId);
+         when(profile.getUuid()).thenReturn("profile-uuid");
+         when(profile.getName()).thenReturn("test-profile");
+-        when(profile.getProtocol()).thenReturn("PKCS11");
+         when(profile.getVendorName()).thenReturn("TestVendor");
+         when(profile.isEnabled()).thenReturn(true);
+         when(profile.getCreated()).thenReturn(new java.util.Date());
+@@ -193,8 +192,7 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testDeleteHSMProfile_RejectsSystemOwnedDatabaseProfile() {
+         Long profileId = 10L;
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getProtocol()).thenReturn("database");
++        HSMProfileVO profile = MockHSMProfileVO.createMockHsmProfile("database");
+         when(profile.getAccountId()).thenReturn(Account.ACCOUNT_ID_SYSTEM);
+         when(profile.getIsPublic()).thenReturn(true);
+         when(hsmProfileDao.findById(profileId)).thenReturn(profile);
+@@ -221,9 +219,8 @@
+     @Test
+     public void testDeleteHSMProfile_AllowsAdminOwnedDatabaseProfile() {
+         Long profileId = 10L;
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
++        HSMProfileVO profile = MockHSMProfileVO.createMockHsmProfile("database");
+         when(profile.getId()).thenReturn(profileId);
+-        when(profile.getProtocol()).thenReturn("database");
+         when(profile.getAccountId()).thenReturn(200L);
+         when(profile.getIsPublic()).thenReturn(false);
+         when(hsmProfileDao.findById(profileId)).thenReturn(profile);
+@@ -344,7 +341,7 @@
+         Long profileId = 11L;
+         Long domainId = 5L;
+ 
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
++        HSMProfileVO profile = MockHSMProfileVO.createMockHsmProfile("PKCS11");
+         when(profile.getId()).thenReturn(profileId);
+         when(profile.getUuid()).thenReturn("profile-uuid");
+         when(profile.getName()).thenReturn("domain-profile");
+@@ -439,4 +436,16 @@
+ 
+         kmsManager.validateProfileScopeForOwner(profile, 201L, 5L);
+     }
++
++    public final class MockHSMProfileVO {
++
++        private MockHSMProfileVO() {
++        }
++
++        public static HSMProfileVO createMockHsmProfile(String protocol) {
++            HSMProfileVO profile = mock(HSMProfileVO.class);
++            when(profile.getProtocol()).thenReturn(protocol);
++            return profile;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyCreationTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyCreationTest.java
+@@ -118,8 +118,7 @@
+         String hsmProfileName = "user-hsm-profile";
+         Long hsmProfileId = 10L;
+ 
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getProtocol()).thenReturn(testProviderName);
++        HSMProfileVO profile = createMockHsmProfile(testProviderName);
+         when(hsmProfileDao.findById(hsmProfileId)).thenReturn(profile);
+ 
+         // Mock provider KEK creation
+@@ -179,8 +178,7 @@
+         // Setup
+         Long hsmProfileId = 40L;
+ 
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getProtocol()).thenReturn(testProviderName);
++        HSMProfileVO profile = MockHSMProfileVO.createMockHsmProfile(testProviderName);
+         when(hsmProfileDao.findById(hsmProfileId)).thenReturn(profile);
+ 
+         when(kmsProvider.createKek(any(KeyPurpose.class), anyString(), anyInt(), eq(hsmProfileId)))
+@@ -213,4 +211,16 @@
+             assertEquals("test-kek-label", createdVersion.getKekLabel());
+         }
+     }
++
++    public final class MockHSMProfileVO {
++
++        private MockHSMProfileVO() {
++        }
++
++        public static HSMProfileVO createMockHsmProfile(String protocol) {
++            HSMProfileVO profile = mock(HSMProfileVO.class);
++            when(profile.getProtocol()).thenReturn(protocol);
++            return profile;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyLifecycleTest.java
+@@ -147,8 +147,7 @@
+         when(version.getKekLabel()).thenReturn("kek-label");
+         when(kmsKekVersionDao.findById(versionId)).thenReturn(version);
+ 
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getProtocol()).thenReturn("database");
++        HSMProfileVO profile = MockHSMProfileVO.createMockHsmProfile("database");
+         when(profile.isEnabled()).thenReturn(true);
+         when(hsmProfileDao.findById(20L)).thenReturn(profile);
+ 
+@@ -244,9 +243,8 @@
+         when(activeVersion.getKekLabel()).thenReturn("kek-label");
+         when(kmsKekVersionDao.getActiveVersion(1L)).thenReturn(activeVersion);
+ 
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
++        HSMProfileVO profile = MockHSMProfileVO.createMockHsmProfile("database");
+         when(profile.isEnabled()).thenReturn(true);
+-        when(profile.getProtocol()).thenReturn("database");
+         when(hsmProfileDao.findById(10L)).thenReturn(profile);
+ 
+         WrappedKey wrappedKeyResult = mock(WrappedKey.class);
+@@ -348,8 +346,7 @@
+         when(version.getKekLabel()).thenReturn("kek-label");
+         when(kmsKekVersionDao.listByKmsKeyId(keyId)).thenReturn(List.of(version));
+ 
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getProtocol()).thenReturn("database");
++        HSMProfileVO profile = MockHSMProfileVO.createMockHsmProfile("database");
+         when(hsmProfileDao.findById(10L)).thenReturn(profile);
+         doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
+ 
+@@ -374,8 +371,7 @@
+         when(version.getKekLabel()).thenReturn("kek-label");
+         when(kmsKekVersionDao.listByKmsKeyId(keyId)).thenReturn(List.of(version));
+ 
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getProtocol()).thenReturn("database");
++        HSMProfileVO profile = MockHSMProfileVO.createMockHsmProfile("database");
+         when(hsmProfileDao.findById(10L)).thenReturn(profile);
+         doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
+         doThrow(KMSException.kekOperationFailed("provider error")).when(kmsProvider).deleteKek(anyString());
+@@ -413,8 +409,7 @@
+         when(version.getKekLabel()).thenReturn("kek-label");
+         when(kmsKekVersionDao.listByKmsKeyId(10L)).thenReturn(List.of(version));
+ 
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getProtocol()).thenReturn("database");
++        HSMProfileVO profile = MockHSMProfileVO.createMockHsmProfile("database");
+         when(hsmProfileDao.findById(20L)).thenReturn(profile);
+         doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
+ 
+@@ -441,8 +436,7 @@
+         when(version.getKekLabel()).thenReturn("kek-label");
+         when(kmsKekVersionDao.listByKmsKeyId(10L)).thenReturn(List.of(version));
+ 
+-        HSMProfileVO profile = mock(HSMProfileVO.class);
+-        when(profile.getProtocol()).thenReturn("database");
++        HSMProfileVO profile = MockHSMProfileVO.createMockHsmProfile("database");
+         when(hsmProfileDao.findById(20L)).thenReturn(profile);
+         doReturn(kmsProvider).when(kmsManager).getKMSProvider("database");
+         doThrow(new RuntimeException("provider unavailable")).when(kmsProvider).deleteKek(anyString());
+@@ -454,4 +448,16 @@
+             verify(kmsKeyDao).remove(10L);
+         }
+     }
++
++    public final class MockHSMProfileVO {
++
++        private MockHSMProfileVO() {
++        }
++
++        public static HSMProfileVO createMockHsmProfile(String protocol) {
++            HSMProfileVO profile = mock(HSMProfileVO.class);
++            when(profile.getProtocol()).thenReturn(protocol);
++            return profile;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyRotationTest.java
++++ b/server/src/test/java/org/apache/cloudstack/kms/KMSManagerImplKeyRotationTest.java
+@@ -122,9 +122,8 @@
+         when(kmsKey.getHsmProfileId()).thenReturn(oldProfileId);
+         when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+ 
+-        HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
++        HSMProfileVO hsmProfile = MockHSMProfileVO.createMockHsmProfile(testProviderName);
+         when(hsmProfile.getId()).thenReturn(oldProfileId);
+-        when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+         when(hsmProfileDao.findById(oldProfileId)).thenReturn(hsmProfile);
+ 
+         // Old version should be marked as Previous
+@@ -179,9 +178,8 @@
+         when(kmsKey.getHsmProfileId()).thenReturn(oldProfileId);
+         when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+ 
+-        HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
++        HSMProfileVO hsmProfile = MockHSMProfileVO.createMockHsmProfile(testProviderName);
+         when(hsmProfile.getId()).thenReturn(newProfileId);
+-        when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+ 
+         KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
+         when(oldVersion.getVersionNumber()).thenReturn(1);
+@@ -284,9 +282,8 @@
+         when(kmsKey.getDomainId()).thenReturn(1L);
+         when(kmsKey.getAccountId()).thenReturn(2L);
+ 
+-        HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
++        HSMProfileVO hsmProfile = MockHSMProfileVO.createMockHsmProfile(testProviderName);
+         when(hsmProfile.getId()).thenReturn(oldProfileId);
+-        when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+         when(hsmProfileDao.findById(oldProfileId)).thenReturn(hsmProfile);
+ 
+         KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
+@@ -326,9 +323,8 @@
+         when(kmsKey.getHsmProfileId()).thenReturn(oldProfileId);
+         when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+ 
+-        HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
++        HSMProfileVO hsmProfile = MockHSMProfileVO.createMockHsmProfile(testProviderName);
+         when(hsmProfile.getId()).thenReturn(oldProfileId);
+-        when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+         when(hsmProfileDao.findById(oldProfileId)).thenReturn(hsmProfile);
+ 
+         // Provider throws because the old KEK label doesn't exist in the HSM
+@@ -355,9 +351,8 @@
+         when(kmsKey.getHsmProfileId()).thenReturn(currentProfileId);
+         when(kmsKey.getPurpose()).thenReturn(KeyPurpose.VOLUME_ENCRYPTION);
+ 
+-        HSMProfileVO hsmProfile = mock(HSMProfileVO.class);
++        HSMProfileVO hsmProfile = MockHSMProfileVO.createMockHsmProfile(testProviderName);
+         when(hsmProfile.getId()).thenReturn(currentProfileId);
+-        when(hsmProfile.getProtocol()).thenReturn(testProviderName);
+         when(hsmProfileDao.findById(currentProfileId)).thenReturn(hsmProfile);
+ 
+         KMSKekVersionVO oldVersion = mock(KMSKekVersionVO.class);
+@@ -384,4 +379,16 @@
+         // Verify KMS key was not updated (same profile)
+         verify(kmsKey, never()).setHsmProfileId(currentProfileId);
+     }
++
++    public final class MockHSMProfileVO {
++
++        private MockHSMProfileVO() {
++        }
++
++        public static HSMProfileVO createMockHsmProfile(String protocol) {
++            HSMProfileVO profile = mock(HSMProfileVO.class);
++            when(profile.getProtocol()).thenReturn(protocol);
++            return profile;
++        }
++    }
+ }

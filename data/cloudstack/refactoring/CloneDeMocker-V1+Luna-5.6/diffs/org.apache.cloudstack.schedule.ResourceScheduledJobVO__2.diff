@@ -1,0 +1,38 @@
+--- a/server/src/test/java/org/apache/cloudstack/schedule/autoscale/AutoScaleScheduleWorkerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/schedule/autoscale/AutoScaleScheduleWorkerTest.java
+@@ -91,13 +91,12 @@
+ 
+     @Test
+     public void testProcessJobWithValidDetailsSubmitsUpdateAutoScaleVmGroupCmd() {
+-        ResourceScheduledJobVO job = Mockito.mock(ResourceScheduledJobVO.class);
+         AutoScaleVmGroupVO group = Mockito.mock(AutoScaleVmGroupVO.class);
+         Map<String, String> details = new HashMap<>();
+         details.put("minmembers", "2");
+         details.put("maxmembers", "5");
+ 
+-        Mockito.when(job.getResourceId()).thenReturn(1L);
++        ResourceScheduledJobVO job = createMockResourceScheduledJobVO();
+         Mockito.when(job.getScheduleId()).thenReturn(10L);
+         Mockito.when(job.getActionName()).thenReturn(AutoScaleScheduleAction.UPDATE.name());
+         Mockito.when(autoScaleVmGroupDao.findById(1L)).thenReturn(group);
+@@ -118,8 +117,7 @@
+ 
+     @Test
+     public void testProcessJobWithMissingGroupSkipsExecution() {
+-        ResourceScheduledJobVO job = Mockito.mock(ResourceScheduledJobVO.class);
+-        Mockito.when(job.getResourceId()).thenReturn(1L);
++        ResourceScheduledJobVO job = createMockResourceScheduledJobVO();
+         Mockito.when(autoScaleVmGroupDao.findById(1L)).thenReturn(null);
+ 
+         Long asyncJobId = worker.processJob(job);
+@@ -161,4 +159,10 @@
+                 Mockito.contains("end date"),
+                 Mockito.eq(1L), Mockito.anyString(), Mockito.eq(true), Mockito.eq(0L)));
+     }
++
++    private static ResourceScheduledJobVO createMockResourceScheduledJobVO() {
++        ResourceScheduledJobVO job = Mockito.mock(ResourceScheduledJobVO.class);
++        Mockito.when(job.getResourceId()).thenReturn(1L);
++        return job;
++    }
+ }
