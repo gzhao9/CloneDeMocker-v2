@@ -1,0 +1,94 @@
+--- a/plugins/storage/object/ceph/src/test/java/org/apache/cloudstack/storage/datastore/driver/CephObjectStoreDriverImplTest.java
++++ b/plugins/storage/object/ceph/src/test/java/org/apache/cloudstack/storage/datastore/driver/CephObjectStoreDriverImplTest.java
+@@ -93,7 +93,7 @@
+         doReturn(rgwClient).when(cephObjectStoreDriverImpl).getS3Client(anyLong(), anyLong());
+         when(accountDetailsDao.findDetail(anyLong(),anyString())).
+                 thenReturn(new AccountDetailVO(1L, "abc","def"));
+-        when(bucketDao.findById(anyLong())).thenReturn(new BucketVO(bucket.getName()));
++        bucketDao = MockBucketDao.createMockBucketDao(new BucketVO(bucket.getName()));
+         Bucket bucketRet = cephObjectStoreDriverImpl.createBucket(bucket, false);
+         assertEquals(bucketRet.getName(), bucket.getName());
+         verify(rgwClient, times(1)).doesBucketExistV2(anyString());
+@@ -109,4 +109,17 @@
+         assertTrue(success);
+         verify(rgwAdmin, times(1)).removeBucket(anyString());
+     }
++
++    public final class MockBucketDao {
++        private MockBucketDao() {
++        }
++
++        public static com.cloud.storage.dao.BucketDao createMockBucketDao(
++                com.cloud.storage.BucketVO findByIdReturn) {
++            com.cloud.storage.dao.BucketDao bucketDao =
++                    Mockito.mock(com.cloud.storage.dao.BucketDao.class);
++            when(bucketDao.findById(anyLong())).thenReturn(findByIdReturn);
++            return bucketDao;
++        }
++    }
+ }
+--- a/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/CloudianHyperStoreObjectStoreDriverImplTest.java
++++ b/plugins/storage/object/cloudian/src/test/java/org/apache/cloudstack/storage/datastore/driver/CloudianHyperStoreObjectStoreDriverImplTest.java
+@@ -192,8 +192,8 @@
+     @Test
+     public void testCreateBucket() throws Exception {
+         doReturn(s3Client).when(cloudianHyperStoreObjectStoreDriverImpl).getS3Client(anyString(), anyString(), anyString());
+-        when(bucketDao.findById(anyLong())).thenReturn(bucketVo);
+-
++
++        bucketDao = MockBucketDao.createMockBucketDao(bucketVo);
+         // Actual Test
+         Bucket bucketRet = cloudianHyperStoreObjectStoreDriverImpl.createBucket(bucketVo, false);
+         assertEquals(TEST_BUCKET_NAME, bucketRet.getName());
+@@ -683,4 +683,17 @@
+         CloudRuntimeException thrown = assertThrows(CloudRuntimeException.class, () -> cloudianHyperStoreObjectStoreDriverImpl.getS3ClientByBucketAndStore(bucket, TEST_STORE_ID));
+         assertTrue(thrown.getMessage().contains("not found"));
+     }
++
++    public final class MockBucketDao {
++        private MockBucketDao() {
++        }
++
++        public static com.cloud.storage.dao.BucketDao createMockBucketDao(
++                com.cloud.storage.BucketVO findByIdReturn) {
++            com.cloud.storage.dao.BucketDao bucketDao =
++                    Mockito.mock(com.cloud.storage.dao.BucketDao.class);
++            when(bucketDao.findById(anyLong())).thenReturn(findByIdReturn);
++            return bucketDao;
++        }
++    }
+ }
+--- a/plugins/storage/object/minio/src/test/java/org/apache/cloudstack/storage/datastore/driver/MinIOObjectStoreDriverImplTest.java
++++ b/plugins/storage/object/minio/src/test/java/org/apache/cloudstack/storage/datastore/driver/MinIOObjectStoreDriverImplTest.java
+@@ -114,12 +114,12 @@
+     public void testCreateBucket() throws Exception {
+         doReturn(minioClient).when(minioObjectStoreDriverImpl).getMinIOClient(anyLong());
+         doReturn(minioAdminClient).when(minioObjectStoreDriverImpl).getMinIOAdminClient(anyLong());
++        bucketDao = MockBucketDao.createMockBucketDao(new BucketVO());
+         when(bucketDao.listByObjectStoreIdAndAccountId(anyLong(), anyLong())).thenReturn(new ArrayList<BucketVO>());
+         when(account.getUuid()).thenReturn(UUID.randomUUID().toString());
+         when(accountDao.findById(anyLong())).thenReturn(account);
+         when(accountDetailsDao.findDetail(anyLong(),anyString())).
+                 thenReturn(new AccountDetailVO(1L, "abc","def"));
+-        when(bucketDao.findById(anyLong())).thenReturn(new BucketVO());
+         Bucket bucketRet = minioObjectStoreDriverImpl.createBucket(bucket, false);
+         assertEquals(bucketRet.getName(), bucket.getName());
+         verify(minioClient, times(1)).bucketExists(any());
+@@ -166,4 +166,17 @@
+         assertEquals(accessKey, persistedMap.get(MinIOObjectStoreDriverImpl.MINIO_ACCESS_KEY));
+         assertEquals(secretKey, persistedMap.get(MinIOObjectStoreDriverImpl.MINIO_SECRET_KEY));
+     }
++
++    public final class MockBucketDao {
++        private MockBucketDao() {
++        }
++
++        public static com.cloud.storage.dao.BucketDao createMockBucketDao(
++                com.cloud.storage.BucketVO findByIdReturn) {
++            com.cloud.storage.dao.BucketDao bucketDao =
++                    Mockito.mock(com.cloud.storage.dao.BucketDao.class);
++            when(bucketDao.findById(anyLong())).thenReturn(findByIdReturn);
++            return bucketDao;
++        }
++    }
+ }

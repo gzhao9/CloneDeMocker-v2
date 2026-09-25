@@ -1,0 +1,63 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -1244,12 +1244,7 @@
+ 
+     @Test
+     public void updateRegisteredExtensionWithResourceUpdatesDetailsForExistingMapping() {
+-        UpdateRegisteredExtensionCmd cmd = mock(UpdateRegisteredExtensionCmd.class);
+-        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.PhysicalNetwork.name());
+-        when(cmd.getResourceId()).thenReturn("physnet-uuid");
+-        when(cmd.getExtensionId()).thenReturn(1L);
+-        when(cmd.getDetails()).thenReturn(Map.of("username", "root", "hosts", "10.10.10.10"));
+-        when(cmd.isCleanupDetails()).thenReturn(false);
++        UpdateRegisteredExtensionCmd cmd = createMockUpdateRegisteredExtensionCmd(Map.of("username", "root", "hosts", "10.10.10.10"), false);
+ 
+         ExtensionVO extension = mock(ExtensionVO.class);
+         when(extensionDao.findById(1L)).thenReturn(extension);
+@@ -1272,12 +1267,7 @@
+ 
+     @Test
+     public void updateRegisteredExtensionWithResourceCleanupDetailsFirstThenSaveRequested() {
+-        UpdateRegisteredExtensionCmd cmd = mock(UpdateRegisteredExtensionCmd.class);
+-        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.PhysicalNetwork.name());
+-        when(cmd.getResourceId()).thenReturn("physnet-uuid");
+-        when(cmd.getExtensionId()).thenReturn(1L);
+-        when(cmd.getDetails()).thenReturn(Map.of("username", "root", "password", "secret"));
+-        when(cmd.isCleanupDetails()).thenReturn(true);
++        UpdateRegisteredExtensionCmd cmd = createMockUpdateRegisteredExtensionCmd(Map.of("username", "root", "password", "secret"), true);
+ 
+         ExtensionVO extension = mock(ExtensionVO.class);
+         when(extensionDao.findById(1L)).thenReturn(extension);
+@@ -1300,12 +1290,8 @@
+     @Test
+     @SuppressWarnings("unchecked")
+     public void updateRegisteredExtensionWithResourceStoresSensitiveDetailsWithDisplayFalse() {
+-        UpdateRegisteredExtensionCmd cmd = mock(UpdateRegisteredExtensionCmd.class);
+-        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.PhysicalNetwork.name());
+-        when(cmd.getResourceId()).thenReturn("physnet-uuid");
+-        when(cmd.getExtensionId()).thenReturn(1L);
+-        when(cmd.getDetails()).thenReturn(Map.of("username", "root", "password", "newSecret"));
+-        when(cmd.isCleanupDetails()).thenReturn(false);
++        UpdateRegisteredExtensionCmd cmd = createMockUpdateRegisteredExtensionCmd(
++                Map.of("username", "root", "password", "newSecret"), false);
+ 
+         ExtensionVO extension = mock(ExtensionVO.class);
+         when(extensionDao.findById(1L)).thenReturn(extension);
+@@ -1547,6 +1533,17 @@
+         extensionsManager.deleteCustomAction(cmd);
+         verify(extensionCustomActionDetailsDao).removeDetails(actionId);
+         verify(extensionCustomActionDao).remove(actionId);
++    }
++
++    private static UpdateRegisteredExtensionCmd createMockUpdateRegisteredExtensionCmd(Map<String, String> details,
++            boolean cleanupDetails) {
++        UpdateRegisteredExtensionCmd cmd = mock(UpdateRegisteredExtensionCmd.class);
++        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.PhysicalNetwork.name());
++        when(cmd.getResourceId()).thenReturn("physnet-uuid");
++        when(cmd.getExtensionId()).thenReturn(1L);
++        when(cmd.getDetails()).thenReturn(details);
++        when(cmd.isCleanupDetails()).thenReturn(cleanupDetails);
++        return cmd;
+     }
+ 
+     private void mockCallerRole(RoleType roleType) {

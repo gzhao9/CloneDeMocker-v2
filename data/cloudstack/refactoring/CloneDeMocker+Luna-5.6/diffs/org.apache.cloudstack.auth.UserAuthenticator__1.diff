@@ -1,0 +1,49 @@
+--- a/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
++++ b/server/src/test/java/com/cloud/user/AccountManagerImplTest.java
+@@ -1056,7 +1056,7 @@
+         Mockito.doReturn(username).when(userVoMock).getUsername();
+ 
+         accountManagerImpl._userPasswordEncoders = new ArrayList<>();
+-        UserAuthenticator authenticatorMock1 = Mockito.mock(UserAuthenticator.class);
++        UserAuthenticator authenticatorMock1 = createMockUserAuthenticator();
+         UserAuthenticator authenticatorMock2 = Mockito.mock(UserAuthenticator.class);
+ 
+         accountManagerImpl._userPasswordEncoders.add(authenticatorMock1);
+@@ -1066,7 +1066,6 @@
+                 UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+ 
+         String currentPassword = "currentPassword";
+-        Mockito.doReturn(authenticationResult).when(authenticatorMock1).authenticate(username, currentPassword, domainId, null);
+ 
+         accountManagerImpl.validateCurrentPassword(userVoMock, currentPassword);
+ 
+@@ -1086,16 +1085,12 @@
+ 
+         accountManagerImpl._userPasswordEncoders = new ArrayList<>();
+         UserAuthenticator authenticatorMock1 = Mockito.mock(UserAuthenticator.class);
+-        UserAuthenticator authenticatorMock2 = Mockito.mock(UserAuthenticator.class);
++        UserAuthenticator authenticatorMock2 = createMockUserAuthenticator();
+ 
+         accountManagerImpl._userPasswordEncoders.add(authenticatorMock1);
+         accountManagerImpl._userPasswordEncoders.add(authenticatorMock2);
+ 
+-        Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = new Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication>(true,
+-                UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+-
+         String currentPassword = "currentPassword";
+-        Mockito.doReturn(authenticationResult).when(authenticatorMock2).authenticate(username, currentPassword, domainId, null);
+ 
+         accountManagerImpl.validateCurrentPassword(userVoMock, currentPassword);
+ 
+@@ -2289,4 +2284,11 @@
+ 
+         accountManagerImpl.checkRoleEscalation(caller, requested);
+     }
++    private static UserAuthenticator createMockUserAuthenticator() {
++        UserAuthenticator authenticatorMock2 = Mockito.mock(UserAuthenticator.class);
++        Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = new Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication>(true,
++                UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
++        Mockito.doReturn(authenticationResult).when(authenticatorMock2).authenticate("username", "currentPassword", 14L, null);
++        return authenticatorMock2;
++    }
+ }

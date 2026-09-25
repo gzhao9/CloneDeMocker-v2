@@ -1,0 +1,101 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
+@@ -136,7 +136,6 @@
+     DomainDao domainDaoMock;
+     @Mock
+     EntityManager entityManagerMock;
+-    @Mock
+     ConfigurationVO configurationVOMock;
+     @Mock
+     ConfigKey configKeyMock;
+@@ -206,7 +205,7 @@
+ 
+     @Before
+     public void setUp() throws Exception {
+-        Mockito.when(configurationVOMock.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
++        configurationVOMock = createMockConfigurationVO(List.of(ConfigKey.Scope.Global));
+         Mockito.when(configDao.findByName(Mockito.anyString())).thenReturn(configurationVOMock);
+         Mockito.when(configDepot.get(Mockito.anyString())).thenReturn(configKeyMock);
+ 
+@@ -484,7 +483,7 @@
+ 
+     @Test
+     public void testValidateInvalidScopeForConfiguration() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
++        ConfigurationVO cfg = createMockConfigurationVO(List.of(ConfigKey.Scope.Account));
+         when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Account));
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+         String msg = configurationManagerImplSpy.validateConfigurationValue("test.config.name", "testvalue", ConfigKey.Scope.Domain);
+@@ -493,7 +492,7 @@
+ 
+     @Test
+     public void testValidateConfig_ThreadsOnKVMHostToTransferVMwareVMFiles_Failure() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
++        ConfigurationVO cfg = createMockConfigurationVO(List.of(ConfigKey.Scope.Global));
+         when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
+         ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+@@ -506,7 +505,7 @@
+ 
+     @Test
+     public void testValidateConfig_ThreadsOnKVMHostToTransferVMwareVMFiles_Success() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
++        ConfigurationVO cfg = createMockConfigurationVO(List.of(ConfigKey.Scope.Global));
+         when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
+         ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+@@ -517,7 +516,7 @@
+ 
+     @Test
+     public void testValidateConfig_ConvertVmwareInstanceToKvmTimeout_Failure() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
++        ConfigurationVO cfg = createMockConfigurationVO(List.of(ConfigKey.Scope.Global));
+         when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
+         ConfigKey<Integer> configKey = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+@@ -531,7 +530,7 @@
+ 
+     @Test
+     public void testValidateConfig_ConvertVmwareInstanceToKvmTimeout_Success() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
++        ConfigurationVO cfg = createMockConfigurationVO(List.of(ConfigKey.Scope.Global));
+         when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
+         ConfigKey<Integer> configKey = UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+@@ -543,7 +542,7 @@
+ 
+     @Test
+     public void testValidateConfig_KMSDekSizeBits_Failure() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
++        ConfigurationVO cfg = createMockConfigurationVO(List.of(ConfigKey.Scope.Global));
+         when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
+         ConfigKey<Integer> configKey = KMSManager.KMSDekSizeBits;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+@@ -556,7 +555,7 @@
+ 
+     @Test
+     public void testValidateConfig_KMSDekSizeBits_Success() {
+-        ConfigurationVO cfg = mock(ConfigurationVO.class);
++        ConfigurationVO cfg = createMockConfigurationVO(List.of(ConfigKey.Scope.Global));
+         when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Global));
+         ConfigKey<Integer> configKey = KMSManager.KMSDekSizeBits;
+         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
+@@ -999,6 +998,7 @@
+ 
+     @Test
+     public void parseConfigurationTypeIntoStringTestReturnsKindWhenTypeIsCharacterAndKindIsNotNull() {
++        configurationVOMock = createMockConfigurationVO(List.of(ConfigKey.Scope.Global));
+         Mockito.when(configurationVOMock.getKind()).thenReturn(ConfigKey.Kind.CSV.name());
+         Assert.assertEquals(ConfigKey.Kind.CSV.name(), configurationManagerImplSpy.parseConfigurationTypeIntoString(Character.class, configurationVOMock));
+     }
+@@ -1410,4 +1410,10 @@
+         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
+         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
+     }
++
++    private static ConfigurationVO createMockConfigurationVO(List<ConfigKey.Scope> scopes) {
++        ConfigurationVO cfg = mock(ConfigurationVO.class);
++        when(cfg.getScopes()).thenReturn(new ArrayList<>(scopes));
++        return cfg;
++    }
+ }
