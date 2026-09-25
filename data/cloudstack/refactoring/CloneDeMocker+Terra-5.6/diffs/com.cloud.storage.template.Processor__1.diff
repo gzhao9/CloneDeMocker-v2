@@ -1,0 +1,49 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -4236,7 +4236,6 @@
+         final StorageLayer storage = Mockito.mock(StorageLayer.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final TemplateLocation location = Mockito.mock(TemplateLocation.class);
+-        final Processor qcow2Processor = Mockito.mock(Processor.class);
+         final FormatInfo info = Mockito.mock(FormatInfo.class);
+ 
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+@@ -4263,8 +4262,8 @@
+         when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(tmplName);
+ 
+         try {
++            final Processor qcow2Processor = createMockQcow2Processor(tmplPath, tmplName, info);
+             when(libvirtUtilitiesHelper.buildQCOW2Processor(storage)).thenReturn(qcow2Processor);
+-            when(qcow2Processor.process(tmplPath, null, tmplName)).thenReturn(info);
+         } catch (final ConfigurationException e) {
+             fail(e.getMessage());
+         } catch (final InternalErrorException e) {
+@@ -4452,7 +4451,6 @@
+         final StorageLayer storage = Mockito.mock(StorageLayer.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final TemplateLocation location = Mockito.mock(TemplateLocation.class);
+-        final Processor qcow2Processor = Mockito.mock(Processor.class);
+         final FormatInfo info = Mockito.mock(FormatInfo.class);
+ 
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+@@ -4479,8 +4477,8 @@
+         when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(tmplName);
+ 
+         try {
++            final Processor qcow2Processor = createMockQcow2Processor(tmplPath, tmplName, info);
+             when(libvirtUtilitiesHelper.buildQCOW2Processor(storage)).thenReturn(qcow2Processor);
+-            when(qcow2Processor.process(tmplPath, null, tmplName)).thenReturn(info);
+ 
+             when(location.create(1, true, tmplName)).thenThrow(IOException.class);
+ 
+@@ -7698,4 +7696,10 @@
+         Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
+         Assert.assertEquals(expectedResult, result);
+     }
++
++    private static Processor createMockQcow2Processor(final String tmplPath, final String tmplName, final FormatInfo info) throws InternalErrorException {
++        final Processor qcow2Processor = Mockito.mock(Processor.class);
++        when(qcow2Processor.process(tmplPath, null, tmplName)).thenReturn(info);
++        return qcow2Processor;
++    }
+ }

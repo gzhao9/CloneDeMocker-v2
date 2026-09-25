@@ -1,0 +1,43 @@
+--- a/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/guru/VMwareGuruTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/guru/VMwareGuruTest.java
+@@ -121,6 +121,9 @@
+     @Mock
+     NfsMountManager mountManager;
+ 
++    @Mock
++    private HostMO hostMoMock;
++
+     private static MockedStatic<VmwareHelper> mockedVmwareHelper;
+ 
+     @BeforeClass
+@@ -276,12 +279,11 @@
+         Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
+         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+-        HostMO hostMo = Mockito.mock(HostMO.class);
+         Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMo).getPowerState();
+-        Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
++        Mockito.doReturn(hostMoMock).when(vmMo).getRunningHost();
+         UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
+         Mockito.doReturn("Windows 2019").when(instance).getOperatingSystem();
+-        when(VmwareHelper.getUnmanagedInstance(hostMo, vmMo)).thenReturn(instance);
++        when(VmwareHelper.getUnmanagedInstance(hostMoMock, vmMo)).thenReturn(instance);
+ 
+         try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+             Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
+@@ -320,13 +322,12 @@
+         Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
+         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+-        HostMO hostMo = Mockito.mock(HostMO.class);
+         Mockito.doReturn(VirtualMachinePowerState.POWERED_ON).when(vmMo).getPowerState();
+-        Mockito.doReturn(hostMo).when(vmMo).getRunningHost();
++        Mockito.doReturn(hostMoMock).when(vmMo).getRunningHost();
+         UnmanagedInstanceTO instance = Mockito.mock(UnmanagedInstanceTO.class);
+         Mockito.doReturn("CentOS").when(instance).getOperatingSystem();
+         Mockito.doReturn("test-cluster").when(instance).getClusterName();
+-        when(VmwareHelper.getUnmanagedInstance(hostMo, vmMo)).thenReturn(instance);
++        when(VmwareHelper.getUnmanagedInstance(hostMoMock, vmMo)).thenReturn(instance);
+         List<DatastoreMO> datastores = new ArrayList<>();
+         Mockito.doReturn(datastores).when(vmMo).getAllDatastores();
+ 
