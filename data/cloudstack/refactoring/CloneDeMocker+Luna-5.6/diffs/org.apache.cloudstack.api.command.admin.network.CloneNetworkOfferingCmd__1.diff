@@ -1,0 +1,35 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerCloneIntegrationTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerCloneIntegrationTest.java
+@@ -722,9 +722,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCloneNetworkOfferingFailsWhenSourceNotFound() {
+-        CloneNetworkOfferingCmd cmd = mock(CloneNetworkOfferingCmd.class);
++        CloneNetworkOfferingCmd cmd = createMockCloneNetworkOfferingCmd("cloned-network-offering");
+         when(cmd.getSourceOfferingId()).thenReturn(999L);
+-        when(cmd.getNetworkOfferingName()).thenReturn("cloned-network-offering");
+         when(networkOfferingDao.findById(999L)).thenReturn(null);
+ 
+         configurationManager.cloneNetworkOffering(cmd);
+@@ -745,9 +744,8 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testCloneNetworkOfferingFailsWhenNameAlreadyExists() {
+-        CloneNetworkOfferingCmd cmd = mock(CloneNetworkOfferingCmd.class);
++        CloneNetworkOfferingCmd cmd = createMockCloneNetworkOfferingCmd("existing-offering");
+         when(cmd.getSourceOfferingId()).thenReturn(1L);
+-        when(cmd.getNetworkOfferingName()).thenReturn("existing-offering");
+ 
+         NetworkOfferingVO sourceOffering = mock(NetworkOfferingVO.class);
+         when(sourceOffering.getId()).thenReturn(1L);
+@@ -1051,4 +1049,10 @@
+         Assert.assertEquals("Should inherit availability", NetworkOffering.Availability.Required, result.getAvailability());
+         verify(networkOfferingDao).findById(sourceId);
+     }
++
++    private static CloneNetworkOfferingCmd createMockCloneNetworkOfferingCmd(String networkOfferingName) {
++        CloneNetworkOfferingCmd cmd = mock(CloneNetworkOfferingCmd.class);
++        when(cmd.getNetworkOfferingName()).thenReturn(networkOfferingName);
++        return cmd;
++    }
+ }

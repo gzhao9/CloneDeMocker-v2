@@ -1,0 +1,99 @@
+--- a/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
+@@ -937,20 +937,18 @@
+         long hostId = 1L;
+ 
+         HostVO host = Mockito.mock(HostVO.class);
+-        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+         HostPodVO pod = Mockito.mock(HostPodVO.class);
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+ 
+         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+         Mockito.when(host.getClusterId()).thenReturn(2L);
++        ClusterVO cluster = createMockClusterVO(3L, "sag2");
+         Mockito.when(clusterDao.findById(2L)).thenReturn(cluster);
+-        Mockito.when(cluster.getPodId()).thenReturn(3L);
+         Mockito.when(podDao.findById(3L)).thenReturn(pod);
+         Mockito.when(pod.getDataCenterId()).thenReturn(4L);
+         Mockito.when(dataCenterDao.findById(4L)).thenReturn(zone);
+ 
+         Mockito.when(host.getStorageAccessGroups()).thenReturn("sag1");
+-        Mockito.when(cluster.getStorageAccessGroups()).thenReturn("sag2");
+         Mockito.when(pod.getStorageAccessGroups()).thenReturn("sag3");
+         Mockito.when(zone.getStorageAccessGroups()).thenReturn("sag4");
+ 
+@@ -969,20 +967,18 @@
+         long hostId = 1L;
+ 
+         HostVO host = Mockito.mock(HostVO.class);
+-        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+         HostPodVO pod = Mockito.mock(HostPodVO.class);
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+ 
+         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+         Mockito.when(host.getClusterId()).thenReturn(2L);
++         ClusterVO cluster = createMockClusterVO(3L, "sag2");
+         Mockito.when(clusterDao.findById(2L)).thenReturn(cluster);
+-        Mockito.when(cluster.getPodId()).thenReturn(3L);
+         Mockito.when(podDao.findById(3L)).thenReturn(pod);
+         Mockito.when(pod.getDataCenterId()).thenReturn(4L);
+         Mockito.when(dataCenterDao.findById(4L)).thenReturn(zone);
+ 
+         Mockito.when(host.getStorageAccessGroups()).thenReturn("");
+-        Mockito.when(cluster.getStorageAccessGroups()).thenReturn("sag2");
+         Mockito.when(pod.getStorageAccessGroups()).thenReturn(null);
+ 
+         String[] sags = storageManagerImpl.getStorageAccessGroups(null, null, null, hostId);
+@@ -1353,9 +1349,7 @@
+         Mockito.when(cmd.getStorageId()).thenReturn(null);
+         Mockito.when(cmd.getStorageAccessGroups()).thenReturn(storageAccessGroups);
+ 
+-        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+-        Mockito.when(cluster.getPodId()).thenReturn(1L);
+-        Mockito.when(cluster.getStorageAccessGroups()).thenReturn("sag1,sag2");
++        ClusterVO cluster = createMockClusterVO(1L, "sag1,sag2");
+         Mockito.when(clusterDao.findById(clusterId)).thenReturn(cluster);
+         Mockito.doNothing().when(storageManagerImpl).checkIfStorageAccessGroupsExistsOnPod(1L, storageAccessGroups);
+ 
+@@ -1510,12 +1504,10 @@
+         long zoneId = 3L;
+         List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+ 
+-        ClusterVO clusterVO = Mockito.mock(ClusterVO.class);
++        ClusterVO clusterVO = createMockClusterVO(podId, "group4,group5");
+         HostPodVO podVO = Mockito.mock(HostPodVO.class);
+         DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
+ 
+-        Mockito.when(clusterVO.getPodId()).thenReturn(podId);
+-        Mockito.when(clusterVO.getStorageAccessGroups()).thenReturn("group4,group5");
+ 
+         Mockito.when(podVO.getDataCenterId()).thenReturn(zoneId);
+         Mockito.when(podVO.getStorageAccessGroups()).thenReturn("group6,group7");
+@@ -1536,13 +1528,11 @@
+         long zoneId = 3L;
+         List<String> newStorageAccessGroups = Arrays.asList("group1", "group2", "group4");
+ 
+-        ClusterVO clusterVO = Mockito.mock(ClusterVO.class);
+         HostPodVO podVO = Mockito.mock(HostPodVO.class);
+         DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
+ 
+-        Mockito.when(clusterVO.getPodId()).thenReturn(podId);
+-        Mockito.when(clusterVO.getStorageAccessGroups()).thenReturn("group4,group5");
+-
++
++        ClusterVO clusterVO = createMockClusterVO(podId, "group4,group5");
+         Mockito.when(podVO.getDataCenterId()).thenReturn(zoneId);
+         Mockito.when(podVO.getStorageAccessGroups()).thenReturn("group6,group7");
+ 
+@@ -1727,4 +1717,11 @@
+ 
+         Assert.assertFalse(result);
+     }
++
++    private static ClusterVO createMockClusterVO(long podId, String storageAccessGroups) {
++        ClusterVO clusterVO = Mockito.mock(ClusterVO.class);
++        Mockito.when(clusterVO.getPodId()).thenReturn(podId);
++        Mockito.when(clusterVO.getStorageAccessGroups()).thenReturn(storageAccessGroups);
++        return clusterVO;
++    }
+ }

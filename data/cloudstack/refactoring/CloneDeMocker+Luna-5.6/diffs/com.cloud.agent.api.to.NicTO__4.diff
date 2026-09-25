@@ -1,0 +1,41 @@
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -1236,12 +1236,10 @@
+ 
+     @Test
+     public void testGetNicVlanValueForExternalVm_Nsx() {
+-        NicTO nic = mock(NicTO.class);
+         NetworkVO networkVO = mock(NetworkVO.class);
+         NsxService nsxService = mock(NsxService.class);
+         String broadcastUri = "nsx://segment";
+-        when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+-        when(nic.getNetworkId()).thenReturn(42L);
++        NicTO nic = createMockNicTO();
+         when(networkDao.findById(42L)).thenReturn(networkVO);
+         when(networkVO.getDomainId()).thenReturn(1L);
+         when(networkVO.getDataCenterId()).thenReturn(2L);
+@@ -1258,11 +1256,9 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testGetNicVlanValueForExternalVm_Nsx_NoBean() {
+-        NicTO nic = mock(NicTO.class);
++        NicTO nic = createMockNicTO();
+         NetworkVO networkVO = mock(NetworkVO.class);
+         String broadcastUri = "nsx://segment";
+-        when(nic.getBroadcastUri()).thenReturn(URI.create(broadcastUri));
+-        when(nic.getNetworkId()).thenReturn(42L);
+         when(networkDao.findById(42L)).thenReturn(networkVO);
+         try (MockedStatic<ComponentContext> ignored = Mockito.mockStatic(ComponentContext.class)) {
+             when(ComponentContext.getDelegateComponentOfType(NsxService.class)).thenThrow(NoSuchBeanDefinitionException.class);
+@@ -1378,4 +1374,11 @@
+ 
+         Assert.assertFalse(service.getAndValidateSupportForKeepMacAddressOnPublicNicParameter(false, networkOfferingVO));
+     }
++
++    private static NicTO createMockNicTO() {
++        NicTO nic = mock(NicTO.class);
++        when(nic.getBroadcastUri()).thenReturn(URI.create("nsx://segment"));
++        when(nic.getNetworkId()).thenReturn(42L);
++        return nic;
++    }
+ }

@@ -1,0 +1,43 @@
+--- a/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/CitrixResourceBaseTest.java
++++ b/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/CitrixResourceBaseTest.java
+@@ -72,6 +72,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class CitrixResourceBaseTest {
++    @Mock
++    private SR srExtNonShared;
+ 
+     @Spy
+     protected CitrixResourceBase citrixResourceBase = new CitrixResourceBase() {
+@@ -228,7 +230,6 @@
+         Connection connectionMock = Mockito.mock(Connection.class);
+ 
+         SR srExtShared = Mockito.mock(SR.class);
+-        SR srExtNonShared = Mockito.mock(SR.class);
+ 
+         List<SR> expectedListOfSrs = new ArrayList<>();
+         expectedListOfSrs.add(srExtNonShared);
+@@ -279,10 +280,10 @@
+         List<SR> srsExt = new ArrayList<>();
+         srsExt.add(sr1);
+ 
+-        SR sr2 = Mockito.mock(SR.class);
++        // removed local mock; replaced with global field `srExtNonShared`
+         List<SR> srsLvm = new ArrayList<>();
+-        srsLvm.add(sr2);
+-
++
++        srsLvm.add(srExtNonShared);
+         Mockito.doReturn(srsExt).when(citrixResourceBase).getAllLocalSrForType(connectionMock, SRType.EXT);
+         Mockito.doReturn(srsLvm).when(citrixResourceBase).getAllLocalSrForType(connectionMock, SRType.LVM);
+ 
+@@ -290,8 +291,8 @@
+ 
+         Assert.assertEquals(srsExt.size() + srsLvm.size(), allLocalSrs.size());
+         Assert.assertEquals(srsExt.get(0), allLocalSrs.get(1));
++
+         Assert.assertEquals(srsLvm.get(0), allLocalSrs.get(0));
+-
+         InOrder inOrder = Mockito.inOrder(citrixResourceBase);
+         inOrder.verify(citrixResourceBase).getAllLocalSrForType(connectionMock, SRType.LVM);
+         inOrder.verify(citrixResourceBase).getAllLocalSrForType(connectionMock, SRType.EXT);

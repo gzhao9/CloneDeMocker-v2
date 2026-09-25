@@ -1,0 +1,159 @@
+--- a/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/Xenserver625StorageProcessorTest.java
++++ b/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/Xenserver625StorageProcessorTest.java
+@@ -62,10 +62,13 @@
+     @Mock
+     private Connection connectionMock;
+ 
++    private SR srMockShared;
++
+     private String pathMock = "pathMock";
+ 
+     @Before
+     public void before() {
++        srMockShared = Mockito.mock(SR.class);
+         xenserver625StorageProcessor = Mockito.spy(new Xenserver625StorageProcessor(citrixResourceBase));
+         citrixResourceBase._host = Mockito.mock(XsHost.class);
+         Mockito.when(citrixResourceBase.getHost()).thenReturn(citrixResourceBase._host);
+@@ -107,9 +110,8 @@
+ 
+     @Test
+     public void createFileSRTestSrAlreadyConfigured() {
+-        SR srMockRetrievedMethod = Mockito.mock(SR.class);
+-
+-        Mockito.doReturn(srMockRetrievedMethod).when(xenserver625StorageProcessor).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
++
++        Mockito.doReturn(srMockShared).when(xenserver625StorageProcessor).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
+ 
+         SR methodCreateFileSrResult = xenserver625StorageProcessor.createFileSR(connectionMock, pathMock);
+ 
+@@ -117,15 +119,14 @@
+         inOrder.verify(xenserver625StorageProcessor, times(1)).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
+         inOrder.verify(xenserver625StorageProcessor, times(0)).createNewFileSr(connectionMock, pathMock);
+ 
+-        Assert.assertEquals(srMockRetrievedMethod, methodCreateFileSrResult);
++        Assert.assertEquals(srMockShared, methodCreateFileSrResult);
+     }
+ 
+     @Test
+     public void createFileSRTestSrNotConfiguredAlreadyCreatingSr() {
+-        SR srMockCreateMethod = Mockito.mock(SR.class);
+ 
+         Mockito.doReturn(null).when(xenserver625StorageProcessor).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
+-        Mockito.doReturn(srMockCreateMethod).when(xenserver625StorageProcessor).createNewFileSr(connectionMock, pathMock);
++        Mockito.doReturn(srMockShared).when(xenserver625StorageProcessor).createNewFileSr(connectionMock, pathMock);
+ 
+         SR methodCreateFileSrResult = xenserver625StorageProcessor.createFileSR(connectionMock, pathMock);
+ 
+@@ -133,7 +134,7 @@
+         inOrder.verify(xenserver625StorageProcessor, times(1)).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
+         inOrder.verify(xenserver625StorageProcessor, times(1)).createNewFileSr(connectionMock, pathMock);
+ 
+-        Assert.assertEquals(srMockCreateMethod, methodCreateFileSrResult);
++        Assert.assertEquals(srMockShared, methodCreateFileSrResult);
+     }
+ 
+     @Test(expected = CloudRuntimeException.class)
+@@ -159,13 +160,12 @@
+ 
+     @Test
+     public void retrieveAlreadyConfiguredSrWithoutExceptionMethodWorking() throws XenAPIException, XmlRpcException {
+-        SR srMock = Mockito.mock(SR.class);
+-        Mockito.doReturn(srMock).when(xenserver625StorageProcessor).retrieveAlreadyConfiguredSr(connectionMock, pathMock);
++        Mockito.doReturn(srMockShared).when(xenserver625StorageProcessor).retrieveAlreadyConfiguredSr(connectionMock, pathMock);
+ 
+         SR sr = xenserver625StorageProcessor.retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
+ 
+         Mockito.verify(xenserver625StorageProcessor).retrieveAlreadyConfiguredSr(connectionMock, pathMock);
+-        Assert.assertEquals(srMock, sr);
++        Assert.assertEquals(srMockShared, sr);
+     }
+ 
+     @Test
+@@ -335,8 +335,7 @@
+         String uuid = "hostUuid";
+         Mockito.when(citrixResourceBase._host.getUuid()).thenReturn(uuid);
+ 
+-        SR srMock = Mockito.mock(SR.class);
+-        Mockito.doReturn(srMock).when(xenserver625StorageProcessor).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
++        Mockito.doReturn(srMockShared).when(xenserver625StorageProcessor).retrieveAlreadyConfiguredSrWithoutException(connectionMock, pathMock);
+         String srUuid = UuidUtils.nameUUIDFromBytes(pathMock.getBytes()).toString();
+ 
+         Host hostMock = Mockito.mock(Host.class);
+@@ -354,7 +353,7 @@
+ 
+             SR sr = xenserver625StorageProcessor.createNewFileSr(connectionMock, pathMock);
+ 
+-            Assert.assertEquals(srMock, sr);
++            Assert.assertEquals(srMockShared, sr);
+             Mockito.verify(xenserver625StorageProcessor, times(0)).removeSrAndPbdIfPossible(Mockito.eq(connectionMock),
+                     Mockito.any(SR.class), Mockito.any(PBD.class));
+             Mockito.verify(xenserver625StorageProcessor).retrieveAlreadyConfiguredSrWithoutException(connectionMock,
+@@ -367,7 +366,6 @@
+         String uuid = "hostUuid";
+         Mockito.when(citrixResourceBase._host.getUuid()).thenReturn(uuid);
+ 
+-        SR srMock = Mockito.mock(SR.class);
+         String srUuid = UuidUtils.nameUUIDFromBytes(pathMock.getBytes()).toString();
+ 
+         Host hostMock = Mockito.mock(Host.class);
+@@ -379,20 +377,20 @@
+ 
+             Mockito.when(SR.introduce(Mockito.eq(connectionMock), Mockito.eq(srUuid), Mockito.eq(pathMock),
+                     Mockito.eq(pathMock), Mockito.eq("file"), Mockito.eq("file"), Mockito.eq(false),
+-                    Mockito.anyMap())).thenReturn(srMock);
++                    Mockito.anyMap())).thenReturn(srMockShared);
+ 
+             PBD pbdMock = Mockito.mock(PBD.class);
+             Mockito.when(PBD.create(Mockito.eq(connectionMock), Mockito.any(Record.class))).thenReturn(pbdMock);
+ 
+             SR sr = xenserver625StorageProcessor.createNewFileSr(connectionMock, pathMock);
+ 
+-            Assert.assertEquals(srMock, sr);
++            Assert.assertEquals(srMockShared, sr);
+             Mockito.verify(xenserver625StorageProcessor, times(0)).removeSrAndPbdIfPossible(Mockito.eq(connectionMock),
+                     Mockito.any(SR.class), Mockito.any(PBD.class));
+             Mockito.verify(xenserver625StorageProcessor, times(0)).retrieveAlreadyConfiguredSrWithoutException(
+                     connectionMock, pathMock);
+ 
+-            Mockito.verify(srMock).scan(connectionMock);
++            Mockito.verify(srMockShared).scan(connectionMock);
+             Mockito.verify(pbdMock).plug(connectionMock);
+ 
+             SR.introduce(Mockito.eq(connectionMock), Mockito.eq(srUuid), Mockito.eq(pathMock), Mockito.eq(pathMock),
+@@ -405,27 +403,25 @@
+ 
+     @Test
+     public void removeSrAndPbdIfPossibleBothPbdAndSrNotNull() {
+-        SR srMock = Mockito.mock(SR.class);
+-        Mockito.doNothing().when(xenserver625StorageProcessor).forgetSr(connectionMock, srMock);
++        Mockito.doNothing().when(xenserver625StorageProcessor).forgetSr(connectionMock, srMockShared);
+ 
+         PBD pbdMock = Mockito.mock(PBD.class);
+         Mockito.doNothing().when(xenserver625StorageProcessor).unplugPbd(connectionMock, pbdMock);
+ 
+-        xenserver625StorageProcessor.removeSrAndPbdIfPossible(connectionMock, srMock, pbdMock);
+-
+-        Mockito.verify(xenserver625StorageProcessor).forgetSr(connectionMock, srMock);
++        xenserver625StorageProcessor.removeSrAndPbdIfPossible(connectionMock, srMockShared, pbdMock);
++
++        Mockito.verify(xenserver625StorageProcessor).forgetSr(connectionMock, srMockShared);
+         Mockito.verify(xenserver625StorageProcessor).unplugPbd(connectionMock, pbdMock);
+ 
+     }
+ 
+     @Test
+     public void removeSrAndPbdIfPossiblePbdNullAndSrNotNull() {
+-        SR srMock = Mockito.mock(SR.class);
+-        Mockito.doNothing().when(xenserver625StorageProcessor).forgetSr(connectionMock, srMock);
+-
+-        xenserver625StorageProcessor.removeSrAndPbdIfPossible(connectionMock, srMock, null);
+-
+-        Mockito.verify(xenserver625StorageProcessor).forgetSr(connectionMock, srMock);
++        Mockito.doNothing().when(xenserver625StorageProcessor).forgetSr(connectionMock, srMockShared);
++
++        xenserver625StorageProcessor.removeSrAndPbdIfPossible(connectionMock, srMockShared, null);
++
++        Mockito.verify(xenserver625StorageProcessor).forgetSr(connectionMock, srMockShared);
+         Mockito.verify(xenserver625StorageProcessor, times(0)).unplugPbd(Mockito.eq(connectionMock), Mockito.any(PBD.class));
+ 
+     }

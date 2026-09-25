@@ -1,0 +1,136 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -173,6 +173,7 @@
+     private ExtensionResourceMapDao extensionResourceMapDao;
+     @Mock
+     private ExtensionResourceMapDetailsDao extensionResourceMapDetailsDao;
++    private ExtensionResourceMapVO resourceMapMock;
+     @Mock
+     private ClusterDao clusterDao;
+     @Mock
+@@ -226,6 +227,7 @@
+     @Before
+     public void setUp() {
+         MockitoAnnotations.openMocks(this);
++        resourceMapMock = mock(ExtensionResourceMapVO.class);
+     }
+ 
+     @Test
+@@ -1120,8 +1122,7 @@
+         ClusterVO clusterVO = mock(ClusterVO.class);
+         when(clusterVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+         when(clusterDao.findByUuid(anyString())).thenReturn(clusterVO);
+-        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+-        when(extensionResourceMapDao.persist(any())).thenReturn(resourceMap);
++        when(extensionResourceMapDao.persist(any())).thenReturn(resourceMapMock);
+         when(extensionDao.findById(anyLong())).thenReturn(extension);
+         Extension result = extensionsManager.registerExtensionWithResource(cmd);
+         assertEquals(extension, result);
+@@ -1165,8 +1166,7 @@
+         when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+         Extension extension = mock(Extension.class);
+         Map<String, String> details = Map.of("key1", "value1");
+-        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+-        when(extensionResourceMapDao.persist(any())).thenReturn(resourceMap);
++        when(extensionResourceMapDao.persist(any())).thenReturn(resourceMapMock);
+         ExtensionResourceMap result = extensionsManager.registerExtensionWithCluster(cluster, extension, details);
+         assertNotNull(result);
+         verify(extensionResourceMapDao).persist(any());
+@@ -1177,8 +1177,7 @@
+         Cluster cluster = mock(Cluster.class);
+         when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+         Extension extension = mock(Extension.class);
+-        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+-        when(extensionResourceMapDao.persist(any())).thenReturn(resourceMap);
++        when(extensionResourceMapDao.persist(any())).thenReturn(resourceMapMock);
+         ExtensionResourceMap result = extensionsManager.registerExtensionWithCluster(cluster, extension, null);
+         assertNotNull(result);
+         verify(extensionResourceMapDao).persist(any());
+@@ -1197,11 +1196,10 @@
+         Cluster cluster = mock(Cluster.class);
+         when(cluster.getId()).thenReturn(100L);
+         Long extensionId = 1L;
+-        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+         when(extensionResourceMapDao.findByResourceIdAndType(eq(100L), eq(ExtensionResourceMap.ResourceType.Cluster)))
+-            .thenReturn(resourceMap);
++            .thenReturn(resourceMapMock);
+         extensionsManager.unregisterExtensionWithCluster(cluster, extensionId);
+-        verify(extensionResourceMapDao).remove(resourceMap.getId());
++        verify(extensionResourceMapDao).remove(resourceMapMock.getId());
+     }
+ 
+     @Test
+@@ -2289,38 +2287,35 @@
+ 
+     @Test
+     public void extensionResourceMapDetailsNeedUpdateReturnsFalseWhenDetailsMatch() {
+-        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+-        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(resourceMap);
+-        when(extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId())).thenReturn(Map.of("key", "value"));
++        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(resourceMapMock);
++        when(extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMapMock.getId())).thenReturn(Map.of("key", "value"));
+         Map<String, String> externalDetails = Map.of("key", "value");
+         Pair<Boolean, ExtensionResourceMap> result = extensionsManager.extensionResourceMapDetailsNeedUpdate(1L,
+             ExtensionResourceMap.ResourceType.Cluster, externalDetails);
+         assertFalse(result.first());
+-        assertEquals(resourceMap, result.second());
++        assertEquals(resourceMapMock, result.second());
+     }
+ 
+     @Test
+     public void extensionResourceMapDetailsNeedUpdateReturnsTrueWhenDetailsDiffer() {
+-        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+-        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(resourceMap);
+-        when(extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId())).thenReturn(Map.of("key", "oldValue"));
++        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(resourceMapMock);
++        when(extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMapMock.getId())).thenReturn(Map.of("key", "oldValue"));
+         Map<String, String> externalDetails = Map.of("key", "newValue");
+         Pair<Boolean, ExtensionResourceMap> result = extensionsManager.extensionResourceMapDetailsNeedUpdate(1L,
+             ExtensionResourceMap.ResourceType.Cluster, externalDetails);
+         assertTrue(result.first());
+-        assertEquals(resourceMap, result.second());
++        assertEquals(resourceMapMock, result.second());
+     }
+ 
+     @Test
+     public void extensionResourceMapDetailsNeedUpdateReturnsTrueWhenExternalDetailsHaveExtraKeys() {
+-        ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+-        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(resourceMap);
+-        when(extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId())).thenReturn(Map.of("key", "value"));
++        when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster)).thenReturn(resourceMapMock);
++        when(extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMapMock.getId())).thenReturn(Map.of("key", "value"));
+         Map<String, String> externalDetails = Map.of("key", "value", "extra", "something");
+         Pair<Boolean, ExtensionResourceMap> result = extensionsManager.extensionResourceMapDetailsNeedUpdate(1L,
+             ExtensionResourceMap.ResourceType.Cluster, externalDetails);
+         assertTrue(result.first());
+-        assertEquals(resourceMap, result.second());
++        assertEquals(resourceMapMock, result.second());
+     }
+ 
+     @Test
+@@ -2493,10 +2488,9 @@
+         when(host.getId()).thenReturn(100L);
+         when(host.getClusterId()).thenReturn(1L);
+         Map<String, String> vmDetails = Map.of("key1", "value1", "key2", "value2");
+-        ExtensionResourceMapVO resourceMapVO = mock(ExtensionResourceMapVO.class);
+         when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster))
+-                .thenReturn(resourceMapVO);
+-        doReturn(new HashMap<>()).when(extensionsManager).getExternalAccessDetails(null, 100L, resourceMapVO);
++                .thenReturn(resourceMapMock);
++        doReturn(new HashMap<>()).when(extensionsManager).getExternalAccessDetails(null, 100L, resourceMapMock);
+         Map<String, Map<String, String>> result = extensionsManager.getExternalAccessDetails(host, vmDetails);
+         assertNotNull(result);
+         assertNotNull(result.get(ApiConstants.VIRTUAL_MACHINE));
+@@ -2509,10 +2503,9 @@
+         when(host.getId()).thenReturn(101L);
+         when(host.getClusterId()).thenReturn(1L);
+         Map<String, String> vmDetails = null;
+-        ExtensionResourceMapVO resourceMapVO = mock(ExtensionResourceMapVO.class);
+         when(extensionResourceMapDao.findByResourceIdAndType(1L, ExtensionResourceMap.ResourceType.Cluster))
+-                .thenReturn(resourceMapVO);
+-        doReturn(new HashMap<>()).when(extensionsManager).getExternalAccessDetails(null, 101L, resourceMapVO);
++                .thenReturn(resourceMapMock);
++        doReturn(new HashMap<>()).when(extensionsManager).getExternalAccessDetails(null, 101L, resourceMapMock);
+         Map<String, Map<String, String>> result = extensionsManager.getExternalAccessDetails(host, vmDetails);
+         assertNotNull(result);
+         assertNull(result.get(ApiConstants.VIRTUAL_MACHINE));

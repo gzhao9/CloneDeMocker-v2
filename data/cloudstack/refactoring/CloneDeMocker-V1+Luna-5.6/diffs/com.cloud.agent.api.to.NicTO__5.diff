@@ -1,0 +1,46 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -1593,14 +1593,12 @@
+     public void updateExternalVmNicsFromPrepareAnswer_updatesNicsSuccessfully() {
+         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+         VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+-        NicTO nicTO = mock(NicTO.class);
+-        NicTO updatedNicTO = mock(NicTO.class);
++        NicTO nicTO = createMockNicTO("nic-uuid");
++        NicTO updatedNicTO = createMockNicTO("nic-uuid");
+ 
+         when(vmTO.getNics()).thenReturn(new NicTO[]{nicTO});
+         when(updatedTO.getNics()).thenReturn(new NicTO[]{updatedNicTO});
+-        when(nicTO.getNicUuid()).thenReturn("nic-uuid");
+         when(nicTO.getMac()).thenReturn("mac-a");
+-        when(updatedNicTO.getNicUuid()).thenReturn("nic-uuid");
+         when(updatedNicTO.getMac()).thenReturn("mac-b");
+         when(_nicsDao.findByUuid("nic-uuid")).thenReturn(mock(NicVO.class));
+ 
+@@ -1614,13 +1612,11 @@
+     public void updateExternalVmNicsFromPrepareAnswer_noMatchingNicUuid_noAction() {
+         VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+         VirtualMachineTO updatedTO = mock(VirtualMachineTO.class);
+-        NicTO nicTO = mock(NicTO.class);
+-        NicTO updatedNicTO = mock(NicTO.class);
++        NicTO updatedNicTO = createMockNicTO("different-uuid");
+ 
+         when(vmTO.getNics()).thenReturn(new NicTO[]{nicTO});
+         when(updatedTO.getNics()).thenReturn(new NicTO[]{updatedNicTO});
+-        when(nicTO.getNicUuid()).thenReturn("nic-uuid");
+-        when(updatedNicTO.getNicUuid()).thenReturn("different-uuid");
++        NicTO nicTO = createMockNicTO("nic-uuid");
+ 
+         virtualMachineManagerImpl.updateExternalVmNicsFromPrepareAnswer(vmTO, updatedTO);
+ 
+@@ -2241,4 +2237,10 @@
+         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
+     }
+ 
++
++    private static NicTO createMockNicTO(String nicUuid) {
++        NicTO nicTO = mock(NicTO.class);
++        when(nicTO.getNicUuid()).thenReturn(nicUuid);
++        return nicTO;
++    }
+ }

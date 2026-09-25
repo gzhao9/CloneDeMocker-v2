@@ -1,0 +1,33 @@
+--- a/server/src/test/java/org/apache/cloudstack/storage/sharedfs/SharedFSServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/storage/sharedfs/SharedFSServiceImplTest.java
+@@ -639,9 +639,8 @@
+         ReflectionTestUtils.setField(sharedFS, "state", SharedFS.State.Destroyed);
+         when(sharedFSDao.listSharedFSToBeDestroyed(any(Date.class))).thenReturn(List.of(sharedFS));
+         try (MockedStatic<GlobalLock> globalLockMocked = Mockito.mockStatic(GlobalLock.class)) {
+-            GlobalLock scanlock = mock(GlobalLock.class);
++            GlobalLock scanlock = createMockGlobalLock();
+             when(GlobalLock.getInternLock("sharedfsservice.cleanup")).thenReturn(scanlock);
+-            when(scanlock.lock(30)).thenReturn(true);
+             sharedFSServiceImpl.cleanupSharedFS(true);
+             verify(_stateMachine, times(1)).transitTo(sharedFS, SharedFS.Event.ExpungeOperation, null, sharedFSDao);
+             verify(_stateMachine, times(1)).transitTo(sharedFS, SharedFS.Event.OperationFailed, null, sharedFSDao);
+@@ -654,12 +653,17 @@
+         ReflectionTestUtils.setField(sharedFS, "state", SharedFS.State.Stopped);
+         when(sharedFSDao.listSharedFSToBeDestroyed(any(Date.class))).thenReturn(List.of(sharedFS));
+         try (MockedStatic<GlobalLock> globalLockMocked = Mockito.mockStatic(GlobalLock.class)) {
+-            GlobalLock scanlock = mock(GlobalLock.class);
++            GlobalLock scanlock = createMockGlobalLock();
+             when(GlobalLock.getInternLock("sharedfsservice.cleanup")).thenReturn(scanlock);
+-            when(scanlock.lock(30)).thenReturn(true);
+             sharedFSServiceImpl.cleanupSharedFS(true);
+             verify(_stateMachine, times(1)).transitTo(sharedFS, SharedFS.Event.ExpungeOperation, null, sharedFSDao);
+             verify(_stateMachine, times(1)).transitTo(sharedFS, SharedFS.Event.OperationFailed, null, sharedFSDao);
+         }
+     }
++
++    private static GlobalLock createMockGlobalLock() {
++        GlobalLock scanlock = mock(GlobalLock.class);
++        when(scanlock.lock(30)).thenReturn(true);
++        return scanlock;
++    }
+ }

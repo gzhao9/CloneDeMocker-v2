@@ -1,0 +1,98 @@
+--- a/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/CitrixResourceBaseTest.java
++++ b/plugins/hypervisors/xenserver/src/test/java/com/cloud/hypervisor/xenserver/resource/CitrixResourceBaseTest.java
+@@ -72,6 +72,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class CitrixResourceBaseTest {
++    @Mock
++    private Connection connectionMock;
+ 
+     @Spy
+     protected CitrixResourceBase citrixResourceBase = new CitrixResourceBase() {
+@@ -225,7 +227,6 @@
+         String mockHostUuid = "hostUuid";
+         citrixResourceBase._host.setUuid(mockHostUuid);
+ 
+-        Connection connectionMock = Mockito.mock(Connection.class);
+ 
+         SR srExtShared = Mockito.mock(SR.class);
+         SR srExtNonShared = Mockito.mock(SR.class);
+@@ -267,14 +268,13 @@
+ 
+     @Test
+     public void getAllLocalSrForTypeNoSrsFoundTest() throws XenAPIException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
+         List<SR> allLocalSrForType = citrixResourceBase.getAllLocalSrForType(connectionMock, SRType.EXT);
+         Assert.assertTrue(allLocalSrForType.isEmpty());
+     }
+ 
+     @Test
+     public void getAllLocalSrsTest() throws XenAPIException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
++        // removed local mock; using global field `connectionMock`
+         SR sr1 = Mockito.mock(SR.class);
+         List<SR> srsExt = new ArrayList<>();
+         srsExt.add(sr1);
+@@ -299,7 +299,6 @@
+ 
+     @Test
+     public void createStoragePoolInfoTest() throws XenAPIException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
+         Host hostMock = Mockito.mock(Host.class);
+         SR srMock = Mockito.mock(SR.class);
+ 
+@@ -338,7 +337,6 @@
+         String hostUuid = "hostUuid";
+         citrixResourceBase._host.setUuid(hostUuid);
+ 
+-        Connection connectionMock = Mockito.mock(Connection.class);
+         SR srMock = Mockito.mock(SR.class);
+ 
+         String srUuid = "srUuid";
+@@ -363,7 +361,7 @@
+         citrixResourceBase._host.setUuid(hostUuid);
+         citrixResourceBase._dcId = 1;
+ 
+-        Connection connectionMock = Mockito.mock(Connection.class);
++        // removed local mock; replaced with global field `connectionMock`
+         SR srMock = Mockito.mock(SR.class);
+ 
+         StoragePoolInfo storagePoolInfoMock = Mockito.mock(StoragePoolInfo.class);
+@@ -381,7 +379,6 @@
+ 
+     @Test
+     public void initializeLocalSrTest() throws XenAPIException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
+ 
+         List<SR> srsMocks = new ArrayList<>();
+         SR srMock1 = Mockito.mock(SR.class);
+@@ -450,12 +447,11 @@
+     @Test
+     public void testGetStatsForNetworkStats() {
+         CitrixResourceBase citrixResourceBaseSpy = Mockito.spy(CitrixResourceBase.class);
+-        Connection connection = Mockito.mock(Connection.class);
+ 
+         doReturn(networkStats[0] + ":" + networkStats[1]).when(citrixResourceBaseSpy).networkUsage(Mockito.any(Connection.class),
+                 Mockito.eq(privateIp), Mockito.eq("get"), Mockito.any(), Mockito.eq(publicIp));
+ 
+-        long[] stats = citrixResourceBaseSpy.getNetworkStats(connection, privateIp, publicIp);
++        long[] stats = citrixResourceBaseSpy.getNetworkStats(connectionMock, privateIp, publicIp);
+         assertEquals(2, stats.length);
+         assertEquals(networkStats[0], stats[0]);
+         assertEquals(networkStats[1], stats[1]);
+@@ -537,7 +533,6 @@
+ 
+     @Test
+     public void testListFilesAtPathWithNonExistentPath() throws IOException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
+         SR srMock = Mockito.mock(SR.class);
+ 
+         ListDataStoreObjectsCommand command = Mockito.mock(ListDataStoreObjectsCommand.class);
+@@ -575,7 +570,6 @@
+ 
+     @Test
+     public void testListFilesAtPathWithFile() throws IOException, XmlRpcException {
+-        Connection connectionMock = Mockito.mock(Connection.class);
+         SR srMock = Mockito.mock(SR.class);
+         SFTPv3FileAttributes fileAttributesMock = Mockito.mock(SFTPv3FileAttributes.class);
+         Vector fileListMock = new Vector();

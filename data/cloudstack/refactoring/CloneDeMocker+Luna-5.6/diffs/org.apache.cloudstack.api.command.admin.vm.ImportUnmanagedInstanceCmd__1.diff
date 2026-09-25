@@ -1,0 +1,38 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -405,6 +405,13 @@
+         when(serviceOfferingMock.getRamSize()).thenReturn(2048);
+     }
+ 
++    private static ImportUnmanagedInstanceCmd createMockImportUnmanagedInstanceCmd(String nameReturn) {
++        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
++        when(importUnmanageInstanceCmd.getName()).thenReturn(nameReturn);
++        when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
++        return importUnmanageInstanceCmd;
++    }
++
+     @NotNull
+     private static List<UnmanagedInstanceTO.Disk> getDisks() {
+         List<UnmanagedInstanceTO.Disk> instanceDisks = new ArrayList<>();
+@@ -457,9 +464,7 @@
+ 
+     @Test
+     public void importUnmanagedInstanceTest() {
+-        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
+-        when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
+-        when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
++        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = createMockImportUnmanagedInstanceCmd("TestInstance");
+         when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+              MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+@@ -477,9 +482,7 @@
+ 
+     @Test(expected = ServerApiException.class)
+     public void importUnmanagedInstanceMissingInstanceTest() {
+-        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
+-        when(importUnmanageInstanceCmd.getName()).thenReturn("SomeInstance");
+-        when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
++        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = createMockImportUnmanagedInstanceCmd("SomeInstance");
+         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+             unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
+         }

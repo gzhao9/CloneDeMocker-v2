@@ -1,0 +1,40 @@
+--- a/engine/schema/src/test/java/com/cloud/dc/dao/ClusterDaoImplTest.java
++++ b/engine/schema/src/test/java/com/cloud/dc/dao/ClusterDaoImplTest.java
+@@ -84,12 +84,8 @@
+     @Test
+     public void listDistinctHypervisorsArchAcrossClusters_WithZone() {
+         Long zoneId = 123L;
+-        ClusterVO cluster1 = mock(ClusterVO.class);
+-        when(cluster1.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+-        when(cluster1.getArch()).thenReturn(CPU.CPUArch.amd64);
+-        ClusterVO cluster2 = mock(ClusterVO.class);
+-        when(cluster2.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+-        when(cluster2.getArch()).thenReturn(CPU.CPUArch.arm64);
++        ClusterVO cluster1 = createMockCluster(Hypervisor.HypervisorType.XenServer, CPU.CPUArch.amd64);
++        ClusterVO cluster2 = createMockCluster(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64);
+         List<ClusterVO> dummyHosts = Arrays.asList(cluster1, cluster2);
+         doReturn(dummyHosts).when(clusterDao).search(any(SearchCriteria.class), isNull());
+         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> result = clusterDao.listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
+@@ -104,9 +100,7 @@
+     @Test
+     public void listDistinctHypervisorsArchAcrossClusters_WithoutZone() {
+         Long zoneId = null;
+-        ClusterVO cluster = mock(ClusterVO.class);
+-        when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+-        when(cluster.getArch()).thenReturn(CPU.CPUArch.amd64);
++        ClusterVO cluster = createMockCluster(Hypervisor.HypervisorType.VMware, CPU.CPUArch.amd64);
+         List<ClusterVO> dummyHosts = Collections.singletonList(cluster);
+         doReturn(dummyHosts).when(clusterDao).search(any(SearchCriteria.class), isNull());
+         List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> result = clusterDao.listDistinctHypervisorsAndArchExcludingExternalType(zoneId);
+@@ -115,4 +109,11 @@
+         assertEquals(Hypervisor.HypervisorType.VMware, result.get(0).first());
+         assertEquals(CPU.CPUArch.amd64, result.get(0).second());
+     }
++
++    private static ClusterVO createMockCluster(Hypervisor.HypervisorType hypervisorType, CPU.CPUArch arch) {
++        ClusterVO cluster = mock(ClusterVO.class);
++        when(cluster.getHypervisorType()).thenReturn(hypervisorType);
++        when(cluster.getArch()).thenReturn(arch);
++        return cluster;
++    }
+ }

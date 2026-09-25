@@ -1,0 +1,36 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -457,9 +457,7 @@
+ 
+     @Test
+     public void importUnmanagedInstanceTest() {
+-        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
+-        when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
+-        when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
++        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = createMockImportUnmanagedInstanceCmd("TestInstance");
+         when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class);
+              MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+@@ -477,9 +475,7 @@
+ 
+     @Test(expected = ServerApiException.class)
+     public void importUnmanagedInstanceMissingInstanceTest() {
+-        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
+-        when(importUnmanageInstanceCmd.getName()).thenReturn("SomeInstance");
+-        when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
++        ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = createMockImportUnmanagedInstanceCmd("SomeInstance");
+         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+             unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
+         }
+@@ -1609,4 +1605,11 @@
+         details.put("key", "not-a-number");
+         unmanagedVMsManager.getDetailAsInteger("key", details);
+     }
++
++    private static ImportUnmanagedInstanceCmd createMockImportUnmanagedInstanceCmd(String nameReturn) {
++        ImportUnmanagedInstanceCmd importUnmanagedInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
++        when(importUnmanagedInstanceCmd.getName()).thenReturn(nameReturn);
++        when(importUnmanagedInstanceCmd.getDomainId()).thenReturn(null);
++        return importUnmanagedInstanceCmd;
++    }
+ }
