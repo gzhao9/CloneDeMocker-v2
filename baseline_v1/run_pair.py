@@ -77,12 +77,12 @@ LOG = REPO / "validation" / "results" / "pair-run.log"
 # Lanes running on this host at once (drive.py --slice K/N sets N). Rows run under N > 1 carry
 # it as `lanesOnHost`: concurrent builds slow each other, so their seconds are not comparable
 # with single-lane rows, though V2 and V1 of one MCI still share the same conditions.
-LANES_ON_HOST = 1
+LANES_ON_HOST = 1            # or a callable returning the live count (drive.py --claim)
 LANE = ""
 
 
 def log(message: str) -> None:
-    tag = f"[{LANE}] " if LANES_ON_HOST > 1 else ""
+    tag = f"[{LANE}] " if LANE else ""
     line = f"{datetime.now().strftime('%m-%d %H:%M:%S')} {tag}{message}"
     print(line, flush=True)
     LOG.parent.mkdir(parents=True, exist_ok=True)
@@ -141,8 +141,9 @@ class TimedProvider(ModelProvider):
 def record(project: str, mci_id: str, result: dict, run_id: str, model: str, harness: str) -> str:
     entry = canonical_store.entry_from_agent_result(mci_id, result)
     entry["host"] = socket.gethostname()
-    if LANES_ON_HOST > 1:
-        entry["lanesOnHost"] = LANES_ON_HOST
+    lanes = LANES_ON_HOST() if callable(LANES_ON_HOST) else LANES_ON_HOST
+    if lanes > 1:
+        entry["lanesOnHost"] = lanes
     for key in ("usageRefactoring", "usageAudit"):
         if key in result:
             entry[key] = result[key]
@@ -212,14 +213,16 @@ def done_ids(project: str, model: str, harness: str) -> set[str]:
 
 def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: int = 0,
                 after_mci=None, should_run=None, reverse: bool = False, start: float = 0.0,
-                workspace_suffix: str = "") -> dict:
+                workspace_suffix: str = "", claim=None, release=None) -> dict:
     """Run every MCI of one detection run through V2 then V1. Resumable: MCIs already in both
     datasets are skipped. `after_mci(project, mci_id)` runs after each MCI (the driver syncs there).
     `should_run(mci_id)` is asked right before each MCI, so routing and work another machine has
     already published are decided on current data, not on a list frozen at start. `reverse`
     walks the list from the end (two machines sharing a project start at opposite ends). `start`
     (0..1) begins that walk part-way in and wraps around, so a third or fourth machine can start
-    in the middle. `workspace_suffix` gives a second lane on the same host its own copy."""
+    in the middle. `workspace_suffix` gives a second lane on the same host its own copy.
+    `claim(mci_id)` is asked last, right before running; False means another lane has it.
+    `release(mci_id)` follows the MCI."""
     service = DetectionService(REPO)
     _, raw = service.load_raw_detection(run_id)
     ordered = [item["id"] for item in service._indexed_instances(raw)]
@@ -244,52 +247,23 @@ def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: i
         if should_run is not None and not should_run(mci_id):
             skipped += 1
             continue
-        # The ledger keeps only passing baselines, so a baseline that fails -- often by hanging
-        # to the 3600 s harness timeout -- was run again for V1 over the same untouched source
-        # and scope. Hand V2's broken baseline to V1 for this MCI instead: same evidence the
-        # ledger would give for a passing one, same verdict, one run instead of two.
-        shared_broken_baseline = None
-        for name, agent_cls, harness, kwargs, done in (
-            ("V2", PairV2Agent, HARNESS_V2, {"max_retries": 2, "use_cache": False}, v2_done),
-            ("V1", PairV1Agent, HARNESS_V1, {"max_retries": 0, "use_cache": False}, v1_done),
-        ):
-            if mci_id in done:
+        if claim is not None and not claim(mci_id):
+            skipped += 1
+            continue
+        if claim is not None:
+            # Another lane may have finished this MCI since this pass began.
+            v2_done = done_ids(project, model, HARNESS_V2)
+            v1_done = done_ids(project, model, HARNESS_V1)
+            if mci_id in v2_done and mci_id in v1_done:
+                if release is not None:
+                    release(mci_id)
+                skipped += 1
                 continue
-            provider = TimedProvider(base)
-            agent = agent_cls(service, provider=provider)
-            started = time.time()
-            if name == "V1" and shared_broken_baseline is not None:
-                kwargs = {**kwargs, "baseline_evidence_override": HarnessEvidence.from_dict(shared_broken_baseline)}
-            try:
-                result = agent.run(run_id, [mci_id], model, user_instruction="", run_pit=False,
-                                   api_profile="default", use_mock=False, sequence_selection=None,
-                                   progress_callback=None, workspace_id=workspace, **kwargs)
-            except Exception as error:  # noqa: BLE001 - record nothing rather than a false verdict
-                errors += 1
-                log(f"  {name} {mci_id}: TOOL ERROR {type(error).__name__}: {str(error)[:200]}")
-                continue
-            result = provider.stamp(result)
-            if name == "V2" and (result.get("harness") or {}).get("baselineBroken"):
-                shared_broken_baseline = result["harness"]["baseline"]
-            if "baseline_evidence_override" in kwargs:
-                result = {**result, "baselineSharedFromV2": "broken baseline replayed from V2's run of this MCI"}
-            # Keep every raw reply next to the proposal (local only), so a decline or a failed
-            # write-back can be checked against what the model actually said.
-            reply_dir = REPO / ".clonedemocker" / "runs" / run_id / "refactoring" / (result.get("proposalId") or "_")
-            reply_dir.mkdir(parents=True, exist_ok=True)
-            (reply_dir / "model-replies.json").write_text(json.dumps(provider.replies, ensure_ascii=False, indent=1),
-                                                          encoding="utf-8")
-            if getattr(agent, "v1_key_normalized", False):
-                result = {**result, "v1KeyNormalized": True}
-            if getattr(agent, "v1_fuzzy_apply", None):
-                result = {**result, "v1FuzzyApply": agent.v1_fuzzy_apply}
-            verdict = record(project, mci_id, result, run_id, model, harness)
-            t = result["timings"]
-            log(f"  {name} {mci_id}: {verdict}  model {t['modelSeconds']}s ({len(provider.calls)} calls), "
-                f"audit {t['auditSeconds']}s, total {time.time() - started:.0f}s, "
-                f"baseline {'reused' if (result.get('verificationReused') or {}).get('baseline') else '-'}"
-                + (f"  | {(result.get('validationReason') or result.get('reason') or '')[:160]}"
-                   if verdict != "SUCCESS" else ""))
+        try:
+            errors += _run_one_mci(service, base, run_id, project, mci_id, model, workspace, v2_done, v1_done)
+        finally:
+            if release is not None:
+                release(mci_id)
         if after_mci:
             after_mci(project, mci_id)
     log(f"pair run: {project} pass finished ({errors} tool errors, {skipped} routed elsewhere/done by a peer)")
@@ -297,6 +271,59 @@ def run_project(run_id: str, project: str, model: str = "gpt-5.6-luna", limit: i
     mine = [m for m in ordered if should_run is None or should_run(m)]
     return {"todo": len(todo), "errors": errors, "skipped": skipped,
             "remaining": len([m for m in mine if m not in v2_now or m not in v1_now])}
+
+
+def _run_one_mci(service, base, run_id: str, project: str, mci_id: str, model: str, workspace: str,
+                 v2_done: set, v1_done: set) -> int:
+    """V2 then V1 on one MCI. Returns the number of tool errors (0-2)."""
+    errors = 0
+    # The ledger keeps only passing baselines, so a baseline that fails -- often by hanging
+    # to the 3600 s harness timeout -- was run again for V1 over the same untouched source
+    # and scope. Hand V2's broken baseline to V1 for this MCI instead: same evidence the
+    # ledger would give for a passing one, same verdict, one run instead of two.
+    shared_broken_baseline = None
+    for name, agent_cls, harness, kwargs, done in (
+        ("V2", PairV2Agent, HARNESS_V2, {"max_retries": 2, "use_cache": False}, v2_done),
+        ("V1", PairV1Agent, HARNESS_V1, {"max_retries": 0, "use_cache": False}, v1_done),
+    ):
+        if mci_id in done:
+            continue
+        provider = TimedProvider(base)
+        agent = agent_cls(service, provider=provider)
+        started = time.time()
+        if name == "V1" and shared_broken_baseline is not None:
+            kwargs = {**kwargs, "baseline_evidence_override": HarnessEvidence.from_dict(shared_broken_baseline)}
+        try:
+            result = agent.run(run_id, [mci_id], model, user_instruction="", run_pit=False,
+                               api_profile="default", use_mock=False, sequence_selection=None,
+                               progress_callback=None, workspace_id=workspace, **kwargs)
+        except Exception as error:  # noqa: BLE001 - record nothing rather than a false verdict
+            errors += 1
+            log(f"  {name} {mci_id}: TOOL ERROR {type(error).__name__}: {str(error)[:200]}")
+            continue
+        result = provider.stamp(result)
+        if name == "V2" and (result.get("harness") or {}).get("baselineBroken"):
+            shared_broken_baseline = result["harness"]["baseline"]
+        if "baseline_evidence_override" in kwargs:
+            result = {**result, "baselineSharedFromV2": "broken baseline replayed from V2's run of this MCI"}
+        # Keep every raw reply next to the proposal (local only), so a decline or a failed
+        # write-back can be checked against what the model actually said.
+        reply_dir = REPO / ".clonedemocker" / "runs" / run_id / "refactoring" / (result.get("proposalId") or "_")
+        reply_dir.mkdir(parents=True, exist_ok=True)
+        (reply_dir / "model-replies.json").write_text(json.dumps(provider.replies, ensure_ascii=False, indent=1),
+                                                      encoding="utf-8")
+        if getattr(agent, "v1_key_normalized", False):
+            result = {**result, "v1KeyNormalized": True}
+        if getattr(agent, "v1_fuzzy_apply", None):
+            result = {**result, "v1FuzzyApply": agent.v1_fuzzy_apply}
+        verdict = record(project, mci_id, result, run_id, model, harness)
+        t = result["timings"]
+        log(f"  {name} {mci_id}: {verdict}  model {t['modelSeconds']}s ({len(provider.calls)} calls), "
+            f"audit {t['auditSeconds']}s, total {time.time() - started:.0f}s, "
+            f"baseline {'reused' if (result.get('verificationReused') or {}).get('baseline') else '-'}"
+            + (f"  | {(result.get('validationReason') or result.get('reason') or '')[:160]}"
+               if verdict != "SUCCESS" else ""))
+    return errors
 
 
 def main() -> None:
