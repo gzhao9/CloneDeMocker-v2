@@ -1,0 +1,769 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -250,6 +250,7 @@
+     Logger loggerMock;
+     @Mock
+     Connect connMock;
++    private final Connect connectionMock = Mockito.mock(Connect.class);
+     @Mock
+     LibvirtDomainXMLParser parserMock;
+     @Mock
+@@ -1039,7 +1040,6 @@
+ 
+     @Test
+     public void testStopCommandNoCheck() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
+@@ -1047,7 +1047,7 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1178,7 +1178,6 @@
+ 
+     @Test
+     public void testGetVmStatsCommand() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
+@@ -1190,7 +1189,7 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1211,7 +1210,6 @@
+ 
+     @Test
+     public void testGetVmDiskStatsCommand() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
+@@ -1223,7 +1221,7 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnection()).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnection()).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1277,7 +1275,6 @@
+ 
+     @Test
+     public void testRebootCommand() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
+@@ -1285,7 +1282,7 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1335,7 +1332,6 @@
+ 
+     @Test
+     public void testRebootCommandError() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
+@@ -1343,8 +1339,8 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+-            when(libvirtComputingResourceMock.rebootVM(conn, command.getVmName())).thenReturn("error");
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(connectionMock);
++            when(libvirtComputingResourceMock.rebootVM(connectionMock, command.getVmName())).thenReturn("error");
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1366,7 +1362,6 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testRebootCommandException2() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
+@@ -1374,8 +1369,8 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+-            when(libvirtComputingResourceMock.rebootVM(conn, command.getVmName())).thenThrow(LibvirtException.class);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(connectionMock);
++            when(libvirtComputingResourceMock.rebootVM(connectionMock, command.getVmName())).thenThrow(LibvirtException.class);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1397,7 +1392,6 @@
+     @Test
+     public void testRebootRouterCommand() {
+         final VirtualRoutingResource routingResource = Mockito.mock(VirtualRoutingResource.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
+@@ -1406,7 +1400,7 @@
+         when(libvirtComputingResourceMock.getVirtRouterResource()).thenReturn(routingResource);
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1430,7 +1424,6 @@
+     @Test
+     public void testRebootRouterCommandConnect() {
+         final VirtualRoutingResource routingResource = Mockito.mock(VirtualRoutingResource.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
+@@ -1440,7 +1433,7 @@
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         when(routingResource.connect(command.getPrivateIpAddress())).thenReturn(true);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1503,7 +1496,6 @@
+ 
+     @Test
+     public void testPrepareForMigrationCommand() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+@@ -1516,7 +1508,7 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vm.getName())).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vm.getName())).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1551,7 +1543,6 @@
+ 
+     @Test
+     public void testPrepareForMigrationCommandMigration() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+@@ -1564,7 +1555,7 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vm.getName())).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vm.getName())).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1641,7 +1632,6 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testPrepareForMigrationCommandURISyntaxException() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+@@ -1654,7 +1644,7 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vm.getName())).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vm.getName())).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1668,7 +1658,7 @@
+         when(libvirtComputingResourceMock.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolManager);
+         try {
+-            when(libvirtComputingResourceMock.getVolumePath(conn, volume)).thenThrow(URISyntaxException.class);
++            when(libvirtComputingResourceMock.getVolumePath(connectionMock, volume)).thenThrow(URISyntaxException.class);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         } catch (final URISyntaxException e) {
+@@ -1697,7 +1687,6 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testPrepareForMigrationCommandInternalErrorException() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+@@ -1709,7 +1698,7 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vm.getName())).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vm.getName())).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -1740,7 +1729,6 @@
+     @Test
+     public void testMigrateCommand() {
+         final Connect conn = Mockito.mock(Connect.class);
+-        final Connect dconn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
+@@ -1755,7 +1743,7 @@
+         when(vmTO.getDisks()).thenReturn(diskTOS);
+         try {
+             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+-            when(libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system")).thenReturn(dconn);
++            when(libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system")).thenReturn(connectionMock);
+ 
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+@@ -1892,7 +1880,6 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testExceptionCheckVirtualMachineCommand() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
+@@ -1932,7 +1919,6 @@
+ 
+     @Test
+     public void testAttachIsoCommand() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
+@@ -1940,7 +1926,7 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -2081,14 +2067,13 @@
+ 
+     @Test
+     public void testGetVncPortCommand() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final GetVncPortCommand command = new GetVncPortCommand(1l, "host");
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getName())).thenReturn(conn);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getName())).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -2863,15 +2848,14 @@
+         final NetworkRulesVmSecondaryIpCommand command = new NetworkRulesVmSecondaryIpCommand(vmName, vmMac, secondaryIp, action );
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+-        } catch (final LibvirtException e) {
+-            fail(e.getMessage());
+-        }
+-        when(libvirtComputingResourceMock.configureNetworkRulesVMSecondaryIP(conn, command.getVmName(), command.getVmMac(), command.getVmSecIp(), command.getAction())).thenReturn(true);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(connectionMock);
++        } catch (final LibvirtException e) {
++            fail(e.getMessage());
++        }
++        when(libvirtComputingResourceMock.configureNetworkRulesVMSecondaryIP(connectionMock, command.getVmName(), command.getVmMac(), command.getVmSecIp(), command.getAction())).thenReturn(true);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -2885,7 +2869,7 @@
+             fail(e.getMessage());
+         }
+         verify(libvirtComputingResourceMock, times(1)).getLibvirtUtilitiesHelper();
+-        verify(libvirtComputingResourceMock, times(1)).configureNetworkRulesVMSecondaryIP(conn, command.getVmName(), command.getVmMac(), command.getVmSecIp(), command.getAction());
++        verify(libvirtComputingResourceMock, times(1)).configureNetworkRulesVMSecondaryIP(connectionMock, command.getVmName(), command.getVmMac(), command.getVmSecIp(), command.getAction());
+     }
+ 
+     @SuppressWarnings("unchecked")
+@@ -2928,15 +2912,14 @@
+         final NetworkRulesSystemVmCommand command = new NetworkRulesSystemVmCommand(vmName, type);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+-        } catch (final LibvirtException e) {
+-            fail(e.getMessage());
+-        }
+-        when(libvirtComputingResourceMock.configureDefaultNetworkRulesForSystemVm(conn, command.getVmName())).thenReturn(true);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(connectionMock);
++        } catch (final LibvirtException e) {
++            fail(e.getMessage());
++        }
++        when(libvirtComputingResourceMock.configureDefaultNetworkRulesForSystemVm(connectionMock, command.getVmName())).thenReturn(true);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -2950,7 +2933,7 @@
+             fail(e.getMessage());
+         }
+         verify(libvirtComputingResourceMock, times(1)).getLibvirtUtilitiesHelper();
+-        verify(libvirtComputingResourceMock, times(1)).configureDefaultNetworkRulesForSystemVm(conn, command.getVmName());
++        verify(libvirtComputingResourceMock, times(1)).configureDefaultNetworkRulesForSystemVm(connectionMock, command.getVmName());
+     }
+ 
+     @SuppressWarnings("unchecked")
+@@ -3424,16 +3407,15 @@
+         final SecurityGroupRulesCmd command = new SecurityGroupRulesCmd(guestIp, guestIp6, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+ 
+         final List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
+         final InterfaceDef interfaceDef = Mockito.mock(InterfaceDef.class);
+         nics.add(interfaceDef);
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtComputingResourceMock.getInterfaces(conn, command.getVmName())).thenReturn(nics);
+-        try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
++        when(libvirtComputingResourceMock.getInterfaces(connectionMock, command.getVmName())).thenReturn(nics);
++        try {
++            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -3473,16 +3455,15 @@
+         command.setVmTO(vm);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+ 
+         final List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
+         final InterfaceDef interfaceDef = Mockito.mock(InterfaceDef.class);
+         nics.add(interfaceDef);
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtComputingResourceMock.getInterfaces(conn, command.getVmName())).thenReturn(nics);
+-        try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
++        when(libvirtComputingResourceMock.getInterfaces(connectionMock, command.getVmName())).thenReturn(nics);
++        try {
++            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(connectionMock);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -3503,7 +3484,7 @@
+         when(egressRuleSet[0].getEndPort()).thenReturn(22);
+         when(egressRuleSet[0].getAllowedCidrs()).thenReturn(cidrs);
+ 
+-        when(libvirtComputingResourceMock.applyDefaultNetworkRules(conn, vm, true)).thenReturn(true);
++        when(libvirtComputingResourceMock.applyDefaultNetworkRules(connectionMock, vm, true)).thenReturn(true);
+         when(libvirtComputingResourceMock.addNetworkRules(command.getVmName(), Long.toString(command.getVmId()), command.getGuestIp(), command.getGuestIp6(), command.getSignature(),
+                 Long.toString(command.getSeqNum()), command.getGuestMac(), command.stringifyRules(), vif, brname, command.getSecIpsString())).thenReturn(true);
+ 
+@@ -3574,7 +3555,6 @@
+         final PlugNicCommand command = new PlugNicCommand(nic, instanceName, vmtype);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final Domain vm = Mockito.mock(Domain.class);
+ 
+         final List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
+@@ -3582,15 +3562,15 @@
+         nics.add(intDef);
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtComputingResourceMock.getInterfaces(conn, command.getVmName())).thenReturn(nics);
++        when(libvirtComputingResourceMock.getInterfaces(connectionMock, command.getVmName())).thenReturn(nics);
+ 
+         when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+ 
+         when(nic.getMac()).thenReturn("00:00:00:00");
+ 
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+-            when(libvirtComputingResourceMock.getDomain(conn, instanceName)).thenReturn(vm);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(connectionMock);
++            when(libvirtComputingResourceMock.getDomain(connectionMock, instanceName)).thenReturn(vm);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -3604,7 +3584,7 @@
+         verify(libvirtComputingResourceMock, times(1)).getLibvirtUtilitiesHelper();
+         try {
+             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(command.getVmName());
+-            verify(libvirtComputingResourceMock, times(1)).getDomain(conn, instanceName);
++            verify(libvirtComputingResourceMock, times(1)).getDomain(connectionMock, instanceName);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -3619,7 +3599,6 @@
+         final PlugNicCommand command = new PlugNicCommand(nic, instanceName, vmtype);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final Domain vm = Mockito.mock(Domain.class);
+         final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+         final InterfaceDef interfaceDef = Mockito.mock(InterfaceDef.class);
+@@ -3629,7 +3608,7 @@
+         nics.add(intDef);
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtComputingResourceMock.getInterfaces(conn, command.getVmName())).thenReturn(nics);
++        when(libvirtComputingResourceMock.getInterfaces(connectionMock, command.getVmName())).thenReturn(nics);
+ 
+         when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+ 
+@@ -3637,8 +3616,8 @@
+         when(nic.getName()).thenReturn("br0");
+ 
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+-            when(libvirtComputingResourceMock.getDomain(conn, instanceName)).thenReturn(vm);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(connectionMock);
++            when(libvirtComputingResourceMock.getDomain(connectionMock, instanceName)).thenReturn(vm);
+ 
+             when(libvirtComputingResourceMock.getVifDriver(nic.getType(), nic.getName())).thenReturn(vifDriver);
+ 
+@@ -3663,7 +3642,7 @@
+         verify(libvirtComputingResourceMock, times(1)).getLibvirtUtilitiesHelper();
+         try {
+             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(command.getVmName());
+-            verify(libvirtComputingResourceMock, times(1)).getDomain(conn, instanceName);
++            verify(libvirtComputingResourceMock, times(1)).getDomain(connectionMock, instanceName);
+             verify(libvirtComputingResourceMock, times(1)).getVifDriver(nic.getType(), nic.getName());
+             verify(vifDriver, times(1)).plug(nic, "Other PV", "", null);
+         } catch (final LibvirtException e) {
+@@ -3716,7 +3695,6 @@
+         final PlugNicCommand command = new PlugNicCommand(nic, instanceName, vmtype);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final Domain vm = Mockito.mock(Domain.class);
+         final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+ 
+@@ -3725,15 +3703,15 @@
+         nics.add(intDef);
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtComputingResourceMock.getInterfaces(conn, command.getVmName())).thenReturn(nics);
++        when(libvirtComputingResourceMock.getInterfaces(connectionMock, command.getVmName())).thenReturn(nics);
+ 
+         when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+ 
+         when(nic.getMac()).thenReturn("00:00:00:01");
+ 
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+-            when(libvirtComputingResourceMock.getDomain(conn, instanceName)).thenReturn(vm);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(connectionMock);
++            when(libvirtComputingResourceMock.getDomain(connectionMock, instanceName)).thenReturn(vm);
+ 
+             when(libvirtComputingResourceMock.getVifDriver(nic.getType(), nic.getName())).thenReturn(vifDriver);
+ 
+@@ -3754,7 +3732,7 @@
+         verify(libvirtComputingResourceMock, times(1)).getLibvirtUtilitiesHelper();
+         try {
+             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(command.getVmName());
+-            verify(libvirtComputingResourceMock, times(1)).getDomain(conn, instanceName);
++            verify(libvirtComputingResourceMock, times(1)).getDomain(connectionMock, instanceName);
+             verify(libvirtComputingResourceMock, times(1)).getVifDriver(nic.getType(), nic.getName());
+             verify(vifDriver, times(1)).plug(nic, "Other PV", "", null);
+         } catch (final LibvirtException e) {
+@@ -3772,7 +3750,6 @@
+         final UnPlugNicCommand command = new UnPlugNicCommand(nic, instanceName);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final Domain vm = Mockito.mock(Domain.class);
+ 
+         final List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
+@@ -3784,7 +3761,7 @@
+         drivers.add(vifDriver);
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtComputingResourceMock.getInterfaces(conn, command.getVmName())).thenReturn(nics);
++        when(libvirtComputingResourceMock.getInterfaces(connectionMock, command.getVmName())).thenReturn(nics);
+ 
+         when(intDef.getBrName()).thenReturn("br0");
+         when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+@@ -3792,8 +3769,8 @@
+         when(nic.getMac()).thenReturn("00:00:00:00");
+ 
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+-            when(libvirtComputingResourceMock.getDomain(conn, instanceName)).thenReturn(vm);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(connectionMock);
++            when(libvirtComputingResourceMock.getDomain(connectionMock, instanceName)).thenReturn(vm);
+             when(libvirtComputingResourceMock.getAllVifDrivers()).thenReturn(drivers);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+@@ -3808,7 +3785,7 @@
+         verify(libvirtComputingResourceMock, times(1)).getLibvirtUtilitiesHelper();
+         try {
+             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(command.getVmName());
+-            verify(libvirtComputingResourceMock, times(1)).getDomain(conn, instanceName);
++            verify(libvirtComputingResourceMock, times(1)).getDomain(connectionMock, instanceName);
+             verify(libvirtComputingResourceMock, times(1)).getAllVifDrivers();
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+@@ -3823,7 +3800,6 @@
+         final UnPlugNicCommand command = new UnPlugNicCommand(nic, instanceName);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final Domain vm = Mockito.mock(Domain.class);
+ 
+         final List<InterfaceDef> nics = new ArrayList<InterfaceDef>();
+@@ -3833,11 +3809,11 @@
+         drivers.add(vifDriver);
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtComputingResourceMock.getInterfaces(conn, command.getVmName())).thenReturn(nics);
+-
+-        try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+-            when(libvirtComputingResourceMock.getDomain(conn, instanceName)).thenReturn(vm);
++        when(libvirtComputingResourceMock.getInterfaces(connectionMock, command.getVmName())).thenReturn(nics);
++
++        try {
++            when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(connectionMock);
++            when(libvirtComputingResourceMock.getDomain(connectionMock, instanceName)).thenReturn(vm);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -3851,7 +3827,7 @@
+         verify(libvirtComputingResourceMock, times(1)).getLibvirtUtilitiesHelper();
+         try {
+             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(command.getVmName());
+-            verify(libvirtComputingResourceMock, times(1)).getDomain(conn, instanceName);
++            verify(libvirtComputingResourceMock, times(1)).getDomain(connectionMock, instanceName);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         }
+@@ -4111,7 +4087,6 @@
+         final ManageSnapshotCommand command = new ManageSnapshotCommand(snapshotId, volumePath, storagePool, preSnapshotPath, snapshotName, vmName);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+         final Domain vm = Mockito.mock(Domain.class);
+@@ -4125,8 +4100,8 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+-            when(libvirtComputingResourceMock.getDomain(conn, command.getVmName())).thenReturn(vm);
++            when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(connectionMock);
++            when(libvirtComputingResourceMock.getDomain(connectionMock, command.getVmName())).thenReturn(vm);
+             when(vm.getInfo()).thenReturn(info);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+@@ -5109,7 +5084,6 @@
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+ 
+         final NicTO nic = Mockito.mock(NicTO.class);
+@@ -5125,8 +5099,8 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
+-            doNothing().when(libvirtComputingResourceMock).createVbd(conn, vmSpec, vmName, vmDef);
++            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(connectionMock);
++            doNothing().when(libvirtComputingResourceMock).createVbd(connectionMock, vmSpec, vmName, vmDef);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         } catch (final InternalErrorException e) {
+@@ -5206,7 +5180,6 @@
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+ 
+         final NicTO nic = Mockito.mock(NicTO.class);
+@@ -5222,8 +5195,8 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
+-            doThrow(InternalErrorException.class).when(libvirtComputingResourceMock).createVbd(conn, vmSpec, vmName, vmDef);
++            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(connectionMock);
++            doThrow(InternalErrorException.class).when(libvirtComputingResourceMock).createVbd(connectionMock, vmSpec, vmName, vmDef);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         } catch (final InternalErrorException e) {
+@@ -5257,7 +5230,6 @@
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+ 
+         final NicTO nic = Mockito.mock(NicTO.class);
+@@ -5273,8 +5245,8 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
+-            doThrow(URISyntaxException.class).when(libvirtComputingResourceMock).createVbd(conn, vmSpec, vmName, vmDef);
++            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(connectionMock);
++            doThrow(URISyntaxException.class).when(libvirtComputingResourceMock).createVbd(connectionMock, vmSpec, vmName, vmDef);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         } catch (final InternalErrorException e) {
+@@ -5308,7 +5280,6 @@
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+         final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
+ 
+@@ -5326,8 +5297,8 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
+-            doNothing().when(libvirtComputingResourceMock).createVbd(conn, vmSpec, vmName, vmDef);
++            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(connectionMock);
++            doNothing().when(libvirtComputingResourceMock).createVbd(connectionMock, vmSpec, vmName, vmDef);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         } catch (final InternalErrorException e) {
+@@ -5340,7 +5311,7 @@
+         try {
+             doNothing().when(libvirtComputingResourceMock).createVifs(vmSpec, vmDef);
+ 
+-            when(libvirtComputingResourceMock.startVM(conn, vmName, vmDef.toString())).thenReturn("SUCCESS");
++            when(libvirtComputingResourceMock.startVM(connectionMock, vmName, vmDef.toString())).thenReturn("SUCCESS");
+ 
+             when(vmSpec.getBootArgs()).thenReturn("ls -lart");
+             when(libvirtComputingResourceMock.passCmdLine(vmName, vmSpec.getBootArgs())).thenReturn(true);
+@@ -5387,7 +5358,6 @@
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+         final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
+ 
+@@ -5405,8 +5375,8 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
+-            doNothing().when(libvirtComputingResourceMock).createVbd(conn, vmSpec, vmName, vmDef);
++            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(connectionMock);
++            doNothing().when(libvirtComputingResourceMock).createVbd(connectionMock, vmSpec, vmName, vmDef);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         } catch (final InternalErrorException e) {
+@@ -5419,7 +5389,7 @@
+         try {
+             doNothing().when(libvirtComputingResourceMock).createVifs(vmSpec, vmDef);
+ 
+-            when(libvirtComputingResourceMock.startVM(conn, vmName, vmDef.toString())).thenReturn("SUCCESS");
++            when(libvirtComputingResourceMock.startVM(connectionMock, vmName, vmDef.toString())).thenReturn("SUCCESS");
+ 
+ 
+             when(vmSpec.getBootArgs()).thenReturn("ls -lart");
+@@ -5467,7 +5437,6 @@
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+ 
+         final NicTO nic = Mockito.mock(NicTO.class);
+@@ -5486,8 +5455,8 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+-            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(conn);
+-            doNothing().when(libvirtComputingResourceMock).createVbd(conn, vmSpec, vmName, vmDef);
++            when(libvirtUtilitiesHelper.getConnectionByType(vmDef.getHvsType())).thenReturn(connectionMock);
++            doNothing().when(libvirtComputingResourceMock).createVbd(connectionMock, vmSpec, vmName, vmDef);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+         } catch (final InternalErrorException e) {
+@@ -6548,7 +6517,6 @@
+ 
+     @Test
+     public void createLinstorVdb() throws LibvirtException, InternalErrorException, URISyntaxException {
+-        final Connect connect = Mockito.mock(Connect.class);
+ 
+         final int id = random.nextInt(65534);
+         final String name = "test-instance-1";
+@@ -6607,7 +6575,7 @@
+         {
+             LibvirtVMDef vm = new LibvirtVMDef();
+             vm.addComp(new DevicesDef());
+-            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
++            libvirtComputingResourceSpy.createVbd(connectionMock, to, name, vm);
+ 
+             DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+             assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());
+@@ -6620,7 +6588,7 @@
+         {
+             LibvirtVMDef vm = new LibvirtVMDef();
+             vm.addComp(new DevicesDef());
+-            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
++            libvirtComputingResourceSpy.createVbd(connectionMock, to, name, vm);
+ 
+             DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+             assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());
+@@ -6634,7 +6602,7 @@
+         {
+             LibvirtVMDef vm = new LibvirtVMDef();
+             vm.addComp(new DevicesDef());
+-            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
++            libvirtComputingResourceSpy.createVbd(connectionMock, to, name, vm);
+ 
+             DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+             assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());
+@@ -6647,7 +6615,7 @@
+         {
+             LibvirtVMDef vm = new LibvirtVMDef();
+             vm.addComp(new DevicesDef());
+-            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
++            libvirtComputingResourceSpy.createVbd(connectionMock, to, name, vm);
+ 
+             DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+             assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());

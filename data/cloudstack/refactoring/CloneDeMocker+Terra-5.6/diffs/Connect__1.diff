@@ -1,0 +1,113 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -790,6 +790,16 @@
+         verifySerialDevices(parse(serialDef.toString()), "");
+     }
+ 
++    private static Connect createMockConnect(String vmName, Domain vm) {
++        final Connect conn = Mockito.mock(Connect.class);
++        try {
++            when(conn.domainLookupByName(vmName)).thenReturn(vm);
++        } catch (final LibvirtException e) {
++            throw new AssertionError(e);
++        }
++        return conn;
++    }
++
+     private VirtualMachineTO createDefaultVM(boolean limitCpuUse) {
+         int id = random.nextInt(65534);
+         String name = "test-instance-1";
+@@ -1069,7 +1079,6 @@
+ 
+     @Test
+     public void testStopCommandCheckVmNOTRunning() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final Domain vm = Mockito.mock(Domain.class);
+         final DomainInfo info = Mockito.mock(DomainInfo.class);
+@@ -1081,8 +1090,8 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
++            final Connect conn = createMockConnect(vmName, vm);
+             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+-            when(conn.domainLookupByName(command.getVmName())).thenReturn(vm);
+ 
+             when(vm.getInfo()).thenReturn(info);
+ 
+@@ -1140,7 +1149,6 @@
+ 
+     @Test
+     public void testStopCommandCheckVmRunning() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final Domain vm = Mockito.mock(Domain.class);
+         final DomainInfo info = Mockito.mock(DomainInfo.class);
+@@ -1152,8 +1160,8 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
++            final Connect conn = createMockConnect(vmName, vm);
+             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+-            when(conn.domainLookupByName(command.getVmName())).thenReturn(vm);
+ 
+             when(vm.getInfo()).thenReturn(info);
+ 
+@@ -1856,18 +1864,17 @@
+ 
+     @Test
+     public void testCheckVirtualMachineCommand() {
+-        final Connect conn = Mockito.mock(Connect.class);
+         final Domain vm = Mockito.mock(Domain.class);
+         final DomainInfo domainInfo = Mockito.mock(DomainInfo.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+ 
+         final String vmName = "Test";
++        final Connect conn = createMockConnect(vmName, vm);
+         final CheckVirtualMachineCommand command = new CheckVirtualMachineCommand(vmName);
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+-            when(conn.domainLookupByName(vmName)).thenReturn(vm);
+             when(vm.getInfo()).thenReturn(domainInfo);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
+@@ -4841,7 +4848,6 @@
+         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final StorageVol v = Mockito.mock(StorageVol.class);
+         final Domain vm = Mockito.mock(Domain.class);
+         final DomainInfo info = Mockito.mock(DomainInfo.class);
+@@ -4858,10 +4864,10 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
++            final Connect conn = createMockConnect(vmInstance, vm);
+             when(libvirtUtilitiesHelper.getConnection()).thenReturn(conn);
+             when(conn.storageVolLookupByPath(path)).thenReturn(v);
+             when(libvirtUtilitiesHelper.getConnectionByVmName(vmInstance)).thenReturn(conn);
+-            when(conn.domainLookupByName(vmInstance)).thenReturn(vm);
+             when(vm.getInfo()).thenReturn(info);
+ 
+             when(conn.getLibVirVersion()).thenReturn(10010l);
+@@ -4901,8 +4907,8 @@
+         final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+-        final Connect conn = Mockito.mock(Connect.class);
+         final Domain vm = Mockito.mock(Domain.class);
++        final Connect conn = createMockConnect(vmInstance, vm);
+         final DomainInfo info = Mockito.mock(DomainInfo.class);
+         final DomainState state = DomainInfo.DomainState.VIR_DOMAIN_RUNNING;
+         info.state = state;
+@@ -4917,7 +4923,6 @@
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         try {
+             when(libvirtUtilitiesHelper.getConnectionByVmName(vmInstance)).thenReturn(conn);
+-            when(conn.domainLookupByName(vmInstance)).thenReturn(vm);
+             when(vm.getInfo()).thenReturn(info);
+         } catch (final LibvirtException e) {
+             fail(e.getMessage());
