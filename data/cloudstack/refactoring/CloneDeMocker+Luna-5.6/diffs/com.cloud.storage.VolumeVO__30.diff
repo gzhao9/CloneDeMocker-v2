@@ -1,23 +1,23 @@
 --- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
 +++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
-@@ -1829,7 +1829,7 @@
+@@ -1829,15 +1829,13 @@
  
      @Test(expected = InvalidParameterValueException.class)
      public void testValidationsForCheckVolumeAPIWithRunningVM() {
 -        VolumeVO volume = mock(VolumeVO.class);
-+        VolumeVO volume = createMockVolume();
- 
+-
          AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
          UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
-@@ -1837,7 +1837,6 @@
+         CallContext.register(user, account);
  
          lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
  
 -        when(volume.getInstanceId()).thenReturn(1L);
++        VolumeVO volume = createMockVolume();
          UserVmVO vm = mock(UserVmVO.class);
          when(userVmDaoMock.findById(1L)).thenReturn(vm);
          when(vm.getState()).thenReturn(State.Running);
-@@ -1847,7 +1846,7 @@
+@@ -1847,7 +1845,7 @@
  
      @Test(expected = InvalidParameterValueException.class)
      public void testValidationsForCheckVolumeAPIWithNonexistedVM() {
@@ -26,7 +26,7 @@
  
          AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.Type.NORMAL, "uuid");
          UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
-@@ -1855,7 +1854,6 @@
+@@ -1855,7 +1853,6 @@
  
          lenient().doNothing().when(accountManagerMock).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
  
@@ -34,16 +34,14 @@
          when(userVmDaoMock.findById(1L)).thenReturn(null);
  
          volumeApiServiceImpl.validationsForCheckVolumeOperation(volume);
-@@ -2054,6 +2052,12 @@
-             verify(volumeServiceMock, times(0)).resize(any(VolumeInfo.class));
+@@ -2896,4 +2893,10 @@
+                     e.getMessage() != null && e.getMessage().contains("VM should be in"));
          }
      }
++
 +    private static VolumeVO createMockVolume() {
 +        VolumeVO volume = mock(VolumeVO.class);
 +        when(volume.getInstanceId()).thenReturn(1L);
 +        return volume;
 +    }
-+
-     private UserVmVO getMockedVm() {
-         UserVmVO vm = Mockito.mock(UserVmVO.class);
-         Mockito.when(vm.getId()).thenReturn(1L);
+ }

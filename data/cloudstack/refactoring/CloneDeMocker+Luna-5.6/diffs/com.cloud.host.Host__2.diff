@@ -1,6 +1,19 @@
 --- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
 +++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
-@@ -1467,12 +1467,10 @@
+@@ -339,6 +339,12 @@
+         }
+     }
+ 
++    private static Host createMockHost(HypervisorType hypervisorType) {
++        Host host = mock(Host.class);
++        when(host.getHypervisorType()).thenReturn(hypervisorType);
++        return host;
++    }
++
+     private ClvmPoolManager injectMockedClvmPoolManager() {
+         ClvmPoolManager clvmPoolManagerMock = mock(ClvmPoolManager.class);
+         ReflectionTestUtils.setField(virtualMachineManagerImpl, "clvmPoolManager", clvmPoolManagerMock);
+@@ -1467,12 +1473,10 @@
  
      @Test
      public void updateStartCommandWithExternalDetails_nonExternalHypervisor_noAction() {
@@ -14,7 +27,7 @@
          virtualMachineManagerImpl.updateStartCommandWithExternalDetails(host, vmTO, command);
  
          verify(command, never()).setExternalDetails(any());
-@@ -1480,12 +1478,10 @@
+@@ -1480,12 +1484,11 @@
  
      @Test
      public void updateStartCommandWithExternalDetails_externalHypervisor_setsExternalDetails() {
@@ -23,12 +36,12 @@
          VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
          StartCommand command = mock(StartCommand.class);
          NicTO nic = mock(NicTO.class);
--
+ 
 -        when(host.getHypervisorType()).thenReturn(HypervisorType.External);
          when(vmTO.getExternalDetails()).thenReturn(new HashMap<>());
          when(vmTO.getNics()).thenReturn(new NicTO[]{nic});
          when(nic.isDefaultNic()).thenReturn(true);
-@@ -1525,20 +1521,18 @@
+@@ -1525,20 +1528,18 @@
  
      @Test
      public void updateRebootCommandWithExternalDetails_nonExternalHypervisor_noAction() {
@@ -51,16 +64,16 @@
          when(vmTO.getExternalDetails()).thenReturn(new HashMap<>());
          when(extensionsManager.getExternalAccessDetails(eq(host), any())).thenReturn(new HashMap<>());
          virtualMachineManagerImpl.updateRebootCommandWithExternalDetails(host, vmTO, rebootCmd);
-@@ -1668,18 +1662,17 @@
+@@ -1668,18 +1669,16 @@
  
      @Test
      public void processPrepareExternalProvisioning_nonExternalHypervisor_noAction() throws OperationTimedoutException, AgentUnavailableException {
 -        Host host = mock(Host.class);
-+        Host host = createMockHost(HypervisorType.KVM);
          VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
          VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
          when(vmProfile.getTemplate()).thenReturn(template);
 -        when(host.getHypervisorType()).thenReturn(HypervisorType.KVM);
++        Host host = createMockHost(HypervisorType.KVM);
          virtualMachineManagerImpl.processPrepareExternalProvisioning(true, host, vmProfile, mock(DataCenter.class));
          verify(agentManagerMock, never()).send(anyLong(), any(Command.class));
      }
@@ -68,26 +81,15 @@
      @Test
      public void processPrepareExternalProvisioning_externalHypervisor_sendsCommand() throws OperationTimedoutException, AgentUnavailableException {
 -        Host host = mock(Host.class);
-+        Host host = createMockHost(HypervisorType.External);
          VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
          VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
          when(vmProfile.getTemplate()).thenReturn(template);
-@@ -1688,7 +1681,6 @@
+@@ -1688,7 +1687,7 @@
          when(vmTO.getNics()).thenReturn(nics);
          doReturn(vmTO).when(virtualMachineManagerImpl).toVmTO(vmProfile);
          ExtensionDetailsVO detailsVO = mock(ExtensionDetailsVO.class);
 -        when(host.getHypervisorType()).thenReturn(HypervisorType.External);
++        Host host = createMockHost(HypervisorType.External);
          when(template.getExtensionId()).thenReturn(1L);
          when(extensionDetailsDao.findDetail(eq(1L), eq(ApiConstants.ORCHESTRATOR_REQUIRES_PREPARE_VM))).thenReturn(detailsVO);
          when(detailsVO.getValue()).thenReturn("true");
-@@ -2241,4 +2233,10 @@
-         verify(clvmPoolManagerMock, times(1)).setClvmLockHostId(3L, destHostId);
-     }
- 
-+    private static Host createMockHost(HypervisorType hypervisorType) {
-+        Host host = mock(Host.class);
-+        when(host.getHypervisorType()).thenReturn(hypervisorType);
-+        return host;
-+    }
-+
- }
