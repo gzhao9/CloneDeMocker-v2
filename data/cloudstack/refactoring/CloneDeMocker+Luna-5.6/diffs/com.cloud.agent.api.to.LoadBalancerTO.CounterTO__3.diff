@@ -1,21 +1,21 @@
 --- a/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
 +++ b/server/src/test/java/com/cloud/network/as/AutoScaleManagerImplTest.java
-@@ -2367,21 +2367,18 @@
+@@ -2367,21 +2367,17 @@
  
          AutoScalePolicyTO scaleUpPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
          ConditionTO scaleUpConditionTO = Mockito.mock(ConditionTO.class);
 -        CounterTO scaleUpCounterTO = Mockito.mock(CounterTO.class);
-+        CounterTO scaleUpCounterTO = createMockScaleDownCounterTO();
++        CounterTO scaleUpCounterTO = createMockCounterTO(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS.toString());
          when(scaleUpPolicyTO.getId()).thenReturn(scaleUpPolicyId);
          when(scaleUpPolicyTO.getConditions()).thenReturn(Arrays.asList(scaleUpConditionTO));
          when(scaleUpConditionTO.getCounter()).thenReturn(scaleUpCounterTO);
 -        when(scaleUpCounterTO.getProvider()).thenReturn(Network.Provider.VirtualRouter.getName());
-         when(scaleUpCounterTO.getValue()).thenReturn(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS.toString());
+-        when(scaleUpCounterTO.getValue()).thenReturn(VirtualRouterAutoScaleCounter.NETWORK_RECEIVED_AVERAGE_MBPS.toString());
  
          AutoScalePolicyTO scaleDownPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
          ConditionTO scaleDownConditionTO = Mockito.mock(ConditionTO.class);
 -        CounterTO scaleDownCounterTO = Mockito.mock(CounterTO.class);
-+        CounterTO scaleDownCounterTO = createMockScaleDownCounterTO();
++        CounterTO scaleDownCounterTO = createMockCounterTO(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS.toString());
          when(scaleDownPolicyTO.getId()).thenReturn(scaleDownPolicyId);
          when(scaleDownPolicyTO.getConditions()).thenReturn(Arrays.asList(scaleDownConditionTO));
          when(scaleDownConditionTO.getCounter()).thenReturn(scaleDownCounterTO);
@@ -24,17 +24,17 @@
  
          when(groupTO.getPolicies()).thenReturn(Arrays.asList(scaleUpPolicyTO, scaleDownPolicyTO));
  
-@@ -2529,6 +2526,13 @@
-         Assert.assertTrue(result.second().endsWith(result.first().split("-")[2]));
-     }
- 
-+    private static CounterTO createMockScaleDownCounterTO() {
-+        CounterTO scaleDownCounterTO = Mockito.mock(CounterTO.class);
-+        when(scaleDownCounterTO.getProvider()).thenReturn(Network.Provider.VirtualRouter.getName());
-+        when(scaleDownCounterTO.getValue()).thenReturn(VirtualRouterAutoScaleCounter.NETWORK_TRANSMIT_AVERAGE_MBPS.toString());
-+        return scaleDownCounterTO;
+@@ -2512,6 +2508,13 @@
+                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
+         Assert.assertTrue(result.first().matches(vmHostNamePattern));
+         Assert.assertEquals(result.first(), result.second());
 +    }
 +
-     @Test
-     public void getNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForWindowsTemplateUsingGuestOsName() {
-         GuestOSVO guestOS = Mockito.mock(GuestOSVO.class);
++    private static CounterTO createMockCounterTO(String counterValueReturn) {
++        CounterTO counterTO = Mockito.mock(CounterTO.class);
++        when(counterTO.getProvider()).thenReturn(Network.Provider.VirtualRouter.getName());
++        when(counterTO.getValue()).thenReturn(counterValueReturn);
++        return counterTO;
+     }
+ 
+     private void runGetNextVmHostAndDisplayNameGeneratesCorrectHostAndDisplayNameForWindowsTemplate() {

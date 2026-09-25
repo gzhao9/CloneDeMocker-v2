@@ -1,22 +1,23 @@
 --- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
 +++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
-@@ -278,6 +278,7 @@
-     private DomainVO domainVOMock;
+@@ -172,6 +172,8 @@
+     @Mock
+     VolumeDao volumeDao;
  
-     private Gson gson;
-+    private VolumeVO volumeVOMock;
++    private VolumeVO volumeMock;
++
+     @Mock
+     VMInstanceDao vmInstanceDao;
  
-     private String[] hostPossibleValues = {"127.0.0.1", "hostname"};
-     private String[] datastoresPossibleValues = {"e9804933-8609-4de3-bccc-6278072a496c", "datastore-name"};
-@@ -291,6 +292,7 @@
+@@ -291,6 +293,7 @@
      @Before
      public void setup() throws Exception {
          gson = new Gson();
-+        volumeVOMock = mock(VolumeVO.class);
++        volumeMock = mock(VolumeVO.class);
  
          closeable = MockitoAnnotations.openMocks(this);
          when(backupOfferingDao.findById(null)).thenReturn(null);
-@@ -542,7 +544,6 @@
+@@ -542,7 +545,6 @@
      @Test
      public void tryRestoreVMTestRestoreSucceeded() throws NoTransitionException {
          BackupOffering offering = mock(BackupOffering.class);
@@ -24,19 +25,19 @@
          VMInstanceVO vm = mock(VMInstanceVO.class);
          BackupVO backup = mock(BackupVO.class);
  
-@@ -554,9 +555,9 @@
+@@ -554,9 +556,9 @@
                      Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(),
                      Mockito.anyString(), Mockito.eq(0))).thenReturn(2L);
  
 -            Mockito.when(volumeDao.findIncludingRemovedByInstanceAndType(1L, null)).thenReturn(Collections.singletonList(volumeVO));
-+            Mockito.when(volumeDao.findIncludingRemovedByInstanceAndType(1L, null)).thenReturn(Collections.singletonList(volumeVOMock));
++            Mockito.when(volumeDao.findIncludingRemovedByInstanceAndType(1L, null)).thenReturn(Collections.singletonList(volumeMock));
              Mockito.when(virtualMachineManager.stateTransitTo(Mockito.eq(vm), Mockito.eq(VirtualMachine.Event.RestoringRequested), Mockito.any())).thenReturn(true);
 -            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVO), Mockito.eq(Volume.Event.RestoreRequested))).thenReturn(true);
-+            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVOMock), Mockito.eq(Volume.Event.RestoreRequested))).thenReturn(true);
++            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeMock), Mockito.eq(Volume.Event.RestoreRequested))).thenReturn(true);
  
              Mockito.when(vm.getId()).thenReturn(1L);
              Mockito.when(offering.getProvider()).thenReturn("veeam");
-@@ -570,7 +571,6 @@
+@@ -570,7 +572,6 @@
      @Test
      public void tryRestoreVMTestRestoreFails() throws NoTransitionException {
          BackupOffering offering = mock(BackupOffering.class);
@@ -44,38 +45,38 @@
          VMInstanceVO vm = mock(VMInstanceVO.class);
          BackupVO backup = mock(BackupVO.class);
  
-@@ -582,11 +582,11 @@
+@@ -582,11 +583,11 @@
                      Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(),
                      Mockito.anyString(), Mockito.eq(0))).thenReturn(2L);
  
 -            Mockito.when(volumeDao.findIncludingRemovedByInstanceAndType(1L, null)).thenReturn(Collections.singletonList(volumeVO));
-+            Mockito.when(volumeDao.findIncludingRemovedByInstanceAndType(1L, null)).thenReturn(Collections.singletonList(volumeVOMock));
++            Mockito.when(volumeDao.findIncludingRemovedByInstanceAndType(1L, null)).thenReturn(Collections.singletonList(volumeMock));
              Mockito.when(virtualMachineManager.stateTransitTo(Mockito.eq(vm), Mockito.eq(VirtualMachine.Event.RestoringRequested), Mockito.any())).thenReturn(true);
 -            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVO), Mockito.eq(Volume.Event.RestoreRequested))).thenReturn(true);
-+            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVOMock), Mockito.eq(Volume.Event.RestoreRequested))).thenReturn(true);
++            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeMock), Mockito.eq(Volume.Event.RestoreRequested))).thenReturn(true);
              Mockito.when(virtualMachineManager.stateTransitTo(Mockito.eq(vm), Mockito.eq(VirtualMachine.Event.RestoringFailed), Mockito.any())).thenReturn(true);
 -            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVO), Mockito.eq(Volume.Event.RestoreFailed))).thenReturn(true);
-+            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVOMock), Mockito.eq(Volume.Event.RestoreFailed))).thenReturn(true);
++            Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeMock), Mockito.eq(Volume.Event.RestoreFailed))).thenReturn(true);
  
              Mockito.when(vm.getId()).thenReturn(1L);
              Mockito.when(offering.getProvider()).thenReturn("veeam");
-@@ -2123,8 +2123,7 @@
+@@ -2123,8 +2124,7 @@
          BackupOfferingVO offering = mock(BackupOfferingVO.class);
          when(offering.getProvider()).thenReturn("testbackupprovider");
  
 -        VolumeVO volume = mock(VolumeVO.class);
 -        when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volume));
-+        when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volumeVOMock));
++        when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volumeMock));
  
          BackupProvider backupProvider = mock(BackupProvider.class);
          when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(true);
-@@ -2255,8 +2254,7 @@
+@@ -2255,8 +2255,7 @@
          when(vm.getRemoved()).thenReturn(null);
          when(vm.getBackupVolumeList()).thenReturn(Collections.emptyList());
  
 -        VolumeVO volume = mock(VolumeVO.class);
 -        when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volume));
-+        when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volumeVOMock));
++        when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volumeMock));
  
          when(backupDao.findById(backupId)).thenReturn(backup);
          when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
