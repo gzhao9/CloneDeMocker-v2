@@ -1,0 +1,232 @@
+--- a/plugins/network-elements/brocade-vcs/src/test/java/com/cloud/network/guru/BrocadeVcsGuestNetworkGuruTest.java
++++ b/plugins/network-elements/brocade-vcs/src/test/java/com/cloud/network/guru/BrocadeVcsGuestNetworkGuruTest.java
+@@ -232,10 +232,7 @@
+         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
+ 
+ 
+-        final NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
+-        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
++        final NetworkVO network = MockNetworkVO.createMockNetworkVO(NETWORK_ID);
+         when(network.getBroadcastUri()).thenReturn(new URI("vlan://14"));
+ 
+         final DeployDestination dest = mock(DeployDestination.class);
+@@ -291,10 +288,7 @@
+         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
+ 
+ 
+-        final NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
+-        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
++        final NetworkVO network = MockNetworkVO.createMockNetworkVO(NETWORK_ID);
+         when(network.getBroadcastUri()).thenReturn(new URI("vlan://14"));
+ 
+         final DeployDestination dest = mock(DeployDestination.class);
+@@ -337,10 +331,7 @@
+     @Test
+     public void testReserve() throws InsufficientVirtualNetworkCapacityException, URISyntaxException, InsufficientAddressCapacityException {
+ 
+-        final NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
+-        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
++        final NetworkVO network = MockNetworkVO.createMockNetworkVO(NETWORK_ID);
+         when(network.getBroadcastUri()).thenReturn(new URI("vlan://14"));
+         when(network.getDataCenterId()).thenReturn(NETWORK_ID);
+ 
+@@ -389,10 +380,7 @@
+     @Test
+     public void testReserveFail() throws InsufficientVirtualNetworkCapacityException, URISyntaxException, InsufficientAddressCapacityException {
+ 
+-        final NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
+-        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
++        final NetworkVO network = MockNetworkVO.createMockNetworkVO(NETWORK_ID);
+         when(network.getBroadcastUri()).thenReturn(new URI("vlan://14"));
+         when(network.getDataCenterId()).thenReturn(NETWORK_ID);
+ 
+@@ -441,10 +429,7 @@
+     @Test
+     public void testDeallocate() {
+ 
+-        final NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
+-        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
++        final NetworkVO network = MockNetworkVO.createMockNetworkVO(NETWORK_ID);
+         when(network.getDataCenterId()).thenReturn(NETWORK_ID);
+ 
+         final NicProfile nic = mock(NicProfile.class);
+@@ -477,12 +462,9 @@
+     @Test
+     public void testDeallocateFail() {
+ 
+-        final NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
+-        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+         when(network.getDataCenterId()).thenReturn(NETWORK_ID);
+ 
++        final NetworkVO network = MockNetworkVO.createMockNetworkVO(NETWORK_ID);
+         final NicProfile nic = mock(NicProfile.class);
+         when(nic.getMacAddress()).thenReturn("macaddress");
+         when(nic.getReservationStrategy()).thenReturn(ReservationStrategy.Start);
+@@ -588,4 +570,17 @@
+         assertTrue(result == false);
+         verify(agentmgr, times(0)).easySend(eq(NETWORK_ID), (Command)any());
+     }
++
++    public final class MockNetworkVO {
++        private MockNetworkVO() {
++        }
++
++        public static com.cloud.network.dao.NetworkVO createMockNetworkVO(long physicalNetworkId) {
++            final com.cloud.network.dao.NetworkVO network = mock(com.cloud.network.dao.NetworkVO.class);
++            when(network.getName()).thenReturn("testnetwork");
++            when(network.getState()).thenReturn(com.cloud.network.Network.State.Implementing);
++            when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
++            return network;
++        }
++    }
+ }
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/guru/NiciraNvpGuestNetworkGuruTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/guru/NiciraNvpGuestNetworkGuruTest.java
+@@ -262,11 +262,8 @@
+         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
+ 
+ 
+-        final NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
+-        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+-
++
++        final NetworkVO network = MockNetworkVO.createMockNetworkVO(NETWORK_ID);
+         final DeployDestination dest = mock(DeployDestination.class);
+ 
+         final DataCenter dc = mock(DataCenter.class);
+@@ -316,12 +313,9 @@
+         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
+ 
+ 
+-        final NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
++        final NetworkVO network = MockNetworkVO.createMockNetworkVO(NETWORK_ID);
+         when(network.getGateway()).thenReturn("10.1.1.1");
+         when(network.getCidr()).thenReturn("10.1.1.0/24");
+-        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+ 
+         final DeployDestination dest = mock(DeployDestination.class);
+ 
+@@ -374,11 +368,8 @@
+         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
+ 
+ 
+-        final NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
+-        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+-
++
++        final NetworkVO network = MockNetworkVO.createMockNetworkVO(NETWORK_ID);
+         final DeployDestination dest = mock(DeployDestination.class);
+ 
+         final DataCenter dc = mock(DataCenter.class);
+@@ -428,12 +419,9 @@
+         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(false);
+ 
+ 
+-        final NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
++        final NetworkVO network = MockNetworkVO.createMockNetworkVO(NETWORK_ID);
+         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
+         when(network.getBroadcastUri()).thenReturn(new URI("lswitch:aaaaa"));
+-        when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+         when(netdao.findById(NETWORK_ID)).thenReturn(network);
+ 
+         final DeployDestination dest = mock(DeployDestination.class);
+@@ -469,4 +457,17 @@
+         verify(agentmgr, times(1)).easySend(eq(NETWORK_ID), (Command)any());
+         verify(implementednetwork, times(1)).setBroadcastUri(null);
+     }
++
++    public final class MockNetworkVO {
++        private MockNetworkVO() {
++        }
++
++        public static com.cloud.network.dao.NetworkVO createMockNetworkVO(long physicalNetworkId) {
++            final com.cloud.network.dao.NetworkVO network = mock(com.cloud.network.dao.NetworkVO.class);
++            when(network.getName()).thenReturn("testnetwork");
++            when(network.getState()).thenReturn(com.cloud.network.Network.State.Implementing);
++            when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
++            return network;
++        }
++    }
+ }
+--- a/plugins/network-elements/vxlan/src/test/java/com/cloud/network/guru/VxlanGuestNetworkGuruTest.java
++++ b/plugins/network-elements/vxlan/src/test/java/com/cloud/network/guru/VxlanGuestNetworkGuruTest.java
+@@ -155,11 +155,8 @@
+         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
+         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
+ 
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
+-        when(network.getPhysicalNetworkId()).thenReturn(42L);
+-
++
++        NetworkVO network = MockNetworkVO.createMockNetworkVO(42L);
+         DeployDestination dest = mock(DeployDestination.class);
+ 
+         DataCenter dc = mock(DataCenter.class);
+@@ -197,12 +194,9 @@
+         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
+         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
+ 
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
++        NetworkVO network = MockNetworkVO.createMockNetworkVO(42L);
+         when(network.getGateway()).thenReturn("10.1.1.1");
+         when(network.getCidr()).thenReturn("10.1.1.0/24");
+-        when(network.getPhysicalNetworkId()).thenReturn(42L);
+ 
+         DeployDestination dest = mock(DeployDestination.class);
+ 
+@@ -244,12 +238,9 @@
+         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
+         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
+ 
+-        NetworkVO network = mock(NetworkVO.class);
+-        when(network.getName()).thenReturn("testnetwork");
+-        when(network.getState()).thenReturn(State.Implementing);
++        NetworkVO network = MockNetworkVO.createMockNetworkVO(42L);
+         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vxlan);
+         when(network.getBroadcastUri()).thenReturn(new URI("vxlan:12345"));
+-        when(network.getPhysicalNetworkId()).thenReturn(42L);
+         when(netdao.findById(42L)).thenReturn(network);
+ 
+         DeployDestination dest = mock(DeployDestination.class);
+@@ -277,4 +268,17 @@
+         guru.shutdown(implementednetwork, offering);
+         verify(implementednetwork, times(1)).setBroadcastUri(null);
+     }
++
++    public final class MockNetworkVO {
++        private MockNetworkVO() {
++        }
++
++        public static com.cloud.network.dao.NetworkVO createMockNetworkVO(long physicalNetworkId) {
++            final com.cloud.network.dao.NetworkVO network = mock(com.cloud.network.dao.NetworkVO.class);
++            when(network.getName()).thenReturn("testnetwork");
++            when(network.getState()).thenReturn(com.cloud.network.Network.State.Implementing);
++            when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
++            return network;
++        }
++    }
+ }
