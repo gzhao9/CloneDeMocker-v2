@@ -1,0 +1,100 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
+@@ -267,6 +267,16 @@
+         return webhook;
+     }
+ 
++    private static AddWebhookFilterCmd createMockAddWebhookFilterCmd(String typeReturn, String modeReturn, String matchTypeReturn, String valueReturn) {
++        AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
++        Mockito.when(cmd.getId()).thenReturn(1L);
++        Mockito.when(cmd.getType()).thenReturn(typeReturn);
++        Mockito.when(cmd.getMode()).thenReturn(modeReturn);
++        Mockito.when(cmd.getMatchType()).thenReturn(matchTypeReturn);
++        Mockito.when(cmd.getValue()).thenReturn(valueReturn);
++        return cmd;
++    }
++
+     @Test
+     public void testValidateWebhookOwnerPayloadUrlUpdateSameExist() {
+         WebhookVO webhookVO = mockWebhookVO(1L);
+@@ -1338,11 +1348,9 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void addWebhookFilterThrowsExceptionForInvalidMode() {
+-        AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
+-        WebhookVO webhook = Mockito.mock(WebhookVO.class);
+-
+-        Mockito.when(cmd.getId()).thenReturn(1L);
+-        Mockito.when(cmd.getMode()).thenReturn("InvalidMode");
++        AddWebhookFilterCmd cmd = createMockAddWebhookFilterCmd(null, "InvalidMode", null, null);
++        WebhookVO webhook = Mockito.mock(WebhookVO.class);
++
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+ 
+         webhookApiServiceImpl.addWebhookFilter(cmd);
+@@ -1372,22 +1380,17 @@
+ 
+     @Test
+     public void addWebhookFilterAddsFilterSuccessfullyEvenWithExisting() {
+-        AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+         WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+         WebhookFilterVO newFilter = Mockito.mock(WebhookFilterVO.class);
+         WebhookFilterResponse filterResponse = Mockito.mock(WebhookFilterResponse.class);
+ 
+-        Mockito.when(cmd.getId()).thenReturn(1L);
++        AddWebhookFilterCmd cmd = createMockAddWebhookFilterCmd("EventType", "Include", "Exact", "value");
+         Mockito.when(webhook.getId()).thenReturn(1L);
+         Mockito.when(filter.getType()).thenReturn(WebhookFilter.Type.EventType);
+         Mockito.when(filter.getMode()).thenReturn(WebhookFilter.Mode.Exclude);
+         Mockito.when(filter.getMatchType()).thenReturn(WebhookFilter.MatchType.Prefix);
+         Mockito.when(filter.getValue()).thenReturn("value.old");
+-        Mockito.when(cmd.getType()).thenReturn("EventType");
+-        Mockito.when(cmd.getMode()).thenReturn("Include");
+-        Mockito.when(cmd.getMatchType()).thenReturn("Exact");
+-        Mockito.when(cmd.getValue()).thenReturn("value");
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+         Mockito.when(webhookFilterDao.listByWebhook(1L)).thenReturn(List.of(filter));
+         Mockito.when(webhookFilterDao.persist(Mockito.any(WebhookFilterVO.class))).thenReturn(newFilter);
+@@ -1401,7 +1404,6 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void addWebhookFilterConflictsWithExisting() {
+-        AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+         WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+ 
+@@ -1410,11 +1412,7 @@
+         Mockito.when(filter.getMode()).thenReturn(WebhookFilter.Mode.Exclude);
+         Mockito.when(filter.getMatchType()).thenReturn(WebhookFilter.MatchType.Prefix);
+         Mockito.when(filter.getValue()).thenReturn("value");
+-        Mockito.when(cmd.getId()).thenReturn(1L);
+-        Mockito.when(cmd.getType()).thenReturn("EventType");
+-        Mockito.when(cmd.getMode()).thenReturn("Include");
+-        Mockito.when(cmd.getMatchType()).thenReturn("Exact");
+-        Mockito.when(cmd.getValue()).thenReturn("value.extra");
++        AddWebhookFilterCmd cmd = createMockAddWebhookFilterCmd("EventType", "Include", "Exact", "value.extra");
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+         Mockito.when(webhookFilterDao.listByWebhook(1L)).thenReturn(List.of(filter));
+ 
+@@ -1423,7 +1421,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void addWebhookFilterSameEventConflictsWithExisting() {
+-        AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
++        AddWebhookFilterCmd cmd = createMockAddWebhookFilterCmd(WebhookFilter.Type.EventType.name(), WebhookFilter.Mode.Exclude.name(), WebhookFilter.MatchType.Exact.name(), EventTypes.EVENT_VM_CREATE);
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+         WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+ 
+@@ -1432,11 +1430,6 @@
+         Mockito.when(filter.getMode()).thenReturn(WebhookFilter.Mode.Include);
+         Mockito.when(filter.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact);
+         Mockito.when(filter.getValue()).thenReturn(EventTypes.EVENT_VM_CREATE);
+-        Mockito.when(cmd.getId()).thenReturn(1L);
+-        Mockito.when(cmd.getType()).thenReturn(WebhookFilter.Type.EventType.name());
+-        Mockito.when(cmd.getMode()).thenReturn(WebhookFilter.Mode.Exclude.name());
+-        Mockito.when(cmd.getMatchType()).thenReturn(WebhookFilter.MatchType.Exact.name());
+-        Mockito.when(cmd.getValue()).thenReturn(EventTypes.EVENT_VM_CREATE);
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+         Mockito.when(webhookFilterDao.listByWebhook(1L)).thenReturn(List.of(filter));
+ 
