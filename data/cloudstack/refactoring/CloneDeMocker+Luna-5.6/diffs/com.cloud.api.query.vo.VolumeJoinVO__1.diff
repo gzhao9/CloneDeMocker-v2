@@ -1,0 +1,68 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/VolumeJoinVOToDiskConverterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/VolumeJoinVOToDiskConverterTest.java
+@@ -38,17 +38,9 @@
+ 
+     @Test
+     public void testToDisk_MapsCoreFieldsAndResolverOverridesActualSize() {
+-        final VolumeJoinVO vol = mock(VolumeJoinVO.class);
+-        when(vol.getUuid()).thenReturn("vol-1");
+-        when(vol.getVolumeType()).thenReturn(Volume.Type.ROOT);
+-        when(vol.getName()).thenReturn("root-disk");
+-        when(vol.getSize()).thenReturn(1000L);
+-        when(vol.getVolumeStoreSize()).thenReturn(500L);
+-        when(vol.getFormat()).thenReturn(Storage.ImageFormat.RAW);
+-        when(vol.getState()).thenReturn(Volume.State.Ready);
+-        when(vol.getPath()).thenReturn("path-1");
+-        when(vol.getDiskOfferingUuid()).thenReturn("do-1");
+-        when(vol.getPoolUuid()).thenReturn("pool-1");
++        final VolumeJoinVO vol = createMockVolumeJoinVO("vol-1", Volume.Type.ROOT, "root-disk",
++                1000L, 500L, Storage.ImageFormat.RAW, Volume.State.Ready, "path-1",
++                "do-1", "pool-1");
+ 
+         final Disk disk = VolumeJoinVOToDiskConverter.toDisk(vol, v -> 700L);
+ 
+@@ -63,18 +55,9 @@
+ 
+     @Test
+     public void testToDiskAttachment_MapsVmAndDisk() {
+-        final VolumeJoinVO vol = mock(VolumeJoinVO.class);
+-        when(vol.getUuid()).thenReturn("vol-2");
++        final VolumeJoinVO vol = createMockVolumeJoinVO("vol-2", Volume.Type.DATADISK, "data-disk", 2048L,
++                1024L, Storage.ImageFormat.QCOW2, Volume.State.Allocated, "path-2", "do-2", "pool-2");
+         when(vol.getVmUuid()).thenReturn("vm-2");
+-        when(vol.getVolumeType()).thenReturn(Volume.Type.DATADISK);
+-        when(vol.getName()).thenReturn("data-disk");
+-        when(vol.getSize()).thenReturn(2048L);
+-        when(vol.getVolumeStoreSize()).thenReturn(1024L);
+-        when(vol.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+-        when(vol.getState()).thenReturn(Volume.State.Allocated);
+-        when(vol.getPath()).thenReturn("path-2");
+-        when(vol.getDiskOfferingUuid()).thenReturn("do-2");
+-        when(vol.getPoolUuid()).thenReturn("pool-2");
+ 
+         final DiskAttachment da = VolumeJoinVOToDiskConverter.toDiskAttachment(vol, null);
+ 
+@@ -83,6 +66,23 @@
+         assertEquals("false", da.getBootable());
+         assertEquals("virtio_scsi", da.getIface());
+         assertEquals("vol-2", da.getDisk().getId());
++    }
++
++    private static VolumeJoinVO createMockVolumeJoinVO(String uuid, Volume.Type volumeType, String name,
++            long size, long volumeStoreSize, Storage.ImageFormat format, Volume.State state, String path,
++            String diskOfferingUuid, String poolUuid) {
++        final VolumeJoinVO vol = mock(VolumeJoinVO.class);
++        when(vol.getUuid()).thenReturn(uuid);
++        when(vol.getVolumeType()).thenReturn(volumeType);
++        when(vol.getName()).thenReturn(name);
++        when(vol.getSize()).thenReturn(size);
++        when(vol.getVolumeStoreSize()).thenReturn(volumeStoreSize);
++        when(vol.getFormat()).thenReturn(format);
++        when(vol.getState()).thenReturn(state);
++        when(vol.getPath()).thenReturn(path);
++        when(vol.getDiskOfferingUuid()).thenReturn(diskOfferingUuid);
++        when(vol.getPoolUuid()).thenReturn(poolUuid);
++        return vol;
+     }
+ 
+     @Test

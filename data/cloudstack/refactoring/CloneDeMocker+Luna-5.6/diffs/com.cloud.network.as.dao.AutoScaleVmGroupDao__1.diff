@@ -1,0 +1,77 @@
+--- a/server/src/test/java/com/cloud/network/lb/AssignLoadBalancerTest.java
++++ b/server/src/test/java/com/cloud/network/lb/AssignLoadBalancerTest.java
+@@ -141,11 +141,10 @@
+         LoadBalancerDao lbdao = Mockito.mock(LoadBalancerDao.class);
+         _lbMgr._lbDao =  lbdao;
+ 
+-        AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
++        AutoScaleVmGroupDao autoScaleVmGroupDao = createMockAutoScaleVmGroupDao();
+         _lbMgr._autoScaleVmGroupDao = autoScaleVmGroupDao;
+ 
+         when(lbdao.findById(anyLong())).thenReturn(Mockito.mock(LoadBalancerVO.class));
+-        when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
+ 
+         _lbMgr.assignToLoadBalancer(1L, null, emptyMap, null, false);
+ 
+@@ -171,7 +170,7 @@
+         AccountDao accountDao = Mockito.mock(AccountDao.class);
+         NetworkDao networkDao = Mockito.mock(NetworkDao.class);
+         AccountManager accountMgr = Mockito.mock(AccountManager.class);
+-        AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
++        AutoScaleVmGroupDao autoScaleVmGroupDao = createMockAutoScaleVmGroupDao();
+         VpcManager vpcMgr = Mockito.mock(VpcManager.class);
+ 
+         _lbMgr._lbDao = lbDao;
+@@ -191,7 +190,6 @@
+         when(lb2VmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(_lbvmMapList);
+         when(accountDao.findById(anyLong())).thenReturn(Mockito.mock(AccountVO.class));
+         Mockito.doNothing().when(accountMgr).checkAccess(any(Account.class), any(SecurityChecker.AccessType.class), any(Boolean.class), any(Network.class));
+-        when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
+         when(vpcMgr.isNetworkOnVpcEnabledConserveMode(any())).thenReturn(false);
+ 
+         _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, null, false);
+@@ -221,7 +219,7 @@
+         NetworkDao networkDao = Mockito.mock(NetworkDao.class);
+         AccountManager accountMgr = Mockito.mock(AccountManager.class);
+         NicSecondaryIpDao nicSecIpDao =  Mockito.mock(NicSecondaryIpDao.class);
+-        AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
++        AutoScaleVmGroupDao autoScaleVmGroupDao = createMockAutoScaleVmGroupDao();
+         VpcManager vpcMgr = Mockito.mock(VpcManager.class);
+ 
+         _lbMgr._lbDao = lbDao;
+@@ -241,7 +239,6 @@
+         when(userVmDao.findById(anyLong())).thenReturn(vm);
+         when(lb2VmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(_lbvmMapList);
+         when (nicSecIpDao.findByIp4AddressAndNicId(anyString(), anyLong())).thenReturn(null);
+-        when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
+         when(vpcMgr.isNetworkOnVpcEnabledConserveMode(any())).thenReturn(false);
+ 
+         _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, null, false);
+@@ -273,7 +270,7 @@
+         NetworkDao networkDao = Mockito.mock(NetworkDao.class);
+         NicSecondaryIpDao nicSecIpDao =  Mockito.mock(NicSecondaryIpDao.class);
+         LoadBalancerVMMapVO lbVmMapVO = new LoadBalancerVMMapVO(1L, 1L, "10.1.1.175", false);
+-        AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
++        AutoScaleVmGroupDao autoScaleVmGroupDao = createMockAutoScaleVmGroupDao();
+         VpcManager vpcMgr = Mockito.mock(VpcManager.class);
+ 
+         _lbMgr._lbDao = lbDao;
+@@ -294,10 +291,15 @@
+         when(userVmDao.findById(anyLong())).thenReturn(vm);
+         when(lb2VmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(_lbvmMapList);
+         when (nicSecIpDao.findByIp4AddressAndNicId(anyString(), anyLong())).thenReturn(null);
++        when(vpcMgr.isNetworkOnVpcEnabledConserveMode(any())).thenReturn(false);
++
++        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, null, false);
++    }
++
++    private static AutoScaleVmGroupDao createMockAutoScaleVmGroupDao() {
++        AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
+         when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
+-        when(vpcMgr.isNetworkOnVpcEnabledConserveMode(any())).thenReturn(false);
+-
+-        _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, null, false);
++        return autoScaleVmGroupDao;
+     }
+ 
+     @After

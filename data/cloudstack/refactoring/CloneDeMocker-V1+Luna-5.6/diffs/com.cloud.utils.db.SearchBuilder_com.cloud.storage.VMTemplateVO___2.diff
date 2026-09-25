@@ -1,0 +1,45 @@
+--- a/engine/schema/src/test/java/com/cloud/storage/dao/VMTemplateDaoImplTest.java
++++ b/engine/schema/src/test/java/com/cloud/storage/dao/VMTemplateDaoImplTest.java
+@@ -151,9 +151,8 @@
+         when(template2.getArch()).thenReturn(CPU.CPUArch.arm64);
+         List<VMTemplateVO> templatesFromDb = Arrays.asList(template1, template2);
+         doReturn(templatesFromDb).when(templateDao).listBy(any(), any());
+-        SearchBuilder<VMTemplateVO> sb = mock(SearchBuilder.class);
++        SearchBuilder<VMTemplateVO> sb = createMockSearchBuilder();
+         templateDao.readySystemTemplateSearch = sb;
+-        when(sb.create()).thenReturn(mock(SearchCriteria.class));
+         List<VMTemplateVO> result = templateDao.findSystemVMReadyTemplates(zoneId, hypervisorType, preferredArch);
+         assertNotNull(result);
+         assertEquals(2, result.size());
+@@ -170,8 +169,7 @@
+         when(template.getArch()).thenReturn(CPU.CPUArch.amd64);
+         List<VMTemplateVO> templatesFromDb = Collections.singletonList(template);
+         doReturn(templatesFromDb).when(templateDao).listBy(any(), any());
+-        SearchBuilder<VMTemplateVO> sb = mock(SearchBuilder.class);
+-        when(sb.create()).thenReturn(mock(SearchCriteria.class));
++        SearchBuilder<VMTemplateVO> sb = createMockSearchBuilder();
+         templateDao.tmpltTypeHyperSearch2 = sb;
+         List<VMTemplateVO> result = templateDao.findRoutingTemplates(hType, templateName, preferredArch);
+         assertNotNull(result);
+@@ -333,9 +331,8 @@
+         Mockito.when(systemVmTemplate3.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+         List<VMTemplateVO> templates = Arrays.asList(systemVmTemplate1, systemVmTemplate2, systemVmTemplate3);
+         Mockito.when(hostDao.listDistinctHypervisorTypes(zoneId)).thenReturn(Arrays.asList(Hypervisor.HypervisorType.KVM));
+-        SearchBuilder<VMTemplateVO> sb = mock(SearchBuilder.class);
++        SearchBuilder<VMTemplateVO> sb = createMockSearchBuilder();
+         templateDao.readySystemTemplateSearch = sb;
+-        when(sb.create()).thenReturn(mock(SearchCriteria.class));
+         doReturn(templates).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
+         VMTemplateVO readyTemplate = templateDao.findSystemVMReadyTemplate(zoneId, Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64.getType());
+         Assert.assertEquals(CPU.CPUArch.arm64, readyTemplate.getArch());
+@@ -418,4 +415,10 @@
+ 
+         assertNull(result);
+     }
++
++    private static SearchBuilder<VMTemplateVO> createMockSearchBuilder() {
++        SearchBuilder<VMTemplateVO> searchBuilder = mock(SearchBuilder.class);
++        when(searchBuilder.create()).thenReturn(mock(SearchCriteria.class));
++        return searchBuilder;
++    }
+ }
