@@ -1,0 +1,103 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -187,6 +187,7 @@
+     private ExtensionCustomActionDao extensionCustomActionDao;
+     @Mock
+     private ExtensionCustomActionDetailsDao extensionCustomActionDetailsDao;
++    private ExtensionCustomActionVO actionMock;
+     @Mock
+     private VirtualMachineManager virtualMachineManager;
+     @Mock
+@@ -226,6 +227,7 @@
+     @Before
+     public void setUp() {
+         MockitoAnnotations.openMocks(this);
++        actionMock = mock(ExtensionCustomActionVO.class);
+     }
+ 
+     @Test
+@@ -1458,12 +1460,11 @@
+         ExtensionVO ext = mock(ExtensionVO.class);
+         when(extensionDao.findById(1L)).thenReturn(ext);
+ 
+-        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+-        when(extensionCustomActionDao.persist(any())).thenReturn(actionVO);
++        when(extensionCustomActionDao.persist(any())).thenReturn(actionMock);
+ 
+         ExtensionCustomAction result = extensionsManager.addCustomAction(cmd);
+ 
+-        assertEquals(actionVO, result);
++        assertEquals(actionMock, result);
+         verify(extensionCustomActionDao).persist(any());
+     }
+ 
+@@ -1514,8 +1515,7 @@
+         DeleteCustomActionCmd cmd = mock(DeleteCustomActionCmd.class);
+         when(cmd.getId()).thenReturn(actionId);
+ 
+-        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+-        when(extensionCustomActionDao.findById(actionId)).thenReturn(actionVO);
++        when(extensionCustomActionDao.findById(actionId)).thenReturn(actionMock);
+         when(extensionCustomActionDao.remove(actionId)).thenReturn(true);
+ 
+         boolean result = extensionsManager.deleteCustomAction(cmd);
+@@ -1541,8 +1541,7 @@
+         long actionId = 30L;
+         DeleteCustomActionCmd cmd = mock(DeleteCustomActionCmd.class);
+         when(cmd.getId()).thenReturn(actionId);
+-        ExtensionCustomActionVO actionVO = mock(ExtensionCustomActionVO.class);
+-        when(extensionCustomActionDao.findById(actionId)).thenReturn(actionVO);
++        when(extensionCustomActionDao.findById(actionId)).thenReturn(actionMock);
+         when(extensionCustomActionDao.remove(actionId)).thenReturn(false);
+         extensionsManager.deleteCustomAction(cmd);
+         verify(extensionCustomActionDetailsDao).removeDetails(actionId);
+@@ -1578,9 +1577,8 @@
+         when(cmd.getStartIndex()).thenReturn(0L);
+         when(cmd.getPageSizeVal()).thenReturn(10L);
+ 
+-        ExtensionCustomActionVO action1 = mock(ExtensionCustomActionVO.class);
+         ExtensionCustomActionVO action2 = mock(ExtensionCustomActionVO.class);
+-        List<ExtensionCustomActionVO> actions = Arrays.asList(action1, action2);
++        List<ExtensionCustomActionVO> actions = Arrays.asList(actionMock, action2);
+         SearchBuilder<ExtensionCustomActionVO> sb = mock(SearchBuilder.class);
+         when(sb.create()).thenReturn(mock(SearchCriteria.class));
+         when(sb.entity()).thenReturn(mock(ExtensionCustomActionVO.class));
+@@ -1589,7 +1587,7 @@
+ 
+         ExtensionCustomActionResponse resp1 = mock(ExtensionCustomActionResponse.class);
+         ExtensionCustomActionResponse resp2 = mock(ExtensionCustomActionResponse.class);
+-        doReturn(resp1).when(extensionsManager).createCustomActionResponse(eq(action1));
++        doReturn(resp1).when(extensionsManager).createCustomActionResponse(eq(actionMock));
+         doReturn(resp2).when(extensionsManager).createCustomActionResponse(eq(action2));
+ 
+ 
+@@ -1660,8 +1658,7 @@
+     public void testUpdateCustomAction_InvalidResourceType_ThrowsException() {
+         UpdateCustomActionCmd cmd = mock(UpdateCustomActionCmd.class);
+         when(cmd.getId()).thenReturn(1L);
+-        ExtensionCustomActionVO action = mock(ExtensionCustomActionVO.class);
+-        when(extensionCustomActionDao.findById(1L)).thenReturn(action);
++        when(extensionCustomActionDao.findById(1L)).thenReturn(actionMock);
+         when(cmd.getResourceType()).thenReturn("InvalidType");
+ 
+         extensionsManager.updateCustomAction(cmd);
+@@ -1671,8 +1668,7 @@
+     public void testUpdateCustomAction_InvalidRoleType_ThrowsException() {
+         UpdateCustomActionCmd cmd = mock(UpdateCustomActionCmd.class);
+         when(cmd.getId()).thenReturn(1L);
+-        ExtensionCustomActionVO action = mock(ExtensionCustomActionVO.class);
+-        when(extensionCustomActionDao.findById(1L)).thenReturn(action);
++        when(extensionCustomActionDao.findById(1L)).thenReturn(actionMock);
+         when(cmd.getAllowedRoleTypes()).thenReturn(List.of("NotARole"));
+ 
+         extensionsManager.updateCustomAction(cmd);
+@@ -1683,8 +1679,7 @@
+         UpdateCustomActionCmd cmd = mock(UpdateCustomActionCmd.class);
+         when(cmd.getId()).thenReturn(1L);
+         when(cmd.getDescription()).thenReturn("desc");
+-        ExtensionCustomActionVO action = mock(ExtensionCustomActionVO.class);
+-        when(extensionCustomActionDao.findById(1L)).thenReturn(action);
++        when(extensionCustomActionDao.findById(1L)).thenReturn(actionMock);
+         when(extensionCustomActionDao.update(eq(1L), any())).thenReturn(false);
+ 
+         extensionsManager.updateCustomAction(cmd);

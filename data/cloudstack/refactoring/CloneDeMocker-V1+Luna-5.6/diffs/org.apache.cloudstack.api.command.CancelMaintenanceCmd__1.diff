@@ -1,0 +1,45 @@
+--- a/plugins/maintenance/src/test/java/org/apache/cloudstack/maintenance/ManagementServerMaintenanceManagerImplTest.java
++++ b/plugins/maintenance/src/test/java/org/apache/cloudstack/maintenance/ManagementServerMaintenanceManagerImplTest.java
+@@ -535,9 +535,8 @@
+     @Test
+     public void cancelMaintenanceCmdNoMsHost() {
+         Mockito.when(msHostDao.findById(1L)).thenReturn(null);
+-        CancelMaintenanceCmd cmd = mock(CancelMaintenanceCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
+-
++
++        CancelMaintenanceCmd cmd = createCancelMaintenanceCmd();
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+             spy.cancelMaintenance(cmd);
+         });
+@@ -548,9 +547,8 @@
+         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+         Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.Up);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
+-        CancelMaintenanceCmd cmd = mock(CancelMaintenanceCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
+-
++
++        CancelMaintenanceCmd cmd = createCancelMaintenanceCmd();
+         Assert.assertThrows(CloudRuntimeException.class, () -> {
+             spy.cancelMaintenance(cmd);
+         });
+@@ -561,11 +559,16 @@
+         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+         Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.Maintenance);
+         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
+-        CancelMaintenanceCmd cmd = mock(CancelMaintenanceCmd.class);
+-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        CancelMaintenanceCmd cmd = createCancelMaintenanceCmd();
+         Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn("Success");
+ 
+         spy.cancelMaintenance(cmd);
+         Mockito.verify(clusterManagerMock, Mockito.times(1)).execute(anyString(), anyLong(), anyString(), anyBoolean());
+     }
++
++    private static CancelMaintenanceCmd createCancelMaintenanceCmd() {
++        CancelMaintenanceCmd cmd = mock(CancelMaintenanceCmd.class);
++        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
++        return cmd;
++    }
+ }

@@ -1,0 +1,68 @@
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpResourceTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpResourceTest.java
+@@ -232,8 +232,7 @@
+     public void testCreateLogicalSwitchPort() throws ConfigurationException, NiciraNvpApiException {
+         resource.configure("NiciraNvpResource", parameters);
+ 
+-        final LogicalSwitchPort lsp = mock(LogicalSwitchPort.class);
+-        when(lsp.getUuid()).thenReturn("eeee");
++        final LogicalSwitchPort lsp = createMockLogicalSwitchPort("eeee");
+         when(nvpApi.createLogicalSwitchPort(eq("cccc"), (LogicalSwitchPort) any())).thenReturn(lsp);
+ 
+         final CreateLogicalSwitchPortCommand clspc = new CreateLogicalSwitchPortCommand("cccc", "dddd", "owner", "nicname");
+@@ -247,8 +246,7 @@
+     public void testCreateLogicalSwitchPortApiExceptionInCreate() throws ConfigurationException, NiciraNvpApiException {
+         resource.configure("NiciraNvpResource", parameters);
+ 
+-        final LogicalSwitchPort lsp = mock(LogicalSwitchPort.class);
+-        when(lsp.getUuid()).thenReturn("eeee");
++        final LogicalSwitchPort lsp = createMockLogicalSwitchPort("eeee");
+         when(nvpApi.createLogicalSwitchPort(eq("cccc"), (LogicalSwitchPort) any())).thenThrow(new NiciraNvpApiException());
+ 
+         final CreateLogicalSwitchPortCommand clspc = new CreateLogicalSwitchPortCommand("cccc", "dddd", "owner", "nicname");
+@@ -260,9 +258,8 @@
+     public void testCreateLogicalSwitchPortApiExceptionInModify() throws ConfigurationException, NiciraNvpApiException {
+         resource.configure("NiciraNvpResource", parameters);
+ 
+-        final LogicalSwitchPort lsp = mock(LogicalSwitchPort.class);
+-        when(lsp.getUuid()).thenReturn("eeee");
+         when(nvpApi.createLogicalSwitchPort(eq("cccc"), (LogicalSwitchPort) any())).thenReturn(lsp);
++        final LogicalSwitchPort lsp = createMockLogicalSwitchPort("eeee");
+         doThrow(new NiciraNvpApiException()).when(nvpApi).updateLogicalSwitchPortAttachment((String) any(), (String) any(), (Attachment) any());
+ 
+         final CreateLogicalSwitchPortCommand clspc = new CreateLogicalSwitchPortCommand("cccc", "dddd", "owner", "nicname");
+@@ -329,10 +326,9 @@
+ 
+         final LogicalRouter lrc = mock(LogicalRouter.class);
+         final LogicalRouterPort lrp = mock(LogicalRouterPort.class);
+-        final LogicalSwitchPort lsp = mock(LogicalSwitchPort.class);
+         when(lrc.getUuid()).thenReturn("ccccc");
+         when(lrp.getUuid()).thenReturn("ddddd").thenReturn("eeeee");
+-        when(lsp.getUuid()).thenReturn("fffff");
++        final LogicalSwitchPort lsp = createMockLogicalSwitchPort("fffff");
+         when(nvpApi.createLogicalRouter((LogicalRouter) any())).thenReturn(lrc);
+         when(nvpApi.createLogicalRouterPort(eq("ccccc"), (LogicalRouterPort) any())).thenReturn(lrp);
+         when(nvpApi.createLogicalSwitchPort(eq("bbbbb"), (LogicalSwitchPort) any())).thenReturn(lsp);
+@@ -376,10 +372,9 @@
+ 
+         final LogicalRouter lrc = mock(LogicalRouter.class);
+         final LogicalRouterPort lrp = mock(LogicalRouterPort.class);
+-        final LogicalSwitchPort lsp = mock(LogicalSwitchPort.class);
+         when(lrc.getUuid()).thenReturn("ccccc");
+         when(lrp.getUuid()).thenReturn("ddddd").thenReturn("eeeee");
+-        when(lsp.getUuid()).thenReturn("fffff");
++        final LogicalSwitchPort lsp = createMockLogicalSwitchPort("fffff");
+         when(nvpApi.createLogicalRouter((LogicalRouter) any())).thenReturn(lrc);
+         when(nvpApi.createLogicalRouterPort(eq("ccccc"), (LogicalRouterPort) any())).thenReturn(lrp);
+         when(nvpApi.createLogicalSwitchPort(eq("bbbbb"), (LogicalSwitchPort) any())).thenReturn(lsp);
+@@ -822,4 +817,10 @@
+         assertTrue(snr.getMatch().getSourcePort() == 8080);
+         assertTrue(snr.getMatch().getEthertype().equals("IPv4") && rules[1].getMatch().getProtocol() == 6);
+     }
++
++    private static LogicalSwitchPort createMockLogicalSwitchPort(final String uuid) {
++        final LogicalSwitchPort lsp = mock(LogicalSwitchPort.class);
++        when(lsp.getUuid()).thenReturn(uuid);
++        return lsp;
++    }
+ }

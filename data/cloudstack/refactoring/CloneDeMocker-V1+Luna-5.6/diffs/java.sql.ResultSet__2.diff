@@ -1,0 +1,136 @@
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java
+@@ -96,7 +96,7 @@
+ 
+     @Test
+     public void indexExistsFalseTest() throws Exception {
+-        when(resultSetMock.next()).thenReturn(false);
++        resultSetMock = MockResultSet.createMockResultSet(false);
+         when(connectionMock.prepareStatement(startsWith("SHOW INDEXES FROM"))).thenReturn(preparedStatementMock);
+         when(preparedStatementMock.executeQuery()).thenReturn(resultSetMock);
+ 
+@@ -112,7 +112,7 @@
+ 
+     @Test
+     public void indexExistsTrueTest() throws Exception {
+-        when(resultSetMock.next()).thenReturn(true);
++        resultSetMock = MockResultSet.createMockResultSet(true);
+         when(connectionMock.prepareStatement(startsWith("SHOW INDEXES FROM"))).thenReturn(preparedStatementMock);
+         when(preparedStatementMock.executeQuery()).thenReturn(resultSetMock);
+ 
+@@ -515,7 +515,7 @@
+     public void testGetColumnType() throws Exception {
+         when(connectionMock.prepareStatement(contains("DESCRIBE"))).thenReturn(preparedStatementMock);
+         when(preparedStatementMock.executeQuery()).thenReturn(resultSetMock);
+-        when(resultSetMock.next()).thenReturn(true);
++        resultSetMock = MockResultSet.createMockResultSet(true);
+         when(resultSetMock.getString("Type")).thenReturn("type");
+ 
+         Connection conn = connectionMock;
+@@ -564,4 +564,17 @@
+         verify(preparedStatementMock, times(1)).executeUpdate();
+         verify(preparedStatementMock, times(1)).close();
+     }
++
++    public final class MockResultSet {
++
++        private MockResultSet() {
++            // Utility class
++        }
++
++        public static java.sql.ResultSet createMockResultSet(boolean nextReturn) {
++            java.sql.ResultSet resultSet = Mockito.mock(java.sql.ResultSet.class);
++            when(resultSet.next()).thenReturn(nextReturn);
++            return resultSet;
++        }
++    }
+ }
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java
+@@ -68,8 +68,7 @@
+                 when(txn.prepareAutoCloseStatement(sql)).thenReturn(pstmt);
+ 
+                 PreparedStatement preparedStatement = Mockito.mock(PreparedStatement.class);
+-                ResultSet resultSet = Mockito.mock(ResultSet.class);
+-                Mockito.when(resultSet.next()).thenReturn(false);
++                ResultSet resultSet = MockResultSet.createMockResultSet(false);
+                 Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
+                 Mockito.when(conn.prepareStatement(anyString())).thenReturn(preparedStatement);
+                 upgrade.performDataMigration(conn);
+@@ -78,4 +77,17 @@
+             }
+         }
+     }
++
++    public final class MockResultSet {
++
++        private MockResultSet() {
++            // Utility class
++        }
++
++        public static java.sql.ResultSet createMockResultSet(boolean nextReturn) {
++            java.sql.ResultSet resultSet = Mockito.mock(java.sql.ResultSet.class);
++            when(resultSet.next()).thenReturn(nextReturn);
++            return resultSet;
++        }
++    }
+ }
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java
+@@ -154,10 +154,10 @@
+                 .thenReturn(selectStmt);
+         when(conn.prepareStatement("UPDATE snapshot_policy SET account_id = ?, domain_id = ? WHERE id = ?"))
+                 .thenReturn(updateStmt);
+-        when(selectStmt.executeQuery()).thenReturn(resultSet);
+-
+-        when(resultSet.next()).thenReturn(false);
+-
++
++
++        resultSet = MockResultSet.createMockResultSet(false);
++        when(selectStmt.executeQuery()).thenReturn(resultSet);
+         upgrade.updateSnapshotPolicyOwnership(conn);
+ 
+         verify(selectStmt).executeQuery();
+@@ -172,8 +172,8 @@
+                 .thenReturn(updateStmt);
+         when(selectStmt.executeQuery()).thenReturn(resultSet);
+ 
+-        when(resultSet.next()).thenReturn(false);
+-
++
++        resultSet = MockResultSet.createMockResultSet(false);
+         upgrade.updateBackupScheduleOwnership(conn);
+ 
+         verify(selectStmt).executeQuery();
+@@ -183,9 +183,9 @@
+     @Test
+     public void testPerformDataMigration() throws SQLException {
+         when(conn.prepareStatement(anyString())).thenReturn(selectStmt);
+-        when(selectStmt.executeQuery()).thenReturn(resultSet);
+-        when(resultSet.next()).thenReturn(false);
+-
++
++        resultSet = MockResultSet.createMockResultSet(false);
++        when(selectStmt.executeQuery()).thenReturn(resultSet);
+         upgrade.performDataMigration(conn);
+ 
+         verify(conn).prepareStatement("SELECT sp.id, v.account_id, v.domain_id FROM snapshot_policy sp, volumes v WHERE sp.volume_id = v.id AND (sp.account_id IS NULL AND sp.domain_id IS NULL)");
+@@ -239,4 +239,17 @@
+         verify(updateStmt).setLong(3, 55L);
+         verify(updateStmt, times(1)).executeUpdate();
+     }
++
++    public final class MockResultSet {
++
++        private MockResultSet() {
++            // Utility class
++        }
++
++        public static java.sql.ResultSet createMockResultSet(boolean nextReturn) {
++            java.sql.ResultSet resultSet = Mockito.mock(java.sql.ResultSet.class);
++            when(resultSet.next()).thenReturn(nextReturn);
++            return resultSet;
++        }
++    }
+ }

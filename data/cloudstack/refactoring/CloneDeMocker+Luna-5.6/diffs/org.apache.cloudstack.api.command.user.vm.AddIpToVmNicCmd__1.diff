@@ -1,0 +1,61 @@
+--- a/api/src/test/java/org/apache/cloudstack/api/command/test/AddIpToVmNicTest.java
++++ b/api/src/test/java/org/apache/cloudstack/api/command/test/AddIpToVmNicTest.java
+@@ -41,6 +41,7 @@
+ public class AddIpToVmNicTest extends TestCase {
+ 
+     private AddIpToVmNicCmd addIpToVmNicCmd;
++    private AddIpToVmNicCmd addIpToVmNicMock;
+     private RemoveIpFromVmNicCmd removeIpFromVmNicCmd;
+     private ResponseGenerator responseGenerator;
+     private SuccessResponse successResponseGenerator;
+@@ -48,44 +49,42 @@
+     @Override
+     @Before
+     public void setUp() {
+-
++        addIpToVmNicMock = Mockito.mock(AddIpToVmNicCmd.class);
+     }
+ 
+     @Test
+     public void testCreateSuccess() throws ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+ 
+         NetworkService networkService = Mockito.mock(NetworkService.class);
+-        AddIpToVmNicCmd ipTonicCmd = Mockito.mock(AddIpToVmNicCmd.class);
+         NicSecondaryIp secIp = Mockito.mock(NicSecondaryIp.class);
+ 
+         Mockito.when(
+             networkService.allocateSecondaryGuestIP(ArgumentMatchers.anyLong(), ArgumentMatchers.any(), ArgumentMatchers.anyString()))
+             .thenReturn(secIp);
+ 
+-        ipTonicCmd._networkService = networkService;
++        addIpToVmNicMock._networkService = networkService;
+         responseGenerator = Mockito.mock(ResponseGenerator.class);
+ 
+         NicSecondaryIpResponse ipres = Mockito.mock(NicSecondaryIpResponse.class);
+         Mockito.when(responseGenerator.createSecondaryIPToNicResponse(secIp)).thenReturn(ipres);
+ 
+-        ipTonicCmd._responseGenerator = responseGenerator;
+-        ipTonicCmd.execute();
++        addIpToVmNicMock._responseGenerator = responseGenerator;
++        addIpToVmNicMock.execute();
+     }
+ 
+     @Test
+     public void testCreateFailure() throws ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+ 
+         NetworkService networkService = Mockito.mock(NetworkService.class);
+-        AddIpToVmNicCmd ipTonicCmd = Mockito.mock(AddIpToVmNicCmd.class);
+ 
+         Mockito.when(
+             networkService.allocateSecondaryGuestIP(ArgumentMatchers.anyLong(), ArgumentMatchers.any(), ArgumentMatchers.anyString()))
+             .thenReturn(null);
+ 
+-        ipTonicCmd._networkService = networkService;
++        addIpToVmNicMock._networkService = networkService;
+ 
+         try {
+-            ipTonicCmd.execute();
++            addIpToVmNicMock.execute();
+         } catch (InsufficientAddressCapacityException e) {
+             throw new InvalidParameterValueException("Allocating guest ip for nic failed");
+         }

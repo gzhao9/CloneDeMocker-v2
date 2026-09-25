@@ -1,0 +1,113 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -562,20 +562,14 @@
+ 
+     @Test
+     public void checkExtensionPathSyncUpdatesReadyWhenStateDiffers() {
+-        Extension ext = mock(Extension.class);
+-        when(ext.getName()).thenReturn("ext");
+-        when(ext.getRelativePath()).thenReturn("entry.sh");
+-        when(ext.isPathReady()).thenReturn(false);
++        Extension ext = createExtension("ext", "entry.sh", false);
+         extensionsManager.checkExtensionPathState(ext, Collections.emptyList());
+         verify(extensionsManager).updateExtensionPathReady(ext, false);
+     }
+ 
+     @Test
+     public void checkExtensionPathSyncUpdatesReadyWhenStateUnchanged() {
+-        Extension ext = mock(Extension.class);
+-        when(ext.getName()).thenReturn("ext");
+-        when(ext.getRelativePath()).thenReturn("entry.sh");
+-        when(ext.isPathReady()).thenReturn(true);
++        Extension ext = createExtension("ext", "entry.sh", true);
+         when(externalProvisioner.getChecksumForExtensionPath("ext", "entry.sh")).thenReturn("checksum123");
+         extensionsManager.checkExtensionPathState(ext, Collections.emptyList());
+         verify(extensionsManager, times(1)).updateExtensionPathReady(any(), anyBoolean());
+@@ -691,13 +685,10 @@
+ 
+     @Test
+     public void prepareExtensionPathAcrossServersReturnsTrueWhenAllServersSucceed() {
+-        Extension ext = mock(Extension.class);
+-        when(ext.getName()).thenReturn("ext");
++
++        Extension ext = createExtension("ext", "entry.sh", false);
+         when(ext.isUserDefined()).thenReturn(true);
+-        when(ext.getRelativePath()).thenReturn("entry.sh");
+         when(ext.getId()).thenReturn(1L);
+-        when(ext.isPathReady()).thenReturn(false);
+-
+         ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
+         ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
+         when(msHost1.getMsid()).thenReturn(100L);
+@@ -726,12 +717,9 @@
+ 
+     @Test
+     public void prepareExtensionPathAcrossServersReturnsFalseWhenAnyServerFails() {
+-        Extension ext = mock(Extension.class);
+-        when(ext.getName()).thenReturn("ext");
++        Extension ext = createExtension("ext", "entry.sh", true);
+         when(ext.isUserDefined()).thenReturn(true);
+-        when(ext.getRelativePath()).thenReturn("entry.sh");
+         when(ext.getId()).thenReturn(1L);
+-        when(ext.isPathReady()).thenReturn(true);
+ 
+         ManagementServerHostVO msHost1 = mock(ManagementServerHostVO.class);
+         ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
+@@ -757,11 +745,8 @@
+ 
+     @Test
+     public void prepareExtensionPathAcrossServersDoesNotUpdateIfStateUnchanged() {
+-        Extension ext = mock(Extension.class);
+-        when(ext.getName()).thenReturn("ext");
++        Extension ext = createExtension("ext", "entry.sh", true);
+         when(ext.isUserDefined()).thenReturn(true);
+-        when(ext.getRelativePath()).thenReturn("entry.sh");
+-        when(ext.isPathReady()).thenReturn(true);
+ 
+         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+         when(msHost.getMsid()).thenReturn(101L);
+@@ -1365,14 +1350,9 @@
+ 
+     @Test
+     public void testCreateExtensionResponse_BasicFields() {
+-        Extension extension = mock(Extension.class);
++        Extension extension = createExtension("ext1", "entry.sh", true);
+         when(extension.getUuid()).thenReturn("uuid-1");
+-        when(extension.getName()).thenReturn("ext1");
+         when(extension.getDescription()).thenReturn("desc");
+-        when(extension.getType()).thenReturn(Extension.Type.Orchestrator);
+-        when(extension.getCreated()).thenReturn(new Date());
+-        when(extension.getRelativePath()).thenReturn("entry.sh");
+-        when(extension.isPathReady()).thenReturn(true);
+         when(extension.isUserDefined()).thenReturn(true);
+         when(extension.getState()).thenReturn(Extension.State.Enabled);
+         when(extension.getId()).thenReturn(1L);
+@@ -1404,14 +1384,11 @@
+ 
+     @Test
+     public void testCreateExtensionResponse_HiddenDetailsOnly() {
+-        Extension extension = mock(Extension.class);
++        Extension extension = createExtension("ext2", "entry2.sh", false);
+         when(extension.getUuid()).thenReturn("uuid-2");
+-        when(extension.getName()).thenReturn("ext2");
+         when(extension.getDescription()).thenReturn("desc2");
+         when(extension.getType()).thenReturn(Extension.Type.Orchestrator);
+         when(extension.getCreated()).thenReturn(new Date());
+-        when(extension.getRelativePath()).thenReturn("entry2.sh");
+-        when(extension.isPathReady()).thenReturn(false);
+         when(extension.isUserDefined()).thenReturn(false);
+         when(extension.getState()).thenReturn(Extension.State.Disabled);
+         when(extension.getId()).thenReturn(2L);
+@@ -3062,4 +3039,12 @@
+         assertTrue(resp.getResult().get(ApiConstants.DETAILS).contains("Action failed"));
+     }
+ 
++
++    private static Extension createExtension(String name, String relativePath, boolean pathReady) {
++        Extension extension = mock(Extension.class);
++        when(extension.getName()).thenReturn(name);
++        when(extension.getRelativePath()).thenReturn(relativePath);
++        when(extension.isPathReady()).thenReturn(pathReady);
++        return extension;
++    }
+ }

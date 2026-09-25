@@ -1,0 +1,116 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -160,6 +160,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class ExtensionsManagerImplTest {
++    @Mock
++    private Extension ext;
+ 
+     @Spy
+     @InjectMocks
+@@ -253,7 +255,6 @@
+ 
+     @Test
+     public void getResultFromAnswersStringReturnsSuccess() {
+-        Extension ext = mock(Extension.class);
+         Answer[] answers = new Answer[]{new Answer(mock(PrepareExtensionPathCommand.class), true, "ok")};
+         String json = GsonHelper.getGson().toJson(answers);
+         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+@@ -264,7 +265,6 @@
+ 
+     @Test
+     public void getResultFromAnswersStringReturnsFailure() {
+-        Extension ext = mock(Extension.class);
+         Answer[] answers = new Answer[]{new Answer(mock(PrepareExtensionPathCommand.class), false, "fail")};
+         String json = GsonHelper.getGson().toJson(answers);
+         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+@@ -275,7 +275,6 @@
+ 
+     @Test
+     public void prepareExtensionPathOnMSPeerReturnsTrueOnSuccess() {
+-        Extension ext = mock(Extension.class);
+         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+         when(msHost.getMsid()).thenReturn(1L);
+         when(clusterManager.execute(anyString(), anyLong(), anyString(), eq(true)))
+@@ -294,7 +293,6 @@
+ 
+     @Test
+     public void cleanupExtensionFilesOnMSPeerReturnsTrueOnSuccess() {
+-        Extension ext = mock(Extension.class);
+         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
+         when(msHost.getMsid()).thenReturn(1L);
+         when(clusterManager.execute(anyString(), anyLong(), anyString(), eq(true)))
+@@ -331,11 +329,10 @@
+     @Test
+     public void getActionMessageReturnsDefaultMessageForSuccessWithoutCustomMessage() {
+         ExtensionCustomAction action = mock(ExtensionCustomAction.class);
+-        Extension extension = mock(Extension.class);
+         when(action.getSuccessMessage()).thenReturn(null);
+ 
+-        String result = extensionsManager.getActionMessage(true, action, extension, ExtensionCustomAction.ResourceType.VirtualMachine, null);
+-
++
++        String result = extensionsManager.getActionMessage(true, action, ext, ExtensionCustomAction.ResourceType.VirtualMachine, null);
+         assertTrue(result.contains("Successfully completed"));
+     }
+ 
+@@ -353,11 +350,10 @@
+     @Test
+     public void getActionMessageReturnsDefaultMessageForFailureWithoutCustomMessage() {
+         ExtensionCustomAction action = mock(ExtensionCustomAction.class);
+-        Extension extension = mock(Extension.class);
+         when(action.getErrorMessage()).thenReturn(null);
+ 
+-        String result = extensionsManager.getActionMessage(false, action, extension, ExtensionCustomAction.ResourceType.VirtualMachine, null);
+-
++
++        String result = extensionsManager.getActionMessage(false, action, ext, ExtensionCustomAction.ResourceType.VirtualMachine, null);
+         assertTrue(result.contains("Failed to complete"));
+     }
+ 
+@@ -509,10 +505,9 @@
+ 
+     @Test
+     public void updateAllExtensionHostsHandlesEmptyHostListGracefully() throws OperationTimedoutException, AgentUnavailableException {
+-        Extension extension = mock(Extension.class);
+         Long clusterId = 100L;
+         when(hostDao.listIdsByClusterId(clusterId)).thenReturn(Collections.emptyList());
+-        extensionsManager.updateAllExtensionHosts(extension, clusterId, false);
++        extensionsManager.updateAllExtensionHosts(ext, clusterId, false);
+         verify(agentMgr, never()).send(anyLong(), any(Command.class));
+     }
+ 
+@@ -1163,11 +1158,10 @@
+     public void registerExtensionWithClusterRegistersSuccessfullyForValidCluster() {
+         Cluster cluster = mock(Cluster.class);
+         when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+-        Extension extension = mock(Extension.class);
+         Map<String, String> details = Map.of("key1", "value1");
+         ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+         when(extensionResourceMapDao.persist(any())).thenReturn(resourceMap);
+-        ExtensionResourceMap result = extensionsManager.registerExtensionWithCluster(cluster, extension, details);
++        ExtensionResourceMap result = extensionsManager.registerExtensionWithCluster(cluster, ext, details);
+         assertNotNull(result);
+         verify(extensionResourceMapDao).persist(any());
+     }
+@@ -1176,10 +1170,9 @@
+     public void registerExtensionWithClusterHandlesNullDetails() {
+         Cluster cluster = mock(Cluster.class);
+         when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+-        Extension extension = mock(Extension.class);
+         ExtensionResourceMapVO resourceMap = mock(ExtensionResourceMapVO.class);
+         when(extensionResourceMapDao.persist(any())).thenReturn(resourceMap);
+-        ExtensionResourceMap result = extensionsManager.registerExtensionWithCluster(cluster, extension, null);
++        ExtensionResourceMap result = extensionsManager.registerExtensionWithCluster(cluster, ext, null);
+         assertNotNull(result);
+         verify(extensionResourceMapDao).persist(any());
+     }
+@@ -2448,7 +2441,6 @@
+ 
+     @Test
+     public void getInstanceConsole_whenNullExtensionNotOrchestrator() {
+-        Extension extension = mock(Extension.class);
+         when(extensionsManager.getExtensionForCluster(anyLong())).thenReturn(extension);
+         VirtualMachine vm = mock(VirtualMachine.class);
+         Host host = mock(Host.class);
