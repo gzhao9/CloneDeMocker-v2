@@ -1,0 +1,41 @@
+--- a/plugins/hypervisors/vmware/src/test/java/org/apache/cloudstack/storage/motion/VmwareStorageMotionStrategyTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/org/apache/cloudstack/storage/motion/VmwareStorageMotionStrategyTest.java
+@@ -106,10 +106,8 @@
+ 
+     @Test
+     public void testStrategyHandlesVmwareHosts() throws Exception {
+-        Host srcHost = mock(Host.class);
+-        Host destHost = mock(Host.class);
+-        when(srcHost.getHypervisorType()).thenReturn(HypervisorType.VMware);
+-        when(destHost.getHypervisorType()).thenReturn(HypervisorType.VMware);
++        Host srcHost = createMockHost(HypervisorType.VMware);
++        Host destHost = createMockHost(HypervisorType.VMware);
+         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
+         StrategyPriority canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
+         assertTrue("The strategy is only supposed to handle VMWare hosts", canHandle == StrategyPriority.HYPERVISOR);
+@@ -117,10 +115,8 @@
+ 
+     @Test
+     public void testStrategyDoesnotHandlesNonVmwareHosts() throws Exception {
+-        Host srcHost = mock(Host.class);
+-        Host destHost = mock(Host.class);
+-        when(srcHost.getHypervisorType()).thenReturn(HypervisorType.XenServer);
+-        when(destHost.getHypervisorType()).thenReturn(HypervisorType.XenServer);
++        Host srcHost = createMockHost(HypervisorType.XenServer);
++        Host destHost = createMockHost(HypervisorType.XenServer);
+         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
+         StrategyPriority canHandle = strategy.canHandle(volumeMap, srcHost, destHost);
+         assertFalse("The strategy is only supposed to handle VMWare hosts", canHandle == StrategyPriority.HYPERVISOR);
+@@ -220,6 +216,12 @@
+ 
+         strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
+         assertFalse("Migration across cluster didn't fail.", result.isSuccess());
++    }
++
++    private static Host createMockHost(HypervisorType hypervisorType) {
++        Host srcHost = mock(Host.class);
++        when(srcHost.getHypervisorType()).thenReturn(hypervisorType);
++        return srcHost;
+     }
+ 
+     private class MockContext<T> extends AsyncRpcContext<T> {

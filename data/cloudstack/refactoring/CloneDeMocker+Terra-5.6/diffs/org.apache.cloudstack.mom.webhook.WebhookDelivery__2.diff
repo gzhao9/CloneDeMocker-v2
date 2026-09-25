@@ -1,0 +1,66 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
+@@ -267,6 +267,12 @@
+         return webhook;
+     }
+ 
++    private static WebhookDelivery createMockWebhookDelivery(long id) {
++        WebhookDelivery webhookDelivery = Mockito.mock(WebhookDelivery.class);
++        Mockito.when(webhookDelivery.getId()).thenReturn(id);
++        return webhookDelivery;
++    }
++
+     @Test
+     public void testValidateWebhookOwnerPayloadUrlUpdateSameExist() {
+         WebhookVO webhookVO = mockWebhookVO(1L);
+@@ -1217,7 +1223,6 @@
+         ExecuteWebhookDeliveryCmd cmd = Mockito.mock(ExecuteWebhookDeliveryCmd.class);
+         WebhookDeliveryVO delivery = Mockito.mock(WebhookDeliveryVO.class);
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+-        WebhookDelivery webhookDelivery = Mockito.mock(WebhookDelivery.class);
+         WebhookDeliveryResponse response = Mockito.mock(WebhookDeliveryResponse.class);
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+@@ -1225,8 +1230,8 @@
+         Mockito.when(webhookDeliveryDao.findById(1L)).thenReturn(delivery);
+         Mockito.when(delivery.getWebhookId()).thenReturn(2L);
+         Mockito.when(webhookDao.findById(2L)).thenReturn(webhook);
++        WebhookDelivery webhookDelivery = createMockWebhookDelivery(3L);
+         Mockito.when(webhookService.executeWebhookDelivery(delivery, webhook, null, null)).thenReturn(webhookDelivery);
+-        Mockito.when(webhookDelivery.getId()).thenReturn(3L);
+         Mockito.when(webhookDeliveryJoinDao.findById(3L)).thenReturn(Mockito.mock(WebhookDeliveryJoinVO.class));
+         Mockito.doReturn(response).when(webhookApiServiceImpl).createWebhookDeliveryResponse(Mockito.any());
+ 
+@@ -1240,14 +1245,13 @@
+     public void executeWebhookDeliveryExecutesSuccessfullyForValidWebhookId() {
+         ExecuteWebhookDeliveryCmd cmd = Mockito.mock(ExecuteWebhookDeliveryCmd.class);
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+-        WebhookDelivery webhookDelivery = Mockito.mock(WebhookDelivery.class);
++        WebhookDelivery webhookDelivery = createMockWebhookDelivery(WebhookDelivery.ID_DUMMY);
+         WebhookDeliveryResponse response = Mockito.mock(WebhookDeliveryResponse.class);
+ 
+         Mockito.when(cmd.getId()).thenReturn(null);
+         Mockito.when(cmd.getWebhookId()).thenReturn(1L);
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+         Mockito.when(webhookService.executeWebhookDelivery(null, webhook, null, null)).thenReturn(webhookDelivery);
+-        Mockito.when(webhookDelivery.getId()).thenReturn(WebhookDelivery.ID_DUMMY);
+         Mockito.doReturn(response).when(webhookApiServiceImpl).createTestWebhookDeliveryResponse(webhookDelivery, webhook);
+ 
+         WebhookDeliveryResponse result = webhookApiServiceImpl.executeWebhookDelivery(cmd);
+@@ -1267,7 +1271,7 @@
+     @Test
+     public void executeWebhookDeliveryExecutesSuccessfullyForValidPayloadUrl() {
+         ExecuteWebhookDeliveryCmd cmd = Mockito.mock(ExecuteWebhookDeliveryCmd.class);
+-        WebhookDelivery webhookDelivery = Mockito.mock(WebhookDelivery.class);
++        WebhookDelivery webhookDelivery = createMockWebhookDelivery(WebhookDelivery.ID_DUMMY);
+         WebhookDeliveryResponse response = Mockito.mock(WebhookDeliveryResponse.class);
+ 
+         Mockito.when(cmd.getId()).thenReturn(null);
+@@ -1277,7 +1281,6 @@
+                 .thenReturn(caller);
+         Mockito.when(webhookService.executeWebhookDelivery(Mockito.eq(null), Mockito.any(Webhook.class),
+                 Mockito.eq(null), Mockito.any(URI.class))).thenReturn(webhookDelivery);
+-        Mockito.when(webhookDelivery.getId()).thenReturn(WebhookDelivery.ID_DUMMY);
+         Mockito.doReturn(response).when(webhookApiServiceImpl).createTestWebhookDeliveryResponse(
+                 Mockito.eq(webhookDelivery), Mockito.any(Webhook.class));
+ 

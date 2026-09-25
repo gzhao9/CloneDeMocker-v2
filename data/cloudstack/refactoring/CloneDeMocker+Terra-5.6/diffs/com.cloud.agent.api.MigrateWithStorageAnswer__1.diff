@@ -1,0 +1,166 @@
+--- a/plugins/hypervisors/vmware/src/test/java/org/apache/cloudstack/storage/motion/VmwareStorageMotionStrategyTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/org/apache/cloudstack/storage/motion/VmwareStorageMotionStrategyTest.java
+@@ -142,84 +142,86 @@
+         AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+         caller.setCallback(caller.getTarget().mockCallBack(null, null)).setContext(context);
+ 
++        MigrateWithStorageAnswer migAnswerMock = createMockMigrateWithStorageAnswer(true);
++        when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
++
++        strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
++        assertTrue("Migration within cluster isn't successful.", result.isSuccess());
++    }
++
++    @Test
++    public void testMigrateWithinClusterFailure() throws Exception {
++        Host srcHost = mock(Host.class);
++        Host destHost = mock(Host.class);
++        when(srcHost.getClusterId()).thenReturn(1L);
++        when(destHost.getClusterId()).thenReturn(1L);
++        Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
++        VirtualMachineTO to = mock(VirtualMachineTO.class);
++        when(to.getId()).thenReturn(6L);
++        VMInstanceVO instance = mock(VMInstanceVO.class);
++        when(instanceDao.findById(6L)).thenReturn(instance);
++
++        MockContext<CommandResult> context = new MockContext<CommandResult>(null, null, volumeMap);
++        AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
++        caller.setCallback(caller.getTarget().mockCallBack(null, null)).setContext(context);
++
++        MigrateWithStorageAnswer migAnswerMock = createMockMigrateWithStorageAnswer(false);
++        when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
++
++        strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
++        assertFalse("Migration within cluster didn't fail.", result.isSuccess());
++    }
++
++    @Test
++    public void testMigrateAcrossClusterSuccess() throws Exception {
++        Host srcHost = mock(Host.class);
++        Host destHost = mock(Host.class);
++        when(srcHost.getClusterId()).thenReturn(1L);
++        when(destHost.getClusterId()).thenReturn(2L);
++        Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
++        VirtualMachineTO to = mock(VirtualMachineTO.class);
++        when(to.getId()).thenReturn(6L);
++        VMInstanceVO instance = mock(VMInstanceVO.class);
++        when(instanceDao.findById(6L)).thenReturn(instance);
++
++        MockContext<CommandResult> context = new MockContext<CommandResult>(null, null, volumeMap);
++        AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
++        caller.setCallback(caller.getTarget().mockCallBack(null, null)).setContext(context);
++
++        MigrateWithStorageAnswer migAnswerMock = createMockMigrateWithStorageAnswer(true);
++        when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
++
++        strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
++        assertTrue("Migration across cluster isn't successful.", result.isSuccess());
++    }
++
++    @Test
++    public void testMigrateAcrossClusterFailure() throws Exception {
++        Host srcHost = mock(Host.class);
++        Host destHost = mock(Host.class);
++        when(srcHost.getClusterId()).thenReturn(1L);
++        when(destHost.getClusterId()).thenReturn(2L);
++        Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
++        VirtualMachineTO to = mock(VirtualMachineTO.class);
++        when(to.getId()).thenReturn(6L);
++        VMInstanceVO instance = mock(VMInstanceVO.class);
++        when(instanceDao.findById(6L)).thenReturn(instance);
++
++        MockContext<CommandResult> context = new MockContext<CommandResult>(null, null, volumeMap);
++        AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
++        caller.setCallback(caller.getTarget().mockCallBack(null, null)).setContext(context);
++
++        MigrateWithStorageAnswer migAnswerMock = createMockMigrateWithStorageAnswer(false);
++        when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
++
++        strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
++        assertFalse("Migration across cluster didn't fail.", result.isSuccess());
++    }
++
++    private static MigrateWithStorageAnswer createMockMigrateWithStorageAnswer(boolean result) {
+         MigrateWithStorageAnswer migAnswerMock = mock(MigrateWithStorageAnswer.class);
+-        when(migAnswerMock.getResult()).thenReturn(true);
+-        when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
+-
+-        strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
+-        assertTrue("Migration within cluster isn't successful.", result.isSuccess());
+-    }
+-
+-    @Test
+-    public void testMigrateWithinClusterFailure() throws Exception {
+-        Host srcHost = mock(Host.class);
+-        Host destHost = mock(Host.class);
+-        when(srcHost.getClusterId()).thenReturn(1L);
+-        when(destHost.getClusterId()).thenReturn(1L);
+-        Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
+-        VirtualMachineTO to = mock(VirtualMachineTO.class);
+-        when(to.getId()).thenReturn(6L);
+-        VMInstanceVO instance = mock(VMInstanceVO.class);
+-        when(instanceDao.findById(6L)).thenReturn(instance);
+-
+-        MockContext<CommandResult> context = new MockContext<CommandResult>(null, null, volumeMap);
+-        AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+-        caller.setCallback(caller.getTarget().mockCallBack(null, null)).setContext(context);
+-
+-        MigrateWithStorageAnswer migAnswerMock = mock(MigrateWithStorageAnswer.class);
+-        when(migAnswerMock.getResult()).thenReturn(false);
+-        when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
+-
+-        strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
+-        assertFalse("Migration within cluster didn't fail.", result.isSuccess());
+-    }
+-
+-    @Test
+-    public void testMigrateAcrossClusterSuccess() throws Exception {
+-        Host srcHost = mock(Host.class);
+-        Host destHost = mock(Host.class);
+-        when(srcHost.getClusterId()).thenReturn(1L);
+-        when(destHost.getClusterId()).thenReturn(2L);
+-        Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
+-        VirtualMachineTO to = mock(VirtualMachineTO.class);
+-        when(to.getId()).thenReturn(6L);
+-        VMInstanceVO instance = mock(VMInstanceVO.class);
+-        when(instanceDao.findById(6L)).thenReturn(instance);
+-
+-        MockContext<CommandResult> context = new MockContext<CommandResult>(null, null, volumeMap);
+-        AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+-        caller.setCallback(caller.getTarget().mockCallBack(null, null)).setContext(context);
+-
+-        MigrateWithStorageAnswer migAnswerMock = mock(MigrateWithStorageAnswer.class);
+-        when(migAnswerMock.getResult()).thenReturn(true);
+-        when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
+-
+-        strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
+-        assertTrue("Migration across cluster isn't successful.", result.isSuccess());
+-    }
+-
+-    @Test
+-    public void testMigrateAcrossClusterFailure() throws Exception {
+-        Host srcHost = mock(Host.class);
+-        Host destHost = mock(Host.class);
+-        when(srcHost.getClusterId()).thenReturn(1L);
+-        when(destHost.getClusterId()).thenReturn(2L);
+-        Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
+-        VirtualMachineTO to = mock(VirtualMachineTO.class);
+-        when(to.getId()).thenReturn(6L);
+-        VMInstanceVO instance = mock(VMInstanceVO.class);
+-        when(instanceDao.findById(6L)).thenReturn(instance);
+-
+-        MockContext<CommandResult> context = new MockContext<CommandResult>(null, null, volumeMap);
+-        AsyncCallbackDispatcher<VmwareStorageMotionStrategyTest, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
+-        caller.setCallback(caller.getTarget().mockCallBack(null, null)).setContext(context);
+-
+-        MigrateWithStorageAnswer migAnswerMock = mock(MigrateWithStorageAnswer.class);
+-        when(migAnswerMock.getResult()).thenReturn(false);
+-        when(agentMgr.send(anyLong(), isA(MigrateWithStorageCommand.class))).thenReturn(migAnswerMock);
+-
+-        strategy.copyAsync(volumeMap, to, srcHost, destHost, caller);
+-        assertFalse("Migration across cluster didn't fail.", result.isSuccess());
++        when(migAnswerMock.getResult()).thenReturn(result);
++        return migAnswerMock;
+     }
+ 
+     private class MockContext<T> extends AsyncRpcContext<T> {

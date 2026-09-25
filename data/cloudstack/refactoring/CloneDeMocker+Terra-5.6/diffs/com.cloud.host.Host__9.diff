@@ -1,0 +1,80 @@
+--- a/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/KvmNonManagedStorageSystemDataMotionTest.java
++++ b/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/KvmNonManagedStorageSystemDataMotionTest.java
+@@ -431,7 +431,7 @@
+         when(host1.getClusterId()).thenReturn(CLUSTER_ID);
+         lenient().when(host1.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+         when(host2.getId()).thenReturn(HOST_2_ID);
+-        when(host2.getClusterId()).thenReturn(CLUSTER_ID);
++        host2 = MockHostWithClusterId.createMockHost(CLUSTER_ID);
+         lenient().when(host2.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+     }
+ 
+--- a/plugins/hypervisors/vmware/src/test/java/org/apache/cloudstack/storage/motion/VmwareStorageMotionStrategyTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/org/apache/cloudstack/storage/motion/VmwareStorageMotionStrategyTest.java
+@@ -128,10 +128,8 @@
+ 
+     @Test
+     public void testMigrateWithinClusterSuccess() throws Exception {
+-        Host srcHost = mock(Host.class);
+-        Host destHost = mock(Host.class);
+-        when(srcHost.getClusterId()).thenReturn(1L);
+-        when(destHost.getClusterId()).thenReturn(1L);
++        Host srcHost = MockHostWithClusterId.createMockHost(1L);
++        Host destHost = MockHostWithClusterId.createMockHost(1L);
+         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
+         VirtualMachineTO to = mock(VirtualMachineTO.class);
+         when(to.getId()).thenReturn(6L);
+@@ -152,10 +150,8 @@
+ 
+     @Test
+     public void testMigrateWithinClusterFailure() throws Exception {
+-        Host srcHost = mock(Host.class);
+-        Host destHost = mock(Host.class);
+-        when(srcHost.getClusterId()).thenReturn(1L);
+-        when(destHost.getClusterId()).thenReturn(1L);
++        Host srcHost = MockHostWithClusterId.createMockHost(1L);
++        Host destHost = MockHostWithClusterId.createMockHost(1L);
+         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
+         VirtualMachineTO to = mock(VirtualMachineTO.class);
+         when(to.getId()).thenReturn(6L);
+@@ -176,10 +172,8 @@
+ 
+     @Test
+     public void testMigrateAcrossClusterSuccess() throws Exception {
+-        Host srcHost = mock(Host.class);
+-        Host destHost = mock(Host.class);
+-        when(srcHost.getClusterId()).thenReturn(1L);
+-        when(destHost.getClusterId()).thenReturn(2L);
++        Host srcHost = MockHostWithClusterId.createMockHost(1L);
++        Host destHost = MockHostWithClusterId.createMockHost(2L);
+         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
+         VirtualMachineTO to = mock(VirtualMachineTO.class);
+         when(to.getId()).thenReturn(6L);
+@@ -200,10 +194,8 @@
+ 
+     @Test
+     public void testMigrateAcrossClusterFailure() throws Exception {
+-        Host srcHost = mock(Host.class);
+-        Host destHost = mock(Host.class);
+-        when(srcHost.getClusterId()).thenReturn(1L);
+-        when(destHost.getClusterId()).thenReturn(2L);
++        Host srcHost = MockHostWithClusterId.createMockHost(1L);
++        Host destHost = MockHostWithClusterId.createMockHost(2L);
+         Map<VolumeInfo, DataStore> volumeMap = new HashMap<VolumeInfo, DataStore>();
+         VirtualMachineTO to = mock(VirtualMachineTO.class);
+         when(to.getId()).thenReturn(6L);
+--- a/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/MockHostWithClusterId.java
++++ b/engine/storage/datamotion/src/test/java/org/apache/cloudstack/storage/motion/MockHostWithClusterId.java
+@@ -0,0 +1,12 @@
++package org.apache.cloudstack.storage.motion;
++
++import com.cloud.host.Host;
++import org.mockito.Mockito;
++
++public class MockHostWithClusterId {
++    public static Host createMockHost(long clusterId) {
++        Host srcHost = Mockito.mock(Host.class);
++        Mockito.when(srcHost.getClusterId()).thenReturn(clusterId);
++        return srcHost;
++    }
++}

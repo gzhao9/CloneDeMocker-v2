@@ -1,0 +1,86 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxServiceImplTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxServiceImplTest.java
+@@ -74,18 +74,16 @@
+ 
+     @Test
+     public void testCreateVpcNetwork() {
+-        NsxAnswer createNsxTier1GatewayAnswer = mock(NsxAnswer.class);
++        NsxAnswer createNsxTier1GatewayAnswer = createMockNsxAnswer();
+         when(nsxControllerUtils.sendNsxCommand(any(CreateNsxTier1GatewayCommand.class), anyLong())).thenReturn(createNsxTier1GatewayAnswer);
+-        when(createNsxTier1GatewayAnswer.getResult()).thenReturn(true);
+ 
+         assertTrue(nsxService.createVpcNetwork(1L, 3L, 2L, 5L, "VPC01", false));
+     }
+ 
+     @Test
+     public void testDeleteVpcNetwork() {
+-        NsxAnswer deleteNsxTier1GatewayAnswer = mock(NsxAnswer.class);
++        NsxAnswer deleteNsxTier1GatewayAnswer = createMockNsxAnswer();
+         when(nsxControllerUtils.sendNsxCommand(any(DeleteNsxTier1GatewayCommand.class), anyLong())).thenReturn(deleteNsxTier1GatewayAnswer);
+-        when(deleteNsxTier1GatewayAnswer.getResult()).thenReturn(true);
+ 
+         assertTrue(nsxService.deleteVpcNetwork(1L, 2L, 3L, 10L, "VPC01"));
+     }
+@@ -95,9 +93,8 @@
+         NetworkVO network = new NetworkVO();
+         network.setVpcId(1L);
+         when(vpcDao.findById(1L)).thenReturn(mock(VpcVO.class));
+-        NsxAnswer deleteNsxSegmentAnswer = mock(NsxAnswer.class);
++        NsxAnswer deleteNsxSegmentAnswer = createMockNsxAnswer();
+         when(nsxControllerUtils.sendNsxCommand(any(DeleteNsxSegmentCommand.class), anyLong())).thenReturn(deleteNsxSegmentAnswer);
+-        when(deleteNsxSegmentAnswer.getResult()).thenReturn(true);
+ 
+         assertTrue(nsxService.deleteNetwork(zoneId, accountId, domainId, network));
+     }
+@@ -106,11 +103,9 @@
+     public void testDeleteNetwork() {
+         NetworkVO network = new NetworkVO();
+         network.setVpcId(null);
+-        NsxAnswer deleteNsxSegmentAnswer = mock(NsxAnswer.class);
+-        when(deleteNsxSegmentAnswer.getResult()).thenReturn(true);
++        NsxAnswer deleteNsxSegmentAnswer = createMockNsxAnswer();
+         when(nsxControllerUtils.sendNsxCommand(any(DeleteNsxSegmentCommand.class), anyLong())).thenReturn(deleteNsxSegmentAnswer);
+-        NsxAnswer deleteNsxTier1GatewayAnswer = mock(NsxAnswer.class);
+-        when(deleteNsxTier1GatewayAnswer.getResult()).thenReturn(true);
++        NsxAnswer deleteNsxTier1GatewayAnswer = createMockNsxAnswer();
+         when(nsxControllerUtils.sendNsxCommand(any(DeleteNsxTier1GatewayCommand.class), anyLong())).thenReturn(deleteNsxTier1GatewayAnswer);
+         assertTrue(nsxService.deleteNetwork(zoneId, accountId, domainId, network));
+     }
+@@ -127,8 +122,7 @@
+         when(vpc.getDomainId()).thenReturn(domainId);
+         when(vpc.getZoneId()).thenReturn(zoneId);
+         when(vpc.getId()).thenReturn(vpcId);
+-        NsxAnswer answer = mock(NsxAnswer.class);
+-        when(answer.getResult()).thenReturn(true);
++        NsxAnswer answer = createMockNsxAnswer();
+         when(nsxControllerUtils.sendNsxCommand(any(CreateOrUpdateNsxTier1NatRuleCommand.class), eq(zoneId))).thenReturn(answer);
+         nsxService.updateVpcSourceNatIp(vpc, ipAddress);
+         Mockito.verify(nsxControllerUtils).sendNsxCommand(any(CreateOrUpdateNsxTier1NatRuleCommand.class), eq(zoneId));
+@@ -141,8 +135,7 @@
+         long vmId = 1L;
+         String publicIp = "10.10.1.10";
+         String vmIp = "192.168.1.20";
+-        NsxAnswer answer = Mockito.mock(NsxAnswer.class);
+-        when(answer.getResult()).thenReturn(true);
++        NsxAnswer answer = createMockNsxAnswer();
+         when(nsxControllerUtils.sendNsxCommand(any(CreateNsxStaticNatCommand.class), eq(zoneId))).thenReturn(answer);
+         nsxService.createStaticNatRule(zoneId, domainId, accountId,
+                 networkId, networkName, true, vmId, publicIp, vmIp);
+@@ -153,10 +146,15 @@
+     public void testDeleteStaticNatRule() {
+         long networkId = 1L;
+         String networkName = "Network-Test";
+-        NsxAnswer answer = Mockito.mock(NsxAnswer.class);
+-        when(answer.getResult()).thenReturn(true);
++        NsxAnswer answer = createMockNsxAnswer();
+         when(nsxControllerUtils.sendNsxCommand(any(DeleteNsxNatRuleCommand.class), eq(zoneId))).thenReturn(answer);
+         nsxService.deleteStaticNatRule(zoneId, domainId, accountId, networkId, networkName, true);
+         Mockito.verify(nsxControllerUtils).sendNsxCommand(any(DeleteNsxNatRuleCommand.class), eq(zoneId));
+     }
++
++    private static NsxAnswer createMockNsxAnswer() {
++        NsxAnswer answer = mock(NsxAnswer.class);
++        when(answer.getResult()).thenReturn(true);
++        return answer;
++    }
+ }

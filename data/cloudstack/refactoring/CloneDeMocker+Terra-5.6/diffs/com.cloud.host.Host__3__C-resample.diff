@@ -1,0 +1,132 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -1310,8 +1310,7 @@
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+         Mockito.when(vm.getId()).thenReturn(1L);
+         Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+-        Host host = Mockito.mock(Host.class);
+-        Mockito.when(host.getId()).thenReturn(1L);
++        Host host = MockHostWithId.createMockHost(1L);
+         Mockito.when(hostDao.findById(1L)).thenReturn(Mockito.mock(HostVO.class));
+         Mockito.when(virtualMachineManager.getMigrationDeployment(Mockito.any(VirtualMachine.class),
+                         Mockito.any(Host.class), Mockito.nullable(Long.class),
+@@ -3406,11 +3405,9 @@
+ 
+     @Test
+     public void validateStorageAccessGroupsOnHostsMatchingSAGsNoException() {
+-        Host srcHost = Mockito.mock(Host.class);
+-        Host destHost = Mockito.mock(Host.class);
+-
+-        Mockito.when(srcHost.getId()).thenReturn(1L);
+-        Mockito.when(destHost.getId()).thenReturn(2L);
++        Host srcHost = MockHostWithId.createMockHost(1L);
++        Host destHost = MockHostWithId.createMockHost(2L);
++
+         when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+         when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag2", "sag3"});
+ 
+@@ -3422,11 +3419,9 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void validateSAGsOnHostsNonMatchingSAGsThrowsException() {
+-        Host srcHost = Mockito.mock(Host.class);
+-        Host destHost = Mockito.mock(Host.class);
+-
+-        Mockito.when(srcHost.getId()).thenReturn(1L);
+-        Mockito.when(destHost.getId()).thenReturn(2L);
++        Host srcHost = MockHostWithId.createMockHost(1L);
++        Host destHost = MockHostWithId.createMockHost(2L);
++
+         when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+         when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag3"});
+ 
+@@ -3435,11 +3430,9 @@
+ 
+     @Test
+     public void validateEmptyStorageAccessGroupOnHosts() {
+-        Host srcHost = Mockito.mock(Host.class);
+-        Host destHost = Mockito.mock(Host.class);
+-
+-        Mockito.when(srcHost.getId()).thenReturn(1L);
+-        Mockito.when(destHost.getId()).thenReturn(2L);
++        Host srcHost = MockHostWithId.createMockHost(1L);
++        Host destHost = MockHostWithId.createMockHost(2L);
++
+         when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{});
+         when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{});
+ 
+@@ -3451,11 +3444,9 @@
+ 
+     @Test
+     public void validateSAGsOnHostsNullStorageAccessGroups() {
+-        Host srcHost = Mockito.mock(Host.class);
+-        Host destHost = Mockito.mock(Host.class);
+-
+-        Mockito.when(srcHost.getId()).thenReturn(1L);
+-        Mockito.when(destHost.getId()).thenReturn(2L);
++        Host srcHost = MockHostWithId.createMockHost(1L);
++        Host destHost = MockHostWithId.createMockHost(2L);
++
+         when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(null);
+         when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(null);
+ 
+@@ -3467,11 +3458,9 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void validateSAGsOnDestHostNullStorageAccessGroups() {
+-        Host srcHost = Mockito.mock(Host.class);
+-        Host destHost = Mockito.mock(Host.class);
+-
+-        Mockito.when(srcHost.getId()).thenReturn(1L);
+-        Mockito.when(destHost.getId()).thenReturn(2L);
++        Host srcHost = MockHostWithId.createMockHost(1L);
++        Host destHost = MockHostWithId.createMockHost(2L);
++
+         when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+         when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(null);
+ 
+@@ -3481,11 +3470,9 @@
+     @Test
+     public void validateNullStorageAccessGroupsOnSrcHost() {
+ 
+-        Host srcHost = Mockito.mock(Host.class);
+-        Host destHost = Mockito.mock(Host.class);
+-
+-        Mockito.when(srcHost.getId()).thenReturn(1L);
+-        Mockito.when(destHost.getId()).thenReturn(2L);
++        Host srcHost = MockHostWithId.createMockHost(1L);
++        Host destHost = MockHostWithId.createMockHost(2L);
++
+         when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(null);
+         when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+ 
+--- a/engine/orchestration/src/test/java/com/cloud/vm/MockHostWithId.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/MockHostWithId.java
+@@ -0,0 +1,12 @@
++package com.cloud.vm;
++
++import com.cloud.host.Host;
++import org.mockito.Mockito;
++
++public class MockHostWithId {
++    public static Host createMockHost(long hostId) {
++        Host destHost = Mockito.mock(Host.class);
++        Mockito.when(destHost.getId()).thenReturn(hostId);
++        return destHost;
++    }
++}
+--- a/server/src/test/java/com/cloud/vm/MockHostWithId.java
++++ b/server/src/test/java/com/cloud/vm/MockHostWithId.java
+@@ -0,0 +1,12 @@
++package com.cloud.vm;
++
++import com.cloud.host.Host;
++import org.mockito.Mockito;
++
++public class MockHostWithId {
++    public static Host createMockHost(long hostId) {
++        Host destHost = Mockito.mock(Host.class);
++        Mockito.when(destHost.getId()).thenReturn(hostId);
++        return destHost;
++    }
++}
