@@ -1,0 +1,82 @@
+--- a/server/src/test/java/com/cloud/template/HypervisorTemplateAdapterTest.java
++++ b/server/src/test/java/com/cloud/template/HypervisorTemplateAdapterTest.java
+@@ -92,6 +92,7 @@
+ public class HypervisorTemplateAdapterTest {
+     @Mock
+     EventDistributor eventDistributor;
++    private VMTemplateVO vmTemplateVOMockField;
+     List<Event> events = new ArrayList<>();
+ 
+     @Mock
+@@ -156,6 +157,7 @@
+     @Before
+     public void before() {
+         closeable = MockitoAnnotations.openMocks(this);
++        vmTemplateVOMockField = Mockito.mock(VMTemplateVO.class);
+     }
+ 
+     @After
+@@ -321,11 +323,10 @@
+     @Test
+     public void createTemplateWithinZonesTestZoneIdsNullShouldCallListAllZones() {
+         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
+-        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+ 
+         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(null);
+ 
+-        _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMock);
++        _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMockField);
+ 
+         Mockito.verify(_dcDao, Mockito.times(1)).listAllZones();
+     }
+@@ -333,7 +334,6 @@
+     @Test
+     public void createTemplateWithinZonesTestZoneIdsNotNullShouldNotCallListAllZones() {
+         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
+-        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+         List<Long> zoneIds = List.of(1L);
+ 
+         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
+@@ -341,7 +341,7 @@
+         Mockito.doReturn(null).when(_templateMgr).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
+         Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class), Mockito.anyLong());
+ 
+-        _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMock);
++        _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMockField);
+ 
+         Mockito.verify(_dcDao, Mockito.times(0)).listAllZones();
+     }
+@@ -349,7 +349,6 @@
+     @Test
+     public void createTemplateWithinZonesTestZoneDoesNotHaveActiveHeuristicRulesShouldCallStandardImageStoreAllocation() {
+         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
+-        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+         List<Long> zoneIds = List.of(zoneId);
+ 
+         Mockito.when(templateProfileMock.getZoneIdList()).thenReturn(zoneIds);
+@@ -357,7 +356,7 @@
+         Mockito.doReturn(null).when(_templateMgr).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
+         Mockito.doNothing().when(_adapter).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class), Mockito.anyLong());
+ 
+-        _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMock);
++        _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMockField);
+ 
+         Mockito.verify(_adapter, Mockito.times(1)).standardImageStoreAllocation(Mockito.isNull(), Mockito.any(VMTemplateVO.class), Mockito.anyLong());
+     }
+@@ -365,7 +364,6 @@
+     @Test
+     public void createTemplateWithinZonesTestZoneWithHeuristicRuleShouldCallValidateSecondaryStorageAndCreateTemplate() {
+         TemplateProfile templateProfileMock = Mockito.mock(TemplateProfile.class);
+-        VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
+         DataStore dataStoreMock = Mockito.mock(DataStore.class);
+         List<Long> zoneIds = List.of(1L);
+ 
+@@ -373,7 +371,7 @@
+         Mockito.doReturn(dataStoreMock).when(_templateMgr).verifyHeuristicRulesForZone(Mockito.any(VMTemplateVO.class), Mockito.anyLong());
+         Mockito.doNothing().when(_adapter).validateSecondaryStorageAndCreateTemplate(Mockito.any(List.class), Mockito.any(VMTemplateVO.class), Mockito.any(Map.class), Mockito.anyInt());
+ 
+-        _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMock);
++        _adapter.createTemplateWithinZones(templateProfileMock, vmTemplateVOMockField);
+ 
+         Mockito.verify(_adapter, Mockito.times(1)).validateSecondaryStorageAndCreateTemplate(Mockito.any(List.class), Mockito.any(VMTemplateVO.class), Mockito.any(Map.class), Mockito.anyInt());
+     }

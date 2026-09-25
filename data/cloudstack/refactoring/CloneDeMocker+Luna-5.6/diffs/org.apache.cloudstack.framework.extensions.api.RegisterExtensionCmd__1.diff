@@ -1,0 +1,65 @@
+--- a/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
++++ b/framework/extensions/src/test/java/org/apache/cloudstack/framework/extensions/manager/ExtensionsManagerImplTest.java
+@@ -1112,10 +1112,7 @@
+ 
+     @Test
+     public void registerExtensionWithResourceRegistersSuccessfullyForValidResourceType() {
+-        RegisterExtensionCmd cmd = mock(RegisterExtensionCmd.class);
+-        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.Cluster.name());
+-        when(cmd.getResourceId()).thenReturn(UUID.randomUUID().toString());
+-        when(cmd.getExtensionId()).thenReturn(1L);
++        RegisterExtensionCmd cmd = createMockRegisterExtensionCmd(ExtensionResourceMap.ResourceType.Cluster.name(), UUID.randomUUID().toString());
+         ExtensionVO extension = mock(ExtensionVO.class);
+         ClusterVO clusterVO = mock(ClusterVO.class);
+         when(clusterVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+@@ -1146,10 +1143,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void registerExtensionWithResourceThrowsForPersistFailure() {
+-        RegisterExtensionCmd cmd = mock(RegisterExtensionCmd.class);
+-        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.Cluster.name());
+-        when(cmd.getResourceId()).thenReturn(UUID.randomUUID().toString());
+-        when(cmd.getExtensionId()).thenReturn(1L);
++        RegisterExtensionCmd cmd = createMockRegisterExtensionCmd(ExtensionResourceMap.ResourceType.Cluster.name(), UUID.randomUUID().toString());
+         ClusterVO clusterVO = mock(ClusterVO.class);
+         when(clusterVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.External);
+         when(clusterDao.findByUuid(anyString())).thenReturn(clusterVO);
+@@ -1547,6 +1541,14 @@
+         extensionsManager.deleteCustomAction(cmd);
+         verify(extensionCustomActionDetailsDao).removeDetails(actionId);
+         verify(extensionCustomActionDao).remove(actionId);
++    }
++
++    private static RegisterExtensionCmd createMockRegisterExtensionCmd(String resourceType, String resourceId) {
++        RegisterExtensionCmd cmd = mock(RegisterExtensionCmd.class);
++        when(cmd.getResourceType()).thenReturn(resourceType);
++        when(cmd.getResourceId()).thenReturn(resourceId);
++        when(cmd.getExtensionId()).thenReturn(1L);
++        return cmd;
+     }
+ 
+     private void mockCallerRole(RoleType roleType) {
+@@ -2841,10 +2843,7 @@
+ 
+     @Test
+     public void registerExtensionWithPhysicalNetworkSucceeds() {
+-        RegisterExtensionCmd cmd = mock(RegisterExtensionCmd.class);
+-        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.PhysicalNetwork.name());
+-        when(cmd.getResourceId()).thenReturn("pnet-uuid");
+-        when(cmd.getExtensionId()).thenReturn(1L);
++        RegisterExtensionCmd cmd = createMockRegisterExtensionCmd(ExtensionResourceMap.ResourceType.PhysicalNetwork.name(), "pnet-uuid");
+         when(cmd.getDetails()).thenReturn(null);
+ 
+         ExtensionVO extension = mock(ExtensionVO.class);
+@@ -2873,10 +2872,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void registerExtensionWithPhysicalNetworkFailsForNonNetworkOrchestratorType() {
+-        RegisterExtensionCmd cmd = mock(RegisterExtensionCmd.class);
+-        when(cmd.getResourceType()).thenReturn(ExtensionResourceMap.ResourceType.PhysicalNetwork.name());
+-        when(cmd.getResourceId()).thenReturn("pnet-uuid");
+-        when(cmd.getExtensionId()).thenReturn(1L);
++        RegisterExtensionCmd cmd = createMockRegisterExtensionCmd(ExtensionResourceMap.ResourceType.PhysicalNetwork.name(), "pnet-uuid");
+ 
+         ExtensionVO extension = mock(ExtensionVO.class);
+         when(extension.getType()).thenReturn(Extension.Type.Orchestrator);

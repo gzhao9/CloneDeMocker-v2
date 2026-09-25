@@ -1,0 +1,84 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -1842,9 +1842,8 @@
+             when(accountDao.findById(accountId)).thenReturn(callerAccount);
+             when(accountDao.findByIdIncludingRemoved(accountId)).thenReturn(callerAccount);
+             when(callerAccount.getState()).thenReturn(Account.State.ENABLED);
+-            VMTemplateVO template = mock(VMTemplateVO.class);
++            VMTemplateVO template = createMockVmTemplate(Storage.ImageFormat.QCOW2);
+             when(templateDao.findById(anyLong())).thenReturn(template);
+-            when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+             when(template.getId()).thenReturn(1L);
+             when(template.isDirectDownload()).thenReturn(false);
+             when(template.getSize()).thenReturn(10L * 1024 * 1024 * 1024L); // 10GB
+@@ -3534,8 +3533,7 @@
+         UserVmVO userVmVO = new UserVmVO();
+         userVmVO.setTemplateId(templateId);
+         when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+-        VMTemplateVO template = mock(VMTemplateVO.class);
+-        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
++        VMTemplateVO template = createMockVmTemplate(Storage.ImageFormat.QCOW2);
+         when(templateDao.findById(templateId)).thenReturn(template);
+         VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+@@ -3584,8 +3582,7 @@
+ 
+         UserVmVO userVmVO = new UserVmVO();
+         when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+-        VMTemplateVO template = mock(VMTemplateVO.class);
+-        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
++        VMTemplateVO template = createMockVmTemplate(Storage.ImageFormat.QCOW2);
+         when(backup.getDetail(ApiConstants.TEMPLATE_ID)).thenReturn("template-uuid");
+         when(templateDao.findByUuid("template-uuid")).thenReturn(template);
+ 
+@@ -3710,8 +3707,7 @@
+         UserVmVO userVmVO = new UserVmVO();
+         userVmVO.setTemplateId(isoId);
+         when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+-        VMTemplateVO iso = mock(VMTemplateVO.class);
+-        when(iso.getFormat()).thenReturn(Storage.ImageFormat.ISO);
++        VMTemplateVO iso = createMockVmTemplate(Storage.ImageFormat.ISO);
+         when(templateDao.findById(isoId)).thenReturn(iso);
+         VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+@@ -3761,8 +3757,7 @@
+ 
+         UserVmVO userVmVO = new UserVmVO();
+         when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+-        VMTemplateVO iso = mock(VMTemplateVO.class);
+-        when(iso.getFormat()).thenReturn(Storage.ImageFormat.ISO);
++        VMTemplateVO iso = createMockVmTemplate(Storage.ImageFormat.ISO);
+         when(backup.getDetail(ApiConstants.TEMPLATE_ID)).thenReturn("iso-uuid");
+         when(templateDao.findByUuid("iso-uuid")).thenReturn(iso);
+ 
+@@ -4264,8 +4259,7 @@
+ 
+         UserVmVO userVmVO = new UserVmVO();
+         when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+-        VMTemplateVO template = mock(VMTemplateVO.class);
+-        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
++        VMTemplateVO template = createMockVmTemplate(Storage.ImageFormat.QCOW2);
+         when(templateDao.findById(templateId)).thenReturn(template);
+ 
+         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+@@ -4328,8 +4322,7 @@
+ 
+         UserVmVO userVmVO = new UserVmVO();
+         when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+-        VMTemplateVO template = mock(VMTemplateVO.class);
+-        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
++        VMTemplateVO template = createMockVmTemplate(Storage.ImageFormat.QCOW2);
+         when(templateDao.findById(templateId)).thenReturn(template);
+ 
+         DiskOfferingVO overrideDiskOffering = mock(DiskOfferingVO.class);
+@@ -4740,4 +4733,10 @@
+         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+     }
++
++    private static VMTemplateVO createMockVmTemplate(Storage.ImageFormat format) {
++        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
++        when(template.getFormat()).thenReturn(format);
++        return template;
++    }
+ }

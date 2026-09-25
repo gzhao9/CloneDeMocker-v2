@@ -1,0 +1,150 @@
+--- a/server/src/test/java/com/cloud/template/HypervisorTemplateAdapterTest.java
++++ b/server/src/test/java/com/cloud/template/HypervisorTemplateAdapterTest.java
+@@ -267,8 +267,7 @@
+         TemplateInfo info = mock(TemplateInfo.class);
+         when(info.getDataStore()).thenReturn(store);
+ 
+-        VMTemplateVO template = mock(VMTemplateVO.class);
+-        when(template.getId()).thenReturn(1l);
++        VMTemplateVO template = MockVMTemplateVO.createMockVmTemplate(1l);
+         when(template.getName()).thenReturn("Test Template");
+         when(template.getFormat()).thenReturn(ImageFormat.QCOW2);
+         when(template.getAccountId()).thenReturn(1l);
+@@ -555,4 +554,15 @@
+         Mockito.when(dataStoreManagerMock.getImageStoresByScope(Mockito.any())).thenReturn(new ArrayList<>());
+         _adapter.checkZoneImageStores(templateVO, List.of(1L));
+     }
++
++    public final class MockVMTemplateVO {
++        private MockVMTemplateVO() {
++        }
++
++        public static VMTemplateVO createMockVmTemplate(long id) {
++            VMTemplateVO template = mock(VMTemplateVO.class);
++            when(template.getId()).thenReturn(id);
++            return template;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/template/TemplateManagerImplTest.java
++++ b/server/src/test/java/com/cloud/template/TemplateManagerImplTest.java
+@@ -351,9 +351,8 @@
+     }
+     @Test
+     public void testPrepareTemplateIsSeeded() {
+-        VMTemplateVO mockTemplate = mock(VMTemplateVO.class);
+-        when(mockTemplate.getId()).thenReturn(202l);
+-
++
++        VMTemplateVO mockTemplate = MockVMTemplateVO.createMockVmTemplate(202l);
+         StoragePoolVO mockPool = mock(StoragePoolVO.class);
+ 
+         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
+@@ -373,9 +372,8 @@
+ 
+     @Test
+     public void testPrepareTemplateNotDownloaded() {
+-        VMTemplateVO mockTemplate = mock(VMTemplateVO.class);
+-        when(mockTemplate.getId()).thenReturn(202l);
+-
++
++        VMTemplateVO mockTemplate = MockVMTemplateVO.createMockVmTemplate(202l);
+         StoragePoolVO mockPool = mock(StoragePoolVO.class);
+ 
+         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
+@@ -392,9 +390,8 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testPrepareTemplateNoHostConnectedToPool() {
+-        VMTemplateVO mockTemplate = mock(VMTemplateVO.class);
+-        when(mockTemplate.getId()).thenReturn(202l);
+-
++
++        VMTemplateVO mockTemplate = MockVMTemplateVO.createMockVmTemplate(202l);
+         StoragePoolVO mockPool = mock(StoragePoolVO.class);
+ 
+         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
+@@ -419,7 +416,6 @@
+ 
+     @Test
+     public void testTemplateScheduledForDownloadInOnePool() {
+-        VMTemplateVO mockTemplate = mock(VMTemplateVO.class);
+         StoragePoolVO mockPool = mock(StoragePoolVO.class);
+         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
+         VMTemplateStoragePoolVO mockTemplateStore = mock(VMTemplateStoragePoolVO.class);
+@@ -428,7 +424,7 @@
+         when(mockPool.getId()).thenReturn(2l);
+         when(mockPool.getStatus()).thenReturn(StoragePoolStatus.Up);
+         when(mockPool.getDataCenterId()).thenReturn(1l);
+-        when(mockTemplate.getId()).thenReturn(202l);
++        mockTemplate = MockVMTemplateVO.createMockVmTemplate(202l);
+         when(mockTemplateStore.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+         when(vmTemplateDao.findById(anyLong())).thenReturn(mockTemplate);
+         when(dataStoreManager.getPrimaryDataStore(anyLong())).thenReturn(mockPrimaryDataStore);
+@@ -467,7 +463,6 @@
+ 
+     @Test
+     public void testTemplateScheduledForDownloadInMultiplePool() {
+-        VMTemplateVO mockTemplate = mock(VMTemplateVO.class);
+         PrimaryDataStore mockPrimaryDataStore = mock(PrimaryDataStore.class);
+         VMTemplateStoragePoolVO mockTemplateStore = mock(VMTemplateStoragePoolVO.class);
+         List<StoragePoolVO> pools = new ArrayList<StoragePoolVO>();
+@@ -484,7 +479,7 @@
+         pools.add(mockPool3);
+ 
+         when(mockPrimaryDataStore.getId()).thenReturn(2l);
+-        when(mockTemplate.getId()).thenReturn(202l);
++        VMTemplateVO mockTemplate = MockVMTemplateVO.createMockVmTemplate(202l);
+         when(mockTemplateStore.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+         when(vmTemplateDao.findById(anyLong())).thenReturn(mockTemplate);
+         when(dataStoreManager.getPrimaryDataStore(anyLong())).thenReturn(mockPrimaryDataStore);
+@@ -618,8 +613,7 @@
+         when(cmd.getUserdataId()).thenReturn(null);
+         when(cmd.getUserdataPolicy()).thenReturn(UserData.UserDataOverridePolicy.ALLOWOVERRIDE);
+ 
+-        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+-        when(template.getId()).thenReturn(1L);
++        VMTemplateVO template = MockVMTemplateVO.createMockVmTemplate(1L);
+         when(vmTemplateDao.findById(1L)).thenReturn(template);
+ 
+         VirtualMachineTemplate resultTemplate = templateManager.linkUserDataToTemplate(cmd);
+@@ -862,10 +856,9 @@
+     @Test
+     public void attachISOToVMAttachWritesToIsoIdWhenPrimarySlotEmpty() {
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        VMTemplateVO iso = Mockito.mock(VMTemplateVO.class);
++        VMTemplateVO iso = MockVMTemplateVO.createMockVmTemplate(42L);
+         Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
+         Mockito.when(vmTemplateDao.findById(42L)).thenReturn(iso);
+-        Mockito.when(iso.getId()).thenReturn(42L);
+         Mockito.when(vm.getIsoId()).thenReturn(null);
+ 
+         boolean result = templateManager.attachISOToVM(1L, 1L, 42L, true, false, false);
+@@ -925,10 +918,9 @@
+     @Test
+     public void attachISOToVMAttachWritesToVmIsoMapWhenPrimarySlotOccupied() {
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        VMTemplateVO iso = Mockito.mock(VMTemplateVO.class);
+         Mockito.when(_userVmDao.findById(1L)).thenReturn(vm);
++        VMTemplateVO iso = MockVMTemplateVO.createMockVmTemplate(42L);
+         Mockito.when(vmTemplateDao.findById(42L)).thenReturn(iso);
+-        Mockito.when(iso.getId()).thenReturn(42L);
+         Mockito.when(vm.getIsoId()).thenReturn(99L);
+         Mockito.when(_vmIsoMapDao.listByVmId(1L)).thenReturn(new ArrayList<>());
+ 
+@@ -1312,4 +1304,15 @@
+             }
+         }
+     }
++
++    public final class MockVMTemplateVO {
++        private MockVMTemplateVO() {
++        }
++
++        public static VMTemplateVO createMockVmTemplate(long id) {
++            VMTemplateVO template = mock(VMTemplateVO.class);
++            when(template.getId()).thenReturn(id);
++            return template;
++        }
++    }
+ }
