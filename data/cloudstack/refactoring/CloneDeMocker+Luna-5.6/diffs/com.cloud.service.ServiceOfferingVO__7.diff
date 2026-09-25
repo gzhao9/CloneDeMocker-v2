@@ -1,0 +1,73 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -199,6 +199,8 @@
+     @Mock
+     private ServiceOfferingVO serviceOfferingMock;
+ 
++    private ServiceOfferingVO serviceOfferingForOrchestration;
++
+     @Mock
+     private SnapshotManager snapshotManagerMock;
+ 
+@@ -301,6 +303,7 @@
+ 
+     @Before
+     public void setup() {
++        serviceOfferingForOrchestration = mock(ServiceOfferingVO.class);
+         ReflectionTestUtils.getField(VirtualMachineManager.VmMetadataManufacturer, "s_depot");
+         virtualMachineManagerImpl.setHostAllocators(new ArrayList<>());
+ 
+@@ -1130,7 +1133,6 @@
+ 
+         ItWorkVO work = mock(ItWorkVO.class);
+ 
+-        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+ 
+         VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+         when(template.isDeployAsIs()).thenReturn(false);
+@@ -1148,11 +1150,11 @@
+         doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
+ 
+         Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
+-        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOffering, template);
++        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOfferingForOrchestration, template);
+ 
+         when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
+ 
+-        when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
++        when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOfferingForOrchestration);
+ 
+         when(_entityMgr.findById(Account.class, vmInstance.getAccountId())).thenReturn(owner);
+         when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
+@@ -1226,7 +1228,6 @@
+ 
+         ItWorkVO work = mock(ItWorkVO.class);
+ 
+-        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+ 
+         VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+         when(template.isDeployAsIs()).thenReturn(false);
+@@ -1244,11 +1245,11 @@
+         doReturn(vmGuru).when(virtualMachineManagerImpl).getVmGuru(vmInstance);
+ 
+         Ternary<VMInstanceVO, ReservationContext, ItWorkVO> start = new Ternary<>(vmInstance, ctx, work);
+-        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOffering, template);
++        Mockito.doReturn(start).when(virtualMachineManagerImpl).changeToStartState(vmGuru, vmInstance, user, account, owner, serviceOfferingForOrchestration, template);
+ 
+         when(ctx.getJournal()).thenReturn(Mockito.mock(Journal.class));
+ 
+-        when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOffering);
++        when(serviceOfferingDaoMock.findById(vmInstance.getId(), vmInstance.getServiceOfferingId())).thenReturn(serviceOfferingForOrchestration);
+ 
+         when(_entityMgr.findById(Account.class, vmInstance.getAccountId())).thenReturn(owner);
+         when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, vmInstance.getTemplateId())).thenReturn(template);
+@@ -1720,8 +1721,7 @@
+         AccountVO owner = Mockito.mock(AccountVO.class);
+         when(_entityMgr.findById(Account.class, accountId)).thenReturn(owner);
+ 
+-        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
+-        when(serviceOfferingDaoMock.findById(vmInstanceVoMockId, offeringId)).thenReturn(offering);
++        when(serviceOfferingDaoMock.findById(vmInstanceVoMockId, offeringId)).thenReturn(serviceOfferingForOrchestration);
+ 
+         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+         when(_entityMgr.findByIdIncludingRemoved(VirtualMachineTemplate.class, templateId)).thenReturn(template);

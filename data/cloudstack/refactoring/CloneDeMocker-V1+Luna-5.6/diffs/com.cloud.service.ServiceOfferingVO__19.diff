@@ -1,0 +1,38 @@
+--- a/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
++++ b/plugins/integrations/kubernetes-service/src/test/java/com/cloud/kubernetes/cluster/KubernetesClusterManagerImplTest.java
+@@ -84,6 +84,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class KubernetesClusterManagerImplTest {
++    @Mock
++    private ServiceOfferingVO offering;
+ 
+     @Mock
+     FirewallRulesDao firewallRulesDao;
+@@ -411,7 +413,7 @@
+     public void testCreateNodeTypeToServiceOfferingMapNullMap() {
+         KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
+         Mockito.when(clusterVO.getServiceOfferingId()).thenReturn(1L);
+-        ServiceOfferingVO offering = Mockito.mock(ServiceOfferingVO.class);
++        // removed local mock; replaced with global field `offering`
+         Mockito.when(serviceOfferingDao.findById(1L)).thenReturn(offering);
+         Map<String, ServiceOffering> mapping = kubernetesClusterManager.createNodeTypeToServiceOfferingMap(new HashMap<>(), null, clusterVO);
+         Assert.assertFalse(MapUtils.isEmpty(mapping));
+@@ -427,15 +429,14 @@
+         idsMap.put(WORKER.name(), workerOfferingId);
+         idsMap.put(CONTROL.name(), controlOfferingId);
+ 
+-        ServiceOfferingVO workerOffering = Mockito.mock(ServiceOfferingVO.class);
+-        Mockito.when(serviceOfferingDao.findById(workerOfferingId)).thenReturn(workerOffering);
++        Mockito.when(serviceOfferingDao.findById(workerOfferingId)).thenReturn(offering);
+         ServiceOfferingVO controlOffering = Mockito.mock(ServiceOfferingVO.class);
+         Mockito.when(serviceOfferingDao.findById(controlOfferingId)).thenReturn(controlOffering);
+ 
+         Map<String, ServiceOffering> mapping = kubernetesClusterManager.createNodeTypeToServiceOfferingMap(idsMap, null, null);
+         Assert.assertEquals(2, mapping.size());
+         Assert.assertTrue(mapping.containsKey(WORKER.name()) && mapping.containsKey(CONTROL.name()));
+-        Assert.assertEquals(workerOffering, mapping.get(WORKER.name()));
++        Assert.assertEquals(offering, mapping.get(WORKER.name()));
+         Assert.assertEquals(controlOffering, mapping.get(CONTROL.name()));
+     }
+ 

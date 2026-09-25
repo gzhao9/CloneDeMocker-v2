@@ -1,0 +1,48 @@
+--- a/server/src/test/java/com/cloud/vm/snapshot/VMSnapshotManagerTest.java
++++ b/server/src/test/java/com/cloud/vm/snapshot/VMSnapshotManagerTest.java
+@@ -381,10 +381,10 @@
+ 
+     @Test
+     public void testUserVmServiceOfferingNeedsChangeWhenDynamicOfferingMatchesSnapshot() {
++        serviceOffering = createMockServiceOffering();
+         when(serviceOffering.isDynamic()).thenReturn(true);
+-        when(serviceOffering.getCpu()).thenReturn(2);
+-        when(serviceOffering.getRamSize()).thenReturn(2048);
+-        when(serviceOffering.getSpeed()).thenReturn(1000);
++        when(_serviceOfferingDao.findById(SERVICE_OFFERING_ID)).thenReturn(serviceOffering);
++        when(_serviceOfferingDao.findByIdIncludingRemoved(TEST_VM_ID, SERVICE_OFFERING_ID)).thenReturn(serviceOffering);
+         when(_serviceOfferingDao.getComputeOffering(eq(serviceOffering), any())).thenReturn(serviceOffering);
+ 
+         assertFalse(_vmSnapshotMgr.userVmServiceOfferingNeedsChange(userVm, vmSnapshotVO));
+@@ -395,14 +395,12 @@
+ 
+     @Test
+     public void testUserVmServiceOfferingNeedsChangeWhenDynamicCpuDiffersFromSnapshot() {
++        serviceOffering = createMockServiceOffering();
+         when(serviceOffering.isDynamic()).thenReturn(true);
+-        when(serviceOffering.getCpu()).thenReturn(2);
+-        when(serviceOffering.getRamSize()).thenReturn(2048);
+-        when(serviceOffering.getSpeed()).thenReturn(1000);
+-        ServiceOfferingVO fromSnapshot = mock(ServiceOfferingVO.class);
++        when(_serviceOfferingDao.findById(SERVICE_OFFERING_ID)).thenReturn(serviceOffering);
++        when(_serviceOfferingDao.findByIdIncludingRemoved(TEST_VM_ID, SERVICE_OFFERING_ID)).thenReturn(serviceOffering);
++        ServiceOfferingVO fromSnapshot = createMockServiceOffering();
+         when(fromSnapshot.getCpu()).thenReturn(4);
+-        when(fromSnapshot.getRamSize()).thenReturn(2048);
+-        when(fromSnapshot.getSpeed()).thenReturn(1000);
+         when(_serviceOfferingDao.getComputeOffering(eq(serviceOffering), any())).thenReturn(fromSnapshot);
+ 
+         assertTrue(_vmSnapshotMgr.userVmServiceOfferingNeedsChange(userVm, vmSnapshotVO));
+@@ -470,4 +468,12 @@
+         assertTrue(appliedNames.contains(VmDetailConstants.MEMORY));
+         assertFalse("UEFI must not be applied from snapshot so that existing UEFI setting is preserved", appliedNames.contains("UEFI"));
+     }
++
++    private static ServiceOfferingVO createMockServiceOffering() {
++        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
++        when(serviceOffering.getCpu()).thenReturn(2);
++        when(serviceOffering.getRamSize()).thenReturn(2048);
++        when(serviceOffering.getSpeed()).thenReturn(1000);
++        return serviceOffering;
++    }
+ }

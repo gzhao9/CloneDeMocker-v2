@@ -1,0 +1,43 @@
+--- a/server/src/test/java/com/cloud/vm/snapshot/VMSnapshotManagerTest.java
++++ b/server/src/test/java/com/cloud/vm/snapshot/VMSnapshotManagerTest.java
+@@ -381,10 +381,8 @@
+ 
+     @Test
+     public void testUserVmServiceOfferingNeedsChangeWhenDynamicOfferingMatchesSnapshot() {
++        serviceOffering = createMockServiceOffering(2);
+         when(serviceOffering.isDynamic()).thenReturn(true);
+-        when(serviceOffering.getCpu()).thenReturn(2);
+-        when(serviceOffering.getRamSize()).thenReturn(2048);
+-        when(serviceOffering.getSpeed()).thenReturn(1000);
+         when(_serviceOfferingDao.getComputeOffering(eq(serviceOffering), any())).thenReturn(serviceOffering);
+ 
+         assertFalse(_vmSnapshotMgr.userVmServiceOfferingNeedsChange(userVm, vmSnapshotVO));
+@@ -396,13 +394,8 @@
+     @Test
+     public void testUserVmServiceOfferingNeedsChangeWhenDynamicCpuDiffersFromSnapshot() {
+         when(serviceOffering.isDynamic()).thenReturn(true);
+-        when(serviceOffering.getCpu()).thenReturn(2);
+-        when(serviceOffering.getRamSize()).thenReturn(2048);
+-        when(serviceOffering.getSpeed()).thenReturn(1000);
+-        ServiceOfferingVO fromSnapshot = mock(ServiceOfferingVO.class);
+-        when(fromSnapshot.getCpu()).thenReturn(4);
+-        when(fromSnapshot.getRamSize()).thenReturn(2048);
+-        when(fromSnapshot.getSpeed()).thenReturn(1000);
++        serviceOffering = createMockServiceOffering(2);
++        ServiceOfferingVO fromSnapshot = createMockServiceOffering(4);
+         when(_serviceOfferingDao.getComputeOffering(eq(serviceOffering), any())).thenReturn(fromSnapshot);
+ 
+         assertTrue(_vmSnapshotMgr.userVmServiceOfferingNeedsChange(userVm, vmSnapshotVO));
+@@ -470,4 +463,12 @@
+         assertTrue(appliedNames.contains(VmDetailConstants.MEMORY));
+         assertFalse("UEFI must not be applied from snapshot so that existing UEFI setting is preserved", appliedNames.contains("UEFI"));
+     }
++
++    private static ServiceOfferingVO createMockServiceOffering(int cpu) {
++        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
++        when(serviceOffering.getCpu()).thenReturn(cpu);
++        when(serviceOffering.getRamSize()).thenReturn(2048);
++        when(serviceOffering.getSpeed()).thenReturn(1000);
++        return serviceOffering;
++    }
+ }

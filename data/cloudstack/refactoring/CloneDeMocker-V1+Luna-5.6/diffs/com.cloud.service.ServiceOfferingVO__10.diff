@@ -1,0 +1,31 @@
+--- a/plugins/storage/sharedfs/storagevm/src/test/java/org/apache/cloudstack/storage/sharedfs/lifecycle/StorageVmSharedFSLifeCycleTest.java
++++ b/plugins/storage/sharedfs/storagevm/src/test/java/org/apache/cloudstack/storage/sharedfs/lifecycle/StorageVmSharedFSLifeCycleTest.java
+@@ -92,6 +92,8 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class StorageVmSharedFSLifeCycleTest {
+     @Mock
++    private ServiceOfferingVO serviceOfferingVO;
++    @Mock
+     private AccountManager accountMgr;
+ 
+     @Mock
+@@ -194,7 +196,6 @@
+     public void testCheckPrerequisitesMinCpuException() {
+         DataCenterVO zone = mock(DataCenterVO.class);
+         when(zone.getId()).thenReturn(s_zoneId);
+-        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
+         when(serviceOfferingDao.findById(s_serviceOfferingId)).thenReturn(serviceOfferingVO);
+         InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class, () -> lifeCycle.checkPrerequisites(zone, s_serviceOfferingId));
+         Assert.assertEquals(exception.getMessage(), "Service offering's number of cpu should be greater than or equal to " + SHAREDFSVM_MIN_CPU_COUNT.key());
+@@ -330,9 +331,8 @@
+         List<Hypervisor.HypervisorType> hypervisors = new ArrayList<>(List.of(Hypervisor.HypervisorType.XenServer, Hypervisor.HypervisorType.KVM));
+         when(resourceMgr.getSupportedHypervisorTypes(s_zoneId, true, null)).thenReturn(hypervisors);
+ 
+-        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+-        when(serviceOfferingDao.findById(s_serviceOfferingId)).thenReturn(serviceOffering);
+-
++
++        when(serviceOfferingDao.findById(s_serviceOfferingId)).thenReturn(serviceOfferingVO);
+         // The hypervisor list is shuffled before iteration, so instead of pinning which hypervisor is
+         // tried first, the first lookup (whichever hypervisor that is) returns no template and the
+         // second lookup returns a valid one, exercising the "skip and try the next hypervisor" fix.

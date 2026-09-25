@@ -1,0 +1,69 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/adapter/ServerAdapterTest.java
+@@ -222,10 +222,7 @@
+ 
+     @Test
+     public void testGetDetailsForInstanceCreation_CustomizedOffering_AddsDetails() {
+-        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        when(offering.isCustomized()).thenReturn(true);
+-        when(offering.getCpu()).thenReturn(4);
+-        when(offering.getRamSize()).thenReturn(2048);
++        ServiceOfferingVO offering = createMockServiceOfferingVO(4, 2048, true);
+         when(offering.getSpeed()).thenReturn(null);
+ 
+         Vm request = mock(Vm.class);
+@@ -240,12 +237,9 @@
+ 
+     @Test
+     public void testGetDetailsForInstanceCreation_CustomizedOffering_WithSpeed_DoesNotAddDefaultCpuSpeed() {
+-        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        when(offering.isCustomized()).thenReturn(true);
+-        when(offering.getCpu()).thenReturn(2);
+-        when(offering.getRamSize()).thenReturn(1024);
++
++        ServiceOfferingVO offering = createMockServiceOfferingVO(2, 1024, true);
+         when(offering.getSpeed()).thenReturn(2000);
+-
+         Vm request = mock(Vm.class);
+         when(request.isWorkerVm()).thenReturn(false);
+ 
+@@ -276,10 +270,7 @@
+ 
+     @Test
+     public void testGetDetailsForInstanceCreation_PreservesExistingCpuSpeed() {
+-        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
+-        when(offering.isCustomized()).thenReturn(true);
+-        when(offering.getCpu()).thenReturn(2);
+-        when(offering.getRamSize()).thenReturn(1024);
++        ServiceOfferingVO offering = createMockServiceOfferingVO(2, 1024, true);
+         when(offering.getSpeed()).thenReturn(null);
+ 
+         Vm request = mock(Vm.class);
+@@ -652,13 +643,10 @@
+ 
+     @Test
+     public void testGetServiceOfferingFromRequest_NotCustomized_CpuMemoryMatch_ReturnsOffering() {
+-        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
++        ServiceOfferingVO offering = createMockServiceOfferingVO(2, 1024, false);
+         Account account = mock(Account.class);
+         when(serviceOfferingDao.findByUuid("uuid4")).thenReturn(offering);
+         doNothing().when(accountService).checkAccess(eq(account), eq(offering), any());
+-        when(offering.isCustomized()).thenReturn(false);
+-        when(offering.getCpu()).thenReturn(2);
+-        when(offering.getRamSize()).thenReturn(1024);
+         DataCenterVO zone = mock(DataCenterVO.class);
+ 
+         assertEquals(offering, serverAdapter.getServiceOfferingFromRequest(zone, account, "uuid4", 2, 1024));
+@@ -1137,4 +1125,12 @@
+     public void testListDisksByBackupUuid_AlwaysThrows() {
+         serverAdapter.listDisksByBackupUuid("backup-uuid");
+     }
++
++    private static ServiceOfferingVO createMockServiceOfferingVO(int cpu, int ramSize, boolean customized) {
++        ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
++        when(offering.isCustomized()).thenReturn(customized);
++        when(offering.getCpu()).thenReturn(cpu);
++        when(offering.getRamSize()).thenReturn(ramSize);
++        return offering;
++    }
+ }

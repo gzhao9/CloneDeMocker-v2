@@ -1,0 +1,41 @@
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpResourceTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/resource/NiciraNvpResourceTest.java
+@@ -405,12 +405,10 @@
+     public void testConfigurePublicIpsOnLogicalRouterApiException() throws ConfigurationException, NiciraNvpApiException {
+         resource.configure("NiciraNvpResource", parameters);
+ 
+-        final ConfigurePublicIpsOnLogicalRouterCommand cmd = mock(ConfigurePublicIpsOnLogicalRouterCommand.class);
+         @SuppressWarnings("unchecked")
+         final List<LogicalRouterPort> list = Collections.EMPTY_LIST;
+ 
+-        when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+-        when(cmd.getL3GatewayServiceUuid()).thenReturn("bbbbb");
++        final ConfigurePublicIpsOnLogicalRouterCommand cmd = createConfigurePublicIpsOnLogicalRouterCommand();
+         when(nvpApi.findLogicalRouterPortByGatewayServiceUuid("aaaaa", "bbbbb")).thenReturn(list);
+         doThrow(new NiciraNvpApiException()).when(nvpApi).updateLogicalRouterPort((String) any(), (LogicalRouterPort) any());
+ 
+@@ -423,10 +421,8 @@
+     public void testConfigurePublicIpsOnLogicalRouterRetry() throws ConfigurationException, NiciraNvpApiException {
+         resource.configure("NiciraNvpResource", parameters);
+ 
+-        final ConfigurePublicIpsOnLogicalRouterCommand cmd = mock(ConfigurePublicIpsOnLogicalRouterCommand.class);
+-
+-        when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
+-        when(cmd.getL3GatewayServiceUuid()).thenReturn("bbbbb");
++
++        final ConfigurePublicIpsOnLogicalRouterCommand cmd = createConfigurePublicIpsOnLogicalRouterCommand();
+         when(nvpApi.findLogicalRouterPortByGatewayServiceUuid("aaaaa", "bbbbb")).thenThrow(new NiciraNvpApiException("retry 1")).thenThrow(new NiciraNvpApiException("retry 2"));
+ 
+         final ConfigurePublicIpsOnLogicalRouterAnswer answer = (ConfigurePublicIpsOnLogicalRouterAnswer) resource.executeRequest(cmd);
+@@ -822,4 +818,11 @@
+         assertTrue(snr.getMatch().getSourcePort() == 8080);
+         assertTrue(snr.getMatch().getEthertype().equals("IPv4") && rules[1].getMatch().getProtocol() == 6);
+     }
++
++    private static ConfigurePublicIpsOnLogicalRouterCommand createConfigurePublicIpsOnLogicalRouterCommand() {
++        final ConfigurePublicIpsOnLogicalRouterCommand cmd = mock(ConfigurePublicIpsOnLogicalRouterCommand.class);
++        when(cmd.getLogicalRouterUuid()).thenReturn("aaaaa");
++        when(cmd.getL3GatewayServiceUuid()).thenReturn("bbbbb");
++        return cmd;
++    }
+ }

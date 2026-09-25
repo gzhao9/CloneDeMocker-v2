@@ -1,0 +1,110 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -416,6 +416,8 @@
+     @Mock
+     private ServiceOfferingVO serviceOffering;
+ 
++    private ServiceOfferingVO serviceOfferingMock;
++
+     @Mock
+     UserDataManager userDataManager;
+ 
+@@ -527,6 +529,7 @@
+ 
+     @Before
+     public void beforeTest() {
++        serviceOfferingMock = mock(ServiceOfferingVO.class);
+         userVmManagerImpl.resourceLimitService = resourceLimitMgr;
+ 
+         Mockito.when(updateVmCommand.getId()).thenReturn(vmId);
+@@ -1852,7 +1855,6 @@
+             TemplateDataStoreVO templateStore = mock(TemplateDataStoreVO.class);
+             when(templateDataStoreDao.findByTemplateZoneReady(1L, 1L)).thenReturn(templateStore);
+ 
+-            ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+             when(vm.getServiceOfferingId()).thenReturn(serviceOfferingId);
+ 
+             List<VolumeVO> rootVols = new ArrayList<>();
+@@ -1941,13 +1943,12 @@
+ 
+     @Test
+     public void testValidateStrictHostTagCheckPass() {
+-        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+ 
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+         HostVO destinationHostVO = Mockito.mock(HostVO.class);
+ 
+-        Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOffering);
++        Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOfferingMock);
+         Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+ 
+         Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+@@ -1964,13 +1965,12 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateStrictHostTagCheckFail() {
+-        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
+         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+ 
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+         HostVO destinationHostVO = Mockito.mock(HostVO.class);
+ 
+-        Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOffering);
++        Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOfferingMock);
+         Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+ 
+         Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+@@ -3509,8 +3509,7 @@
+         ReflectionTestUtils.setField(cmd, "backupId", backupId);
+         ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
+ 
+-        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+-        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOffering);
++        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOfferingMock);
+ 
+         Map<String, String> diskDetails = new HashMap<>();
+         diskDetails.put(ApiConstants.DISK_OFFERING_ID, "disk-offering-uuid");
+@@ -3682,9 +3681,8 @@
+         ReflectionTestUtils.setField(cmd, "diskOfferingId", rootDiskOfferingId);
+         ReflectionTestUtils.setField(cmd, "overrideDiskOfferingId", null);
+ 
+-        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+         DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+-        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOffering);
++        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOfferingMock);
+         when(rootDiskOffering.getDiskSize()).thenReturn(10 * 1024 * 1024 * 1024L);
+         when(diskOfferingDao.findById(rootDiskOfferingId)).thenReturn(rootDiskOffering);
+ 
+@@ -3766,10 +3764,9 @@
+         when(backup.getDetail(ApiConstants.TEMPLATE_ID)).thenReturn("iso-uuid");
+         when(templateDao.findByUuid("iso-uuid")).thenReturn(iso);
+ 
+-        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+         when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
+-        when(_serviceOfferingDao.findByUuid("service-offering-uuid")).thenReturn(serviceOffering);
++        when(_serviceOfferingDao.findByUuid("service-offering-uuid")).thenReturn(serviceOfferingMock);
+ 
+         VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+@@ -4248,8 +4245,7 @@
+         ReflectionTestUtils.setField(cmd, "backupId", backupId);
+         ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
+ 
+-        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+-        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOffering);
++        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOfferingMock);
+ 
+         DataCenterVO zone = mock(DataCenterVO.class);
+         when(_dcDao.findById(zoneId)).thenReturn(zone);
+@@ -4315,8 +4311,7 @@
+         ReflectionTestUtils.setField(cmd, "zoneId", zoneId);
+         ReflectionTestUtils.setField(cmd, "overrideDiskOfferingId", overrideDiskOfferingId);
+ 
+-        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+-        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOffering);
++        when(_serviceOfferingDao.findById(serviceOfferingId)).thenReturn(serviceOfferingMock);
+ 
+         DataCenterVO zone = mock(DataCenterVO.class);
+         when(_dcDao.findById(zoneId)).thenReturn(zone);

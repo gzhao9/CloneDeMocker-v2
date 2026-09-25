@@ -1,0 +1,57 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -423,6 +423,13 @@
+         return instanceDisks;
+     }
+ 
++    private static ServiceOfferingVO createMockServiceOfferingVO() {
++        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
++        Mockito.when(serviceOfferingVO.getCpu()).thenReturn(null);
++        Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(null);
++        return serviceOfferingVO;
++    }
++
+     @After
+     public void tearDown() throws Exception {
+         closeable.close();
+@@ -1474,7 +1481,7 @@
+     @Test
+     public void testAddServiceOfferingDetailsToParamsFixedOffering() {
+         Map<String, String> params = new HashMap<>();
+-        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
++        ServiceOfferingVO serviceOfferingVO = createMockServiceOfferingVO();
+         Mockito.when(serviceOfferingVO.getCpu()).thenReturn(2);
+         Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(2048);
+         unmanagedVMsManager.addServiceOfferingDetailsToParams(params, serviceOfferingVO);
+@@ -1485,14 +1492,14 @@
+     @Test
+     public void testAddServiceOfferingDetailsToParamsCustomConstrainedOffering() {
+         Map<String, String> params = new HashMap<>();
+-        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
++        ServiceOfferingVO serviceOfferingVO = createMockServiceOfferingVO();
+         Map<String, String> details = new HashMap<>();
+         details.put(ApiConstants.MIN_CPU_NUMBER, "1");
+         details.put(ApiConstants.MIN_MEMORY, "1024");
+         Mockito.when(serviceOfferingVO.getDetails()).thenReturn(details);
+-        Mockito.when(serviceOfferingVO.getCpu()).thenReturn(null);
++
+         Mockito.when(serviceOfferingVO.getSpeed()).thenReturn(1500);
+-        Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(null);
++
+         unmanagedVMsManager.addServiceOfferingDetailsToParams(params, serviceOfferingVO);
+         Assert.assertEquals("1", params.get(VmDetailConstants.CPU_NUMBER));
+         Assert.assertEquals("1500", params.get(VmDetailConstants.CPU_SPEED));
+@@ -1502,10 +1509,10 @@
+     @Test
+     public void testAddServiceOfferingDetailsToParamsCustomUnconstrainedOffering() {
+         Map<String, String> params = new HashMap<>();
+-        ServiceOfferingVO serviceOfferingVO = mock(ServiceOfferingVO.class);
+-        Mockito.when(serviceOfferingVO.getCpu()).thenReturn(null);
++        ServiceOfferingVO serviceOfferingVO = createMockServiceOfferingVO();
++
+         Mockito.when(serviceOfferingVO.getSpeed()).thenReturn(null);
+-        Mockito.when(serviceOfferingVO.getRamSize()).thenReturn(null);
++
+         unmanagedVMsManager.addServiceOfferingDetailsToParams(params, serviceOfferingVO);
+         Assert.assertFalse(params.containsKey(VmDetailConstants.CPU_NUMBER));
+         Assert.assertFalse(params.containsKey(VmDetailConstants.CPU_SPEED));
