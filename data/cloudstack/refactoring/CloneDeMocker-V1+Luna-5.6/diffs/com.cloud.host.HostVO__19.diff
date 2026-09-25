@@ -1,0 +1,64 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -1618,8 +1618,8 @@
+         doReturn(userVmVOMock).when(kbossBackupProviderSpy).allocateValidationVm(anyLong(), any());
+         doReturn(2L).when(userVmVOMock).getHostId();
+         doReturn(Hypervisor.HypervisorType.KVM).when(userVmVOMock).getHypervisorType();
++         hostVOMock = MockHostVO.createMockHostVO(2L);
+         doReturn(hostVOMock).when(hostDaoMock).findById(anyLong());
+-        doReturn(2L).when(hostVOMock).getId();
+         doReturn(userVmVOMock).when(userVmDaoMock).findById(anyLong());
+         doReturn(List.of()).when(volumeDaoMock).findByInstance(anyLong());
+         doNothing().when(kbossBackupProviderSpy).createValidationVolumesOnPrimaryStorage(any(), any(), any(), any(), any());
+@@ -3113,4 +3113,15 @@
+         verify(kbossBackupProviderSpy).releaseBackup(backupId);
+     }
+ 
++
++    public final class MockHostVO {
++        private MockHostVO() {
++        }
++
++        public static HostVO createMockHostVO(long hostId) {
++            HostVO hostVOMock = Mockito.mock(HostVO.class);
++            doReturn(hostId).when(hostVOMock).getId();
++            return hostVOMock;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupCompressionServiceJobControllerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupCompressionServiceJobControllerTest.java
+@@ -402,7 +402,7 @@
+         doReturn(instanceId).when(internalBackupServiceJobVoMock).getInstanceId();
+         doReturn(jobId).when(internalBackupServiceJobVoMock).getId();
+         doReturn(backupId).when(internalBackupServiceJobVoMock).getBackupId();
+-        doReturn(hostId).when(hostVO).getId();
++        hostVO = MockHostVO.createMockHostVO(hostId);
+         doReturn(5).when(backupCompressionServiceJobControllerSpy).getMaxConcurrentJobsPerHost(maxConcurrentJobsConfigKey, hostVO);
+         doNothing().when(backupCompressionServiceJobControllerSpy).submitQueuedJob(any(), eq(datacenterId), any());
+ 
+@@ -428,7 +428,7 @@
+         doReturn(instanceId).when(internalBackupServiceJobVoMock).getInstanceId();
+         doReturn(jobId).when(internalBackupServiceJobVoMock).getId();
+         doReturn(backupId).when(internalBackupServiceJobVoMock).getBackupId();
+-        doReturn(hostId).when(hostVO).getId();
++        HostVO hostVO = MockHostVO.createMockHostVO(hostId);
+         doReturn(1).when(backupCompressionServiceJobControllerSpy).getMaxConcurrentJobsPerHost(maxConcurrentJobsConfigKey, hostVO);
+         doNothing().when(backupCompressionServiceJobControllerSpy).submitQueuedJob(any(), eq(datacenterId), any());
+ 
+@@ -525,4 +525,15 @@
+         verify(internalBackupServiceJobDaoMock).unlockFromLockTable("compression_lock");
+         verify(internalBackupServiceJobDaoMock).listExecutingJobsByZoneIdAndJobType(eq(datacenterId), eq(InternalBackupServiceJobType.StartCompression));
+     }
++
++    public final class MockHostVO {
++        private MockHostVO() {
++        }
++
++        public static HostVO createMockHostVO(long hostId) {
++            HostVO hostVOMock = Mockito.mock(HostVO.class);
++            doReturn(hostId).when(hostVOMock).getId();
++            return hostVOMock;
++        }
++    }
+ }

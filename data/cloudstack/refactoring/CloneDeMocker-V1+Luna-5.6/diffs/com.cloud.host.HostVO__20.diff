@@ -1,0 +1,65 @@
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
+@@ -370,8 +370,7 @@
+ 
+         Mockito.when(hostDao.findHypervisorHostInCluster(clusterId)).thenReturn(Collections.emptyList());
+ 
+-        HostVO fallbackHost = mock(HostVO.class);
+-        Mockito.when(fallbackHost.getId()).thenReturn(5L);
++        HostVO fallbackHost = MockHostVO.createMockHostVO(5L);
+         Mockito.when(resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId))
+                 .thenReturn(fallbackHost);
+ 
+@@ -604,8 +603,7 @@
+         Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         Mockito.when(storagePoolDao.findByUuid(dsUuid)).thenReturn(pool);
+ 
+-        HostVO host = mock(HostVO.class);
+-        Mockito.when(host.getId()).thenReturn(8L);
++        HostVO host = MockHostVO.createMockHostVO(8L);
+         Mockito.when(hostDao.findByIp(hostIp)).thenReturn(host);
+ 
+         Backup.VolumeInfo backedUp = new Backup.VolumeInfo(volUuid, "i-2-99-VM/2026/data1.qcow2",
+@@ -1034,4 +1032,15 @@
+         Mockito.verify(backupDao, Mockito.never()).remove(51L);
+         Mockito.verify(backupDao).remove(50L);
+     }
++
++    public final class MockHostVO {
++        private MockHostVO() {
++        }
++
++        public static com.cloud.host.HostVO createMockHostVO(long hostId) {
++            com.cloud.host.HostVO host = Mockito.mock(com.cloud.host.HostVO.class);
++            Mockito.when(host.getId()).thenReturn(hostId);
++            return host;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
+@@ -382,7 +382,7 @@
+             when(primaryDataStoreDao.findById(701L)).thenReturn(pool);
+ 
+             when(hostDao.findByDataCenterId(1L)).thenReturn(List.of(hostVO));
+-            when(hostVO.getId()).thenReturn(801L);
++            hostVO = MockHostVO.createMockHostVO(801L);
+             when(hostVO.getDataCenterId()).thenReturn(1L);
+             when(agentManager.send(eq(801L), any(Command.class)))
+                     .thenReturn(new CreateImageTransferAnswer(null, true, null, "ticket-1", "https://transfer/file"));
+@@ -464,4 +464,15 @@
+             verify(agentManager, times(2)).send(eq(802L), any(Command.class));
+         }
+     }
++
++    public final class MockHostVO {
++        private MockHostVO() {
++        }
++
++        public static com.cloud.host.HostVO createMockHostVO(long hostId) {
++            com.cloud.host.HostVO host = Mockito.mock(com.cloud.host.HostVO.class);
++            Mockito.when(host.getId()).thenReturn(hostId);
++            return host;
++        }
++    }
+ }

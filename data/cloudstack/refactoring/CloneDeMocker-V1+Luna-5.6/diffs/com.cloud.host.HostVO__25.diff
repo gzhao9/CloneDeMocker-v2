@@ -1,0 +1,53 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -1945,7 +1945,6 @@
+         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+ 
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+-        HostVO destinationHostVO = Mockito.mock(HostVO.class);
+ 
+         Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOffering);
+         Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+@@ -1953,8 +1952,8 @@
+         Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+         Mockito.when(vm.getTemplateId()).thenReturn(2L);
+ 
+-        Mockito.when(destinationHostVO.checkHostServiceOfferingAndTemplateTags(Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anySet())).thenReturn(true);
+-
++
++        HostVO destinationHostVO = createMockHostVO(true);
+         userVmManagerImpl.validateStrictHostTagCheck(vm, destinationHostVO);
+ 
+         Mockito.verify(
+@@ -1968,7 +1967,6 @@
+         VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+ 
+         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+-        HostVO destinationHostVO = Mockito.mock(HostVO.class);
+ 
+         Mockito.when(_serviceOfferingDao.findByIdIncludingRemoved(1L)).thenReturn(serviceOffering);
+         Mockito.when(templateDao.findByIdIncludingRemoved(2L)).thenReturn(template);
+@@ -1976,7 +1974,7 @@
+         Mockito.when(vm.getServiceOfferingId()).thenReturn(1L);
+         Mockito.when(vm.getTemplateId()).thenReturn(2L);
+ 
+-        Mockito.when(destinationHostVO.checkHostServiceOfferingAndTemplateTags(Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anySet())).thenReturn(false);
++        HostVO destinationHostVO = createMockHostVO(false);
+         userVmManagerImpl.validateStrictHostTagCheck(vm, destinationHostVO);
+     }
+ 
+@@ -4740,4 +4738,14 @@
+         Assert.assertEquals(Long.valueOf(500L), volume.getMinIops());
+         Assert.assertEquals(Long.valueOf(2000L), volume.getMaxIops());
+     }
++
++    private static HostVO createMockHostVO(boolean checkHostServiceOfferingAndTemplateTagsResult) {
++        HostVO destinationHostVO = Mockito.mock(HostVO.class);
++        Mockito.when(destinationHostVO.checkHostServiceOfferingAndTemplateTags(
++                Mockito.any(ServiceOffering.class),
++                Mockito.any(VirtualMachineTemplate.class),
++                Mockito.anySet()))
++            .thenReturn(checkHostServiceOfferingAndTemplateTagsResult);
++        return destinationHostVO;
++    }
+ }
