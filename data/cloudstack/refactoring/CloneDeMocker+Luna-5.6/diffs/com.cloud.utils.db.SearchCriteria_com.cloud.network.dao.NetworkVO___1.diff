@@ -1,0 +1,48 @@
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -348,6 +348,12 @@
+         f.set(configKey, o);
+     }
+ 
++    private static SearchCriteria<NetworkVO> createMockSearchCriteria(SearchCriteria accountJoin) {
++        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
++        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
++        return sc;
++    }
++
+     @Test
+     public void testGetPrivateVlanPairNoVlans() {
+         Pair<String, Network.PVlanType> pair = service.getPrivateVlanPair(null, null, null);
+@@ -1303,9 +1309,8 @@
+ 
+     @Test
+     public void addProjectNetworksConditionToSearch_includesProjectNetworksWhenNotSkipped() {
+-        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+         SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+-        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
++        SearchCriteria<NetworkVO> sc = createMockSearchCriteria(accountJoin);
+         service.addProjectNetworksConditionToSearch(sc, false, -1L);
+         Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.NNULL);
+         Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
+@@ -1313,9 +1318,8 @@
+ 
+     @Test
+     public void addProjectNetworksConditionToSearch_excludesProjectNetworksWhenSkipped() {
+-        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+         SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+-        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
++        SearchCriteria<NetworkVO> sc = createMockSearchCriteria(accountJoin);
+         service.addProjectNetworksConditionToSearch(sc, true, -1L);
+         Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.NEQ, Account.Type.PROJECT);
+         Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
+@@ -1323,9 +1327,8 @@
+ 
+     @Test
+     public void addProjectNetworksConditionToSearch_includesSpecificProjectWhenProjectIdProvided() {
+-        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+         SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+-        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
++        SearchCriteria<NetworkVO> sc = createMockSearchCriteria(accountJoin);
+         service.addProjectNetworksConditionToSearch(sc, false, 123L);
+         Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.EQ, Account.Type.PROJECT);
+         Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);

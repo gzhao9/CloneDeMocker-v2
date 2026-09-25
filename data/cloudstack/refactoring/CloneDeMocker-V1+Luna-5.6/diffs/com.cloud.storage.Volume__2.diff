@@ -1,0 +1,111 @@
+--- a/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/VolumeOrchestratorTest.java
++++ b/engine/orchestration/src/test/java/org/apache/cloudstack/engine/orchestration/VolumeOrchestratorTest.java
+@@ -262,18 +262,7 @@
+ 
+     @Test
+     public void testAllocateDuplicateVolumeVOBasic() {
+-        Volume oldVol = Mockito.mock(Volume.class);
+-        Mockito.when(oldVol.getVolumeType()).thenReturn(Volume.Type.ROOT);
+-        Mockito.when(oldVol.getName()).thenReturn("testVol");
+-        Mockito.when(oldVol.getDataCenterId()).thenReturn(1L);
+-        Mockito.when(oldVol.getDomainId()).thenReturn(2L);
+-        Mockito.when(oldVol.getAccountId()).thenReturn(3L);
+-        Mockito.when(oldVol.getDiskOfferingId()).thenReturn(4L);
+-        Mockito.when(oldVol.getProvisioningType()).thenReturn(Storage.ProvisioningType.THIN);
+-        Mockito.when(oldVol.getSize()).thenReturn(10L);
+-        Mockito.when(oldVol.getMinIops()).thenReturn(100L);
+-        Mockito.when(oldVol.getMaxIops()).thenReturn(200L);
+-        Mockito.when(oldVol.get_iScsiName()).thenReturn("iqn.test");
++        Volume oldVol = createMockVolume("testVol", 10L, 100L, 200L, "iqn.test", Storage.ProvisioningType.THIN);
+         Mockito.when(oldVol.getTemplateId()).thenReturn(5L);
+         Mockito.when(oldVol.getDeviceId()).thenReturn(1L);
+         Mockito.when(oldVol.getInstanceId()).thenReturn(6L);
+@@ -292,18 +281,7 @@
+ 
+     @Test
+     public void testAllocateDuplicateVolumeVOWithEncryption() {
+-        Volume oldVol = Mockito.mock(Volume.class);
+-        Mockito.when(oldVol.getVolumeType()).thenReturn(Volume.Type.ROOT);
+-        Mockito.when(oldVol.getName()).thenReturn("secureVol");
+-        Mockito.when(oldVol.getDataCenterId()).thenReturn(1L);
+-        Mockito.when(oldVol.getDomainId()).thenReturn(2L);
+-        Mockito.when(oldVol.getAccountId()).thenReturn(3L);
+-        Mockito.when(oldVol.getDiskOfferingId()).thenReturn(4L);
+-        Mockito.when(oldVol.getProvisioningType()).thenReturn(Storage.ProvisioningType.THIN);
+-        Mockito.when(oldVol.getSize()).thenReturn(10L);
+-        Mockito.when(oldVol.getMinIops()).thenReturn(100L);
+-        Mockito.when(oldVol.getMaxIops()).thenReturn(200L);
+-        Mockito.when(oldVol.get_iScsiName()).thenReturn("iqn.secure");
++        Volume oldVol = createMockVolume("secureVol", 10L, 100L, 200L, "iqn.secure", Storage.ProvisioningType.THIN);
+         Mockito.when(oldVol.getTemplateId()).thenReturn(5L);
+         Mockito.when(oldVol.getDeviceId()).thenReturn(2L);
+         Mockito.when(oldVol.getInstanceId()).thenReturn(7L);
+@@ -327,19 +305,8 @@
+ 
+     @Test
+     public void testAllocateDuplicateVolumeVOWithTemplateOverride() {
+-        Volume oldVol = Mockito.mock(Volume.class);
+-        Mockito.when(oldVol.getVolumeType()).thenReturn(Volume.Type.ROOT);
+-        Mockito.when(oldVol.getName()).thenReturn("tmplVol");
+-        Mockito.when(oldVol.getDataCenterId()).thenReturn(1L);
+-        Mockito.when(oldVol.getDomainId()).thenReturn(2L);
+-        Mockito.when(oldVol.getAccountId()).thenReturn(3L);
+-        Mockito.when(oldVol.getDiskOfferingId()).thenReturn(4L);
+-        Mockito.when(oldVol.getProvisioningType()).thenReturn(Storage.ProvisioningType.THIN);
+-        Mockito.when(oldVol.getSize()).thenReturn(20L);
+-        Mockito.when(oldVol.getMinIops()).thenReturn(50L);
+-        Mockito.when(oldVol.getMaxIops()).thenReturn(250L);
+-        Mockito.when(oldVol.get_iScsiName()).thenReturn("iqn.tmpl");
+-
++
++        Volume oldVol = createMockVolume("tmplVol", 20L, 50L, 250L, "iqn.tmpl", Storage.ProvisioningType.THIN);
+         VolumeVO persistedVol = Mockito.mock(VolumeVO.class);
+         Mockito.when(volumeDao.persist(Mockito.any())).thenReturn(persistedVol);
+ 
+@@ -349,18 +316,7 @@
+ 
+     @Test
+     public void testAllocateDuplicateVolumeVOEncryptionFromOldVolumeOnly() {
+-        Volume oldVol = Mockito.mock(Volume.class);
+-        Mockito.when(oldVol.getVolumeType()).thenReturn(Volume.Type.ROOT);
+-        Mockito.when(oldVol.getName()).thenReturn("vol-old");
+-        Mockito.when(oldVol.getDataCenterId()).thenReturn(1L);
+-        Mockito.when(oldVol.getDomainId()).thenReturn(2L);
+-        Mockito.when(oldVol.getAccountId()).thenReturn(3L);
+-        Mockito.when(oldVol.getDiskOfferingId()).thenReturn(4L);
+-        Mockito.when(oldVol.getProvisioningType()).thenReturn(Storage.ProvisioningType.SPARSE);
+-        Mockito.when(oldVol.getSize()).thenReturn(30L);
+-        Mockito.when(oldVol.getMinIops()).thenReturn(10L);
+-        Mockito.when(oldVol.getMaxIops()).thenReturn(500L);
+-        Mockito.when(oldVol.get_iScsiName()).thenReturn("iqn.old");
++        Volume oldVol = createMockVolume("vol-old", 30L, 10L, 500L, "iqn.old", Storage.ProvisioningType.SPARSE);
+         Mockito.when(oldVol.getTemplateId()).thenReturn(123L);
+         Mockito.when(oldVol.getDeviceId()).thenReturn(1L);
+         Mockito.when(oldVol.getInstanceId()).thenReturn(100L);
+@@ -945,4 +901,26 @@
+         return null;
+     }
+ 
++
++    private static Volume createMockVolume(
++            String name,
++            long size,
++            long minIops,
++            long maxIops,
++            String iScsiName,
++            Storage.ProvisioningType provisioningType) {
++        Volume volume = Mockito.mock(Volume.class);
++        Mockito.when(volume.getAccountId()).thenReturn(3L);
++        Mockito.when(volume.getDataCenterId()).thenReturn(1L);
++        Mockito.when(volume.getDiskOfferingId()).thenReturn(4L);
++        Mockito.when(volume.getDomainId()).thenReturn(2L);
++        Mockito.when(volume.getMaxIops()).thenReturn(maxIops);
++        Mockito.when(volume.getMinIops()).thenReturn(minIops);
++        Mockito.when(volume.getName()).thenReturn(name);
++        Mockito.when(volume.getProvisioningType()).thenReturn(provisioningType);
++        Mockito.when(volume.getSize()).thenReturn(size);
++        Mockito.when(volume.getVolumeType()).thenReturn(Volume.Type.ROOT);
++        Mockito.when(volume.get_iScsiName()).thenReturn(iScsiName);
++        return volume;
++    }
+ }

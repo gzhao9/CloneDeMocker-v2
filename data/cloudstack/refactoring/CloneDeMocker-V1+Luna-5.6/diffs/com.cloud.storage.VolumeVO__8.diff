@@ -1,0 +1,45 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -1831,8 +1831,7 @@
+ 
+     @Test
+     public void cleanupValidationTestDestroyVmThrowsAndCleanupMailIsSent() throws ResourceUnavailableException {
+-        VolumeVO dataVolume = Mockito.mock(VolumeVO.class);
+-        doReturn(Volume.Type.DATADISK).when(dataVolume).getVolumeType();
++        VolumeVO dataVolume = createMockVolume(Volume.Type.DATADISK);
+         doReturn(88L).when(userVmVOMock).getHostId();
+         doReturn(Set.of("secondary-storage-1")).when(kbossBackupProviderSpy).getSecondaryStorageUrls(userVmVOMock);
+         doThrow(new RuntimeException("boom")).when(userVmManagerMock).destroyVm(any(DestroyVMCmd.class), Mockito.eq(false));
+@@ -1854,8 +1853,7 @@
+ 
+     @Test
+     public void cleanupValidationTestCleanupCommandFails() {
+-        VolumeVO dataVolume = Mockito.mock(VolumeVO.class);
+-        doReturn(Volume.Type.DATADISK).when(dataVolume).getVolumeType();
++        VolumeVO dataVolume = createMockVolume(Volume.Type.DATADISK);
+         doReturn(88L).when(userVmVOMock).getHostId();
+         doReturn(Set.of("secondary-storage-1")).when(kbossBackupProviderSpy).getSecondaryStorageUrls(userVmVOMock);
+         doReturn(null).when(agentManagerMock).easySend(anyLong(), any());
+@@ -1876,9 +1874,8 @@
+ 
+     @Test
+     public void cleanupValidationTestNoEmailSentAndAllStepsExecuted() throws ResourceUnavailableException {
+-        VolumeVO rootVolume = Mockito.mock(VolumeVO.class);
+-        doReturn(Volume.Type.ROOT).when(rootVolume).getVolumeType();
+-
++
++        VolumeVO rootVolume = createMockVolume(Volume.Type.ROOT);
+         VolumeVO dataVolume = Mockito.mock(VolumeVO.class);
+         doReturn(Volume.Type.DATADISK).when(dataVolume).getVolumeType();
+         doReturn(52L).when(dataVolume).getId();
+@@ -3113,4 +3110,10 @@
+         verify(kbossBackupProviderSpy).releaseBackup(backupId);
+     }
+ 
++
++    private static VolumeVO createMockVolume(Volume.Type volumeType) {
++        VolumeVO volume = Mockito.mock(VolumeVO.class);
++        doReturn(volumeType).when(volume).getVolumeType();
++        return volume;
++    }
+ }

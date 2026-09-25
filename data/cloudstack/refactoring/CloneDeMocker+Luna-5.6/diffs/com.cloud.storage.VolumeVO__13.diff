@@ -1,0 +1,67 @@
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
+@@ -589,8 +589,7 @@
+         String hostIp = "10.0.0.5";
+         String dsUuid = "ds-uuid-1";
+ 
+-        VolumeVO srcVolume = mock(VolumeVO.class);
+-        Mockito.when(srcVolume.getUuid()).thenReturn(volUuid);
++        VolumeVO srcVolume = MockVolumeVOFactory.createMockVolumeVO(volUuid);
+         Mockito.when(srcVolume.getName()).thenReturn("data1");
+         Mockito.when(volumeDao.findByUuid(volUuid)).thenReturn(srcVolume);
+ 
+--- a/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
+@@ -145,8 +145,7 @@
+ 
+     @Test
+     public void validateVmVolumesForBackup_oneVolumeNotReady_throwsWithVolumeAndInstanceId() {
+-        VolumeVO vol = mock(VolumeVO.class);
+-        when(vol.getUuid()).thenReturn("vol-not-ready");
++        VolumeVO vol = MockVolumeVOFactory.createMockVolumeVO("vol-not-ready");
+         when(volumeDao.findByInstanceAndNotStates(1L, Volume.State.Ready)).thenReturn(List.of(vol));
+ 
+         CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+@@ -158,10 +157,8 @@
+ 
+     @Test
+     public void validateVmVolumesForBackup_multipleVolumesNotReady_throwsWithAllVolumeIds() {
+-        VolumeVO vol1 = mock(VolumeVO.class);
+-        VolumeVO vol2 = mock(VolumeVO.class);
+-        when(vol1.getUuid()).thenReturn("vol-a");
+-        when(vol2.getUuid()).thenReturn("vol-b");
++        VolumeVO vol1 = MockVolumeVOFactory.createMockVolumeVO("vol-a");
++        VolumeVO vol2 = MockVolumeVOFactory.createMockVolumeVO("vol-b");
+         when(volumeDao.findByInstanceAndNotStates(1L, Volume.State.Ready)).thenReturn(List.of(vol1, vol2));
+ 
+         CloudRuntimeException ex = assertThrows(CloudRuntimeException.class,
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/MockVolumeVOFactory.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/MockVolumeVOFactory.java
+@@ -0,0 +1,12 @@
++package org.apache.cloudstack.backup;
++
++import com.cloud.storage.VolumeVO;
++import org.mockito.Mockito;
++
++public class MockVolumeVOFactory {
++    public static VolumeVO createMockVolumeVO(String uuid) {
++        VolumeVO volume = Mockito.mock(VolumeVO.class);
++        Mockito.when(volume.getUuid()).thenReturn(uuid);
++        return volume;
++    }
++}
+--- a/server/src/test/java/org/apache/cloudstack/backup/MockVolumeVOFactory.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/MockVolumeVOFactory.java
+@@ -0,0 +1,12 @@
++package org.apache.cloudstack.backup;
++
++import com.cloud.storage.VolumeVO;
++import org.mockito.Mockito;
++
++public class MockVolumeVOFactory {
++    public static VolumeVO createMockVolumeVO(String uuid) {
++        VolumeVO volume = Mockito.mock(VolumeVO.class);
++        Mockito.when(volume.getUuid()).thenReturn(uuid);
++        return volume;
++    }
++}

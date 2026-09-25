@@ -1,0 +1,46 @@
+--- a/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkServiceImplTest.java
+@@ -1303,9 +1303,8 @@
+ 
+     @Test
+     public void addProjectNetworksConditionToSearch_includesProjectNetworksWhenNotSkipped() {
+-        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+         SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+-        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
++        SearchCriteria<NetworkVO> sc = createMockSearchCriteria(accountJoin);
+         service.addProjectNetworksConditionToSearch(sc, false, -1L);
+         Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.NNULL);
+         Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
+@@ -1313,9 +1312,8 @@
+ 
+     @Test
+     public void addProjectNetworksConditionToSearch_excludesProjectNetworksWhenSkipped() {
+-        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+         SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+-        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
++        SearchCriteria<NetworkVO> sc = createMockSearchCriteria(accountJoin);
+         service.addProjectNetworksConditionToSearch(sc, true, -1L);
+         Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.NEQ, Account.Type.PROJECT);
+         Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
+@@ -1323,9 +1321,8 @@
+ 
+     @Test
+     public void addProjectNetworksConditionToSearch_includesSpecificProjectWhenProjectIdProvided() {
+-        SearchCriteria<NetworkVO> sc = Mockito.mock(SearchCriteria.class);
+         SearchCriteria accountJoin = Mockito.mock(SearchCriteria.class);
+-        Mockito.when(sc.getJoin("account")).thenReturn(accountJoin);
++        SearchCriteria<NetworkVO> sc = createMockSearchCriteria(accountJoin);
+         service.addProjectNetworksConditionToSearch(sc, false, 123L);
+         Mockito.verify(accountJoin).addAnd("type", SearchCriteria.Op.EQ, Account.Type.PROJECT);
+         Mockito.verify(sc).addAnd("id", SearchCriteria.Op.SC, accountJoin);
+@@ -1378,4 +1375,10 @@
+ 
+         Assert.assertFalse(service.getAndValidateSupportForKeepMacAddressOnPublicNicParameter(false, networkOfferingVO));
+     }
++
++    private static SearchCriteria<NetworkVO> createMockSearchCriteria(SearchCriteria accountJoin) {
++        SearchCriteria<NetworkVO> searchCriteria = Mockito.mock(SearchCriteria.class);
++        Mockito.when(searchCriteria.getJoin("account")).thenReturn(accountJoin);
++        return searchCriteria;
++    }
+ }

@@ -1,0 +1,76 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -142,8 +142,7 @@
+     @Mock
+     private VolumeDao volumeDaoMock;
+ 
+-    @Mock
+-    private VolumeVO volumeVoMock;
++    private VolumeVO volumeVoMock = createMockVolumeVO();
+ 
+     @Mock
+     private SnapshotDataStoreDao snapshotDataStoreDaoMock;
+@@ -1811,7 +1810,7 @@
+ 
+     @Test
+     public void cleanupValidationTestStartedVmFalseAndValidationNotPreparedAndFailedToDestroyVolume() throws ResourceUnavailableException {
+-        VolumeVO dataVolume = Mockito.mock(VolumeVO.class);
++        VolumeVO dataVolume = createMockVolumeVO();
+         doReturn(Volume.Type.DATADISK).when(dataVolume).getVolumeType();
+         doReturn(52L).when(dataVolume).getId();
+         doNothing().when(kbossBackupProviderSpy).sendCleanupFailedEmail(any(), any());
+@@ -1879,7 +1878,7 @@
+         VolumeVO rootVolume = Mockito.mock(VolumeVO.class);
+         doReturn(Volume.Type.ROOT).when(rootVolume).getVolumeType();
+ 
+-        VolumeVO dataVolume = Mockito.mock(VolumeVO.class);
++        VolumeVO dataVolume = createMockVolumeVO();
+         doReturn(Volume.Type.DATADISK).when(dataVolume).getVolumeType();
+         doReturn(52L).when(dataVolume).getId();
+ 
+@@ -2030,6 +2029,7 @@
+ 
+     @Test
+     public void mergeCurrentDeltaIntoVolumeTestNoDeltaDoesNothing() {
++        VolumeVO volumeVoMock = createMockVolumeVO();
+         doReturn(volumeId).when(volumeVoMock).getId();
+         doReturn(null).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
+ 
+@@ -2041,7 +2041,7 @@
+ 
+     @Test (expected = CloudRuntimeException.class)
+     public void mergeCurrentDeltaIntoVolumeTestNullAnswer() {
+-        doReturn(volumeId).when(volumeVoMock).getId();
++        volumeVoMock = createMockVolumeVO();
+         doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
+         doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
+@@ -2060,7 +2060,7 @@
+ 
+     @Test
+     public void mergeCurrentDeltaIntoVolumeTestNoSucceedingSnapshot() {
+-        doReturn(volumeId).when(volumeVoMock).getId();
++        volumeVoMock = createMockVolumeVO();
+         doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
+         doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
+@@ -2088,7 +2088,7 @@
+ 
+     @Test
+     public void mergeCurrentDeltaIntoVolumeTestWithSucceedingSnapshotWithMoreDeltas() {
+-        doReturn(volumeId).when(volumeVoMock).getId();
++        volumeVoMock = createMockVolumeVO();
+         doReturn(internalBackupStoragePoolVoMock).when(internalBackupStoragePoolDaoMock).findOneByVolumeId(volumeId);
+         doReturn(backupId).when(internalBackupStoragePoolVoMock).getBackupId();
+         doReturn(internalBackupJoinVoMock).when(internalBackupJoinDaoMock).findById(backupId);
+@@ -3113,4 +3113,10 @@
+         verify(kbossBackupProviderSpy).releaseBackup(backupId);
+     }
+ 
++    private static VolumeVO createMockVolumeVO() {
++        VolumeVO volumeVoMock = Mockito.mock(VolumeVO.class);
++        doReturn(41L).when(volumeVoMock).getId();
++        return volumeVoMock;
++    }
++
+ }
