@@ -1,0 +1,38 @@
+--- a/server/src/test/java/com/cloud/capacity/CapacityManagerTest.java
++++ b/server/src/test/java/com/cloud/capacity/CapacityManagerTest.java
+@@ -40,7 +40,7 @@
+     CapacityManagerImpl capMgr;
+     private Host host = mock(Host.class);
+     private ServiceOfferingVO svo = mock(ServiceOfferingVO.class);
+-    private CapacityVO cvoCpu = mock(CapacityVO.class);
++    private CapacityVO cvoCpu = createMockCapacityVO();
+     private CapacityVO cvoRam = mock(CapacityVO.class);
+     private VirtualMachine vm = mock(VirtualMachine.class);
+     private ClusterDetailsVO clusterDetailCpu = mock(ClusterDetailsVO.class);
+@@ -54,9 +54,18 @@
+         return capMgr;
+     }
+ 
++    private static CapacityVO createMockCapacityVO() {
++        CapacityVO cvoCpu = mock(CapacityVO.class);
++        when(cvoCpu.getUsedCapacity()).thenReturn(500l);
++        when(cvoCpu.getTotalCapacity()).thenReturn(2000l);
++        when(cvoCpu.getReservedCapacity()).thenReturn(0l);
++        return cvoCpu;
++    }
++
+     @Test
+     public void allocateCapacityTest() {
+         capMgr = setUp();
++        cvoRam = createMockCapacityVO();
+         when(vm.getHostId()).thenReturn(1l);
+         when(vm.getServiceOfferingId()).thenReturn(2l);
+         when(SOfferingDao.findById(anyLong(), anyLong())).thenReturn(svo);
+@@ -69,7 +78,6 @@
+         when(svo.getCpu()).thenReturn(500);
+         when(svo.getRamSize()).thenReturn(512);
+         when(cvoCpu.getReservedCapacity()).thenReturn(0l);
+-        when(cvoRam.getReservedCapacity()).thenReturn(0l);
+         when(clusterDetailRam.getValue()).thenReturn("1.5");
+         when(clusterDetailCpu.getValue()).thenReturn("2");
+         when(CDao.update(anyLong(), isA(CapacityVO.class))).thenReturn(true);

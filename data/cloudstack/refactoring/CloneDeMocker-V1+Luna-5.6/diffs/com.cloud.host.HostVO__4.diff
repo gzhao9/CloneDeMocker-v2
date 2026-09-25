@@ -1,0 +1,101 @@
+--- a/server/src/test/java/org/apache/cloudstack/consoleproxy/ConsoleAccessManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/consoleproxy/ConsoleAccessManagerImplTest.java
+@@ -69,6 +69,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class ConsoleAccessManagerImplTest {
++    @Mock
++    private HostVO host;
+ 
+     @Mock
+     private AccountManager accountManager;
+@@ -334,7 +336,6 @@
+     @Test
+     public void getConsoleConnectionDetailsForExternalVmReturnsNullWhenAnswerIsNull() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
+         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
+ 
+         Mockito.when(managementServer.getExternalVmConsole(vm, host)).thenReturn(null);
+@@ -347,7 +348,6 @@
+     @Test
+     public void getConsoleConnectionDetailsForExternalVmReturnsNullWhenAnswerResultIsFalse() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
+         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
+         Answer answer = Mockito.mock(Answer.class);
+ 
+@@ -363,7 +363,7 @@
+     @Test
+     public void getConsoleConnectionDetailsForExternalVmReturnsNullWhenAnswerIsNotOfTypeGetExternalConsoleAnswer() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
++        // removed local mock; replaced with global field `host`
+         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
+         Answer answer = Mockito.mock(Answer.class);
+ 
+@@ -378,7 +378,7 @@
+     @Test
+     public void getConsoleConnectionDetailsForExternalVmSetsDetailsWhenAnswerIsValid() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
++        // removed local mock; replaced with global field `host`
+         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
+         GetExternalConsoleAnswer answer = Mockito.mock(GetExternalConsoleAnswer.class);
+ 
+@@ -405,7 +405,6 @@
+     @Test
+     public void getConsoleConnectionDetailsForExternalVmSetsDetailsWhenAnswerIsValidDirect() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
+         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
+         GetExternalConsoleAnswer answer = Mockito.mock(GetExternalConsoleAnswer.class);
+ 
+@@ -426,7 +425,6 @@
+     @Test
+     public void getConsoleConnectionDetailsForExternalVmDoesNotSetSidWhenPasswordIsBlank() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
+         ConsoleConnectionDetails details = new ConsoleConnectionDetails("sid", "en", "tag", "displayName");
+         GetExternalConsoleAnswer answer = Mockito.mock(GetExternalConsoleAnswer.class);
+ 
+@@ -613,7 +611,6 @@
+     @Test
+     public void generateConsoleProxyClientParamSetsBasicDetailsCorrectly() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
+         String hostAddress = "192.168.1.100";
+         int port = 5902;
+         String sid = "sid";
+@@ -643,7 +640,6 @@
+     @Test
+     public void generateConsoleProxyClientParamSetsExtraSecurityTokenWhenProvided() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
+         ConsoleConnectionDetails details = new ConsoleConnectionDetails("password", null, null, null);
+ 
+         ConsoleProxyClientParam param = consoleAccessManager.generateConsoleProxyClientParam(details, "ticket", "sessionUuid", "127.0.0.1", "extraToken", vm, host);
+@@ -653,7 +649,6 @@
+ 
+     @Test
+     public void generateConsoleProxyClientParamSetsLocaleWhenProvided() {
+-        HostVO host = Mockito.mock(HostVO.class);
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+         ConsoleConnectionDetails details = new ConsoleConnectionDetails(null, "fr-fr", null, null);
+ 
+@@ -686,7 +681,6 @@
+ 
+     @Test
+     public void generateConsoleProxyClientParamSetsTunnelDetailsWhenProvided() {
+-        HostVO host = Mockito.mock(HostVO.class);
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+         ConsoleConnectionDetails details = new ConsoleConnectionDetails(null, null, null, null);
+         details.setTunnelUrl("tunnelUrl");
+@@ -701,7 +695,6 @@
+     @Test
+     public void returnsNullWhenConsoleConnectionDetailsAreNull() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
+         Mockito.doReturn(null).when(consoleAccessManager).getConsoleConnectionDetails(vm, host);
+ 
+         ConsoleEndpoint result = consoleAccessManager.composeConsoleAccessEndpoint("rootUrl", vm, host, "addr", "sessionUuid", "extraToken");

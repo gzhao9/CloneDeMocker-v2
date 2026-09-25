@@ -1,0 +1,44 @@
+--- a/server/src/test/java/com/cloud/capacity/CapacityManagerTest.java
++++ b/server/src/test/java/com/cloud/capacity/CapacityManagerTest.java
+@@ -40,7 +40,7 @@
+     CapacityManagerImpl capMgr;
+     private Host host = mock(Host.class);
+     private ServiceOfferingVO svo = mock(ServiceOfferingVO.class);
+-    private CapacityVO cvoCpu = mock(CapacityVO.class);
++    private CapacityVO cvoCpu;
+     private CapacityVO cvoRam = mock(CapacityVO.class);
+     private VirtualMachine vm = mock(VirtualMachine.class);
+     private ClusterDetailsVO clusterDetailCpu = mock(ClusterDetailsVO.class);
+@@ -59,17 +59,13 @@
+         capMgr = setUp();
+         when(vm.getHostId()).thenReturn(1l);
+         when(vm.getServiceOfferingId()).thenReturn(2l);
++         cvoCpu = createMockCapacityVO(500l, 2000l);
+         when(SOfferingDao.findById(anyLong(), anyLong())).thenReturn(svo);
+         when(CDao.findByHostIdType(anyLong(), eq(Capacity.CAPACITY_TYPE_CPU))).thenReturn(cvoCpu);
+         when(CDao.findByHostIdType(anyLong(), eq(Capacity.CAPACITY_TYPE_MEMORY))).thenReturn(cvoRam);
+-        when(cvoCpu.getUsedCapacity()).thenReturn(500l);
+-        when(cvoCpu.getTotalCapacity()).thenReturn(2000l);
+-        when(cvoRam.getUsedCapacity()).thenReturn(3000l);
+-        when(cvoRam.getTotalCapacity()).thenReturn((long)1024 * 1024 * 1024);
++        cvoRam = createMockCapacityVO(3000l, (long) 1024 * 1024 * 1024);
+         when(svo.getCpu()).thenReturn(500);
+         when(svo.getRamSize()).thenReturn(512);
+-        when(cvoCpu.getReservedCapacity()).thenReturn(0l);
+-        when(cvoRam.getReservedCapacity()).thenReturn(0l);
+         when(clusterDetailRam.getValue()).thenReturn("1.5");
+         when(clusterDetailCpu.getValue()).thenReturn("2");
+         when(CDao.update(anyLong(), isA(CapacityVO.class))).thenReturn(true);
+@@ -77,4 +73,12 @@
+         Assert.assertTrue(hasCapacity);
+ 
+     }
++
++    private static CapacityVO createMockCapacityVO(long usedCapacity, long totalCapacity) {
++        CapacityVO capacityVO = mock(CapacityVO.class);
++        when(capacityVO.getUsedCapacity()).thenReturn(usedCapacity);
++        when(capacityVO.getTotalCapacity()).thenReturn(totalCapacity);
++        when(capacityVO.getReservedCapacity()).thenReturn(0l);
++        return capacityVO;
++    }
+ }

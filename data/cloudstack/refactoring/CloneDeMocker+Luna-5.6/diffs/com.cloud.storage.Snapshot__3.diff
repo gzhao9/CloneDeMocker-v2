@@ -1,0 +1,78 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/snapshot/DefaultSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/snapshot/DefaultSnapshotStrategyTest.java
+@@ -57,6 +57,8 @@
+     @InjectMocks
+     DefaultSnapshotStrategy defaultSnapshotStrategySpy = Mockito.spy(DefaultSnapshotStrategy.class);
+ 
++    private Snapshot snapshotMock;
++
+     @Mock
+     SnapshotDataFactory snapshotDataFactoryMock;
+ 
+@@ -97,6 +99,7 @@
+ 
+     @Before
+     public void setup() {
++        snapshotMock = Mockito.mock(Snapshot.class);
+         mockSnapshotInfos.add(snapshotInfo1Mock);
+         mockSnapshotInfos.add(snapshotInfo2Mock);
+     }
+@@ -326,32 +329,28 @@
+ 
+     @Test
+     public void testIsSnapshotStoredOnSecondaryForCLVMVolume_NullVolume() {
+-        Snapshot snapshot = Mockito.mock(Snapshot.class);
+-        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, null));
++        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshotMock, null));
+     }
+ 
+     @Test
+     public void testIsSnapshotStoredOnSecondaryForCLVMVolume_NullPoolId() {
+-        Snapshot snapshot = Mockito.mock(Snapshot.class);
+         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+         Mockito.when(volumeVO.getPoolId()).thenReturn(null);
+ 
+-        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
++        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshotMock, volumeVO));
+     }
+ 
+     @Test
+     public void testIsSnapshotStoredOnSecondaryForCLVMVolume_NullPool() {
+-        Snapshot snapshot = Mockito.mock(Snapshot.class);
+         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+         Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+         Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn(null);
+ 
+-        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
++        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshotMock, volumeVO));
+     }
+ 
+     @Test
+     public void testIsSnapshotStoredOnSecondaryForCLVMVolume_NonCLVMPool() {
+-        Snapshot snapshot = Mockito.mock(Snapshot.class);
+         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+         Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+ 
+@@ -359,12 +358,11 @@
+         Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn((DataStore) pool);
+ 
+-        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
++        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshotMock, volumeVO));
+     }
+ 
+     @Test
+     public void testIsSnapshotStoredOnSecondaryForCLVMVolume_RBDPool() {
+-        Snapshot snapshot = Mockito.mock(Snapshot.class);
+         VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+         Mockito.when(volumeVO.getPoolId()).thenReturn(10L);
+ 
+@@ -372,7 +370,7 @@
+         Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+         Mockito.when(dataStoreManager.getDataStore(10L, DataStoreRole.Primary)).thenReturn((DataStore) pool);
+ 
+-        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshot, volumeVO));
++        Assert.assertFalse(defaultSnapshotStrategySpy.isSnapshotStoredOnSecondaryForCLVMVolume(snapshotMock, volumeVO));
+     }
+ 
+     @Test

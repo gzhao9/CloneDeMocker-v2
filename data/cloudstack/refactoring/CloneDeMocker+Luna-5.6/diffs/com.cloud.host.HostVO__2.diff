@@ -1,0 +1,98 @@
+--- a/server/src/test/java/org/apache/cloudstack/consoleproxy/ConsoleAccessManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/consoleproxy/ConsoleAccessManagerImplTest.java
+@@ -446,8 +446,7 @@
+ 
+     @Test
+     public void getHostAndPortForKVMMaintenanceHostIfNeededReturnsNullForNonKVMHypervisor() {
+-        HostVO host = Mockito.mock(HostVO.class);
+-        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
++        HostVO host = createMockHost(Hypervisor.HypervisorType.XenServer);
+ 
+         Pair<String, Integer> result = consoleAccessManager.getHostAndPortForKVMMaintenanceHostIfNeeded(host, Map.of());
+ 
+@@ -456,8 +455,7 @@
+ 
+     @Test
+     public void getHostAndPortForKVMMaintenanceHostIfNeededReturnsNullForNonMaintenanceResourceState() {
+-        HostVO host = Mockito.mock(HostVO.class);
+-        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
++        HostVO host = createMockHost(Hypervisor.HypervisorType.KVM);
+         Mockito.when(host.getResourceState()).thenReturn(ResourceState.Enabled);
+ 
+         Pair<String, Integer> result = consoleAccessManager.getHostAndPortForKVMMaintenanceHostIfNeeded(host, Map.of());
+@@ -467,8 +465,7 @@
+ 
+     @Test
+     public void getHostAndPortForKVMMaintenanceHostIfNeededReturnsHostAndPortForValidKVMInMaintenance() {
+-        HostVO host = Mockito.mock(HostVO.class);
+-        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
++        HostVO host = createMockHost(Hypervisor.HypervisorType.KVM);
+         Mockito.when(host.getResourceState()).thenReturn(ResourceState.ErrorInMaintenance);
+ 
+         String address = "192.168.1.100";
+@@ -487,8 +484,7 @@
+ 
+     @Test
+     public void getHostAndPortForKVMMaintenanceHostIfNeededReturnsNullWhenVncAddressOrPortIsMissing() {
+-        HostVO host = Mockito.mock(HostVO.class);
+-        Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
++        HostVO host = createMockHost(Hypervisor.HypervisorType.KVM);
+         Mockito.when(host.getResourceState()).thenReturn(ResourceState.ErrorInMaintenance);
+ 
+         Map<String, String> vmDetails = Map.of(VmDetailConstants.KVM_VNC_ADDRESS, "192.168.1.100");
+@@ -501,7 +497,7 @@
+     @Test
+     public void getConsoleConnectionDetailsReturnsDetailsForExternalHypervisor() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
++        HostVO host = createMockHost(Hypervisor.HypervisorType.External);
+         ConsoleConnectionDetails details = Mockito.mock(ConsoleConnectionDetails.class);
+ 
+         Mockito.when(vm.getUuid()).thenReturn("vm-uuid");
+@@ -521,7 +517,7 @@
+     @Test
+     public void getConsoleConnectionDetailsReturnsDetailsForKVMHypervisor() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
++        HostVO host = createMockHost(Hypervisor.HypervisorType.KVM);
+         String hostAddress = "192.168.1.100";
+         int port = 5900;
+         String vmUuid = "vm-uuid";
+@@ -548,7 +544,7 @@
+     @Test
+     public void getConsoleConnectionDetailsReturnsDetailsWithRDPForHyperV() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
++        HostVO host = createMockHost(Hypervisor.HypervisorType.Hyperv);
+         String hostAddress = "192.168.1.100";
+         Pair<String, Integer> hostPortInfo = new Pair<>(hostAddress, -9);
+ 
+@@ -574,7 +570,7 @@
+     @Test
+     public void getConsoleConnectionDetailsReturnsNullHostInvalidPortWhenVncPortInfoIsMissing() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
++        HostVO host = createMockHost(Hypervisor.HypervisorType.KVM);
+ 
+         Mockito.when(vm.getUuid()).thenReturn("vm-uuid");
+         Mockito.when(vm.getHostName()).thenReturn("vm-hostname");
+@@ -592,7 +588,7 @@
+     @Test
+     public void getConsoleConnectionDetailsSetsLocaleWhenKeyboardDetailIsPresent() {
+         VirtualMachine vm = Mockito.mock(VirtualMachine.class);
+-        HostVO host = Mockito.mock(HostVO.class);
++        HostVO host = createMockHost(Hypervisor.HypervisorType.KVM);
+         String hostAddress = "192.168.1.100";
+         Pair<String, Integer> hostPortInfo = new Pair<>(hostAddress, 5900);
+ 
+@@ -787,4 +783,10 @@
+         Assert.assertNull(endpoint.getWebsocketExtra());
+         Assert.assertNull(endpoint.getWebsocketHost());
+     }
++
++    private static HostVO createMockHost(Hypervisor.HypervisorType hypervisorType) {
++        HostVO host = Mockito.mock(HostVO.class);
++        Mockito.when(host.getHypervisorType()).thenReturn(hypervisorType);
++        return host;
++    }
+ }
