@@ -1,22 +1,22 @@
 --- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
 +++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
-@@ -462,12 +462,10 @@
+@@ -462,12 +462,9 @@
          VMInstanceVO vm = mock(VMInstanceVO.class);
          Mockito.when(vm.getId()).thenReturn(vmId);
  
 -        VolumeVO nfsVol = mock(VolumeVO.class);
 -        Mockito.when(nfsVol.getPoolId()).thenReturn(1L);
-+        VolumeVO nfsVol = MockVolumeVO.createMockVolume(1L);
-         VolumeVO hostVol = mock(VolumeVO.class);
+-        VolumeVO hostVol = mock(VolumeVO.class);
 -        Mockito.when(hostVol.getPoolId()).thenReturn(2L);
 -        VolumeVO smpVol = mock(VolumeVO.class);
 -        Mockito.when(smpVol.getPoolId()).thenReturn(3L);
-+        VolumeVO hostVol = MockVolumeVO.createMockVolume(2L);
-+        VolumeVO smpVol = MockVolumeVO.createMockVolume(3L);
++        VolumeVO nfsVol = MockVolumeVO.createMockVolumeVO(1L);
++        VolumeVO hostVol = MockVolumeVO.createMockVolumeVO(2L);
++        VolumeVO smpVol = MockVolumeVO.createMockVolumeVO(3L);
          Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(nfsVol, hostVol, smpVol));
  
          StoragePoolVO nfs = mock(StoragePoolVO.class);
-@@ -493,10 +491,8 @@
+@@ -493,10 +490,8 @@
          VMInstanceVO vm = mock(VMInstanceVO.class);
          Mockito.when(vm.getId()).thenReturn(vmId);
  
@@ -24,46 +24,45 @@
 -        Mockito.when(nfsVol.getPoolId()).thenReturn(1L);
 -        VolumeVO rbdVol = mock(VolumeVO.class);
 -        Mockito.when(rbdVol.getPoolId()).thenReturn(9L);
-+        VolumeVO nfsVol = MockVolumeVO.createMockVolume(1L);
-+        VolumeVO rbdVol = MockVolumeVO.createMockVolume(9L);
++        VolumeVO nfsVol = MockVolumeVO.createMockVolumeVO(1L);
++        VolumeVO rbdVol = MockVolumeVO.createMockVolumeVO(9L);
          Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(nfsVol, rbdVol));
  
          StoragePoolVO nfs = mock(StoragePoolVO.class);
-@@ -515,8 +511,7 @@
+@@ -515,8 +510,7 @@
          Long vmId = 57L;
          VMInstanceVO vm = mock(VMInstanceVO.class);
          Mockito.when(vm.getId()).thenReturn(vmId);
 -        VolumeVO vol = mock(VolumeVO.class);
 -        Mockito.when(vol.getPoolId()).thenReturn(1L);
-+        VolumeVO vol = MockVolumeVO.createMockVolume(1L);
++        VolumeVO vol = MockVolumeVO.createMockVolumeVO(1L);
          Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(vol));
          Mockito.when(storagePoolDao.findById(1L)).thenReturn(null);
  
-@@ -1034,4 +1029,17 @@
+@@ -1034,4 +1028,15 @@
          Mockito.verify(backupDao, Mockito.never()).remove(51L);
          Mockito.verify(backupDao).remove(50L);
      }
 +
 +    public final class MockVolumeVO {
-+
 +        private MockVolumeVO() {
-+            // Utility class
 +        }
 +
-+        public static com.cloud.storage.VolumeVO createMockVolume(long poolId) {
-+            com.cloud.storage.VolumeVO volume = org.mockito.Mockito.mock(com.cloud.storage.VolumeVO.class);
-+            org.mockito.Mockito.when(volume.getPoolId()).thenReturn(poolId);
++        public static VolumeVO createMockVolumeVO(long poolId) {
++            VolumeVO volume = Mockito.mock(VolumeVO.class);
++            Mockito.when(volume.getPoolId()).thenReturn(poolId);
 +            return volume;
 +        }
 +    }
  }
 --- a/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
 +++ b/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
-@@ -363,10 +363,10 @@
+@@ -362,11 +362,11 @@
+             mocked.when(CallContext::current).thenReturn(callContext);
              when(callContext.getCallingUser()).thenReturn(user);
  
++            volume = MockVolumeVO.createMockVolumeVO(701L);
              when(volumeDao.findById(601L)).thenReturn(volume);
-+            volume = MockVolumeVO.createMockVolume(701L);
              when(volume.getId()).thenReturn(601L);
              when(volume.getState()).thenReturn(Volume.State.Ready);
              when(volume.getDataCenterId()).thenReturn(1L);
@@ -75,7 +74,7 @@
              mocked.when(CallContext::current).thenReturn(callContext);
              when(callContext.getCallingUser()).thenReturn(user);
  
-+            volume = MockVolumeVO.createMockVolume(702L);
++            volume = MockVolumeVO.createMockVolumeVO(702L);
              when(volumeDao.findById(602L)).thenReturn(volume);
              when(volume.getId()).thenReturn(602L);
              when(volume.getUuid()).thenReturn("vol-602");
@@ -84,20 +83,18 @@
              when(volume.getPath()).thenReturn("vol-602.raw");
              when(imageTransferDao.findByVolume(602L)).thenReturn(null);
  
-@@ -464,4 +464,17 @@
+@@ -464,4 +464,15 @@
              verify(agentManager, times(2)).send(eq(802L), any(Command.class));
          }
      }
 +
 +    public final class MockVolumeVO {
-+
 +        private MockVolumeVO() {
-+            // Utility class
 +        }
 +
-+        public static com.cloud.storage.VolumeVO createMockVolume(long poolId) {
-+            com.cloud.storage.VolumeVO volume = org.mockito.Mockito.mock(com.cloud.storage.VolumeVO.class);
-+            org.mockito.Mockito.when(volume.getPoolId()).thenReturn(poolId);
++        public static VolumeVO createMockVolumeVO(long poolId) {
++            VolumeVO volume = Mockito.mock(VolumeVO.class);
++            Mockito.when(volume.getPoolId()).thenReturn(poolId);
 +            return volume;
 +        }
 +    }
