@@ -1,0 +1,44 @@
+--- a/engine/schema/src/test/java/com/cloud/vm/dao/VMInstanceDetailsDaoImplTest.java
++++ b/engine/schema/src/test/java/com/cloud/vm/dao/VMInstanceDetailsDaoImplTest.java
+@@ -50,12 +50,9 @@
+ 
+     @Test
+     public void removeDetailsWithPrefixRemovesMatchingDetails() {
+-        SearchBuilder<VMInstanceDetailVO> sb = mock(SearchBuilder.class);
+         VMInstanceDetailVO entity = mock(VMInstanceDetailVO.class);
+-        when(sb.entity()).thenReturn(entity);
+-        when(sb.and(anyString(), any(), any(SearchCriteria.Op.class))).thenReturn(sb);
+         SearchCriteria<VMInstanceDetailVO> sc = mock(SearchCriteria.class);
+-        when(sb.create()).thenReturn(sc);
++        SearchBuilder<VMInstanceDetailVO> sb = createMockSearchBuilder(entity, sc);
+         when(vmInstanceDetailsDaoImpl.createSearchBuilder()).thenReturn(sb);
+         doReturn(3).when(vmInstanceDetailsDaoImpl).remove(sc);
+         int removedCount = vmInstanceDetailsDaoImpl.removeDetailsWithPrefix(1L, "testPrefix");
+@@ -67,12 +64,9 @@
+ 
+     @Test
+     public void removeDetailsWithPrefixDoesNotRemoveWhenNoMatch() {
+-        SearchBuilder<VMInstanceDetailVO> sb = mock(SearchBuilder.class);
+         VMInstanceDetailVO entity = mock(VMInstanceDetailVO.class);
+-        when(sb.entity()).thenReturn(entity);
+-        when(sb.and(anyString(), any(), any(SearchCriteria.Op.class))).thenReturn(sb);
+         SearchCriteria<VMInstanceDetailVO> sc = mock(SearchCriteria.class);
+-        when(sb.create()).thenReturn(sc);
++        SearchBuilder<VMInstanceDetailVO> sb = createMockSearchBuilder(entity, sc);
+         when(vmInstanceDetailsDaoImpl.createSearchBuilder()).thenReturn(sb);
+         doReturn(0).when(vmInstanceDetailsDaoImpl).remove(sc);
+ 
+@@ -83,4 +77,13 @@
+         Mockito.verify(sc).setParameters("prefix", "nonExistentPrefix%");
+         Mockito.verify(vmInstanceDetailsDaoImpl, Mockito.times(1)).remove(sc);
+     }
++
++    private static SearchBuilder<VMInstanceDetailVO> createMockSearchBuilder(
++            VMInstanceDetailVO entity, SearchCriteria<VMInstanceDetailVO> sc) {
++        SearchBuilder<VMInstanceDetailVO> sb = mock(SearchBuilder.class);
++        when(sb.entity()).thenReturn(entity);
++        when(sb.and(anyString(), any(), any(SearchCriteria.Op.class))).thenReturn(sb);
++        when(sb.create()).thenReturn(sc);
++        return sb;
++    }
+ }

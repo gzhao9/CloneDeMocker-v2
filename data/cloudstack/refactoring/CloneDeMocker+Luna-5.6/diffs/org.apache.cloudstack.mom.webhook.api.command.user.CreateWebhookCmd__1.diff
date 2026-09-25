@@ -1,0 +1,28 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
+@@ -139,6 +139,13 @@
+         return webhookJoinVO;
+     }
+ 
++    private static CreateWebhookCmd createMockCreateWebhookCmd(String accountName) {
++        CreateWebhookCmd cmd = Mockito.mock(CreateWebhookCmd.class);
++        Mockito.when(cmd.getAccountName()).thenReturn(accountName);
++        Mockito.when(cmd.getDomainId()).thenReturn(1L);
++        return cmd;
++    }
++
+     private void validateWebhookResponseWithWebhookJoinVO(WebhookResponse response, WebhookJoinVO webhookJoinVO) {
+         Assert.assertEquals(webhookJoinVO.getName(), ReflectionTestUtils.getField(response, "name"));
+         Assert.assertEquals(webhookJoinVO.getDescription(), ReflectionTestUtils.getField(response, "description"));
+@@ -676,10 +683,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void getOwnerThrowsExceptionForInvalidAccount() {
+-        CreateWebhookCmd cmd = Mockito.mock(CreateWebhookCmd.class);
+-
+-        Mockito.when(cmd.getAccountName()).thenReturn("invalidAccount");
+-        Mockito.when(cmd.getDomainId()).thenReturn(1L);
++        CreateWebhookCmd cmd = createMockCreateWebhookCmd("invalidAccount");
+         Mockito.when(cmd.getProjectId()).thenReturn(null);
+         Mockito.when(accountManager.finalizeOwner(caller, "invalidAccount", 1L, null))
+                 .thenThrow(new InvalidParameterValueException("Invalid account"));

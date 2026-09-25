@@ -1,0 +1,85 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtDiskOnlyVMSnapshotCommandWrapperTest.java
+@@ -350,11 +350,10 @@
+     public void testShouldSuspendVmForSnapshotWhenUefiAndNotQuiesced() {
+         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper();
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+-        VMSnapshotTO target = mock(VMSnapshotTO.class);
+-
++
++        VMSnapshotTO target = createMockVMSnapshotTO(false);
+         when(command.isUefiEnabled()).thenReturn(true);
+         when(command.getTarget()).thenReturn(target);
+-        when(target.getQuiescevm()).thenReturn(false);
+ 
+         assertTrue(wrapper.shouldSuspendVmForSnapshot(command));
+     }
+@@ -363,11 +362,10 @@
+     public void testShouldSuspendVmForSnapshotWhenQuiesceIsRequested() {
+         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper();
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+-        VMSnapshotTO target = mock(VMSnapshotTO.class);
+-
++
++        VMSnapshotTO target = createMockVMSnapshotTO(true);
+         when(command.isUefiEnabled()).thenReturn(true);
+         when(command.getTarget()).thenReturn(target);
+-        when(target.getQuiescevm()).thenReturn(true);
+ 
+         assertTrue(wrapper.shouldSuspendVmForSnapshot(command));
+     }
+@@ -376,11 +374,10 @@
+     public void testShouldFreezeVmFilesystemsForSnapshotWhenQuiesceIsRequested() {
+         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper();
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+-        VMSnapshotTO target = mock(VMSnapshotTO.class);
+-
+-        when(command.isUefiEnabled()).thenReturn(true);
++
++        when(command.isUefiEnabled()).thenReturn(true);
++        VMSnapshotTO target = createMockVMSnapshotTO(true);
+         when(command.getTarget()).thenReturn(target);
+-        when(target.getQuiescevm()).thenReturn(true);
+ 
+         assertTrue(wrapper.shouldFreezeVmFilesystemsForSnapshot(command));
+     }
+@@ -388,10 +385,9 @@
+     @Test
+     public void testGetFlagsToUseForRunningVmSnapshotCreationOmitsLibvirtQuiesceWhenAlreadyFrozen() {
+         LibvirtCreateDiskOnlyVMSnapshotCommandWrapper wrapper = new LibvirtCreateDiskOnlyVMSnapshotCommandWrapper();
+-        VMSnapshotTO target = mock(VMSnapshotTO.class);
+-
+-        when(target.getQuiescevm()).thenReturn(true);
+-
++
++
++        VMSnapshotTO target = createMockVMSnapshotTO(true);
+         int flags = wrapper.getFlagsToUseForRunningVmSnapshotCreation(target, true);
+ 
+         assertEquals(0, flags & Domain.SnapshotCreateFlags.QUIESCE);
+@@ -629,13 +625,12 @@
+         org.libvirt.Connect connect = mock(org.libvirt.Connect.class);
+         Domain domain = mock(Domain.class);
+         CreateDiskOnlyVmSnapshotCommand command = mock(CreateDiskOnlyVmSnapshotCommand.class);
+-        VMSnapshotTO target = mock(VMSnapshotTO.class);
+ 
+         when(command.getVmName()).thenReturn("vm-name");
+         when(command.getVolumeTOs()).thenReturn(List.of());
+         when(command.getTarget()).thenReturn(target);
+         when(command.isUefiEnabled()).thenReturn(true);
+-        when(target.getQuiescevm()).thenReturn(true);
++        VMSnapshotTO target = createMockVMSnapshotTO(true);
+         when(resource.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         when(libvirtUtilitiesHelper.getConnection()).thenReturn(connect);
+         when(resource.getDisks(connect, "vm-name")).thenReturn(List.of());
+@@ -818,4 +813,10 @@
+ 
+         assertFalse(answer.getResult());
+     }
++
++    private static VMSnapshotTO createMockVMSnapshotTO(boolean quiescevm) {
++        VMSnapshotTO target = mock(VMSnapshotTO.class);
++        when(target.getQuiescevm()).thenReturn(quiescevm);
++        return target;
++    }
+ }
