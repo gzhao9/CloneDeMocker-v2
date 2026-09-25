@@ -1,0 +1,74 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -130,6 +130,8 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class TungstenElementTest {
+     @Mock
++    private NicProfile nicProfile;
++    @Mock
+     TungstenFabricUtils tungstenFabricUtils;
+     @Mock
+     NetworkModel networkModel;
+@@ -684,7 +686,6 @@
+     @Test
+     public void releaseManagementNetworkTest() throws ConcurrentOperationException, ResourceUnavailableException {
+         Network network = mock(Network.class);
+-        NicProfile nicProfile = mock(NicProfile.class);
+         VirtualMachineProfile virtualMachineProfile = mock(VirtualMachineProfile.class);
+         ReservationContext reservationContext = mock(ReservationContext.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+@@ -707,7 +708,6 @@
+     @Test(expected = CloudRuntimeException.class)
+     public void releaseWithExceptionTest() throws ConcurrentOperationException, ResourceUnavailableException {
+         Network network = mock(Network.class);
+-        NicProfile nicProfile = mock(NicProfile.class);
+         VirtualMachineProfile virtualMachineProfile = mock(VirtualMachineProfile.class);
+         ReservationContext reservationContext = mock(ReservationContext.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+@@ -909,7 +909,6 @@
+ 
+     @Test
+     public void prepareMigrationTest() {
+-        NicProfile nic = mock(NicProfile.class);
+         Network network = mock(Network.class);
+         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+         DeployDestination dest = mock(DeployDestination.class);
+@@ -924,12 +923,11 @@
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class), anyLong())).thenReturn(tungstenAnswer);
+ 
+-        assertTrue(tungstenElement.prepareMigration(nic, network, vm, dest, context));
++        assertTrue(tungstenElement.prepareMigration(nicProfile, network, vm, dest, context));
+     }
+ 
+     @Test
+     public void rollbackMigration() {
+-        NicProfile nic = mock(NicProfile.class);
+         Network network = mock(Network.class);
+         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+         ReservationContext src = mock(ReservationContext.class);
+@@ -941,13 +939,13 @@
+         when(vm.getVirtualMachine()).thenReturn(virtualMachine);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+ 
+-        tungstenElement.rollbackMigration(nic, network, vm, src, dest);
++        tungstenElement.rollbackMigration(nicProfile, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
+ 
+     @Test
+     public void commitMigration() {
+-        NicProfile nic = mock(NicProfile.class);
++        // removed local mock; replaced with global field `nicProfile`
+         Network network = mock(Network.class);
+         VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+         ReservationContext src = mock(ReservationContext.class);
+@@ -959,7 +957,7 @@
+         when(vm.getVirtualMachine()).thenReturn(virtualMachine);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+ 
+-        tungstenElement.commitMigration(nic, network, vm, src, dest);
++        tungstenElement.commitMigration(nicProfile, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
+ }

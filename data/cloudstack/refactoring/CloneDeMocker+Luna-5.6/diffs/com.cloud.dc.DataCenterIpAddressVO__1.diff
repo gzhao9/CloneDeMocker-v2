@@ -1,0 +1,53 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -274,6 +274,8 @@
+     @Mock
+     IpAddressManager ipAddressManager;
+ 
++    private DataCenterIpAddressVO dataCenterIpAddressVOMock;
++
+     TungstenServiceImpl tungstenService;
+ 
+     AutoCloseable closeable;
+@@ -281,6 +283,7 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
++        dataCenterIpAddressVOMock = mock(DataCenterIpAddressVO.class);
+         tungstenService = new TungstenServiceImpl();
+         tungstenService.projectDao = projectDao;
+         tungstenService.tungstenProviderDao = tungstenProviderDao;
+@@ -416,7 +419,6 @@
+         Network managementNetwork = mock(Network.class);
+         TungstenAnswer addTungstenNetworkSubnetAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
+-        DataCenterIpAddressVO dataCenterIpAddressVO = mock(DataCenterIpAddressVO.class);
+ 
+         when(hostPodVO.getDescription()).thenReturn("192.168.100.100-192.168.100.200");
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(),
+@@ -426,7 +428,7 @@
+         when(getTungstenNetworkDnsAnswer.getDetails()).thenReturn("192.168.100.150");
+         when(managementNetwork.getCidr()).thenReturn("192.168.100.0/24");
+         when(managementNetwork.getTrafficType()).thenReturn(Networks.TrafficType.Management);
+-        when(dataCenterIpAddressDao.listByPodIdDcIdIpAddress(anyLong(), anyLong(), anyString())).thenReturn(List.of(dataCenterIpAddressVO));
++        when(dataCenterIpAddressDao.listByPodIdDcIdIpAddress(anyLong(), anyLong(), anyString())).thenReturn(List.of(dataCenterIpAddressVOMock));
+         when(dataCenterIpAddressDao.mark(anyLong(), anyLong(), anyString())).thenReturn(true);
+ 
+         assertTrue(tungstenService.addManagementNetworkSubnet(hostPodVO));
+@@ -457,7 +459,6 @@
+         Network managementNetwork = mock(Network.class);
+         TungstenAnswer removeTungstenNetworkSubnetAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
+-        DataCenterIpAddressVO dataCenterIpAddressVO = mock(DataCenterIpAddressVO.class);
+ 
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(),
+                 eq(Networks.TrafficType.Management))).thenReturn(managementNetwork);
+@@ -465,7 +466,7 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenNetworkDnsCommand.class), anyLong())).thenReturn(getTungstenNetworkDnsAnswer);
+         when(getTungstenNetworkDnsAnswer.getDetails()).thenReturn("192.168.100.150");
+         when(managementNetwork.getTrafficType()).thenReturn(Networks.TrafficType.Management);
+-        when(dataCenterIpAddressDao.listByPodIdDcIdIpAddress(anyLong(), anyLong(), anyString())).thenReturn(List.of(dataCenterIpAddressVO));
++        when(dataCenterIpAddressDao.listByPodIdDcIdIpAddress(anyLong(), anyLong(), anyString())).thenReturn(List.of(dataCenterIpAddressVOMock));
+ 
+         assertTrue(tungstenService.removeManagementNetworkSubnet(hostPodVO));
+         verify(dataCenterIpAddressDao, times(1)).releasePodIpAddress(anyLong());

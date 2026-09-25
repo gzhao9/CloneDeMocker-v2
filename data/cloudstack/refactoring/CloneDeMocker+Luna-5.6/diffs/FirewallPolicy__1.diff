@@ -1,0 +1,50 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/resource/TungstenResourceTest.java
+@@ -183,6 +183,8 @@
+     @Mock
+     TungstenApi tungstenApi;
+ 
++    private FirewallPolicy firewallPolicyMock;
++
+     TungstenResource tungstenResource;
+ 
+     MockedStatic<TungstenVRouterApi> tungstenVRouterApiMocked;
+@@ -192,6 +194,7 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
++        firewallPolicyMock = mock(FirewallPolicy.class);
+         tungstenResource = new TungstenResource();
+         tungstenResource.tungstenApi = tungstenApi;
+         ReflectionTestUtils.setField(tungstenResource, "vrouterPort", "9091");
+@@ -1196,8 +1199,7 @@
+     @Test
+     public void executeRequestCreateTungstenFirewallPolicyCommandTest() {
+         TungstenCommand command = new CreateTungstenFirewallPolicyCommand("firewallPolicyName", "b30ff54a-10a9-11ec-82a8-0242ac130003", 1);
+-        FirewallPolicy firewallPolicy = mock(FirewallPolicy.class);
+-        when(tungstenApi.createTungstenFirewallPolicy(anyString(), anyString(), anyString(), anyInt())).thenReturn(firewallPolicy);
++        when(tungstenApi.createTungstenFirewallPolicy(anyString(), anyString(), anyString(), anyInt())).thenReturn(firewallPolicyMock);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+         assertNotNull(answer.getApiObjectBase());
+@@ -1254,9 +1256,8 @@
+     public void executeRequestListTungstenFirewallPolicyCommandTest() {
+         TungstenCommand command = new ListTungstenFirewallPolicyCommand("d64e6082-10b3-11ec-82a8-0242ac130003",
+                 "db1f89d8-10b3-11ec-82a8-0242ac130003");
+-        FirewallPolicy firewallPolicy1 = mock(FirewallPolicy.class);
+         FirewallPolicy firewallPolicy2 = mock(FirewallPolicy.class);
+-        Answer<List<ApiObjectBase>> firewallPoliciesAnswer = setupApiObjectBaseListAnswer(firewallPolicy1, firewallPolicy2);
++        Answer<List<ApiObjectBase>> firewallPoliciesAnswer = setupApiObjectBaseListAnswer(firewallPolicyMock, firewallPolicy2);
+         when(tungstenApi.listTungstenFirewallPolicy(anyString(), anyString())).thenAnswer(firewallPoliciesAnswer);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
+@@ -1313,8 +1314,7 @@
+     @Test
+     public void executeRequestDeleteTungstenFirewallPolicyCommandTest() {
+         TungstenCommand command = new DeleteTungstenFirewallPolicyCommand("0b27c38c-10b6-11ec-82a8-0242ac130003");
+-        FirewallPolicy firewallPolicy = mock(FirewallPolicy.class);
+-        when(tungstenApi.getTungstenObject(eq(FirewallPolicy.class), anyString())).thenReturn(firewallPolicy);
++        when(tungstenApi.getTungstenObject(eq(FirewallPolicy.class), anyString())).thenReturn(firewallPolicyMock);
+         when(tungstenApi.deleteTungstenObject(any(FirewallPolicy.class))).thenReturn(true);
+         TungstenAnswer answer = (TungstenAnswer) tungstenResource.executeRequest(command);
+         assertTrue(answer.getResult());
