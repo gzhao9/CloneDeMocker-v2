@@ -1,0 +1,93 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -494,13 +494,12 @@
+     public void getCustomDiskOfferingIdForVolumeUploadReturnsDefaultOfferingWhenEncryptedOnlyAndDefaultOfferingIsEncrypted() {
+         Account owner = Mockito.mock(Account.class);
+         DataCenter zone = Mockito.mock(DataCenter.class);
+-        DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
++        DiskOfferingVO defaultOffering = createMockDiskOfferingVO(true);
+ 
+         Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Active);
+         Mockito.when(defaultOffering.getId()).thenReturn(12L);
+         Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+         Mockito.when(_diskOfferingDao.findById(12L)).thenReturn(defaultOffering);
+-        Mockito.when(defaultOffering.getEncrypt()).thenReturn(true);
+ 
+         Long result = volumeApiServiceImpl.getCustomDiskOfferingIdForVolumeUpload(owner, zone, true);
+ 
+@@ -512,18 +511,15 @@
+     public void getCustomDiskOfferingIdForVolumeUploadFallsBackToEncryptedCustomOfferingWhenDefaultOfferingNotEncrypted() {
+         Account owner = Mockito.mock(Account.class);
+         DataCenter zone = Mockito.mock(DataCenter.class);
+-        DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+-        DiskOfferingVO nonEncryptedOffering = Mockito.mock(DiskOfferingVO.class);
+-        DiskOfferingVO encryptedOffering = Mockito.mock(DiskOfferingVO.class);
++        DiskOfferingVO defaultOffering = createMockDiskOfferingVO(false);
++        DiskOfferingVO nonEncryptedOffering = createMockDiskOfferingVO(false);
++        DiskOfferingVO encryptedOffering = createMockDiskOfferingVO(true);
+ 
+         Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Active);
+         Mockito.when(defaultOffering.getId()).thenReturn(13L);
+         Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+         Mockito.when(_diskOfferingDao.findById(13L)).thenReturn(defaultOffering);
+-        Mockito.when(defaultOffering.getEncrypt()).thenReturn(false);
+-
+-        Mockito.when(nonEncryptedOffering.getEncrypt()).thenReturn(false);
+-        Mockito.when(encryptedOffering.getEncrypt()).thenReturn(true);
++
+         Mockito.when(encryptedOffering.getId()).thenReturn(23L);
+         Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(nonEncryptedOffering, encryptedOffering));
+ 
+@@ -562,15 +558,14 @@
+         Account owner = Mockito.mock(Account.class);
+         DataCenter zone = Mockito.mock(DataCenter.class);
+         DiskOfferingVO defaultOffering = Mockito.mock(DiskOfferingVO.class);
+-        DiskOfferingVO firstEncrypted = Mockito.mock(DiskOfferingVO.class);
+-        DiskOfferingVO secondEncrypted = Mockito.mock(DiskOfferingVO.class);
++        DiskOfferingVO firstEncrypted = createMockDiskOfferingVO(true);
++        DiskOfferingVO secondEncrypted = createMockDiskOfferingVO(true);
+ 
+         Mockito.when(defaultOffering.getState()).thenReturn(DiskOffering.State.Inactive);
+         Mockito.when(_diskOfferingDao.findByUniqueName(anyString())).thenReturn(defaultOffering);
+ 
+-        Mockito.when(firstEncrypted.getEncrypt()).thenReturn(true);
+-        Mockito.when(secondEncrypted.getEncrypt()).thenReturn(true);
+-        Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(firstEncrypted, secondEncrypted));
++
++                Mockito.when(_diskOfferingDao.listCustomDiskOfferings()).thenReturn(List.of(firstEncrypted, secondEncrypted));
+         Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(owner, firstEncrypted, zone);
+         Mockito.doThrow(new PermissionDeniedException("denied")).when(_configMgr).checkDiskOfferingAccess(owner, secondEncrypted, zone);
+ 
+@@ -671,8 +666,7 @@
+     // Negative test - attach data volume, to the vm on non-kvm hypervisor
+     @Test(expected = InvalidParameterValueException.class)
+     public void attachDiskWithEncryptEnabledOfferingonNonKVM() throws NoSuchFieldException, IllegalAccessException {
+-        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+-        when(diskOffering.getEncrypt()).thenReturn(true);
++        DiskOfferingVO diskOffering = createMockDiskOfferingVO(true);
+         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
+         volumeApiServiceImpl.attachVolumeToVM(2L, 10L, 1L, false, false);
+     }
+@@ -681,8 +675,7 @@
+     @Test
+     public void attachDiskWithEncryptEnabledOfferingOnKVM() throws NoSuchFieldException, IllegalAccessException {
+         thrown.expect(NullPointerException.class);
+-        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+-        when(diskOffering.getEncrypt()).thenReturn(true);
++        DiskOfferingVO diskOffering = createMockDiskOfferingVO(true);
+         when(_diskOfferingDao.findById(anyLong())).thenReturn(diskOffering);
+         try (MockedConstruction<CheckedReservation> mockCheckedReservation = Mockito.mockConstruction(CheckedReservation.class)) {
+             volumeApiServiceImpl.attachVolumeToVM(4L, 10L, 1L, false, false);
+@@ -1042,6 +1035,12 @@
+         Mockito.verify(volumeServiceMock, Mockito.times(1)).destroyVolume(volumeMockId);
+     }
+ 
++    private static DiskOfferingVO createMockDiskOfferingVO(boolean encrypt) {
++        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
++        Mockito.when(diskOffering.getEncrypt()).thenReturn(encrypt);
++        return diskOffering;
++    }
++
+     private void verifyMocksForTestDestroyVolumeWhenVolumeIsNotInRightState() {
+         Mockito.verify(volumeServiceMock, Mockito.times(0)).destroyVolume(volumeMockId);
+         Mockito.verify(resourceLimitServiceMock, Mockito.times(0)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock, null);
