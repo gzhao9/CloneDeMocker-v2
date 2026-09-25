@@ -176,6 +176,25 @@ def sync(lane: str, project: str, note: str) -> bool:
     return False
 
 
+LFS_POINTER = b"version https://git-lfs.github.com/spec/v1"
+
+
+def show_blob(spec: str) -> bytes | None:
+    """`git show <rev>:<path>`, with a Git LFS pointer expanded to the file it stands for.
+
+    CloudStack's pair results files passed GitHub's 100 MB limit and live in LFS from
+    2026-09-26; `git show` returns only their pointer. Works for both forms."""
+    shown = subprocess.run(["git", "show", spec], cwd=REPO, capture_output=True)
+    if shown.returncode != 0 or not shown.stdout:
+        return None
+    if shown.stdout.startswith(LFS_POINTER):
+        smudged = subprocess.run(["git", "lfs", "smudge"], cwd=REPO, input=shown.stdout, capture_output=True)
+        if smudged.returncode != 0 or smudged.stdout.startswith(LFS_POINTER):
+            raise RuntimeError(f"cannot fetch the LFS object for {spec}: {smudged.stderr[-300:]!r}")
+        return smudged.stdout
+    return shown.stdout
+
+
 def merge_with_remote(base: str, rel: str) -> None:
     """Fold rows another machine published into this file before it replaces the remote copy.
 
@@ -186,10 +205,10 @@ def merge_with_remote(base: str, rel: str) -> None:
     """
     if not (rel.endswith("refactoring-results.json") or rel.endswith("refactoring-results.csv")):
         return
-    shown = subprocess.run(["git", "show", f"{base}:{rel}"], cwd=REPO, capture_output=True)
-    if shown.returncode != 0 or not shown.stdout:
+    blob = show_blob(f"{base}:{rel}")
+    if blob is None:
         return
-    remote_text = shown.stdout.decode("utf-8", "replace")
+    remote_text = blob.decode("utf-8-sig", "replace")
     path = REPO / rel
     if rel.endswith(".json"):
         local = json.loads(path.read_text(encoding="utf-8"))
@@ -222,10 +241,10 @@ _remote_cache: dict = {"at": 0.0}
 
 
 def _remote_rows(rel: str) -> dict:
-    shown = subprocess.run(["git", "show", f"{REMOTE}/main:{rel}"], cwd=REPO, capture_output=True)
-    if shown.returncode != 0 or not shown.stdout:
+    blob = show_blob(f"{REMOTE}/main:{rel}")
+    if blob is None:
         return {}
-    return json.loads(shown.stdout.decode("utf-8", "replace")).get("results", {})
+    return json.loads(blob.decode("utf-8-sig", "replace")).get("results", {})
 
 
 # Modules CloudStack builds only when the `noredist` property is set (profiles in pom.xml and
