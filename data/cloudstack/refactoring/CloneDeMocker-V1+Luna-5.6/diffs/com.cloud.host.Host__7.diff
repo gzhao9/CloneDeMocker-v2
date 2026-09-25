@@ -1,0 +1,81 @@
+--- a/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/ScaleIOPrimaryDataStoreDriverTest.java
++++ b/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/ScaleIOPrimaryDataStoreDriverTest.java
+@@ -77,6 +77,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class ScaleIOPrimaryDataStoreDriverTest {
++    @Mock
++    private Host host;
+ 
+     @Spy
+     @InjectMocks
+@@ -376,7 +378,6 @@
+ 
+         VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+         VolumeInfo destData = Mockito.mock(VolumeInfo.class);
+-        Host host = Mockito.mock(Host.class);
+         String destVolumePath = "01b332b300000007:vol-11-b9e2-10ee";
+ 
+         when(srcData.getId()).thenReturn(1L);
+@@ -412,7 +413,6 @@
+ 
+         VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+         VolumeInfo destData = Mockito.mock(VolumeInfo.class);
+-        Host host = Mockito.mock(Host.class);
+         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
+         String destVolumePath = "01b332b300000007:vol-11-b9e2-10ee";
+ 
+@@ -447,7 +447,6 @@
+         // Either Volume deletion success or failure method should complete
+ 
+         VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+-        Host host = Mockito.mock(Host.class);
+         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
+ 
+         DataStore srcStore = Mockito.mock(DataStore.class);
+@@ -470,7 +469,6 @@
+         // Either Volume deletion success or failure method should complete
+ 
+         VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
+-        Host host = Mockito.mock(Host.class);
+         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
+ 
+         DataStore srcStore = Mockito.mock(DataStore.class);
+@@ -520,16 +518,15 @@
+         DataObject destData = Mockito.mock(DataObject.class);
+         DataTO destDataTO = Mockito.mock(DataTO.class);
+         when(destData.getTO()).thenReturn(destDataTO);
+-        Host destHost = Mockito.mock(Host.class);
+ 
+         doReturn(false).when(scaleIOPrimaryDataStoreDriver).anyVolumeRequiresEncryption(srcData, destData);
+         RemoteHostEndPoint ep = Mockito.mock(RemoteHostEndPoint.class);
+-        remoteHostEndPointMock.when(() -> RemoteHostEndPoint.getHypervisorHostEndPoint(destHost)).thenReturn(ep);
++        remoteHostEndPointMock.when(() -> RemoteHostEndPoint.getHypervisorHostEndPoint(host)).thenReturn(ep);
+         Answer answer = Mockito.mock(Answer.class);
+         when(ep.sendMessage(any())).thenReturn(answer);
+ 
+-        Answer expectedAnswer = scaleIOPrimaryDataStoreDriver.copyOfflineVolume(srcData, destData, destHost);
+-
++
++        Answer expectedAnswer = scaleIOPrimaryDataStoreDriver.copyOfflineVolume(srcData, destData, host);
+         Assert.assertEquals(expectedAnswer, answer);
+     }
+ 
+@@ -543,12 +540,12 @@
+         DataObject destData = Mockito.mock(DataObject.class);
+         DataTO destDataTO = Mockito.mock(DataTO.class);
+         when(destData.getTO()).thenReturn(destDataTO);
+-        Host destHost = Mockito.mock(Host.class);
+-
++
++        // removed local mock; replaced with global field `host`
+         doReturn(false).when(scaleIOPrimaryDataStoreDriver).anyVolumeRequiresEncryption(srcData, destData);
+-        remoteHostEndPointMock.when(() -> RemoteHostEndPoint.getHypervisorHostEndPoint(destHost)).thenReturn(null);
+-
+-        Answer answer = scaleIOPrimaryDataStoreDriver.copyOfflineVolume(srcData, destData, destHost);
++
++        remoteHostEndPointMock.when(() -> RemoteHostEndPoint.getHypervisorHostEndPoint(host)).thenReturn(null);
++        Answer answer = scaleIOPrimaryDataStoreDriver.copyOfflineVolume(srcData, destData, host);
+ 
+         Assert.assertEquals(false, answer.getResult());
+     }

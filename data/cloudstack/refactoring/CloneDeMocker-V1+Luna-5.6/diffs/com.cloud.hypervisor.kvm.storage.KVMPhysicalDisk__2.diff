@@ -1,0 +1,92 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtGetVolumesOnStorageCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtGetVolumesOnStorageCommandWrapperTest.java
+@@ -108,8 +108,7 @@
+         List<KVMPhysicalDisk> physicalDisks = new ArrayList<>();
+         int numberDisks = 3;
+         for (int i = 0; i < numberDisks; i++) {
+-            KVMPhysicalDisk disk = Mockito.mock(KVMPhysicalDisk.class);
+-            Mockito.when(disk.getName()).thenReturn(diskNamePrefix + (numberDisks - i));
++            KVMPhysicalDisk disk = MockKVMPhysicalDisk.createMockKVMPhysicalDisk(diskNamePrefix + (numberDisks - i));
+             Mockito.when(disk.getFormat()).thenReturn(QemuImg.PhysicalDiskFormat.QCOW2);
+             Mockito.when(disk.getQemuEncryptFormat()).thenReturn(QemuObject.EncryptFormat.LUKS);
+             physicalDisks.add(disk);
+@@ -155,4 +154,16 @@
+         Mockito.verify(volumeOnStorageTO).addDetail(VolumeOnStorageTO.Detail.IS_ENCRYPTED, "true");
+         Mockito.verify(volumeOnStorageTO).addDetail(VolumeOnStorageTO.Detail.IS_LOCKED, "false");
+     }
++
++    public final class MockKVMPhysicalDisk {
++        private MockKVMPhysicalDisk() {
++        }
++
++        public static com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk createMockKVMPhysicalDisk(String name) {
++            com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk disk =
++                    org.mockito.Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.class);
++            org.mockito.Mockito.when(disk.getName()).thenReturn(name);
++            return disk;
++        }
++    }
+ }
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtImportConvertedInstanceCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtImportConvertedInstanceCommandWrapperTest.java
+@@ -92,17 +92,12 @@
+     public void testGetTemporaryDisksWithPrefixFromTemporaryPool() {
+         String convertPath = "/xyz";
+         String convertPrefix = UUID.randomUUID().toString();
+-        KVMPhysicalDisk physicalDisk1 = Mockito.mock(KVMPhysicalDisk.class);
+-        Mockito.when(physicalDisk1.getName()).thenReturn("disk1");
+-        KVMPhysicalDisk physicalDisk2 = Mockito.mock(KVMPhysicalDisk.class);
+-        Mockito.when(physicalDisk2.getName()).thenReturn("disk2");
+-
+-        KVMPhysicalDisk convertedDisk1 = Mockito.mock(KVMPhysicalDisk.class);
+-        Mockito.when(convertedDisk1.getName()).thenReturn(String.format("%s-sda", convertPrefix));
+-        KVMPhysicalDisk convertedDisk2 = Mockito.mock(KVMPhysicalDisk.class);
+-        Mockito.when(convertedDisk2.getName()).thenReturn(String.format("%s-sdb", convertPrefix));
+-        KVMPhysicalDisk convertedXml = Mockito.mock(KVMPhysicalDisk.class);
+-        Mockito.when(convertedXml.getName()).thenReturn(String.format("%s.xml", convertPrefix));
++        KVMPhysicalDisk physicalDisk1 = MockKVMPhysicalDisk.createMockKVMPhysicalDisk("disk1");
++        KVMPhysicalDisk physicalDisk2 = MockKVMPhysicalDisk.createMockKVMPhysicalDisk("disk2");
++
++        KVMPhysicalDisk convertedDisk1 = MockKVMPhysicalDisk.createMockKVMPhysicalDisk(String.format("%s-sda", convertPrefix));
++        KVMPhysicalDisk convertedDisk2 = MockKVMPhysicalDisk.createMockKVMPhysicalDisk(String.format("%s-sdb", convertPrefix));
++        KVMPhysicalDisk convertedXml = MockKVMPhysicalDisk.createMockKVMPhysicalDisk(String.format("%s.xml", convertPrefix));
+         Mockito.when(temporaryPool.listPhysicalDisks()).thenReturn(Arrays.asList(physicalDisk1, physicalDisk2,
+                 convertedDisk1, convertedDisk2, convertedXml));
+ 
+@@ -123,8 +118,7 @@
+         LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
+         Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
+ 
+-        KVMPhysicalDisk convertedDisk1 = Mockito.mock(KVMPhysicalDisk.class);
+-        Mockito.when(convertedDisk1.getName()).thenReturn("disk1");
++        KVMPhysicalDisk convertedDisk1 = MockKVMPhysicalDisk.createMockKVMPhysicalDisk("disk1");
+         Mockito.when(temporaryPool.getPhysicalDisk(relativePath)).thenReturn(convertedDisk1);
+ 
+         List<KVMPhysicalDisk> disks = importInstanceCommandWrapper.getTemporaryDisksFromParsedXml(temporaryPool, parser, "", "", "prefix");
+@@ -176,8 +170,7 @@
+             LibvirtVMDef.DiskDef.DiskFmtType type = LibvirtVMDef.DiskDef.DiskFmtType.QCOW2;
+             diskDef.defFileBasedDisk(relativePath, relativePath, bus, type);
+ 
+-            KVMPhysicalDisk sourceDisk = Mockito.mock(KVMPhysicalDisk.class);
+-            Mockito.when(sourceDisk.getName()).thenReturn(UUID.randomUUID().toString());
++            KVMPhysicalDisk sourceDisk = MockKVMPhysicalDisk.createMockKVMPhysicalDisk(UUID.randomUUID().toString());
+             Mockito.when(sourceDisk.getPool()).thenReturn(destinationPool);
+             Mockito.when(destinationPool.getType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+             List<KVMPhysicalDisk> disks = List.of(sourceDisk);
+@@ -242,4 +235,16 @@
+         Answer answer = importInstanceCommandWrapper.execute(cmd, libvirtComputingResourceMock);
+         Assert.assertFalse(answer.getResult());
+     }
++
++    public final class MockKVMPhysicalDisk {
++        private MockKVMPhysicalDisk() {
++        }
++
++        public static com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk createMockKVMPhysicalDisk(String name) {
++            com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk disk =
++                    org.mockito.Mockito.mock(com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.class);
++            org.mockito.Mockito.when(disk.getName()).thenReturn(name);
++            return disk;
++        }
++    }
+ }

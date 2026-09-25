@@ -1,57 +1,70 @@
 --- a/server/src/test/java/com/cloud/server/ManagementServerImplTest.java
 +++ b/server/src/test/java/com/cloud/server/ManagementServerImplTest.java
-@@ -618,9 +618,8 @@
+@@ -618,19 +618,17 @@
              when(cmd.isRecursive()).thenReturn(false);
              UserDataVO userData = Mockito.mock(UserDataVO.class);
  
 -            SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
-+            SearchBuilder<UserDataVO> sb = createMockSearchBuilder(userData);
++            SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
++
++            SearchBuilder<UserDataVO> sb = createMockSearchBuilder(userData, sc);
              when(userDataDao.createSearchBuilder()).thenReturn(sb);
 -            when(sb.entity()).thenReturn(userData);
+-
+-            SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
+-            when(sb.create()).thenReturn(sc);
  
-             SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
-             when(sb.create()).thenReturn(sc);
-@@ -651,9 +650,8 @@
-             when(cmd.isRecursive()).thenReturn(false);
-             UserDataVO userData = Mockito.mock(UserDataVO.class);
- 
--            SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
-+            SearchBuilder<UserDataVO> sb = createMockSearchBuilder(userData);
-             when(userDataDao.createSearchBuilder()).thenReturn(sb);
--            when(sb.entity()).thenReturn(userData);
- 
-             SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
-             when(sb.create()).thenReturn(sc);
-@@ -684,9 +682,8 @@
-             when(cmd.isRecursive()).thenReturn(false);
-             UserDataVO userData = Mockito.mock(UserDataVO.class);
- 
--            SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
-+            SearchBuilder<UserDataVO> sb = createMockSearchBuilder(userData);
-             when(userDataDao.createSearchBuilder()).thenReturn(sb);
--            when(sb.entity()).thenReturn(userData);
- 
-             SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
-             when(sb.create()).thenReturn(sc);
-@@ -696,7 +693,7 @@
+             List<UserDataVO> userDataList = new ArrayList<UserDataVO>();
+             userDataList.add(userData);
              Pair<List<UserDataVO>, Integer> result = new Pair(userDataList, 1);
              when(userDataDao.searchAndCount(nullable(SearchCriteria.class), nullable(Filter.class))).thenReturn(result);
  
 -            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDatas(cmd, false);
-+            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserDataS(cmd, false);
++            Pair<List<? extends UserData>, Integer> userdataResultList = spy.listUserData(cmd, false);
  
              Assert.assertEquals(userdataResultList.first().get(0), userDataList.get(0));
          }
-@@ -2466,6 +2463,12 @@
-         return diskOffering;
-     }
+@@ -651,12 +649,9 @@
+             when(cmd.isRecursive()).thenReturn(false);
+             UserDataVO userData = Mockito.mock(UserDataVO.class);
  
-+    private static SearchBuilder<UserDataVO> createMockSearchBuilder(UserDataVO userData) {
-+        SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
-+        when(sb.entity()).thenReturn(userData);
-+        return sb;
+-            SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
++            SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
++            SearchBuilder<UserDataVO> sb = createMockSearchBuilder(userData, sc);
+             when(userDataDao.createSearchBuilder()).thenReturn(sb);
+-            when(sb.entity()).thenReturn(userData);
+-
+-            SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
+-            when(sb.create()).thenReturn(sc);
+ 
+             List<UserDataVO> userDataList = new ArrayList<UserDataVO>();
+             userDataList.add(userData);
+@@ -684,12 +679,9 @@
+             when(cmd.isRecursive()).thenReturn(false);
+             UserDataVO userData = Mockito.mock(UserDataVO.class);
+ 
+-            SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
++            SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
++            SearchBuilder<UserDataVO> sb = createMockSearchBuilder(userData, sc);
+             when(userDataDao.createSearchBuilder()).thenReturn(sb);
+-            when(sb.entity()).thenReturn(userData);
+-
+-            SearchCriteria<UserDataVO> sc = Mockito.mock(SearchCriteria.class);
+-            when(sb.create()).thenReturn(sc);
+ 
+             List<UserDataVO> userDataList = new ArrayList<UserDataVO>();
+             userDataList.add(userData);
+@@ -991,6 +983,13 @@
+         Mockito.when(guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
+         Mockito.when(guestOSDao.listIdsByCategoryId(id)).thenReturn(Arrays.asList(1L));
+         spy.deleteGuestOsCategory(deleteCmd);
 +    }
 +
-     @Test
-     public void createDeploymentPlanForMigrationListingTestAllocatesInAnyClusterWhenStorageMigrationIsSupported() {
-         VMInstanceVO vm = mockRunningVM(1L, HypervisorType.KVM);
++    private static SearchBuilder<UserDataVO> createMockSearchBuilder(UserDataVO userData, SearchCriteria<UserDataVO> searchCriteria) {
++        SearchBuilder<UserDataVO> sb = Mockito.mock(SearchBuilder.class);
++        when(sb.entity()).thenReturn(userData);
++        when(sb.create()).thenReturn(searchCriteria);
++        return sb;
+     }
+ 
+     private void mockGuestOsJoin() {
