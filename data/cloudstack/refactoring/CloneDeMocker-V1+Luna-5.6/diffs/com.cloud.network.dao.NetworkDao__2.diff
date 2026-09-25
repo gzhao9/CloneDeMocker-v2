@@ -1,0 +1,88 @@
+--- a/server/src/test/java/com/cloud/network/router/NetworkHelperImplTest.java
++++ b/server/src/test/java/com/cloud/network/router/NetworkHelperImplTest.java
+@@ -348,7 +348,7 @@
+         Mockito.when(publicIpMock.getNetmask()).thenReturn(expected.getIPv4Netmask());
+         Mockito.when(publicIpMock.getMacAddress()).thenReturn(expected.getMacAddress());
+         Mockito.when(publicIpMock.getNetworkId()).thenReturn(networkId);
+-        Mockito.when(networkDao.findById(networkId)).thenReturn(publicNetworkMock);
++        networkDao = MockNetworkDao.createMockNetworkDao(networkId, publicNetworkMock);
+         Mockito.when(publicNetworkMock.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Vxlan);
+         Mockito.when(publicIpMock.getVlanTag()).thenReturn(vlanTag);
+ 
+@@ -378,7 +378,7 @@
+         Mockito.when(publicIpMock.getNetmask()).thenReturn(expected.getIPv4Netmask());
+         Mockito.when(publicIpMock.getMacAddress()).thenReturn(expected.getMacAddress());
+         Mockito.when(publicIpMock.getNetworkId()).thenReturn(networkId);
+-        Mockito.when(networkDao.findById(networkId)).thenReturn(publicNetworkMock);
++        networkDao = MockNetworkDao.createMockNetworkDao(networkId, publicNetworkMock);
+         Mockito.when(publicNetworkMock.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Vlan);
+         Mockito.when(publicIpMock.getVlanTag()).thenReturn(vlanTag);
+ 
+@@ -408,7 +408,7 @@
+         Mockito.when(publicIpMock.getNetmask()).thenReturn(expected.getIPv4Netmask());
+         Mockito.when(publicIpMock.getMacAddress()).thenReturn(expected.getMacAddress());
+         Mockito.when(publicIpMock.getNetworkId()).thenReturn(networkId);
+-        Mockito.when(networkDao.findById(networkId)).thenReturn(publicNetworkMock);
++        networkDao = MockNetworkDao.createMockNetworkDao(networkId, publicNetworkMock);
+         Mockito.when(publicNetworkMock.getBroadcastDomainType()).thenReturn(Networks.BroadcastDomainType.Vlan);
+         Mockito.when(publicIpMock.getVlanTag()).thenReturn(vlanTag);
+ 
+@@ -534,4 +534,18 @@
+         Map<Network, List<? extends NicProfile>> nic = networkHelperSpy.configurePublicNic(routerDeploymentDefinitionMock, false);
+         Mockito.verify(ipv6ServiceMock).updateNicIpv6(Mockito.eq(nic.get(networkMock).get(0)), Mockito.any(), Mockito.eq(networkMock));
+     }
++
++    public final class MockNetworkDao {
++        private MockNetworkDao() {
++        }
++
++        public static com.cloud.network.dao.NetworkDao createMockNetworkDao(
++                long networkId,
++                com.cloud.network.dao.NetworkVO networkVO) {
++            com.cloud.network.dao.NetworkDao networkDao =
++                    Mockito.mock(com.cloud.network.dao.NetworkDao.class);
++            Mockito.when(networkDao.findById(networkId)).thenReturn(networkVO);
++            return networkDao;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/network/router/RouterControlHelperTest.java
++++ b/server/src/test/java/com/cloud/network/router/RouterControlHelperTest.java
+@@ -82,7 +82,7 @@
+         when(nw2.getTrafficType()).thenReturn(TrafficType.Control);
+         NetworkVO nw3 = mock(NetworkVO.class);
+         lenient().when(nw3.getTrafficType()).thenReturn(TrafficType.Control);
+-        when(this.nwDao.findById(NW_ID_1)).thenReturn(nw1);
++        this.nwDao = MockNetworkDao.createMockNetworkDao(NW_ID_1, nw1);
+         when(this.nwDao.findById(NW_ID_2)).thenReturn(nw2);
+         lenient().when(this.nwDao.findById(NW_ID_3)).thenReturn(nw3);
+ 
+@@ -105,8 +105,8 @@
+ 
+         NetworkVO nw1 = mock(NetworkVO.class);
+         when(nw1.getTrafficType()).thenReturn(TrafficType.Public);
+-        when(this.nwDao.findById(NW_ID_1)).thenReturn(nw1);
+ 
++        this.nwDao = MockNetworkDao.createMockNetworkDao(NW_ID_1, nw1);
+         DomainRouterVO router = mock(DomainRouterVO.class);
+         when(this.routerDao.findById(ROUTER_ID)).thenReturn(router);
+         when(router.getPrivateIpAddress()).thenReturn(IP4_ADDRES1);
+@@ -118,4 +118,18 @@
+         assertEquals(DIDN_T_GET_THE_EXPECTED_IP4_ADDRESS, IP4_ADDRES1, ip4address);
+     }
+ 
++
++    public final class MockNetworkDao {
++        private MockNetworkDao() {
++        }
++
++        public static com.cloud.network.dao.NetworkDao createMockNetworkDao(
++                long networkId,
++                com.cloud.network.dao.NetworkVO networkVO) {
++            com.cloud.network.dao.NetworkDao networkDao =
++                    Mockito.mock(com.cloud.network.dao.NetworkDao.class);
++            Mockito.when(networkDao.findById(networkId)).thenReturn(networkVO);
++            return networkDao;
++        }
++    }
+ }

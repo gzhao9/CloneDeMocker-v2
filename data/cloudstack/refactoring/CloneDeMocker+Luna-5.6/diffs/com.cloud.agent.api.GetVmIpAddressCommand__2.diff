@@ -1,0 +1,246 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtGetVmIpAddressCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtGetVmIpAddressCommandWrapperTest.java
+@@ -66,14 +66,11 @@
+     @Test
+     public void testExecuteWithValidVmName() {
+         LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+-        GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+         LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+         MockedStatic<Script> scriptMock = mockStatic(Script.class);
+ 
+-        when(getVmIpAddressCommand.getVmName()).thenReturn("validVmName");
+-        when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn("192.168.0.0/24");
++        GetVmIpAddressCommand getVmIpAddressCommand = createMockGetVmIpAddressCommand("validVmName", "192.168.0.0/24", false);
+         when(getVmIpAddressCommand.getMacAddress()).thenReturn("02:0c:02:f9:00:80");
+-        when(getVmIpAddressCommand.isWindows()).thenReturn(false);
+         when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, VIRSH_DOMIF_OUTPUT));
+ 
+         Answer answer = commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
+@@ -113,17 +110,14 @@
+     @Test
+     public void testExecuteWithWindowsVm() {
+         LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+-        GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+-        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+-        MockedStatic<Script> scriptMock = null;
+-
+-        try {
+-            scriptMock = mockStatic(Script.class);
+-
+-            when(getVmIpAddressCommand.getVmName()).thenReturn("validVmName");
+-            when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn("192.168.0.0/24");
++        GetVmIpAddressCommand getVmIpAddressCommand = createMockGetVmIpAddressCommand("validVmName", "192.168.0.0/24", true);
++        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
++        MockedStatic<Script> scriptMock = null;
++
++        try {
++            scriptMock = mockStatic(Script.class);
++
+             when(getVmIpAddressCommand.getMacAddress()).thenReturn("02:0c:02:f9:00:80");
+-            when(getVmIpAddressCommand.isWindows()).thenReturn(true);
+             when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, VIRSH_DOMIF_OUTPUT_WINDOWS));
+ 
+             Answer answer = commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
+@@ -140,17 +134,14 @@
+     @Test
+     public void testExecuteWithWindowsVm2() {
+         LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+-        GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+-        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+-        MockedStatic<Script> scriptMock = null;
+-
+-        try {
+-            scriptMock = mockStatic(Script.class);
+-
+-            when(getVmIpAddressCommand.getVmName()).thenReturn("validVmName");
+-            when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn("192.168.0.0/24");
++        GetVmIpAddressCommand getVmIpAddressCommand = createMockGetVmIpAddressCommand("validVmName", "192.168.0.0/24", true);
++        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
++        MockedStatic<Script> scriptMock = null;
++
++        try {
++            scriptMock = mockStatic(Script.class);
++
+             when(getVmIpAddressCommand.getMacAddress()).thenReturn("02:0c:02:f9:00:80");
+-            when(getVmIpAddressCommand.isWindows()).thenReturn(true);
+             when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, "")).thenReturn(new Pair<>(0, "192.168.0.10"));
+ 
+             Answer answer = commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
+@@ -165,6 +156,27 @@
+ 
+     @Test
+     public void testExecuteWithNoIpFound() {
++        LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
++        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
++        MockedStatic<Script> scriptMock = null;
++        try {
++            scriptMock = mockStatic(Script.class);
++
++            GetVmIpAddressCommand getVmIpAddressCommand = createMockGetVmIpAddressCommand("validVmName", "192.168.0.0/24", false);
++            when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, ""));
++
++            Answer answer = commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
++
++            assertFalse(answer.getResult());
++            assertNull(answer.getDetails());
++        } finally {
++            if (scriptMock != null)
++                scriptMock.close();
++        }
++    }
++
++    @Test
++    public void testExecuteWithValidVmNameAndNoIpFound() {
+         LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+         GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+         LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+@@ -188,40 +200,13 @@
+     }
+ 
+     @Test
+-    public void testExecuteWithValidVmNameAndNoIpFound() {
+-        LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+-        GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+-        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+-        MockedStatic<Script> scriptMock = null;
+-        try {
+-            scriptMock = mockStatic(Script.class);
+-
+-            when(getVmIpAddressCommand.getVmName()).thenReturn("validVmName");
+-            when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn("192.168.0.0/24");
+-            when(getVmIpAddressCommand.isWindows()).thenReturn(false);
+-            when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, ""));
+-
+-            Answer answer = commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
+-
+-            assertFalse(answer.getResult());
+-            assertNull(answer.getDetails());
+-        } finally {
+-            if (scriptMock != null)
+-                scriptMock.close();
+-        }
+-    }
+-
+-    @Test
+     public void testExecuteWithValidVmNameAndIpFromDhcpLeaseFile() {
+         LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+-        GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+-        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+-        MockedStatic<Script> scriptMock = null;
+-        try {
+-            scriptMock = mockStatic(Script.class);
+-            when(getVmIpAddressCommand.getVmName()).thenReturn("validVmName");
+-            when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn("192.168.0.0/24");
+-            when(getVmIpAddressCommand.isWindows()).thenReturn(false);
++        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
++        MockedStatic<Script> scriptMock = null;
++        try {
++            scriptMock = mockStatic(Script.class);
++            GetVmIpAddressCommand getVmIpAddressCommand = createMockGetVmIpAddressCommand("validVmName", "192.168.0.0/24", false);
+             when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, "192.168.0.10"));
+ 
+             Answer answer = commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
+@@ -237,14 +222,11 @@
+     @Test
+     public void testExecuteWithValidVmNameAndIpFromWindowsRegistry() {
+         LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+-        GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+-        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+-        MockedStatic<Script> scriptMock = null;
+-        try {
+-            scriptMock = mockStatic(Script.class);
+-            when(getVmIpAddressCommand.getVmName()).thenReturn("validVmName");
+-            when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn("192.168.0.0/24");
+-            when(getVmIpAddressCommand.isWindows()).thenReturn(true);
++        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
++        MockedStatic<Script> scriptMock = null;
++        try {
++            scriptMock = mockStatic(Script.class);
++            GetVmIpAddressCommand getVmIpAddressCommand = createMockGetVmIpAddressCommand("validVmName", "192.168.0.0/24", true);
+             when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(new Pair<>(0, "\"192.168.0.10\""));
+ 
+             Answer answer = commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
+@@ -259,6 +241,26 @@
+ 
+     @Test
+     public void testIpFromDomIfCommandExecutionFailure() {
++        LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
++        GetVmIpAddressCommand getVmIpAddressCommand = createMockGetVmIpAddressCommand("testVm", "192.168.1.0/24", false);
++        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
++        MockedStatic<Script> scriptMock = null;
++        try {
++            scriptMock = mockStatic(Script.class);
++            when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(null);
++
++            Answer answer = commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
++
++            assertFalse(answer.getResult());
++            assertNull(answer.getDetails());
++        } finally {
++            if (scriptMock != null)
++                scriptMock.close();
++        }
++    }
++
++    @Test
++    public void testIpFromDhcpLeaseFileCommandExecutionFailure() {
+         LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+         GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+         LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+@@ -280,38 +282,13 @@
+     }
+ 
+     @Test
+-    public void testIpFromDhcpLeaseFileCommandExecutionFailure() {
+-        LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+-        GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+-        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+-        MockedStatic<Script> scriptMock = null;
+-        try {
+-            scriptMock = mockStatic(Script.class);
+-            when(getVmIpAddressCommand.getVmName()).thenReturn("testVm");
+-            when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn("192.168.1.0/24");
+-            when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(null);
+-
+-            Answer answer = commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
+-
+-            assertFalse(answer.getResult());
+-            assertNull(answer.getDetails());
+-        } finally {
+-            if (scriptMock != null)
+-                scriptMock.close();
+-        }
+-    }
+-
+-    @Test
+     public void testIpFromWindowsRegistryCommandExecutionFailure() {
+         LibvirtComputingResource libvirtComputingResource = mock(LibvirtComputingResource.class);
+-        GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
+-        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
+-        MockedStatic<Script> scriptMock = null;
+-        try {
+-            scriptMock = mockStatic(Script.class);
+-            when(getVmIpAddressCommand.getVmName()).thenReturn("testVm");
+-            when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn("192.168.1.0/24");
+-            when(getVmIpAddressCommand.isWindows()).thenReturn(true);
++        LibvirtGetVmIpAddressCommandWrapper commandWrapper = new LibvirtGetVmIpAddressCommandWrapper();
++        MockedStatic<Script> scriptMock = null;
++        try {
++            scriptMock = mockStatic(Script.class);
++            GetVmIpAddressCommand getVmIpAddressCommand = createMockGetVmIpAddressCommand("testVm", "192.168.1.0/24", true);
+             when(Script.executePipedCommands(anyList(), anyLong())).thenReturn(null);
+ 
+             Answer answer = commandWrapper.execute(getVmIpAddressCommand, libvirtComputingResource);
+@@ -353,4 +330,12 @@
+                 scriptMock.close();
+         }
+     }
++
++    private static GetVmIpAddressCommand createMockGetVmIpAddressCommand(String vmName, String vmNetworkCidr, boolean windows) {
++        GetVmIpAddressCommand getVmIpAddressCommand = mock(GetVmIpAddressCommand.class);
++        when(getVmIpAddressCommand.getVmName()).thenReturn(vmName);
++        when(getVmIpAddressCommand.getVmNetworkCidr()).thenReturn(vmNetworkCidr);
++        when(getVmIpAddressCommand.isWindows()).thenReturn(windows);
++        return getVmIpAddressCommand;
++    }
+ }

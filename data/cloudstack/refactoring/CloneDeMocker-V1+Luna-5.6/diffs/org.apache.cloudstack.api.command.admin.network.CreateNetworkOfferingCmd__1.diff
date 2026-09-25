@@ -1,0 +1,88 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
+@@ -218,7 +218,6 @@
+         ReflectionTestUtils.setField(configurationManagerImplSpy, "annotationDao", annotationDao);
+ 
+         deleteZoneCmd = Mockito.mock(DeleteZoneCmd.class);
+-        createNetworkOfferingCmd = Mockito.mock(CreateNetworkOfferingCmd.class);
+     }
+ 
+     @Test
+@@ -461,9 +460,8 @@
+         NetworkOfferingVO offeringVO = Mockito.mock(NetworkOfferingVO.class);
+ 
+         when(createNetworkOfferingCmd.isForNsx()).thenReturn(true);
++        createNetworkOfferingCmd = MockCreateNetworkOfferingCmd.createMockCreateNetworkOfferingCmd(Network.GuestType.Isolated.name());
+         when(createNetworkOfferingCmd.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED.name());
+-        when(createNetworkOfferingCmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.name());
+-        when(createNetworkOfferingCmd.getGuestIpType()).thenReturn(Network.GuestType.Isolated.name());
+         when(createNetworkOfferingCmd.getAvailability()).thenReturn(NetworkOffering.Availability.Optional.name());
+         when(configDao.getValue(anyString())).thenReturn("1000");
+         when(networkOfferingDao.persist(any(NetworkOfferingVO.class), anyMap())).thenReturn(offeringVO);
+@@ -1410,4 +1408,21 @@
+         mapWithEmptySet.put(Network.Service.Firewall, Collections.emptySet());
+         Assert.assertNull(ConfigurationManagerImpl.getExternalNetworkProvider(null, mapWithEmptySet));
+     }
++
++    public final class MockCreateNetworkOfferingCmd {
++
++        private MockCreateNetworkOfferingCmd() {
++        }
++
++        public static org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd createMockCreateNetworkOfferingCmd(
++                String guestIpType) {
++            org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd createNetworkOfferingCmd =
++                    Mockito.mock(org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd.class);
++
++            when(createNetworkOfferingCmd.getGuestIpType()).thenReturn(guestIpType);
++            when(createNetworkOfferingCmd.getTraffictype()).thenReturn("Guest");
++
++            return createNetworkOfferingCmd;
++        }
++    }
+ }
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
+@@ -1315,18 +1315,14 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testInvalidNetworkTypeCreateIpv6NetworkOffering() {
+-        CreateNetworkOfferingCmd cmd = Mockito.mock(CreateNetworkOfferingCmd.class);
+-        Mockito.when(cmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.toString());
+-        Mockito.when(cmd.getGuestIpType()).thenReturn(Network.GuestType.L2.toString());
++        CreateNetworkOfferingCmd cmd = MockCreateNetworkOfferingCmd.createMockCreateNetworkOfferingCmd(Network.GuestType.L2.toString());
+         Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
+         configurationMgr.createNetworkOffering(cmd);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testDisabledConfigCreateIpv6NetworkOffering() {
+-        CreateNetworkOfferingCmd cmd = Mockito.mock(CreateNetworkOfferingCmd.class);
+-        Mockito.when(cmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.toString());
+-        Mockito.when(cmd.getGuestIpType()).thenReturn(Network.GuestType.Isolated.toString());
++        CreateNetworkOfferingCmd cmd = MockCreateNetworkOfferingCmd.createMockCreateNetworkOfferingCmd(Network.GuestType.Isolated.toString());
+         Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
+         configurationMgr.createNetworkOffering(cmd);
+     }
+@@ -1508,4 +1504,21 @@
+                 "Validation failed: Command 'DhcpEntryCommand600' does not contain '='.",
+                 result.second());
+     }
++
++    public final class MockCreateNetworkOfferingCmd {
++
++        private MockCreateNetworkOfferingCmd() {
++        }
++
++        public static org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd createMockCreateNetworkOfferingCmd(
++                String guestIpType) {
++            org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd createNetworkOfferingCmd =
++                    Mockito.mock(org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd.class);
++
++            when(createNetworkOfferingCmd.getGuestIpType()).thenReturn(guestIpType);
++            when(createNetworkOfferingCmd.getTraffictype()).thenReturn("Guest");
++
++            return createNetworkOfferingCmd;
++        }
++    }
+ }

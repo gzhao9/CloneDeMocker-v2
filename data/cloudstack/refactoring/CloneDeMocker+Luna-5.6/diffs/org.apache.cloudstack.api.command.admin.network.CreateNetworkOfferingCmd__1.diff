@@ -1,0 +1,54 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerImplTest.java
+@@ -460,10 +460,9 @@
+     public void testCreateNetworkOfferingForNsx() {
+         NetworkOfferingVO offeringVO = Mockito.mock(NetworkOfferingVO.class);
+ 
++        createNetworkOfferingCmd = MockCreateNetworkOfferingCmd.createMockCreateNetworkOfferingCmd(Network.GuestType.Isolated.name());
+         when(createNetworkOfferingCmd.isForNsx()).thenReturn(true);
+         when(createNetworkOfferingCmd.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED.name());
+-        when(createNetworkOfferingCmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.name());
+-        when(createNetworkOfferingCmd.getGuestIpType()).thenReturn(Network.GuestType.Isolated.name());
+         when(createNetworkOfferingCmd.getAvailability()).thenReturn(NetworkOffering.Availability.Optional.name());
+         when(configDao.getValue(anyString())).thenReturn("1000");
+         when(networkOfferingDao.persist(any(NetworkOfferingVO.class), anyMap())).thenReturn(offeringVO);
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerTest.java
+@@ -1315,18 +1315,14 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testInvalidNetworkTypeCreateIpv6NetworkOffering() {
+-        CreateNetworkOfferingCmd cmd = Mockito.mock(CreateNetworkOfferingCmd.class);
+-        Mockito.when(cmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.toString());
+-        Mockito.when(cmd.getGuestIpType()).thenReturn(Network.GuestType.L2.toString());
++        CreateNetworkOfferingCmd cmd = MockCreateNetworkOfferingCmd.createMockCreateNetworkOfferingCmd(Network.GuestType.L2.toString());
+         Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
+         configurationMgr.createNetworkOffering(cmd);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testDisabledConfigCreateIpv6NetworkOffering() {
+-        CreateNetworkOfferingCmd cmd = Mockito.mock(CreateNetworkOfferingCmd.class);
+-        Mockito.when(cmd.getTraffictype()).thenReturn(Networks.TrafficType.Guest.toString());
+-        Mockito.when(cmd.getGuestIpType()).thenReturn(Network.GuestType.Isolated.toString());
++        CreateNetworkOfferingCmd cmd = MockCreateNetworkOfferingCmd.createMockCreateNetworkOfferingCmd(Network.GuestType.Isolated.toString());
+         Mockito.when(cmd.getInternetProtocol()).thenReturn(NetUtils.InternetProtocol.DualStack.toString());
+         configurationMgr.createNetworkOffering(cmd);
+     }
+--- a/server/src/test/java/com/cloud/configuration/MockCreateNetworkOfferingCmd.java
++++ b/server/src/test/java/com/cloud/configuration/MockCreateNetworkOfferingCmd.java
+@@ -0,0 +1,14 @@
++package com.cloud.configuration;
++
++import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
++import org.mockito.Mockito;
++
++public class MockCreateNetworkOfferingCmd {
++
++    public static CreateNetworkOfferingCmd createMockCreateNetworkOfferingCmd(String guestIpTypeReturn) {
++        CreateNetworkOfferingCmd cmd = Mockito.mock(CreateNetworkOfferingCmd.class);
++        Mockito.when(cmd.getTraffictype()).thenReturn(com.cloud.network.Networks.TrafficType.Guest.toString());
++        Mockito.when(cmd.getGuestIpType()).thenReturn(guestIpTypeReturn);
++        return cmd;
++    }
++}
