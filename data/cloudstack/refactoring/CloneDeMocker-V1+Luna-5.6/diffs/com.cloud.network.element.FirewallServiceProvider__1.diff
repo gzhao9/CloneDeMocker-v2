@@ -1,0 +1,104 @@
+--- a/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
++++ b/server/src/test/java/com/cloud/network/firewall/FirewallManagerTest.java
+@@ -357,7 +357,6 @@
+         final Account caller = Mockito.mock(Account.class);
+         final IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         final NetworkVO network = Mockito.mock(NetworkVO.class);
+-        final FirewallServiceProvider firewallServiceProvider = Mockito.mock(FirewallServiceProvider.class);
+         final Map<Capability, String> firewallCaps = new HashMap<>();
+         final Map<Service, Map<Capability, String>> capabilities = new HashMap<>();
+ 
+@@ -370,8 +369,7 @@
+         when(_networkModel.getNetwork(2L)).thenReturn(network);
+         when(network.getVpcId()).thenReturn(10L);
+         when(routedIpv4Manager.isVirtualRouterGateway(network)).thenReturn(false);
+-        when(firewallServiceProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+-        when(firewallServiceProvider.getCapabilities()).thenReturn(capabilities);
++        final FirewallServiceProvider firewallServiceProvider = createFirewallServiceProvider(capabilities);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+         _firewallMgr._firewallElements = List.of(firewallServiceProvider);
+ 
+@@ -440,15 +438,13 @@
+     @Test
+     public void testGetFirewallServiceCapabilitiesForVpcNetworkUsesVpcProvider() {
+         NetworkVO network = Mockito.mock(NetworkVO.class);
+-        FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> firewallCaps = new HashMap<>();
+         firewallCaps.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+         Map<Service, Map<Capability, String>> providerCapabilities = new HashMap<>();
+         providerCapabilities.put(Service.Firewall, firewallCaps);
+ 
+         when(network.getVpcId()).thenReturn(10L);
+-        when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+-        when(fwProvider.getCapabilities()).thenReturn(providerCapabilities);
++        FirewallServiceProvider fwProvider = createFirewallServiceProvider(providerCapabilities);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+         _firewallMgr._firewallElements = List.of(fwProvider);
+ 
+@@ -479,14 +475,12 @@
+ 
+     @Test
+     public void testGetFirewallServiceCapabilitiesForVpcReturnsCapabilitiesWhenProviderSupports() {
+-        FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
++        FirewallServiceProvider fwProvider = createFirewallServiceProvider(caps);
+         Map<Capability, String> firewallCaps = new HashMap<>();
+         firewallCaps.put(Capability.SupportedProtocols, "tcp,udp");
+         Map<Service, Map<Capability, String>> caps = new HashMap<>();
+         caps.put(Service.Firewall, firewallCaps);
+ 
+-        when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+-        when(fwProvider.getCapabilities()).thenReturn(caps);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+         _firewallMgr._firewallElements = List.of(fwProvider);
+ 
+@@ -565,16 +559,14 @@
+         Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         Vpc vpc = Mockito.mock(Vpc.class);
+-        FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> firewallCaps = new HashMap<>();
+         firewallCaps.put(Capability.SupportedProtocols, "tcp,udp");
+         firewallCaps.put(Capability.SupportedTrafficDirection, "ingress,egress");
+         Map<Service, Map<Capability, String>> caps = new HashMap<>();
+         caps.put(Service.Firewall, firewallCaps);
+ 
++        FirewallServiceProvider fwProvider = createFirewallServiceProvider(caps);
+         when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpc);
+-        when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+-        when(fwProvider.getCapabilities()).thenReturn(caps);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+         _firewallMgr._firewallElements = List.of(fwProvider);
+ 
+@@ -586,7 +578,6 @@
+         Account caller = Mockito.mock(Account.class);
+         IPAddressVO ipAddress = Mockito.mock(IPAddressVO.class);
+         Vpc vpc = Mockito.mock(Vpc.class);
+-        FirewallServiceProvider fwProvider = Mockito.mock(FirewallServiceProvider.class);
+         Map<Capability, String> firewallCaps = new HashMap<>();
+         firewallCaps.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+         firewallCaps.put(Capability.SupportedTrafficDirection, "ingress,egress");
+@@ -594,8 +585,7 @@
+         caps.put(Service.Firewall, firewallCaps);
+ 
+         when(_vpcMgr.getActiveVpc(10L)).thenReturn(vpc);
+-        when(fwProvider.getProvider()).thenReturn(Network.Provider.VPCVirtualRouter);
+-        when(fwProvider.getCapabilities()).thenReturn(caps);
++        FirewallServiceProvider fwProvider = createFirewallServiceProvider(caps);
+         when(_vpcMgr.isProviderSupportServiceInVpc(10L, Service.Firewall, Network.Provider.VPCVirtualRouter)).thenReturn(true);
+         _firewallMgr._firewallElements = List.of(fwProvider);
+ 
+@@ -723,4 +713,14 @@
+         when(_ipAddressDao.findById(1L)).thenReturn(null);
+         _firewallMgr.getSourceIpForIngressRule(1L);
+     }
++
++    private static FirewallServiceProvider createFirewallServiceProvider(
++            Map<Service, Map<Capability, String>> capabilities) {
++        final FirewallServiceProvider firewallServiceProvider =
++                Mockito.mock(FirewallServiceProvider.class);
++        when(firewallServiceProvider.getProvider())
++                .thenReturn(Network.Provider.VPCVirtualRouter);
++        when(firewallServiceProvider.getCapabilities()).thenReturn(capabilities);
++        return firewallServiceProvider;
++    }
+ }

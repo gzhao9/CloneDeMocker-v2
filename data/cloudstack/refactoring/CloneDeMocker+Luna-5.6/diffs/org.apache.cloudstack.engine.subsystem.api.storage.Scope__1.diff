@@ -1,0 +1,72 @@
+--- a/engine/storage/image/src/test/java/org/apache/cloudstack/storage/image/TemplateServiceImplTest.java
++++ b/engine/storage/image/src/test/java/org/apache/cloudstack/storage/image/TemplateServiceImplTest.java
+@@ -215,9 +215,8 @@
+         templatesInSourceStore.put(tmpltMock.getUniqueName(), tmpltPropMock);
+         Mockito.doReturn(null).when(templateInfoMock).getInstallPath();
+ 
+-        Scope scopeMock = Mockito.mock(Scope.class);
+-        Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
+-        Mockito.doReturn(1L).when(scopeMock).getScopeId();
++        Scope scopeMock = createMockScope();
++        Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
+         Mockito.doReturn(List.of(1L)).when(_dcDao).listAllIds();
+ 
+         boolean result = templateService.tryCopyingTemplateToImageStore(tmpltMock, destStoreMock);
+@@ -228,9 +227,8 @@
+ 
+     @Test
+     public void tryCopyingTemplateToImageStoreTestReturnsTrueWhenTemplateExistsInAnotherZone() throws StorageUnavailableException, ResourceAllocationException {
+-        Scope scopeMock = Mockito.mock(Scope.class);
+-        Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
+-        Mockito.doReturn(1L).when(scopeMock).getScopeId();
++        Scope scopeMock = createMockScope();
++        Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
+         Mockito.doReturn(100L).when(tmpltMock).getId();
+         Mockito.doReturn("unique-name").when(tmpltMock).getUniqueName();
+         Mockito.doReturn(List.of(sourceStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(1L);
+@@ -259,9 +257,8 @@
+ 
+     @Test
+     public void tryCopyingTemplateToImageStoreTestReturnsFalseWhenDestinationZoneIsMissing() {
+-        Scope scopeMock = Mockito.mock(Scope.class);
+-        Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
+-        Mockito.doReturn(1L).when(scopeMock).getScopeId();
++        Scope scopeMock = createMockScope();
++        Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
+         Mockito.doReturn(100L).when(tmpltMock).getId();
+         Mockito.doReturn("unique-name").when(tmpltMock).getUniqueName();
+         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
+@@ -286,9 +283,8 @@
+ 
+     @Test
+     public void tryCopyingTemplateToImageStoreTestReturnsTrueWhenCrossZoneCopyTaskIsScheduled() throws StorageUnavailableException, ResourceAllocationException {
+-        Scope scopeMock = Mockito.mock(Scope.class);
+-        Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
+-        Mockito.doReturn(1L).when(scopeMock).getScopeId();
++        Scope scopeMock = createMockScope();
++        Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
+         Mockito.doReturn(100L).when(tmpltMock).getId();
+         Mockito.doReturn("unique-name").when(tmpltMock).getUniqueName();
+         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
+@@ -328,9 +324,8 @@
+ 
+     @Test
+     public void tryCopyingTemplateToImageStoreTestReturnsFalseWhenTemplateNotFoundInAnyZone() {
+-        Scope scopeMock = Mockito.mock(Scope.class);
+-        Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
+-        Mockito.doReturn(1L).when(scopeMock).getScopeId();
++        Scope scopeMock = createMockScope();
++        Mockito.doReturn(scopeMock).when(destStoreMock).getScope();
+         Mockito.doReturn(List.of(1L, 2L)).when(_dcDao).listAllIds();
+         Mockito.doReturn(List.of(sourceStoreMock)).when(dataStoreManagerMock).getImageStoresByZoneIds(Mockito.anyLong());
+         Mockito.doReturn(null).when(templateService).listTemplate(Mockito.any());
+@@ -372,4 +367,9 @@
+         Assert.assertNotNull(result);
+         Assert.assertEquals(tmplWithValidPath, result);
+     }
++    private static Scope createMockScope() {
++        Scope scopeMock = Mockito.mock(Scope.class);
++        Mockito.doReturn(1L).when(scopeMock).getScopeId();
++        return scopeMock;
++    }
+ }
