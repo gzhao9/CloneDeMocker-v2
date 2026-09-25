@@ -1,0 +1,46 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -423,6 +423,12 @@
+         return instanceDisks;
+     }
+ 
++    private static StoragePoolVO createMockStoragePoolVO(Storage.StoragePoolType poolType) {
++        StoragePoolVO destPool = mock(StoragePoolVO.class);
++        when(destPool.getPoolType()).thenReturn(poolType);
++        return destPool;
++    }
++
+     @After
+     public void tearDown() throws Exception {
+         closeable.close();
+@@ -839,10 +845,9 @@
+         DataStore dataStore = mock(DataStore.class);
+         when(dataStore.getTO()).thenReturn(dataStoreTO);
+ 
+-        StoragePoolVO destPool = mock(StoragePoolVO.class);
++        StoragePoolVO destPool = createMockStoragePoolVO(Storage.StoragePoolType.NetworkFilesystem);
+         when(destPool.getDataCenterId()).thenReturn(zoneId);
+         when(destPool.getClusterId()).thenReturn(null);
+-        when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         StoragePoolVO zoneDestPool = mock(StoragePoolVO.class);
+         if (selectTemporaryStorage) {
+             long temporaryStoragePoolId = 1L;
+@@ -1407,7 +1412,7 @@
+ 
+     @Test
+     public void testCheckConversionStoragePoolPrimaryStagingPool() {
+-        StoragePoolVO destPool = mock(StoragePoolVO.class);
++        StoragePoolVO destPool = createMockStoragePoolVO(null);
+         long destPoolId = 1L;
+         Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+         unmanagedVMsManager.checkConversionStoragePool(destPoolId, false);
+@@ -1424,8 +1429,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testCheckConversionStoragePoolPrimaryStagingPoolTypeNotAllowedForce() {
+-        StoragePoolVO destPool = mock(StoragePoolVO.class);
+-        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
++        StoragePoolVO destPool = createMockStoragePoolVO(Storage.StoragePoolType.RBD);
+         long destPoolId = 1L;
+         Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+         unmanagedVMsManager.checkConversionStoragePool(destPoolId, true);

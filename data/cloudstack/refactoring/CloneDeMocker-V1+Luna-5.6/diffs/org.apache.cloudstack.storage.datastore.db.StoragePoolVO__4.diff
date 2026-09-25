@@ -1,0 +1,94 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -180,6 +180,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class UnmanagedVMsManagerImplTest {
++    @Mock
++    private StoragePoolVO storagePool;
+ 
+     @Spy
+     @InjectMocks
+@@ -670,7 +672,7 @@
+                 .thenReturn(diskProfile);
+         Map<Volume, StoragePool> storage = new HashMap<>();
+         VolumeVO volume = Mockito.mock(VolumeVO.class);
+-        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
++        // removed local mock; replaced with global field `storagePool`
+         storage.put(volume, storagePool);
+         when(mockDest.getStorageForDisks()).thenReturn(storage);
+         when(mockDest.getHost()).thenReturn(host);
+@@ -843,7 +845,7 @@
+         when(destPool.getDataCenterId()).thenReturn(zoneId);
+         when(destPool.getClusterId()).thenReturn(null);
+         when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+-        StoragePoolVO zoneDestPool = mock(StoragePoolVO.class);
++        // removed local mock; replaced with global field `storagePool`
+         if (selectTemporaryStorage) {
+             long temporaryStoragePoolId = 1L;
+             when(importVmCmd.getConvertStoragePoolId()).thenReturn(temporaryStoragePoolId);
+@@ -857,8 +859,8 @@
+         }
+         when(primaryDataStoreDao.listPoolByHostPath(Mockito.anyString(), Mockito.anyString())).thenReturn(List.of(destPool));
+         when(primaryDataStoreDao.findClusterWideStoragePoolsByHypervisorAndPoolType(clusterId, Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem)).thenReturn(List.of(destPool));
+-        when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(zoneId, Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem)).thenReturn(List.of(zoneDestPool));
+-
++
++        when(primaryDataStoreDao.findZoneWideStoragePoolsByHypervisorAndPoolType(zoneId, Hypervisor.HypervisorType.KVM, Storage.StoragePoolType.NetworkFilesystem)).thenReturn(List.of(storagePool));
+         if (VcenterParameter.EXISTING == vcenterParameter) {
+             VmwareDatacenterVO datacenterVO = mock(VmwareDatacenterVO.class);
+             when(datacenterVO.getVcenterHost()).thenReturn(vcenterHost);
+@@ -1040,18 +1042,18 @@
+     @Test(expected = InvalidParameterValueException.class)
+     public void testValidateSelectedConversionStoragePoolForVddkFailsWhenPoolDoesNotSupportDiskOfferings() {
+         long poolId = 11L;
+-        StoragePoolVO selectedPool = mock(StoragePoolVO.class);
++        // removed local mock; replaced with global field `storagePool`
+         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+         DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+         DiskOfferingVO dataDiskOffering = mock(DiskOfferingVO.class);
+ 
+         when(serviceOffering.getDiskOfferingId()).thenReturn(21L);
+-        when(primaryDataStoreDao.findById(poolId)).thenReturn(selectedPool);
++        when(primaryDataStoreDao.findById(poolId)).thenReturn(storagePool);
+         when(diskOfferingDao.findById(21L)).thenReturn(rootDiskOffering);
+         when(diskOfferingDao.findById(22L)).thenReturn(dataDiskOffering);
+-        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, rootDiskOffering)).thenReturn(true);
+-        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, dataDiskOffering)).thenReturn(false);
+-
++        when(volumeApiService.doesStoragePoolSupportDiskOffering(storagePool, rootDiskOffering)).thenReturn(true);
++
++        when(volumeApiService.doesStoragePoolSupportDiskOffering(storagePool, dataDiskOffering)).thenReturn(false);
+         unmanagedVMsManager.validateSelectedConversionStoragePoolForVddk(true, poolId,
+                 serviceOffering, Map.of("1000-2", 22L));
+     }
+@@ -1059,17 +1061,13 @@
+     @Test
+     public void testValidateSelectedConversionStoragePoolForVddkPassesWhenPoolSupportsAllDiskOfferings() {
+         long poolId = 12L;
+-        StoragePoolVO selectedPool = mock(StoragePoolVO.class);
+         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+         DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+         DiskOfferingVO dataDiskOffering = mock(DiskOfferingVO.class);
+ 
+         when(serviceOffering.getDiskOfferingId()).thenReturn(31L);
+-        when(primaryDataStoreDao.findById(poolId)).thenReturn(selectedPool);
+         when(diskOfferingDao.findById(31L)).thenReturn(rootDiskOffering);
+         when(diskOfferingDao.findById(32L)).thenReturn(dataDiskOffering);
+-        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, rootDiskOffering)).thenReturn(true);
+-        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, dataDiskOffering)).thenReturn(true);
+ 
+         unmanagedVMsManager.validateSelectedConversionStoragePoolForVddk(true, poolId,
+                 serviceOffering, Map.of("1000-2", 32L));
+@@ -1407,9 +1405,9 @@
+ 
+     @Test
+     public void testCheckConversionStoragePoolPrimaryStagingPool() {
+-        StoragePoolVO destPool = mock(StoragePoolVO.class);
++        // removed local mock; replaced with global field `storagePool`
+         long destPoolId = 1L;
+-        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
++        Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(storagePool);
+         unmanagedVMsManager.checkConversionStoragePool(destPoolId, false);
+     }
+ 

@@ -1,0 +1,29 @@
+--- a/server/src/test/java/com/cloud/alert/AlertManagerImplTest.java
++++ b/server/src/test/java/com/cloud/alert/AlertManagerImplTest.java
+@@ -148,6 +148,12 @@
+         }
+     }
+ 
++    private static StoragePoolVO createMockSharedStoragePool() {
++        StoragePoolVO sharedPool = Mockito.mock(StoragePoolVO.class);
++        Mockito.when(sharedPool.isShared()).thenReturn(true);
++        return sharedPool;
++    }
++
+     @Test
+     public void sendAlertTestSendMail() {
+         Mockito.doReturn(null).when(_alertDao).getLastAlert(Mockito.anyShort(), Mockito.anyLong(),
+@@ -231,11 +237,10 @@
+     public void testRecalculateStorageCapacities() {
+         List<Long> mockPoolIds = List.of(101L, 102L, 103L);
+         Mockito.when(primaryDataStoreDao.listAllIds()).thenReturn(mockPoolIds);
+-        StoragePoolVO sharedPool = Mockito.mock(StoragePoolVO.class);
+-        Mockito.when(sharedPool.isShared()).thenReturn(true);
++        StoragePoolVO sharedPool = createMockSharedStoragePool();
+         Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(0))).thenReturn(sharedPool);
+         Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(1))).thenReturn(sharedPool);
+-        StoragePoolVO nonSharedPool = Mockito.mock(StoragePoolVO.class);
++        StoragePoolVO nonSharedPool = createMockSharedStoragePool();
+         Mockito.when(nonSharedPool.isShared()).thenReturn(false);
+         Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(2))).thenReturn(nonSharedPool);
+         Mockito.when(capacityManager.getAllocatedPoolCapacity(sharedPool, null)).thenReturn(10L);

@@ -1,0 +1,45 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -839,10 +839,9 @@
+         DataStore dataStore = mock(DataStore.class);
+         when(dataStore.getTO()).thenReturn(dataStoreTO);
+ 
+-        StoragePoolVO destPool = mock(StoragePoolVO.class);
++        StoragePoolVO destPool = createStoragePool(Storage.StoragePoolType.NetworkFilesystem);
+         when(destPool.getDataCenterId()).thenReturn(zoneId);
+         when(destPool.getClusterId()).thenReturn(null);
+-        when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+         StoragePoolVO zoneDestPool = mock(StoragePoolVO.class);
+         if (selectTemporaryStorage) {
+             long temporaryStoragePoolId = 1L;
+@@ -1415,8 +1414,7 @@
+ 
+     @Test
+     public void testCheckConversionStoragePoolPrimaryStagingPoolTypeAllowedForce() {
+-        StoragePoolVO destPool = mock(StoragePoolVO.class);
+-        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        StoragePoolVO destPool = createStoragePool(Storage.StoragePoolType.NetworkFilesystem);
+         long destPoolId = 1L;
+         Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+         unmanagedVMsManager.checkConversionStoragePool(destPoolId, true);
+@@ -1424,8 +1422,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testCheckConversionStoragePoolPrimaryStagingPoolTypeNotAllowedForce() {
+-        StoragePoolVO destPool = mock(StoragePoolVO.class);
+-        Mockito.when(destPool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
++        StoragePoolVO destPool = createStoragePool(Storage.StoragePoolType.RBD);
+         long destPoolId = 1L;
+         Mockito.when(primaryDataStoreDao.findById(destPoolId)).thenReturn(destPool);
+         unmanagedVMsManager.checkConversionStoragePool(destPoolId, true);
+@@ -1609,4 +1606,10 @@
+         details.put("key", "not-a-number");
+         unmanagedVMsManager.getDetailAsInteger("key", details);
+     }
++
++    private static StoragePoolVO createStoragePool(Storage.StoragePoolType poolType) {
++        StoragePoolVO storagePool = mock(StoragePoolVO.class);
++        when(storagePool.getPoolType()).thenReturn(poolType);
++        return storagePool;
++    }
+ }

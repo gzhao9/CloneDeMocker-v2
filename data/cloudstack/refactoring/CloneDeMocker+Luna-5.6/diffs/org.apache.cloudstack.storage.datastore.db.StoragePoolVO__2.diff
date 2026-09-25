@@ -1,0 +1,49 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -1075,6 +1075,13 @@
+                 serviceOffering, Map.of("1000-2", 32L));
+     }
+ 
++    private static StoragePoolVO createMockStoragePoolVO(long clusterId) {
++        StoragePoolVO pool = mock(StoragePoolVO.class);
++        when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
++        when(pool.getClusterId()).thenReturn(clusterId);
++        return pool;
++    }
++
+     private ClusterVO getClusterForTests() {
+         ClusterVO cluster = mock(ClusterVO.class);
+         when(cluster.getId()).thenReturn(1L);
+@@ -1095,9 +1102,7 @@
+     public void testSelectInstanceConversionTemporaryLocationPoolInvalidScope() {
+         ClusterVO cluster = getClusterForTests();
+         long poolId = 1L;
+-        StoragePoolVO pool = mock(StoragePoolVO.class);
+-        when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
+-        when(pool.getClusterId()).thenReturn(100L);
++        StoragePoolVO pool = createMockStoragePoolVO(100L);
+         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+         unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null, poolId, false);
+     }
+@@ -1107,9 +1112,7 @@
+     public void testSelectInstanceConversionTemporaryLocationPoolConvertHostDifferentCluster() {
+         ClusterVO cluster = getClusterForTests();
+         long poolId = 1L;
+-        StoragePoolVO pool = mock(StoragePoolVO.class);
+-        when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
+-        when(pool.getClusterId()).thenReturn(1L);
++        StoragePoolVO pool = createMockStoragePoolVO(1L);
+         HostVO host = mock(HostVO.class);
+         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+         when(host.getClusterId()).thenReturn(2L);
+@@ -1131,9 +1134,7 @@
+     public void testSelectInstanceConversionTemporaryLocationStoragePoolInvalidType() {
+         ClusterVO cluster = getClusterForTests();
+         long poolId = 1L;
+-        StoragePoolVO pool = mock(StoragePoolVO.class);
+-        when(pool.getScope()).thenReturn(ScopeType.CLUSTER);
+-        when(pool.getClusterId()).thenReturn(1L);
++        StoragePoolVO pool = createMockStoragePoolVO(1L);
+         when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+         when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.RBD);
+         unmanagedVMsManager.selectInstanceConversionTemporaryLocation(cluster, null, null, poolId, false);
