@@ -1,0 +1,107 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -1509,7 +1509,7 @@
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+         final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+         final NicTO nicTO = Mockito.mock(NicTO.class);
+-        final DiskTO diskTO = Mockito.mock(DiskTO.class);
++        final DiskTO diskTO = createMockDiskTO(Volume.Type.ISO);
+         final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+ 
+         final PrepareForMigrationCommand command = new PrepareForMigrationCommand(vm);
+@@ -1525,7 +1525,6 @@
+         when(vm.getDisks()).thenReturn(new DiskTO[]{diskTO});
+ 
+         when(nicTO.getType()).thenReturn(TrafficType.Guest);
+-        when(diskTO.getType()).thenReturn(Volume.Type.ISO);
+ 
+         when(libvirtComputingResourceMock.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolManager);
+@@ -1557,7 +1556,7 @@
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+         final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+         final NicTO nicTO = Mockito.mock(NicTO.class);
+-        final DiskTO diskTO = Mockito.mock(DiskTO.class);
++        final DiskTO diskTO = createMockDiskTO(Volume.Type.ISO);
+         final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+ 
+         final PrepareForMigrationCommand command = new PrepareForMigrationCommand(vm);
+@@ -1573,7 +1572,6 @@
+         when(vm.getDisks()).thenReturn(new DiskTO[]{diskTO});
+ 
+         when(nicTO.getType()).thenReturn(TrafficType.Guest);
+-        when(diskTO.getType()).thenReturn(Volume.Type.ISO);
+ 
+         when(libvirtComputingResourceMock.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolManager);
+@@ -1647,7 +1645,7 @@
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+         final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+         final NicTO nicTO = Mockito.mock(NicTO.class);
+-        final DiskTO volume = Mockito.mock(DiskTO.class);
++        final DiskTO volume = createMockDiskTO(Volume.Type.ISO);
+         final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+ 
+         final PrepareForMigrationCommand command = new PrepareForMigrationCommand(vm);
+@@ -1663,7 +1661,6 @@
+         when(vm.getDisks()).thenReturn(new DiskTO[]{volume});
+ 
+         when(nicTO.getType()).thenReturn(TrafficType.Guest);
+-        when(volume.getType()).thenReturn(Volume.Type.ISO);
+ 
+         when(libvirtComputingResourceMock.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolManager);
+@@ -7248,7 +7245,7 @@
+     public void defineDiskForDefaultPoolTypeSkipsForceDiskController() {
+         Map<String, String> details = new HashMap<>();
+         details.put(VmDetailConstants.KVM_SKIP_FORCE_DISK_CONTROLLER, "true");
+-        Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
++        volume = createMockDiskTO(Volume.Type.DATADISK);
+         Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+         libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+         Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+@@ -7257,7 +7254,7 @@
+     @Test
+     public void defineDiskForDefaultPoolTypeUsesDiskBusTypeDataForDataDiskWithoutWindowsAndUefi() {
+         Map<String, String> details = new HashMap<>();
+-        Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
++        volume = createMockDiskTO(Volume.Type.DATADISK);
+         Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+         libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+         Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+@@ -7266,7 +7263,7 @@
+     @Test
+     public void defineDiskForDefaultPoolTypeUsesDiskBusTypeForRootDisk() {
+         Map<String, String> details = new HashMap<>();
+-        Mockito.when(volume.getType()).thenReturn(Volume.Type.ROOT);
++        volume = createMockDiskTO(Volume.Type.ROOT);
+         Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+         libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+         Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE, DiskDef.DiskFmtType.QCOW2);
+@@ -7275,7 +7272,7 @@
+     @Test
+     public void defineDiskForDefaultPoolTypeUsesSecureBootConfiguration() {
+         Map<String, String> details = new HashMap<>();
+-        Mockito.when(volume.getType()).thenReturn(Volume.Type.ROOT);
++        volume = createMockDiskTO(Volume.Type.ROOT);
+         Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+         libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, true, true, true, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+         Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DiskDef.DiskFmtType.QCOW2, true);
+@@ -7283,10 +7280,16 @@
+ 
+     @Test
+     public void defineDiskForDefaultPoolTypeHandlesNullDetails() {
+-        Mockito.when(volume.getType()).thenReturn(Volume.Type.DATADISK);
++        volume = createMockDiskTO(Volume.Type.DATADISK);
+         Mockito.when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+         libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, false, false, false, physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, null);
+         Mockito.verify(diskDef).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
++    }
++
++    private static DiskTO createMockDiskTO(Volume.Type volumeType) {
++        DiskTO volume = Mockito.mock(DiskTO.class);
++        Mockito.when(volume.getType()).thenReturn(volumeType);
++        return volume;
+     }
+ 
+     @Test

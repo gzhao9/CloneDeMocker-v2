@@ -1,0 +1,52 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/KvmFileBasedStorageVmSnapshotStrategyTest.java
+@@ -186,7 +186,7 @@
+         when(snapshotDataStoreVO.getDataStoreId()).thenReturn(dataStoreId);
+         when(strategy.snapshotDataFactory.getSnapshot(snapshotId, dataStoreId, DataStoreRole.Primary)).thenReturn(snapshotInfo);
+         when(snapshotInfo.getTO()).thenReturn(snapshotObjectTO);
+-        when(vmSnapshotDao.findCurrentSnapshotByVmId(vmId)).thenReturn(currentVmSnapshot);
++        MockVMSnapshotDao.stubCurrentSnapshot(vmSnapshotDao, vmId, currentVmSnapshot);
+         when(agentMgr.easySend(eq(hostId), any())).thenAnswer(invocation ->
+                 new RevertDiskOnlyVmSnapshotAnswer((RevertDiskOnlyVmSnapshotCommand) invocation.getArgument(1), Collections.emptyList()));
+ 
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/OntapVMSnapshotStrategyTest.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/OntapVMSnapshotStrategyTest.java
+@@ -777,7 +777,7 @@
+ 
+         // Has a current (parent) snapshot
+         VMSnapshotVO currentSnapshot = mock(VMSnapshotVO.class);
+-        when(vmSnapshotDao.findCurrentSnapshotByVmId(VM_ID)).thenReturn(currentSnapshot);
++        MockVMSnapshotDao.stubCurrentSnapshot(vmSnapshotDao, VM_ID, currentSnapshot);
+         VMSnapshotTO parentTO = mock(VMSnapshotTO.class);
+         when(parentTO.getId()).thenReturn(199L);
+         when(vmSnapshotHelper.getSnapshotWithParents(currentSnapshot)).thenReturn(parentTO);
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockVMSnapshotDao.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockVMSnapshotDao.java
+@@ -0,0 +1,12 @@
++package org.apache.cloudstack.storage.vmsnapshot;
++
++import org.mockito.Mockito;
++
++import com.cloud.vm.snapshot.VMSnapshotVO;
++import com.cloud.vm.snapshot.dao.VMSnapshotDao;
++
++public class MockVMSnapshotDao {
++    public static void stubCurrentSnapshot(VMSnapshotDao vmSnapshotDao, long vmId, VMSnapshotVO currentSnapshot) {
++        Mockito.when(vmSnapshotDao.findCurrentSnapshotByVmId(vmId)).thenReturn(currentSnapshot);
++    }
++}
+--- a/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockVMSnapshotDao.java
++++ b/plugins/storage/volume/ontap/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockVMSnapshotDao.java
+@@ -0,0 +1,12 @@
++package org.apache.cloudstack.storage.vmsnapshot;
++
++import org.mockito.Mockito;
++
++import com.cloud.vm.snapshot.VMSnapshotVO;
++import com.cloud.vm.snapshot.dao.VMSnapshotDao;
++
++public class MockVMSnapshotDao {
++    public static void stubCurrentSnapshot(VMSnapshotDao vmSnapshotDao, long vmId, VMSnapshotVO currentSnapshot) {
++        Mockito.when(vmSnapshotDao.findCurrentSnapshotByVmId(vmId)).thenReturn(currentSnapshot);
++    }
++}

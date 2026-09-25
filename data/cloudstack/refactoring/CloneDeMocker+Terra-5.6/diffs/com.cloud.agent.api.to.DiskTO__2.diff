@@ -1,0 +1,45 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -256,6 +256,7 @@
+     private DiskDef diskDef;
+     @Mock
+     private DiskTO volume;
++    private final DiskTO diskTOForTest = Mockito.mock(DiskTO.class);
+     @Mock
+     private KVMPhysicalDisk physicalDisk;
+     @Mock
+@@ -499,8 +500,7 @@
+         to.setDetails(new HashMap<>());
+         to.setPlatformEmulator("Other PV Virtio-SCSI");
+ 
+-        final DiskTO diskTO = Mockito.mock(DiskTO.class);
+-        to.setDisks(new DiskTO[]{diskTO});
++        to.setDisks(new DiskTO[]{diskTOForTest});
+ 
+         GuestDef guest = new GuestDef();
+         guest.setGuestType(GuestType.KVM);
+@@ -1703,7 +1703,6 @@
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+         final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+         final NicTO nicTO = Mockito.mock(NicTO.class);
+-        final DiskTO volume = Mockito.mock(DiskTO.class);
+ 
+         final PrepareForMigrationCommand command = new PrepareForMigrationCommand(vm);
+ 
+@@ -5083,14 +5082,13 @@
+ 
+     @Test
+     public void testStorageSubSystemCommand() {
+-        final DiskTO disk = Mockito.mock(DiskTO.class);
+         final String vmName = "Test";
+-        final AttachCommand command = new AttachCommand(disk, vmName);
++        final AttachCommand command = new AttachCommand(diskTOForTest, vmName);
+ 
+         final StorageSubsystemCommandHandler handler = Mockito.mock(StorageSubsystemCommandHandler.class);
+         when(libvirtComputingResourceMock.getStorageHandler()).thenReturn(handler);
+ 
+-        when(handler.handleStorageCommands(command)).thenReturn(new AttachAnswer(disk));
++        when(handler.handleStorageCommands(command)).thenReturn(new AttachAnswer(diskTOForTest));
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);

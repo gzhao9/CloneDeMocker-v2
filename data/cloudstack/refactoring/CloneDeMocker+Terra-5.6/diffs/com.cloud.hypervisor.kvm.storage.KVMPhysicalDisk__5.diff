@@ -1,0 +1,58 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -258,6 +258,7 @@
+     private DiskTO volume;
+     @Mock
+     private KVMPhysicalDisk physicalDisk;
++    private final KVMPhysicalDisk primaryPhysicalDisk = Mockito.mock(KVMPhysicalDisk.class);
+     @Mock
+     private Map<String, String> details;
+ 
+@@ -2236,13 +2237,12 @@
+         final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+-        final KVMPhysicalDisk baseVol = Mockito.mock(KVMPhysicalDisk.class);
+ 
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(poolManager);
+         when(poolManager.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
+ 
+-        when(primary.getPhysicalDisk(command.getTemplateUrl())).thenReturn(baseVol);
+-        when(poolManager.createDiskFromTemplate(baseVol, diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, baseVol.getSize(), 0,null)).thenReturn(vol);
++        when(primary.getPhysicalDisk(command.getTemplateUrl())).thenReturn(primaryPhysicalDisk);
++        when(poolManager.createDiskFromTemplate(primaryPhysicalDisk, diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, primaryPhysicalDisk.getSize(), 0,null)).thenReturn(vol);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -2326,7 +2326,6 @@
+         final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk tmplVol = Mockito.mock(KVMPhysicalDisk.class);
+-        final KVMPhysicalDisk primaryVol = Mockito.mock(KVMPhysicalDisk.class);
+ 
+         final KVMPhysicalDisk disk = new KVMPhysicalDisk("/path", "disk.qcow2", primaryPool);
+         disks.add(disk);
+@@ -2365,7 +2364,6 @@
+         final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk tmplVol = Mockito.mock(KVMPhysicalDisk.class);
+-        final KVMPhysicalDisk primaryVol = Mockito.mock(KVMPhysicalDisk.class);
+ 
+         final int index = url.lastIndexOf("/");
+         final String mountpoint = url.substring(0, index);
+@@ -2401,7 +2399,6 @@
+         final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk tmplVol = Mockito.mock(KVMPhysicalDisk.class);
+-        final KVMPhysicalDisk primaryVol = Mockito.mock(KVMPhysicalDisk.class);
+ 
+         final int index = url.lastIndexOf("/");
+         final String mountpoint = url.substring(0, index);
+@@ -2435,7 +2432,6 @@
+         final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk tmplVol = Mockito.mock(KVMPhysicalDisk.class);
+-        final KVMPhysicalDisk primaryVol = Mockito.mock(KVMPhysicalDisk.class);
+ 
+         final int index = url.lastIndexOf("/");
+         final String mountpoint = url.substring(0, index);

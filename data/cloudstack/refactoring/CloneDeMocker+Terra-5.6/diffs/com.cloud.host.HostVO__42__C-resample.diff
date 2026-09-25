@@ -1,0 +1,70 @@
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyKVMTest.java
+@@ -288,10 +288,8 @@
+         Mockito.when(vmSnapshotDao.findById(ArgumentMatchers.anyLong())).thenReturn(vmSnapshot);
+         Mockito.when(vmSnapshot.getId()).thenReturn(1L);
+         Mockito.when(vmSnapshot.getCreated()).thenReturn(new Date());
+-        HostVO hostVO = Mockito.mock(HostVO.class);
++        HostVO hostVO = MockHostVOForHypervisor.createMockHostVO(hypervisorType);
+         Mockito.when(hostDao.findById(ArgumentMatchers.anyLong())).thenReturn(hostVO);
+-        Mockito.when(hostVO.getHypervisorType()).thenReturn(hypervisorType);
+-        Mockito.when(hostVO.getHypervisorVersion()).thenReturn(hypervisorVersion);
+         DeleteVMSnapshotAnswer answer = Mockito.mock(DeleteVMSnapshotAnswer.class);
+         Mockito.when(answer.getResult()).thenReturn(true);
+ 
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyTest.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/VMSnapshotStrategyTest.java
+@@ -129,10 +129,8 @@
+         Mockito.when(guestOsHypervisorDao.findById(ArgumentMatchers.anyLong())).thenReturn(guestOSHypervisorVO);
+         Mockito.when(guestOsHypervisorDao.findByOsIdAndHypervisor(ArgumentMatchers.anyLong(), ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(guestOSHypervisorVO);
+         Mockito.when(agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Command.class))).thenReturn(null);
+-        HostVO hostVO = Mockito.mock(HostVO.class);
++        HostVO hostVO = MockHostVOForHypervisor.createMockHostVO(hypervisorType);
+         Mockito.when(hostDao.findById(ArgumentMatchers.anyLong())).thenReturn(hostVO);
+-        Mockito.when(hostVO.getHypervisorType()).thenReturn(hypervisorType);
+-        Mockito.when(hostVO.getHypervisorVersion()).thenReturn(hypervisorVersion);
+         Exception e = null;
+         try {
+             vmSnapshotStrategy.takeVMSnapshot(vmSnapshot);
+@@ -178,10 +176,8 @@
+         Mockito.when(vmSnapshot.getId()).thenReturn(1L);
+         Mockito.when(vmSnapshot.getCreated()).thenReturn(new Date());
+         Mockito.when(agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Command.class))).thenReturn(null);
+-        HostVO hostVO = Mockito.mock(HostVO.class);
++        HostVO hostVO = MockHostVOForHypervisor.createMockHostVO(hypervisorType);
+         Mockito.when(hostDao.findById(ArgumentMatchers.anyLong())).thenReturn(hostVO);
+-        Mockito.when(hostVO.getHypervisorType()).thenReturn(hypervisorType);
+-        Mockito.when(hostVO.getHypervisorVersion()).thenReturn(hypervisorVersion);
+         Exception e = null;
+         try {
+             vmSnapshotStrategy.revertVMSnapshot(vmSnapshot);
+@@ -226,10 +222,8 @@
+         Mockito.when(vmSnapshot.getId()).thenReturn(1L);
+         Mockito.when(vmSnapshot.getCreated()).thenReturn(new Date());
+         Mockito.when(agentMgr.send(ArgumentMatchers.anyLong(), ArgumentMatchers.any(Command.class))).thenReturn(null);
+-        HostVO hostVO = Mockito.mock(HostVO.class);
++        HostVO hostVO = MockHostVOForHypervisor.createMockHostVO(hypervisorType);
+         Mockito.when(hostDao.findById(ArgumentMatchers.anyLong())).thenReturn(hostVO);
+-        Mockito.when(hostVO.getHypervisorType()).thenReturn(hypervisorType);
+-        Mockito.when(hostVO.getHypervisorVersion()).thenReturn(hypervisorVersion);
+ 
+         Exception e = null;
+         try {
+--- a/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockHostVOForHypervisor.java
++++ b/engine/storage/snapshot/src/test/java/org/apache/cloudstack/storage/vmsnapshot/MockHostVOForHypervisor.java
+@@ -0,0 +1,15 @@
++package org.apache.cloudstack.storage.vmsnapshot;
++
++import com.cloud.host.HostVO;
++import com.cloud.hypervisor.Hypervisor.HypervisorType;
++
++import org.mockito.Mockito;
++
++public class MockHostVOForHypervisor {
++    public static HostVO createMockHostVO(HypervisorType hypervisorType) {
++        HostVO hostVO = Mockito.mock(HostVO.class);
++        Mockito.when(hostVO.getHypervisorType()).thenReturn(hypervisorType);
++        Mockito.when(hostVO.getHypervisorVersion()).thenReturn("default");
++        return hostVO;
++    }
++}
