@@ -1,0 +1,63 @@
+--- a/server/src/test/java/org/apache/cloudstack/storage/sharedfs/SharedFSServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/storage/sharedfs/SharedFSServiceImplTest.java
+@@ -244,10 +244,8 @@
+         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
+         when(zone.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+ 
+-        DiskOfferingVO diskOfferingVO = mock(DiskOfferingVO.class);
++        DiskOfferingVO diskOfferingVO = createMockDiskOfferingVO(true, true);
+         when(diskOfferingDao.findById(s_diskOfferingId)).thenReturn(diskOfferingVO);
+-        when(diskOfferingVO.isCustomized()).thenReturn(true);
+-        when(diskOfferingVO.isCustomizedIops()).thenReturn(true);
+ 
+         SharedFSVO sharedFS = getMockSharedFS();
+         ReflectionTestUtils.setField(sharedFS, "id", s_sharedFSId);
+@@ -288,9 +286,8 @@
+         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
+         when(zone.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+ 
+-        DiskOfferingVO diskOfferingVO = mock(DiskOfferingVO.class);
++        DiskOfferingVO diskOfferingVO = createMockDiskOfferingVO(false, false);
+         when(diskOfferingDao.findById(s_diskOfferingId)).thenReturn(diskOfferingVO);
+-        when(diskOfferingVO.isCustomized()).thenReturn(false);
+         Assert.assertThrows(InvalidParameterValueException.class, () -> sharedFSServiceImpl.allocSharedFS(cmd));
+ 
+         when(diskOfferingVO.isCustomized()).thenReturn(true);
+@@ -306,10 +303,8 @@
+         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
+         when(zone.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+ 
+-        DiskOfferingVO diskOfferingVO = mock(DiskOfferingVO.class);
++        DiskOfferingVO diskOfferingVO = createMockDiskOfferingVO(true, true);
+         when(diskOfferingDao.findById(s_diskOfferingId)).thenReturn(diskOfferingVO);
+-        when(diskOfferingVO.isCustomized()).thenReturn(true);
+-        when(diskOfferingVO.isCustomizedIops()).thenReturn(true);
+ 
+         when(cmd.getNetworkId()).thenReturn(s_networkId);
+         NetworkVO networkVO = mock(NetworkVO.class);
+@@ -449,10 +444,8 @@
+         when(dataCenterDao.findById(s_zoneId)).thenReturn(zone);
+         when(zone.getAllocationState()).thenReturn(Grouping.AllocationState.Enabled);
+ 
+-        DiskOfferingVO diskOfferingVO = mock(DiskOfferingVO.class);
++        DiskOfferingVO diskOfferingVO = createMockDiskOfferingVO(true, true);
+         when(diskOfferingDao.findById(newDiskOfferingId)).thenReturn(diskOfferingVO);
+-        when(diskOfferingVO.isCustomized()).thenReturn(true);
+-        when(diskOfferingVO.isCustomizedIops()).thenReturn(true);
+ 
+         sharedFSServiceImpl.changeSharedFSDiskOffering(cmd);
+     }
+@@ -588,6 +581,13 @@
+         when(cmd.getDomainId()).thenReturn(s_domainId);
+         when(cmd.getNetworkId()).thenReturn(s_networkId);
+         return cmd;
++    }
++
++    private static DiskOfferingVO createMockDiskOfferingVO(boolean customized, boolean customizedIops) {
++        DiskOfferingVO diskOfferingVO = mock(DiskOfferingVO.class);
++        when(diskOfferingVO.isCustomized()).thenReturn(customized);
++        when(diskOfferingVO.isCustomizedIops()).thenReturn(customizedIops);
++        return diskOfferingVO;
+     }
+ 
+     @Test

@@ -1,0 +1,39 @@
+--- a/server/src/test/java/com/cloud/network/NetworkModelImplTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkModelImplTest.java
+@@ -409,9 +409,8 @@
+         NetworkExtensionElement mockElement = mock(NetworkExtensionElement.class);
+         Map<Network.Service, Map<Network.Capability, String>> capabilities = new HashMap<>();
+         capabilities.put(Network.Service.Firewall, new HashMap<>());
+-        when(networkExtensionElement.withProviderName("my-ext")).thenReturn(mockElement);
+-        when(mockElement.getCapabilities()).thenReturn(capabilities);
+-
++
++        NetworkExtensionElement mockElement = createMockNetworkExtensionElement(capabilities);
+         List<? extends Network.Provider> result =
+                 networkModel.listSupportedNetworkServiceProviders(Network.Service.Firewall.getName());
+ 
+@@ -438,10 +437,9 @@
+         // networkElements is empty so no standard providers found
+         ReflectionTestUtils.setField(networkModel, "networkElements", new ArrayList<>());
+ 
+-        NetworkExtensionElement mockElement = mock(NetworkExtensionElement.class);
++        NetworkExtensionElement mockElement = createMockNetworkExtensionElement(capabilities);
+         Map<Network.Service, Map<Network.Capability, String>> capabilities = new HashMap<>();
+         when(networkExtensionElement.withProviderName("my-ext")).thenReturn(mockElement);
+-        when(mockElement.getCapabilities()).thenReturn(capabilities);
+ 
+         List<? extends Network.Provider> result =
+                 networkModel.listSupportedNetworkServiceProviders(Network.Service.Firewall.getName());
+@@ -452,4 +450,12 @@
+         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.times(1)).listAll();
+         Mockito.verify(physicalNetworkServiceProviderDao, Mockito.never()).listBy(Mockito.anyLong());
+     }
++
++    private static NetworkExtensionElement createMockNetworkExtensionElement(
++            Map<Network.Service, Map<Network.Capability, String>> capabilities) {
++        NetworkExtensionElement mockElement = mock(NetworkExtensionElement.class);
++        when(mockElement.getCapabilities())
++                .thenReturn((Map<Network.Service, Map<Network.Capability, String>>) capabilities);
++        return mockElement;
++    }
+ }

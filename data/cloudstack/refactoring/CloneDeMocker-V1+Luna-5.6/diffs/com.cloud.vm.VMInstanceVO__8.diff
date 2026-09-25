@@ -1,0 +1,71 @@
+--- a/plugins/affinity-group-processors/non-strict-host-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAffinityProcessorTest.java
++++ b/plugins/affinity-group-processors/non-strict-host-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAffinityProcessorTest.java
+@@ -155,13 +155,9 @@
+         when(affinityGroupDao.findById(affinityGroupId)).thenReturn(affinityGroupVO);
+         when(affinityGroupVO.getId()).thenReturn(affinityGroupId);
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
++        VMInstanceVO vm2 = MockVMInstanceVO.createMockVmInstanceVO(host2Id);
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+-        VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
+         when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+-        when(vm2.getHostId()).thenReturn(null);
+-        when(vm2.getLastHostId()).thenReturn(host2Id);
+-        when(vm2.getState()).thenReturn(VirtualMachine.State.Starting);
+-        when(vm2.getUpdateTime()).thenReturn(new Date());
+ 
+         ReflectionTestUtils.setField(processor, "vmCapacityReleaseInterval", 3600);
+         processor.process(vmProfile, plan, avoid);
+@@ -170,4 +166,18 @@
+         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
+         Assert.assertEquals(Integer.valueOf(1), plan.getHostPriorities().get(host2Id));
+     }
++
++    public final class MockVMInstanceVO {
++        private MockVMInstanceVO() {
++        }
++
++        public static VMInstanceVO createMockVmInstanceVO(long host2Id) {
++            VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
++            when(vm2.getHostId()).thenReturn(null);
++            when(vm2.getLastHostId()).thenReturn(host2Id);
++            when(vm2.getState()).thenReturn(VirtualMachine.State.Starting);
++            when(vm2.getUpdateTime()).thenReturn(new Date());
++            return vm2;
++        }
++    }
+ }
+--- a/plugins/affinity-group-processors/non-strict-host-anti-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAntiAffinityProcessorTest.java
++++ b/plugins/affinity-group-processors/non-strict-host-anti-affinity/src/test/java/org/apache/cloudstack/affinity/NonStrictHostAntiAffinityProcessorTest.java
+@@ -155,12 +155,8 @@
+         when(affinityGroupVO.getId()).thenReturn(affinityGroupId);
+         List<Long> groupVMIds = new ArrayList<>(Arrays.asList(vmId, vm2Id));
+         when(_affinityGroupVMMapDao.listVmIdsByAffinityGroup(affinityGroupId)).thenReturn(groupVMIds);
+-        VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
++        VMInstanceVO vm2 = MockVMInstanceVO.createMockVmInstanceVO(host2Id);
+         when(vmInstanceDao.findById(vm2Id)).thenReturn(vm2);
+-        when(vm2.getHostId()).thenReturn(null);
+-        when(vm2.getLastHostId()).thenReturn(host2Id);
+-        when(vm2.getState()).thenReturn(VirtualMachine.State.Starting);
+-        when(vm2.getUpdateTime()).thenReturn(new Date());
+ 
+         ReflectionTestUtils.setField(processor, "vmCapacityReleaseInterval", 3600);
+         processor.process(vmProfile, plan, avoid);
+@@ -169,4 +165,18 @@
+         Assert.assertNotNull(plan.getHostPriorities().get(host2Id));
+         Assert.assertEquals(Integer.valueOf(-1), plan.getHostPriorities().get(host2Id));
+     }
++
++    public final class MockVMInstanceVO {
++        private MockVMInstanceVO() {
++        }
++
++        public static VMInstanceVO createMockVmInstanceVO(long host2Id) {
++            VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
++            when(vm2.getHostId()).thenReturn(null);
++            when(vm2.getLastHostId()).thenReturn(host2Id);
++            when(vm2.getState()).thenReturn(VirtualMachine.State.Starting);
++            when(vm2.getUpdateTime()).thenReturn(new Date());
++            return vm2;
++        }
++    }
+ }

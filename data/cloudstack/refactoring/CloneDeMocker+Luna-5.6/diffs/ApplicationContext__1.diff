@@ -1,0 +1,39 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/lease/VMLeaseManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/lease/VMLeaseManagerImplTest.java
+@@ -83,6 +83,8 @@
+     @InjectMocks
+     private VMLeaseManagerImpl vmLeaseManager;
+ 
++    private ApplicationContext applicationContextMock;
++
+     @Mock
+     private UserVmJoinDao userVmJoinDao;
+ 
+@@ -103,6 +105,7 @@
+ 
+     @Before
+     public void setUp() {
++        applicationContextMock = mock(ApplicationContext.class);
+         vmLeaseManager.setAsyncJobDispatcher(asyncJobDispatcher);
+         when(asyncJobDispatcher.getName()).thenReturn("AsyncJobDispatcher");
+         when(asyncJobManager.submitAsyncJob(any(AsyncJobVO.class))).thenReturn(1L);
+@@ -190,8 +193,7 @@
+         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false);
+         // Mock the static ComponentContext
+         try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class)) {
+-            ApplicationContext mockAppContext = mock(ApplicationContext.class);
+-            mockedComponentContext.when(ComponentContext::getApplicationContext).thenReturn(mockAppContext);
++            mockedComponentContext.when(ComponentContext::getApplicationContext).thenReturn(applicationContextMock);
+             mockedComponentContext.when(() -> ComponentContext.inject(any())).thenReturn(true);
+             long jobId = vmLeaseManager.executeStopInstanceJob(vm, 123L);
+             assertEquals(1L, jobId);
+@@ -210,8 +212,7 @@
+     public void testExecuteDestroyInstanceJob() {
+         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false, DESTROY);
+         try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class)) {
+-            ApplicationContext mockAppContext = mock(ApplicationContext.class);
+-            mockedComponentContext.when(ComponentContext::getApplicationContext).thenReturn(mockAppContext);
++            mockedComponentContext.when(ComponentContext::getApplicationContext).thenReturn(applicationContextMock);
+             mockedComponentContext.when(() -> ComponentContext.inject(any())).thenReturn(true);
+             long jobId = vmLeaseManager.executeDestroyInstanceJob(vm, 123L);
+             assertEquals(1L, jobId);

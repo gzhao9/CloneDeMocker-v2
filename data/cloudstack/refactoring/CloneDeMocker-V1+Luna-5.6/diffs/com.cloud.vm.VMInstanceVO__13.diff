@@ -1,0 +1,58 @@
+--- a/server/src/test/java/com/cloud/ha/HighAvailabilityManagerImplTest.java
++++ b/server/src/test/java/com/cloud/ha/HighAvailabilityManagerImplTest.java
+@@ -273,11 +273,7 @@
+ 
+     @Test
+     public void scheduleStop() {
+-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+-        Mockito.when(vm.getId()).thenReturn(1L);
+-        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+-        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+-        Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
++        VMInstanceVO vm = createMockVmInstanceVO();
+         Mockito.when(_haDao.hasBeenScheduled(vm.getId(), WorkType.Stop)).thenReturn(false);
+         Mockito.when(_haDao.persist((HaWorkVO)Mockito.any())).thenReturn(Mockito.mock(HaWorkVO.class));
+ 
+@@ -304,13 +300,9 @@
+ 
+     @Test
+     public void scheduleMigration() {
+-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+-        Mockito.when(vm.getId()).thenReturn(1L);
+-        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+-        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+-        Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
++
++        VMInstanceVO vm = createMockVmInstanceVO();
+         Mockito.when(vm.getHostId()).thenReturn(1L);
+-
+         Mockito.when(_haDao.persist((HaWorkVO) Mockito.any())).thenAnswer(invocation -> {
+             HaWorkVO haWork = invocation.getArgument(0);
+             ReflectionTestUtils.setField(haWork, "id", 1L);
+@@ -339,11 +331,7 @@
+ 
+     @Test
+     public void scheduleDestroy() {
+-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+-        Mockito.when(vm.getId()).thenReturn(1L);
+-        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+-        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+-        Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
++        VMInstanceVO vm = createMockVmInstanceVO();
+         Mockito.when(_haDao.persist((HaWorkVO)Mockito.any())).thenReturn(Mockito.mock(HaWorkVO.class));
+ 
+         assertTrue(highAvailabilityManager.scheduleDestroy(vm, 1L, HighAvailabilityManager.ReasonType.HostMaintenance));
+@@ -484,4 +472,13 @@
+         assertFalse(result);
+         Mockito.verify(mockWork, Mockito.never()).setStep(Mockito.any());
+     }
++
++    private static VMInstanceVO createMockVmInstanceVO() {
++        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
++        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
++        Mockito.when(vm.getId()).thenReturn(1L);
++        Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
++        Mockito.when(vm.getType()).thenReturn(VirtualMachine.Type.User);
++        return vm;
++    }
+ }

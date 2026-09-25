@@ -1,0 +1,68 @@
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java
+@@ -410,7 +410,7 @@
+ 
+     @Test
+     public void testDropColumn() throws Exception {
+-        when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatementMock);
++        connectionMock = MockConnection.createMockConnection(preparedStatementMock);
+ 
+         Connection conn = connectionMock;
+         String tableName = "tableName";
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java
+@@ -46,8 +46,6 @@
+     public void testPerformDataMigration() throws SQLException {
+         try (MockedStatic<DbUpgradeUtils> ignored = Mockito.mockStatic(DbUpgradeUtils.class)) {
+             DbUpgradeUtils dbUpgradeUtils = Mockito.mock(DbUpgradeUtils.class);
+-            when(dbUpgradeUtils.getTableColumnType(conn, "configuration", "scope")).thenReturn("varchar(255)");
+-
+             try (MockedStatic<TransactionLegacy> ignored2 = Mockito.mockStatic(TransactionLegacy.class)) {
+                 TransactionLegacy txn = Mockito.mock(TransactionLegacy.class);
+                 when(TransactionLegacy.currentTxn()).thenReturn(txn);
+@@ -70,8 +68,8 @@
+                 PreparedStatement preparedStatement = Mockito.mock(PreparedStatement.class);
+                 ResultSet resultSet = Mockito.mock(ResultSet.class);
+                 Mockito.when(resultSet.next()).thenReturn(false);
+-                Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
+-                Mockito.when(conn.prepareStatement(anyString())).thenReturn(preparedStatement);
++                conn = MockConnection.createMockConnection(preparedStatement);
++                when(dbUpgradeUtils.getTableColumnType(conn, "configuration", "scope")).thenReturn("varchar(255)");
+                 upgrade.performDataMigration(conn);
+ 
+                 Mockito.verify(pstmt, Mockito.times(1)).executeUpdate();
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java
+@@ -182,7 +182,7 @@
+ 
+     @Test
+     public void testPerformDataMigration() throws SQLException {
+-        when(conn.prepareStatement(anyString())).thenReturn(selectStmt);
++        conn = MockConnection.createMockConnection(selectStmt);
+         when(selectStmt.executeQuery()).thenReturn(resultSet);
+         when(resultSet.next()).thenReturn(false);
+ 
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/MockConnection.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/MockConnection.java
+@@ -0,0 +1,21 @@
++package com.cloud.upgrade.dao;
++
++import java.sql.Connection;
++import java.sql.PreparedStatement;
++import java.sql.SQLException;
++
++import static org.mockito.ArgumentMatchers.anyString;
++
++import org.mockito.Mockito;
++
++public class MockConnection {
++    public static Connection createMockConnection(PreparedStatement preparedStatement) {
++        Connection connection = Mockito.mock(Connection.class);
++        try {
++            Mockito.when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
++        } catch (SQLException e) {
++            throw new AssertionError(e);
++        }
++        return connection;
++    }
++}

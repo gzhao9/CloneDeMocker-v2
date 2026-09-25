@@ -1,0 +1,33 @@
+--- a/server/src/test/java/org/apache/cloudstack/resource/ResourceCleanupServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/resource/ResourceCleanupServiceImplTest.java
+@@ -548,8 +548,7 @@
+ 
+     @Test(expected = InvalidParameterValueException.class)
+     public void testPurgeExpungedResourcesInvalidResourceType() {
+-        PurgeExpungedResourcesCmd cmd = Mockito.mock(PurgeExpungedResourcesCmd.class);
+-        Mockito.when(cmd.getResourceType()).thenReturn("Volume");
++        PurgeExpungedResourcesCmd cmd = createMockPurgeExpungedResourcesCmd("Volume");
+         resourceCleanupService.purgeExpungedResources(cmd);
+     }
+ 
+@@ -577,8 +576,7 @@
+     public void testPurgeExpungedResources() {
+         Mockito.doReturn((long)ids.size()).when(resourceCleanupService).purgeExpungedResourceUsingJob(
+                 ResourceCleanupService.ResourceType.VirtualMachine, batchSize, null, null);
+-        PurgeExpungedResourcesCmd cmd = Mockito.mock(PurgeExpungedResourcesCmd.class);
+-        Mockito.when(cmd.getResourceType()).thenReturn(ResourceCleanupService.ResourceType.VirtualMachine.toString());
++        PurgeExpungedResourcesCmd cmd = createMockPurgeExpungedResourcesCmd(ResourceCleanupService.ResourceType.VirtualMachine.toString());
+         Mockito.when(cmd.getBatchSize()).thenReturn(batchSize);
+         long result = resourceCleanupService.purgeExpungedResources(cmd);
+         Assert.assertEquals(ids.size(), result);
+@@ -685,4 +683,10 @@
+         resourceCleanupService.parseDateFromConfig(
+                 ResourceCleanupService.ExpungedResourcesPurgeStartTime.key(), "ABC");
+     }
++
++    private static PurgeExpungedResourcesCmd createMockPurgeExpungedResourcesCmd(String resourceTypeReturn) {
++        PurgeExpungedResourcesCmd cmd = Mockito.mock(PurgeExpungedResourcesCmd.class);
++        Mockito.when(cmd.getResourceType()).thenReturn(resourceTypeReturn);
++        return cmd;
++    }
+ }

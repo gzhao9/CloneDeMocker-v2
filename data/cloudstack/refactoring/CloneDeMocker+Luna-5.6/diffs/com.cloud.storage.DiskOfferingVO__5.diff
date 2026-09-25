@@ -1,0 +1,53 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/UnmanagedVMsManagerImplTest.java
+@@ -250,6 +250,8 @@
+     @Mock
+     private SnapshotDao snapshotDao;
+ 
++    private DiskOfferingVO rootDiskOfferingMock;
++
+     @Mock
+     private VMInstanceVO virtualMachine;
+     @Mock
+@@ -284,6 +286,7 @@
+     @Before
+     public void setUp() throws Exception {
+         closeable = MockitoAnnotations.openMocks(this);
++        rootDiskOfferingMock = mock(DiskOfferingVO.class);
+         actionEventUtilsMocked = Mockito.mockStatic(ActionEventUtils.class);
+         BDDMockito.given(ActionEventUtils.onStartedActionEvent(anyLong(), anyLong(), anyString(), anyString(), anyLong(), anyString(), anyBoolean(), anyLong()))
+                 .willReturn(1L);
+@@ -1042,14 +1045,13 @@
+         long poolId = 11L;
+         StoragePoolVO selectedPool = mock(StoragePoolVO.class);
+         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+-        DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+         DiskOfferingVO dataDiskOffering = mock(DiskOfferingVO.class);
+ 
+         when(serviceOffering.getDiskOfferingId()).thenReturn(21L);
+         when(primaryDataStoreDao.findById(poolId)).thenReturn(selectedPool);
+-        when(diskOfferingDao.findById(21L)).thenReturn(rootDiskOffering);
++        when(diskOfferingDao.findById(21L)).thenReturn(rootDiskOfferingMock);
+         when(diskOfferingDao.findById(22L)).thenReturn(dataDiskOffering);
+-        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, rootDiskOffering)).thenReturn(true);
++        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, rootDiskOfferingMock)).thenReturn(true);
+         when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, dataDiskOffering)).thenReturn(false);
+ 
+         unmanagedVMsManager.validateSelectedConversionStoragePoolForVddk(true, poolId,
+@@ -1061,14 +1063,13 @@
+         long poolId = 12L;
+         StoragePoolVO selectedPool = mock(StoragePoolVO.class);
+         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+-        DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+         DiskOfferingVO dataDiskOffering = mock(DiskOfferingVO.class);
+ 
+         when(serviceOffering.getDiskOfferingId()).thenReturn(31L);
+         when(primaryDataStoreDao.findById(poolId)).thenReturn(selectedPool);
+-        when(diskOfferingDao.findById(31L)).thenReturn(rootDiskOffering);
++        when(diskOfferingDao.findById(31L)).thenReturn(rootDiskOfferingMock);
+         when(diskOfferingDao.findById(32L)).thenReturn(dataDiskOffering);
+-        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, rootDiskOffering)).thenReturn(true);
++        when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, rootDiskOfferingMock)).thenReturn(true);
+         when(volumeApiService.doesStoragePoolSupportDiskOffering(selectedPool, dataDiskOffering)).thenReturn(true);
+ 
+         unmanagedVMsManager.validateSelectedConversionStoragePoolForVddk(true, poolId,

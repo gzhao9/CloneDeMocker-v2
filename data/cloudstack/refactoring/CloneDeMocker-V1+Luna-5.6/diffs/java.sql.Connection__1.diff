@@ -1,0 +1,97 @@
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/DatabaseAccessObjectTest.java
+@@ -410,8 +410,8 @@
+ 
+     @Test
+     public void testDropColumn() throws Exception {
+-        when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatementMock);
+-
++
++        connectionMock = MockConnection.createMockConnection(preparedStatementMock);
+         Connection conn = connectionMock;
+         String tableName = "tableName";
+         String columnName = "columnName";
+@@ -495,7 +495,7 @@
+     @Test
+     public void testDropColumnWhenexecuteUpdateResultsInException() throws Exception {
+         SQLException sqlException = new SQLException();
+-        when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatementMock);
++        connectionMock = MockConnection.createMockConnection(preparedStatementMock);
+         when(preparedStatementMock.executeUpdate()).thenThrow(sqlException);
+ 
+         Connection conn = connectionMock;
+@@ -564,4 +564,17 @@
+         verify(preparedStatementMock, times(1)).executeUpdate();
+         verify(preparedStatementMock, times(1)).close();
+     }
++
++    public final class MockConnection {
++        private MockConnection() {
++            // Utility class
++        }
++
++        public static java.sql.Connection createMockConnection(
++                java.sql.PreparedStatement preparedStatement) {
++            java.sql.Connection connectionMock = Mockito.mock(java.sql.Connection.class);
++            when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatement);
++            return connectionMock;
++        }
++    }
+ }
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42040to42100Test.java
+@@ -71,11 +71,24 @@
+                 ResultSet resultSet = Mockito.mock(ResultSet.class);
+                 Mockito.when(resultSet.next()).thenReturn(false);
+                 Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
+-                Mockito.when(conn.prepareStatement(anyString())).thenReturn(preparedStatement);
++                conn = MockConnection.createMockConnection(preparedStatement);
+                 upgrade.performDataMigration(conn);
+ 
+                 Mockito.verify(pstmt, Mockito.times(1)).executeUpdate();
+             }
+         }
+     }
++
++    public final class MockConnection {
++        private MockConnection() {
++            // Utility class
++        }
++
++        public static java.sql.Connection createMockConnection(
++                java.sql.PreparedStatement preparedStatement) {
++            java.sql.Connection connectionMock = Mockito.mock(java.sql.Connection.class);
++            when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatement);
++            return connectionMock;
++        }
++    }
+ }
+--- a/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java
++++ b/engine/schema/src/test/java/com/cloud/upgrade/dao/Upgrade42100to42200Test.java
+@@ -182,7 +182,7 @@
+ 
+     @Test
+     public void testPerformDataMigration() throws SQLException {
+-        when(conn.prepareStatement(anyString())).thenReturn(selectStmt);
++        conn = MockConnection.createMockConnection(selectStmt);
+         when(selectStmt.executeQuery()).thenReturn(resultSet);
+         when(resultSet.next()).thenReturn(false);
+ 
+@@ -239,4 +239,17 @@
+         verify(updateStmt).setLong(3, 55L);
+         verify(updateStmt, times(1)).executeUpdate();
+     }
++
++    public final class MockConnection {
++        private MockConnection() {
++            // Utility class
++        }
++
++        public static java.sql.Connection createMockConnection(
++                java.sql.PreparedStatement preparedStatement) {
++            java.sql.Connection connectionMock = Mockito.mock(java.sql.Connection.class);
++            when(connectionMock.prepareStatement(anyString())).thenReturn(preparedStatement);
++            return connectionMock;
++        }
++    }
+ }

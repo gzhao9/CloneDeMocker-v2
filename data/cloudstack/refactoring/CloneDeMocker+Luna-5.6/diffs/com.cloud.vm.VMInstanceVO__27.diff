@@ -1,0 +1,277 @@
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
+@@ -213,7 +213,7 @@
+         Long zoneId = 6L;
+         Long backupId = 7L;
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVm(VMInstanceVO.State.Running);
+         Mockito.when(vm.getId()).thenReturn(vmId);
+         Mockito.when(vm.getHostId()).thenReturn(hostId);
+         Mockito.when(vm.getInstanceName()).thenReturn("test-vm");
+@@ -221,7 +221,6 @@
+         Mockito.when(vm.getAccountId()).thenReturn(accountId);
+         Mockito.when(vm.getDomainId()).thenReturn(domainId);
+         Mockito.when(vm.getDataCenterId()).thenReturn(zoneId);
+-        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
+ 
+         BackupRepository backupRepository = mock(BackupRepository.class);
+         Mockito.when(backupRepository.getType()).thenReturn("nfs");
+@@ -427,10 +426,9 @@
+     public void decideChainReturnsFullWhenVmHasNoActiveCheckpoint() {
+         Long zoneId = 1L;
+         Long vmId = 42L;
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVm(VMInstanceVO.State.Running);
+         Mockito.when(vm.getId()).thenReturn(vmId);
+         Mockito.when(vm.getDataCenterId()).thenReturn(zoneId);
+-        Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
+ 
+         // Master switch defaults to false (opt-in by zone) — explicitly enable it for this
+         // test so we exercise the "no active_checkpoint_id" branch rather than short-circuit
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -430,12 +430,11 @@
+     @Test
+     public void restoreBackedUpVolumeTestHostIpAndDatastoreUuid() {
+         BackupVO backupVO = new BackupVO();
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+         String volumeUuid = "5f4ed903-ac23-4f8a-b595-69c73c40593f";
+         String vmName = "i-2-3-VM";
+         VirtualMachine.State vmState = VirtualMachine.State.Running;
++        VMInstanceVO vm = createMockVm(vmState);
+         Mockito.when(vm.getName()).thenReturn(vmName);
+-        Mockito.when(vm.getState()).thenReturn(vmState);
+         Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>(vmName, vmState);
+ 
+         Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+@@ -458,12 +457,11 @@
+     @Test
+     public void restoreBackedUpVolumeTestHostIpAndDatastoreName() {
+         BackupVO backupVO = new BackupVO();
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+         String volumeUuid = "5f4ed903-ac23-4f8a-b595-69c73c40593f";
+         String vmName = "i-2-3-VM";
+         VirtualMachine.State vmState = VirtualMachine.State.Running;
++        VMInstanceVO vm = createMockVm(vmState);
+         Mockito.when(vm.getName()).thenReturn(vmName);
+-        Mockito.when(vm.getState()).thenReturn(vmState);
+         Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>(vmName, vmState);
+ 
+         Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+@@ -486,12 +484,11 @@
+     @Test
+     public void restoreBackedUpVolumeTestHostNameAndDatastoreUuid() {
+         BackupVO backupVO = new BackupVO();
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+         String volumeUuid = "5f4ed903-ac23-4f8a-b595-69c73c40593f";
+         String vmName = "i-2-3-VM";
+         VirtualMachine.State vmState = VirtualMachine.State.Running;
++        VMInstanceVO vm = createMockVm(vmState);
+         Mockito.when(vm.getName()).thenReturn(vmName);
+-        Mockito.when(vm.getState()).thenReturn(vmState);
+         Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>(vmName, vmState);
+ 
+         Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+@@ -514,12 +511,11 @@
+     @Test
+     public void restoreBackedUpVolumeTestHostAndDatastoreName() {
+         BackupVO backupVO = new BackupVO();
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+         String volumeUuid = "5f4ed903-ac23-4f8a-b595-69c73c40593f";
+         String vmName = "i-2-3-VM";
+         VirtualMachine.State vmState = VirtualMachine.State.Running;
++        VMInstanceVO vm = createMockVm(vmState);
+         Mockito.when(vm.getName()).thenReturn(vmName);
+-        Mockito.when(vm.getState()).thenReturn(vmState);
+         Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>(vmName, vmState);
+ 
+         Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+@@ -1235,7 +1231,7 @@
+         Long vmId = 1L;
+         Long offeringId = 2L;
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVm(VirtualMachine.State.Running);
+         when(vm.getId()).thenReturn(vmId);
+         BackupOfferingVO offering = mock(BackupOfferingVO.class);
+         Account owner = mock(Account.class);
+@@ -1245,7 +1241,6 @@
+ 
+         when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+         when(backupOfferingDao.findById(offeringId)).thenReturn(offering);
+-        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+         when(vm.getDataCenterId()).thenReturn(1L);
+         when(vm.getBackupOfferingId()).thenReturn(null);
+         when(offering.getProvider()).thenReturn("testbackupprovider");
+@@ -1346,10 +1341,9 @@
+         when(backup.getBackupOfferingId()).thenReturn(offeringId);
+         when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVm(VirtualMachine.State.Stopped);
+         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+         when(vm.getId()).thenReturn(vmId);
+-        when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+         when(vm.getHostId()).thenReturn(hostId);
+ 
+         BackupOfferingVO offering = mock(BackupOfferingVO.class);
+@@ -1402,10 +1396,9 @@
+         when(backup.getBackupOfferingId()).thenReturn(offeringId);
+         when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVm(VirtualMachine.State.Stopped);
+         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+         when(vm.getId()).thenReturn(vmId);
+-        when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+         when(vm.getHostId()).thenReturn(hostId);
+ 
+         BackupOfferingVO offering = mock(BackupOfferingVO.class);
+@@ -2109,7 +2102,7 @@
+         when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo));
+         when(backup.getUuid()).thenReturn("backup-uuid");
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVm(VirtualMachine.State.Stopped);
+         when(vm.getId()).thenReturn(vmId);
+         when(vm.getDataCenterId()).thenReturn(zoneId);
+         when(vm.getDomainId()).thenReturn(domainId);
+@@ -2117,7 +2110,6 @@
+         when(vm.getUserId()).thenReturn(userId);
+         when(vm.getInstanceName()).thenReturn(vmInstanceName);
+         when(vm.getHypervisorType()).thenReturn(hypervisorType);
+-        when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+         when(vm.getRemoved()).thenReturn(null);
+ 
+         BackupOfferingVO offering = mock(BackupOfferingVO.class);
+@@ -2195,8 +2187,7 @@
+         when(backup.getZoneId()).thenReturn(zoneId);
+         when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+-        when(vm.getState()).thenReturn(VirtualMachine.State.Expunging);
++        VMInstanceVO vm = createMockVm(VirtualMachine.State.Expunging);
+ 
+         when(backupDao.findById(backupId)).thenReturn(backup);
+         when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+@@ -2221,8 +2212,7 @@
+         when(backup.getZoneId()).thenReturn(zoneId);
+         when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+-        when(vm.getState()).thenReturn(VirtualMachine.State.Running);
++        VMInstanceVO vm = createMockVm(VirtualMachine.State.Running);
+         when(vm.getRemoved()).thenReturn(null);
+ 
+         when(backupDao.findById(backupId)).thenReturn(backup);
+@@ -2249,9 +2239,8 @@
+         when(backup.getStatus()).thenReturn(Backup.Status.BackedUp);
+         when(backup.getBackedUpVolumes()).thenReturn(Collections.emptyList());
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVm(VirtualMachine.State.Destroyed);
+         when(vm.getId()).thenReturn(vmId);
+-        when(vm.getState()).thenReturn(VirtualMachine.State.Destroyed);
+         when(vm.getRemoved()).thenReturn(null);
+         when(vm.getBackupVolumeList()).thenReturn(Collections.emptyList());
+ 
+--- a/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/KVMBackupExportServiceImplTest.java
+@@ -203,8 +203,8 @@
+ 
+     @Test
+     public void createBackup_instanceNotRunningOrStopped_throws() {
++        vm = createMockVm(State.Migrating);
+         when(vmInstanceDao.findById(1L)).thenReturn(vm);
+-        when(vm.getState()).thenReturn(State.Migrating);
+         when(vm.getDataCenterId()).thenReturn(10L);
+ 
+         assertThrows(CloudRuntimeException.class,
+@@ -213,8 +213,10 @@
+ 
+     @Test
+     public void createBackup_backupAlreadyInProgress_throws() {
++        vm = createMockVm(State.Running);
++        when(vm.getId()).thenReturn(1L);
++        when(vm.getUuid()).thenReturn("vm-uuid");
+         when(vmInstanceDao.findById(1L)).thenReturn(vm);
+-        when(vm.getState()).thenReturn(State.Running);
+         when(vm.getDataCenterId()).thenReturn(10L);
+         BackupVO existing = mock(BackupVO.class);
+         when(existing.getStatus()).thenReturn(Backup.Status.BackingUp);
+@@ -265,8 +267,10 @@
+ 
+     @Test
+     public void createBackup_existingBackupNotInProgress_proceedsNormally() {
++        vm = createMockVm(State.Stopped);
++        when(vm.getId()).thenReturn(1L);
++        when(vm.getUuid()).thenReturn("vm-uuid");
+         when(vmInstanceDao.findById(1L)).thenReturn(vm);
+-        when(vm.getState()).thenReturn(State.Stopped);
+         when(vm.getDataCenterId()).thenReturn(10L);
+         when(vm.getAccountId()).thenReturn(100L);
+         when(vm.getDomainId()).thenReturn(200L);
+@@ -285,8 +289,10 @@
+ 
+     @Test
+     public void createBackup_withActiveCheckpoint_setsFromCheckpointId() {
++        vm = createMockVm(State.Running);
++        when(vm.getId()).thenReturn(1L);
++        when(vm.getUuid()).thenReturn("vm-uuid");
+         when(vmInstanceDao.findById(1L)).thenReturn(vm);
+-        when(vm.getState()).thenReturn(State.Running);
+         when(vm.getDataCenterId()).thenReturn(10L);
+         when(vm.getAccountId()).thenReturn(100L);
+         when(vm.getDomainId()).thenReturn(200L);
+@@ -333,6 +339,10 @@
+ 
+     @Test
+     public void finalizeImageTransfer_downloadStoppedVm_stopNbdFails_throwsAndDoesNotUpdate() throws Exception {
++        vm = createMockVm(State.Stopped);
++        when(vm.getId()).thenReturn(1L);
++        when(vm.getUuid()).thenReturn("vm-uuid");
++
+         ImageTransferVO transfer = new ImageTransferVO("tx-download-fail", 11L, 21L, 31L, "sock",
+                 ImageTransferVO.Phase.transferring, ImageTransfer.Direction.download, 1L, 1L, 1L);
+         ReflectionTestUtils.setField(transfer, "id", 501L);
+@@ -341,7 +351,6 @@
+         when(backup.getHostId()).thenReturn(31L);
+         when(backup.getVmId()).thenReturn(41L);
+         when(vmInstanceDao.findById(41L)).thenReturn(vm);
+-        when(vm.getState()).thenReturn(State.Stopped);
+         when(agentManager.send(eq(31L), any(Command.class))).thenReturn(
+                 new Answer(null, true, null),
+                 new Answer(null, false, "stop failed")
+@@ -436,8 +445,10 @@
+             when(backup.getAccountId()).thenReturn(11L);
+             when(backup.getDomainId()).thenReturn(12L);
+             when(backup.getZoneId()).thenReturn(1L);
++            vm = createMockVm(State.Stopped);
++            when(vm.getId()).thenReturn(1L);
++            when(vm.getUuid()).thenReturn("vm-uuid");
+             when(vmInstanceDao.findById(55L)).thenReturn(vm);
+-            when(vm.getState()).thenReturn(State.Stopped);
+             when(vmInstanceDetailsDao.listDetailsKeyPairs(55L)).thenReturn(Map.of(VmDetailConstants.ACTIVE_CHECKPOINT_ID, "ckp-active"));
+             when(hostDao.findById(802L)).thenReturn(hostVO);
+             when(hostVO.getDataCenterId()).thenReturn(1L);
+--- a/server/src/test/java/org/apache/cloudstack/backup/MockVMInstanceVO.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/MockVMInstanceVO.java
+@@ -0,0 +1,17 @@
++package org.apache.cloudstack.backup;
++
++import com.cloud.vm.VMInstanceVO;
++import com.cloud.vm.VirtualMachine;
++import org.mockito.Mockito;
++
++public final class MockVMInstanceVO {
++
++    private MockVMInstanceVO() {
++    }
++
++    public static VMInstanceVO createMockVm(VirtualMachine.State state) {
++        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
++        Mockito.when(vm.getState()).thenReturn(state);
++        return vm;
++    }
++}

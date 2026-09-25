@@ -1,0 +1,42 @@
+--- a/engine/orchestration/src/test/java/com/cloud/agent/manager/AgentManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/agent/manager/AgentManagerImplTest.java
+@@ -49,6 +49,7 @@
+     private AgentManagerImpl mgr = Mockito.spy(new AgentManagerImpl());
+     private HostVO host;
+     private StartupCommand[] cmds;
++    private Commands commandsMock;
+ 
+     @Before
+     public void setUp() throws Exception {
+@@ -57,6 +58,7 @@
+         host.setDataCenterId(1L);
+         cmds = new StartupCommand[]{new StartupRoutingCommand()};
+         attache = new ConnectedAgentAttache(null, 1L, "uuid", "kvm-attache", Hypervisor.HypervisorType.KVM, null, false);
++        commandsMock = Mockito.mock(Commands.class);
+ 
+         hostDao = Mockito.mock(HostDao.class);
+         hostDetailsDao = Mockito.mock(HostDetailsDao.class);
+@@ -123,20 +125,18 @@
+ 
+     @Test
+     public void testGetTimeoutWithPositiveTimeout() {
+-        Commands commands = Mockito.mock(Commands.class);
+         int timeout = 30;
+-        int result = mgr.getTimeout(commands, timeout);
++        int result = mgr.getTimeout(commandsMock, timeout);
+ 
+         Assert.assertEquals(30, result);
+     }
+ 
+     @Test
+     public void testGetTimeoutWithGranularTimeout() {
+-        Commands commands = Mockito.mock(Commands.class);
+-        Mockito.doReturn(50).when(mgr).getTimeoutFromGranularWaitTime(commands);
++        Mockito.doReturn(50).when(mgr).getTimeoutFromGranularWaitTime(commandsMock);
+ 
+         int timeout = 0;
+-        int result = mgr.getTimeout(commands, timeout);
++        int result = mgr.getTimeout(commandsMock, timeout);
+ 
+         Assert.assertEquals(50, result);
+     }

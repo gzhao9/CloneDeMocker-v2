@@ -1,0 +1,77 @@
+--- a/plugins/user-authenticators/oauth2/src/test/java/org/apache/cloudstack/oauth2/OAuth2AuthManagerImplTest.java
++++ b/plugins/user-authenticators/oauth2/src/test/java/org/apache/cloudstack/oauth2/OAuth2AuthManagerImplTest.java
+@@ -215,11 +215,16 @@
+         }
+     }
+ 
++    private static RegisterOAuthProviderCmd createMockRegisterOAuthProviderCmd(String provider, long domainId) {
++        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
++        when(cmd.getProvider()).thenReturn(provider);
++        when(cmd.getDomainId()).thenReturn(domainId);
++        return cmd;
++    }
++
+     @Test
+     public void testRegisterOauthProviderForRootDomainTreatedAsGlobal() {
+-        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+-        when(cmd.getProvider()).thenReturn("github");
+-        when(cmd.getDomainId()).thenReturn(com.cloud.domain.Domain.ROOT_DOMAIN);
++        RegisterOAuthProviderCmd cmd = createMockRegisterOAuthProviderCmd("github", com.cloud.domain.Domain.ROOT_DOMAIN);
+         when(cmd.getSecretKey()).thenReturn("secret");
+         when(cmd.getClientId()).thenReturn("clientId");
+         when(cmd.getRedirectUri()).thenReturn("https://redirect");
+@@ -331,9 +336,7 @@
+     @Test
+     public void testRegisterOauthProviderWithDomain() {
+         when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+-        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+-        when(cmd.getProvider()).thenReturn("github");
+-        when(cmd.getDomainId()).thenReturn(5L);
++        RegisterOAuthProviderCmd cmd = createMockRegisterOAuthProviderCmd("github", 5L);
+         when(cmd.getSecretKey()).thenReturn("secret");
+         when(cmd.getClientId()).thenReturn("clientId");
+         when(cmd.getRedirectUri()).thenReturn("https://redirect");
+@@ -350,9 +353,7 @@
+     @Test
+     public void testRegisterOauthProviderDuplicateForDomain() {
+         when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+-        RegisterOAuthProviderCmd cmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+-        when(cmd.getProvider()).thenReturn("github");
+-        when(cmd.getDomainId()).thenReturn(5L);
++        RegisterOAuthProviderCmd cmd = createMockRegisterOAuthProviderCmd("github", 5L);
+ 
+         OauthProviderVO existing = new OauthProviderVO();
+         existing.setProvider("github");
+@@ -532,9 +533,7 @@
+         when(_authManager.isOAuthPluginEnabled(Mockito.nullable(Long.class))).thenReturn(true);
+ 
+         // Register github for domain 5
+-        RegisterOAuthProviderCmd cmd1 = Mockito.mock(RegisterOAuthProviderCmd.class);
+-        when(cmd1.getProvider()).thenReturn("github");
+-        when(cmd1.getDomainId()).thenReturn(5L);
++        RegisterOAuthProviderCmd cmd1 = createMockRegisterOAuthProviderCmd("github", 5L);
+         when(cmd1.getSecretKey()).thenReturn("secret1");
+         when(_oauthProviderDao.findByProviderAndDomain("github", 5L)).thenReturn(null);
+         when(_oauthProviderDao.persist(Mockito.any(OauthProviderVO.class))).thenAnswer(i -> i.getArgument(0));
+@@ -544,9 +543,7 @@
+         assertEquals(Long.valueOf(5L), result1.getDomainId());
+ 
+         // Register github for domain 10 — should succeed independently
+-        RegisterOAuthProviderCmd cmd2 = Mockito.mock(RegisterOAuthProviderCmd.class);
+-        when(cmd2.getProvider()).thenReturn("github");
+-        when(cmd2.getDomainId()).thenReturn(10L);
++        RegisterOAuthProviderCmd cmd2 = createMockRegisterOAuthProviderCmd("github", 10L);
+         when(cmd2.getSecretKey()).thenReturn("secret2");
+         when(_oauthProviderDao.findByProviderAndDomain("github", 10L)).thenReturn(null);
+ 
+@@ -570,9 +567,7 @@
+         assertNull(globalResult.getDomainId());
+ 
+         // Domain-specific registration for same provider — should succeed (different scope)
+-        RegisterOAuthProviderCmd domainCmd = Mockito.mock(RegisterOAuthProviderCmd.class);
+-        when(domainCmd.getProvider()).thenReturn("google");
+-        when(domainCmd.getDomainId()).thenReturn(7L);
++        RegisterOAuthProviderCmd domainCmd = createMockRegisterOAuthProviderCmd("google", 7L);
+         when(_oauthProviderDao.findByProviderAndDomain("google", 7L)).thenReturn(null);
+ 
+         OauthProviderVO domainResult = _authManager.registerOauthProvider(domainCmd);

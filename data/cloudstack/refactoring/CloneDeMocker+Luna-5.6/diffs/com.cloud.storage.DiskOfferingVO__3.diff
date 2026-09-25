@@ -1,0 +1,125 @@
+--- a/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
++++ b/server/src/test/java/com/cloud/vm/UserVmManagerImplTest.java
+@@ -221,6 +221,8 @@
+     @InjectMocks
+     private UserVmManagerImpl userVmManagerImpl = new UserVmManagerImpl();
+ 
++    private DiskOfferingVO diskOfferingMock;
++
+     @Mock
+     private ServiceOfferingDao _serviceOfferingDao;
+ 
+@@ -527,6 +529,7 @@
+ 
+     @Before
+     public void beforeTest() {
++        diskOfferingMock = mock(DiskOfferingVO.class);
+         userVmManagerImpl.resourceLimitService = resourceLimitMgr;
+ 
+         Mockito.when(updateVmCommand.getId()).thenReturn(vmId);
+@@ -905,23 +908,20 @@
+ 
+     @Test (expected = InvalidParameterValueException.class)
+     public void prepareResizeVolumeCmdTestRootVolumeNull() {
+-        DiskOfferingVO newRootDiskOffering = Mockito.mock(DiskOfferingVO.class);
+         DiskOfferingVO currentRootDiskOffering = Mockito.mock(DiskOfferingVO.class);
+-        userVmManagerImpl.prepareResizeVolumeCmd(null, currentRootDiskOffering, newRootDiskOffering);
++        userVmManagerImpl.prepareResizeVolumeCmd(null, currentRootDiskOffering, diskOfferingMock);
+     }
+ 
+     @Test (expected = InvalidParameterValueException.class)
+     public void prepareResizeVolumeCmdTestCurrentRootDiskOffering() {
+-        DiskOfferingVO newRootDiskOffering = Mockito.mock(DiskOfferingVO.class);
+         VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+-        userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVm, null, newRootDiskOffering);
++        userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVm, null, diskOfferingMock);
+     }
+ 
+     @Test (expected = InvalidParameterValueException.class)
+     public void prepareResizeVolumeCmdTestNewRootDiskOffering() {
+         VolumeVO rootVolumeOfVm = Mockito.mock(VolumeVO.class);
+-        DiskOfferingVO currentRootDiskOffering = Mockito.mock(DiskOfferingVO.class);
+-        userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVm, currentRootDiskOffering, null);
++        userVmManagerImpl.prepareResizeVolumeCmd(rootVolumeOfVm, diskOfferingMock, null);
+     }
+ 
+     @Test
+@@ -1865,8 +1865,7 @@
+             when(rootVol.getDiskOfferingId()).thenReturn(100L);
+             when(rootVol.isDisplay()).thenReturn(true);
+             rootVols.add(rootVol);
+-            DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+-            when(diskOfferingDao.findById(100L)).thenReturn(diskOffering);
++            when(diskOfferingDao.findById(100L)).thenReturn(diskOfferingMock);
+ 
+             StoragePoolVO storagePool = mock(StoragePoolVO.class);
+             when(storagePool.isManaged()).thenReturn(true);
+@@ -1897,9 +1896,8 @@
+     @Test
+     public void testCheckVolumesLimits() {
+         long diskOffId1 = 1L;
+-        DiskOfferingVO diskOfferingVO1 = Mockito.mock(DiskOfferingVO.class);
+-        Mockito.when(diskOfferingDao.findById(diskOffId1)).thenReturn(diskOfferingVO1);
+-        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingVO1)).thenReturn(List.of("tag1", "tag2"));
++        Mockito.when(diskOfferingDao.findById(diskOffId1)).thenReturn(diskOfferingMock);
++        Mockito.when(resourceLimitMgr.getResourceLimitStorageTags(diskOfferingMock)).thenReturn(List.of("tag1", "tag2"));
+         long diskOffId2 = 2L;
+         DiskOfferingVO diskOfferingVO2 = Mockito.mock(DiskOfferingVO.class);
+         Mockito.when(diskOfferingDao.findById(diskOffId2)).thenReturn(diskOfferingVO2);
+@@ -3589,15 +3587,14 @@
+         when(backup.getDetail(ApiConstants.TEMPLATE_ID)).thenReturn("template-uuid");
+         when(templateDao.findByUuid("template-uuid")).thenReturn(template);
+ 
+-        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+         when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
+         when(_serviceOfferingDao.findByUuid("service-offering-uuid")).thenReturn(serviceOffering);
+-        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
++        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOfferingMock, 10L, 1000L, 2000L);
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+ 
+         NetworkVO network1 = mock(NetworkVO.class);
+         NetworkVO network2 = mock(NetworkVO.class);
+-        when(backupManager.getDataDiskInfoListFromBackup(backup)).thenReturn(List.of(new VmDiskInfo(diskOffering, 10L, 1000L, 2000L)));
++        when(backupManager.getDataDiskInfoListFromBackup(backup)).thenReturn(List.of(new VmDiskInfo(diskOfferingMock, 10L, 1000L, 2000L)));
+         Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+ 
+         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+@@ -3767,16 +3764,15 @@
+         when(templateDao.findByUuid("iso-uuid")).thenReturn(iso);
+ 
+         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
+-        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+         when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
+         when(_serviceOfferingDao.findByUuid("service-offering-uuid")).thenReturn(serviceOffering);
+ 
+-        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
++        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOfferingMock, 10L, 1000L, 2000L);
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+ 
+         NetworkVO network1 = mock(NetworkVO.class);
+         NetworkVO network2 = mock(NetworkVO.class);
+-        when(backupManager.getDataDiskInfoListFromBackup(backup)).thenReturn(List.of(new VmDiskInfo(diskOffering, 10L, 1000L, 2000L)));
++        when(backupManager.getDataDiskInfoListFromBackup(backup)).thenReturn(List.of(new VmDiskInfo(diskOfferingMock, 10L, 1000L, 2000L)));
+         Mockito.when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+ 
+         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+@@ -4268,8 +4264,7 @@
+         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+         when(templateDao.findById(templateId)).thenReturn(template);
+ 
+-        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+-        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
++        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOfferingMock, 10L, 1000L, 2000L);
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+         when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+ 
+@@ -4336,8 +4331,7 @@
+         when(overrideDiskOffering.isComputeOnly()).thenReturn(true);
+         when(diskOfferingDao.findById(overrideDiskOfferingId)).thenReturn(overrideDiskOffering);
+ 
+-        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
+-        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOffering, 10L, 1000L, 2000L);
++        VmDiskInfo rootVmDiskInfo = new VmDiskInfo(diskOfferingMock, 10L, 1000L, 2000L);
+         when(backupManager.getRootDiskInfoFromBackup(backup)).thenReturn(rootVmDiskInfo);
+         when(backupManager.canCreateInstanceFromBackup(backupId)).thenReturn(true);
+ 

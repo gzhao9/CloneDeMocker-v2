@@ -1,0 +1,54 @@
+--- a/server/src/test/java/com/cloud/ha/dao/HighAvailabilityDaoImplTest.java
++++ b/server/src/test/java/com/cloud/ha/dao/HighAvailabilityDaoImplTest.java
+@@ -52,9 +52,9 @@
+ 
+     @Test
+     public void testExpungeByVmList() {
+-        SearchBuilder<HaWorkVO> sb = Mockito.mock(SearchBuilder.class);
++
+         SearchCriteria<HaWorkVO> sc = Mockito.mock(SearchCriteria.class);
+-        Mockito.when(sb.create()).thenReturn(sc);
++        SearchBuilder<HaWorkVO> sb = createMockSearchBuilder(sc);
+         Mockito.doAnswer((Answer<Integer>) invocationOnMock -> {
+             Long batchSize = (Long)invocationOnMock.getArguments()[1];
+             return batchSize == null ? 0 : batchSize.intValue();
+@@ -73,11 +73,10 @@
+ 
+     @Test
+     public void testMarkPendingWorksAsInvestigating() throws Exception {
+-        SearchBuilder<HaWorkVO> mockTBASearch = Mockito.mock(SearchBuilder.class);
++        SearchCriteria<HaWorkVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
++        SearchBuilder<HaWorkVO> mockTBASearch = createMockSearchBuilder(mockSearchCriteria);
+         highAvailabilityDaoImpl.TBASearch = mockTBASearch;
+-        SearchCriteria<HaWorkVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
+         UpdateBuilder mockUpdateBuilder = Mockito.mock(UpdateBuilder.class);
+-        Mockito.when(mockTBASearch.create()).thenReturn(mockSearchCriteria);
+         Mockito.doNothing().when(mockSearchCriteria).setParameters(Mockito.eq("time"), Mockito.anyLong());
+         Mockito.doNothing().when(mockSearchCriteria).setParameters(Mockito.eq("step"), Mockito.eq(HighAvailabilityManager.Step.Done), Mockito.eq(HighAvailabilityManager.Step.Cancelled));
+         HaWorkVO haWorkVO = new HaWorkVO(1L, VirtualMachine.Type.User, null,
+@@ -98,12 +97,11 @@
+ 
+     @Test
+     public void testMarkServerPendingWorksAsInvestigating() {
+-        SearchBuilder<HaWorkVO> mockSearch = Mockito.mock(SearchBuilder.class);
++        SearchCriteria<HaWorkVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
++        SearchBuilder<HaWorkVO> mockSearch = createMockSearchBuilder(mockSearchCriteria);
+         Mockito.doReturn(Mockito.mock(HaWorkVO.class)).when(mockSearch).entity();
+         Mockito.doReturn(mockSearch).when(highAvailabilityDaoImpl).createSearchBuilder();
+-        SearchCriteria<HaWorkVO> mockSearchCriteria = Mockito.mock(SearchCriteria.class);
+         UpdateBuilder mockUpdateBuilder = Mockito.mock(UpdateBuilder.class);
+-        Mockito.when(mockSearch.create()).thenReturn(mockSearchCriteria);
+         Mockito.doNothing().when(mockSearchCriteria).setParameters(Mockito.eq("server"), Mockito.eq(1L));
+         Mockito.doNothing().when(mockSearchCriteria).setParameters(Mockito.eq("step"), Mockito.eq(HighAvailabilityManager.Step.Done), Mockito.eq(HighAvailabilityManager.Step.Cancelled));
+         HaWorkVO haWorkVO = new HaWorkVO(1L, VirtualMachine.Type.User, null,
+@@ -122,4 +120,10 @@
+             Mockito.verify(highAvailabilityDaoImpl).update(Mockito.eq(mockUpdateBuilder), Mockito.eq(mockSearchCriteria), Mockito.isNull());
+         }
+     }
++
++    private static SearchBuilder<HaWorkVO> createMockSearchBuilder(SearchCriteria<HaWorkVO> searchCriteria) {
++        SearchBuilder<HaWorkVO> searchBuilder = Mockito.mock(SearchBuilder.class);
++        Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
++        return searchBuilder;
++    }
+ }

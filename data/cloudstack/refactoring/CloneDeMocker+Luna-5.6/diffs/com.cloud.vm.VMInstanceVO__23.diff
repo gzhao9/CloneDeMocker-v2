@@ -1,0 +1,55 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -662,8 +662,8 @@
+         when(createBackupScheduleCmdMock.getIntervalType()).thenReturn(DateUtil.IntervalType.DAILY);
+         when(createBackupScheduleCmdMock.getMaxBackups()).thenReturn(8);
+ 
++        vmInstanceVOMock = createMockVm(zoneId);
+         when(vmInstanceDao.findById(vmId)).thenReturn(vmInstanceVOMock);
+-        when(vmInstanceVOMock.getDataCenterId()).thenReturn(zoneId);
+         when(vmInstanceVOMock.getAccountId()).thenReturn(accountId);
+         when(vmInstanceVOMock.getBackupOfferingId()).thenReturn(backupOfferingId);
+ 
+@@ -934,8 +934,8 @@
+         long dataCenterId = 2L;
+ 
+         try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
++            vmInstanceVOMock = createMockVm(dataCenterId);
+             Mockito.when(vmInstanceDao.findById(vmId)).thenReturn(vmInstanceVOMock);
+-            Mockito.when(vmInstanceVOMock.getDataCenterId()).thenReturn(dataCenterId);
+             Mockito.when(backupManager.isDisabled(dataCenterId)).thenReturn(false);
+ 
+             mockedCallContext.when(CallContext::current).thenReturn(callContextMock);
+@@ -1948,7 +1948,7 @@
+         Mockito.when(cmd.getId()).thenReturn(1L);
+ 
+         // Mock VM for validation
+-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVm(1L);
+         Mockito.when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+         Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+         overrideBackupFrameworkConfigValue();
+@@ -1983,9 +1983,8 @@
+         Mockito.when(cmd.getId()).thenReturn(1L);
+ 
+         // Mock VM for validation
+-        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVm(1L);
+         Mockito.when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+-        Mockito.when(vm.getDataCenterId()).thenReturn(1L);
+         overrideBackupFrameworkConfigValue();
+         Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
+ 
+@@ -2623,6 +2622,12 @@
+         when(offering.getId()).thenReturn(id);
+         when(offering.getName()).thenReturn(name);
+         return offering;
++    }
++
++    private static VMInstanceVO createMockVm(long dataCenterId) {
++        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
++        Mockito.when(vm.getDataCenterId()).thenReturn(dataCenterId);
++        return vm;
+     }
+ 
+     @Test

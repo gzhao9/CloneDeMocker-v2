@@ -1,0 +1,41 @@
+--- a/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
++++ b/engine/orchestration/src/test/java/com/cloud/vm/VirtualMachineManagerImplTest.java
+@@ -352,6 +352,12 @@
+         return method;
+     }
+ 
++    private static DiskOfferingVO createMockDiskOffering(String[] tagsArray) {
++        DiskOfferingVO diskOfferingMock = mock(DiskOfferingVO.class);
++        when(diskOfferingMock.getTagsArray()).thenReturn(tagsArray);
++        return diskOfferingMock;
++    }
++
+     @Test
+     public void testaddHostIpToCertDetailsIfConfigAllows() {
+         Host vmHost = mock(Host.class);
+@@ -483,18 +489,20 @@
+         when(vmInstanceMock.getServiceOfferingId()).thenReturn(1l);
+ 
+         ServiceOfferingVO mockCurrentServiceOffering = mock(ServiceOfferingVO.class);
+-        DiskOfferingVO mockCurrentDiskOffering = mock(DiskOfferingVO.class);
++        DiskOfferingVO mockCurrentDiskOffering = createMockDiskOffering(new String[]{"x","y"});
+ 
+         when(serviceOfferingDaoMock.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(mockCurrentServiceOffering);
+         when(diskOfferingDaoMock.findByIdIncludingRemoved(anyLong())).thenReturn(mockCurrentDiskOffering);
+-        when(diskOfferingDaoMock.findById(anyLong())).thenReturn(diskOfferingMock);
+-        when(diskOfferingMock.isUseLocalStorage()).thenReturn(false);
++
++
+         when(mockCurrentServiceOffering.isSystemUse()).thenReturn(true);
+         when(serviceOfferingMock.isSystemUse()).thenReturn(true);
+         String[] oldDOStorageTags = {"x","y"};
+         String[] newDOStorageTags = {"z","x","y"};
+-        when(mockCurrentDiskOffering.getTagsArray()).thenReturn(oldDOStorageTags);
+-        when(diskOfferingMock.getTagsArray()).thenReturn(newDOStorageTags);
++
++        diskOfferingMock = createMockDiskOffering(newDOStorageTags);
++        when(diskOfferingDaoMock.findById(anyLong())).thenReturn(diskOfferingMock);
++        when(diskOfferingMock.isUseLocalStorage()).thenReturn(false);
+ 
+         virtualMachineManagerImpl.checkIfCanUpgrade(vmInstanceMock, serviceOfferingMock);
+     }

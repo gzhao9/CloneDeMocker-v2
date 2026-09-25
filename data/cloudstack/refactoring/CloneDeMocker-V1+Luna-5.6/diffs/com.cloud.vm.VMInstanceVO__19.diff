@@ -1,0 +1,67 @@
+--- a/plugins/storage/volume/storpool/src/test/java/org/apache/cloudstack/storage/datastore/driver/StorPoolPrimaryDataStoreDriverTest.java
++++ b/plugins/storage/volume/storpool/src/test/java/org/apache/cloudstack/storage/datastore/driver/StorPoolPrimaryDataStoreDriverTest.java
+@@ -115,9 +115,8 @@
+     public void testMigrateVolumePassed(){
+ 
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+-        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+-        when(vm.getState()).thenReturn(State.Running);
++        VMInstanceVO vm = createMockVmInstance(State.Running);
++        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+ 
+         when(StorPoolUtil.getSpConnection(destObj.getDataStore().getUuid(), destObj.getDataStore().getId(), detailsDao, storagePool)).thenReturn(conn);
+         StorPoolUtil.SpApiResponse resp = new StorPoolUtil.SpApiResponse();
+@@ -131,10 +130,9 @@
+     @Test
+     public void testMigrateVolumeNotPassed() {
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+-
+-        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+-        when(vm.getState()).thenReturn(State.Running);
++
++        VMInstanceVO vm = createMockVmInstance(State.Running);
++        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+ 
+         when(StorPoolUtil.getSpConnection(destObj.getDataStore().getUuid(), destObj.getDataStore().getId(), detailsDao, storagePool)).thenReturn(conn);
+         StorPoolUtil.SpApiResponse resp = new StorPoolUtil.SpApiResponse();
+@@ -147,10 +145,9 @@
+     @Test
+     public void testCopyVolumeAttachedToVmPassed() {
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+-
+-        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+-        when(vm.getState()).thenReturn(State.Stopped);
++
++        VMInstanceVO vm = createMockVmInstance(State.Stopped);
++        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+         String vmUuid = UUID.randomUUID().toString();
+         when(vm.getUuid()).thenReturn(vmUuid);
+ 
+@@ -167,10 +164,9 @@
+     @Test
+     public void testCopyVolumeAttachedToVmNotPassed() {
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+-
+-        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+-        when(vm.getState()).thenReturn(State.Stopped);
++
++        VMInstanceVO vm = createMockVmInstance(State.Stopped);
++        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+         String vmUuid = UUID.randomUUID().toString();
+         when(vm.getUuid()).thenReturn(vmUuid);
+ 
+@@ -240,4 +236,10 @@
+         respErr.setDescr("Failed");
+         resp.setError(respErr);
+     }
++
++    private static VMInstanceVO createMockVmInstance(State stateReturn) {
++        VMInstanceVO vm = mock(VMInstanceVO.class);
++        when(vm.getState()).thenReturn(stateReturn);
++        return vm;
++    }
+ }

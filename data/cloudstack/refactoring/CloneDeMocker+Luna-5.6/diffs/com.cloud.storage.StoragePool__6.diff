@@ -1,0 +1,35 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -1042,6 +1042,12 @@
+         Mockito.verify(volumeServiceMock, Mockito.times(1)).destroyVolume(volumeMockId);
+     }
+ 
++    private static StoragePool createMockStoragePool(Storage.StoragePoolType poolType) {
++        StoragePool destPrimaryStorage = Mockito.mock(StoragePool.class);
++        Mockito.when(destPrimaryStorage.getPoolType()).thenReturn(poolType);
++        return destPrimaryStorage;
++    }
++
+     private void verifyMocksForTestDestroyVolumeWhenVolumeIsNotInRightState() {
+         Mockito.verify(volumeServiceMock, Mockito.times(0)).destroyVolume(volumeMockId);
+         Mockito.verify(resourceLimitServiceMock, Mockito.times(0)).decrementVolumeResourceCount(accountMockId, true, volumeSizeMock, newDiskOfferingMock, null);
+@@ -2259,8 +2265,7 @@
+         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
+         when(volumeToAttach.getState()).thenReturn(Volume.State.Uploaded);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        StoragePool destPrimaryStorage = Mockito.mock(StoragePool.class);
+-        when(destPrimaryStorage.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
++        StoragePool destPrimaryStorage = createMockStoragePool(Storage.StoragePoolType.PowerFlex);
+         Mockito.doReturn(destPrimaryStorage).when(volumeApiServiceImpl)
+                 .getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+         volumeApiServiceImpl.createVolumeOnPrimaryForAttachIfNeeded(volumeToAttach, vm, null);
+@@ -2271,8 +2276,7 @@
+         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
+         Mockito.when(volumeToAttach.getState()).thenReturn(Volume.State.Uploaded);
+         UserVmVO vm = Mockito.mock(UserVmVO.class);
+-        StoragePool destPrimaryStorage = Mockito.mock(StoragePool.class);
+-        Mockito.when(destPrimaryStorage.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
++        StoragePool destPrimaryStorage = createMockStoragePool(Storage.StoragePoolType.NetworkFilesystem);
+         Mockito.doReturn(destPrimaryStorage).when(volumeApiServiceImpl)
+                 .getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+         try {

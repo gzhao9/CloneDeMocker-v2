@@ -1,0 +1,118 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/UserVmJoinVOToVmConverterTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/api/converter/UserVmJoinVOToVmConverterTest.java
+@@ -42,26 +42,24 @@
+ 
+     @Test
+     public void testToVm_MapsUpStateWithBasicFields() {
+-        final UserVmJoinVO src = mock(UserVmJoinVO.class);
+-        when(src.getId()).thenReturn(101L);
+-        when(src.getUuid()).thenReturn("vm-1");
+-        when(src.getName()).thenReturn("vm-1-name");
+-        when(src.getDisplayName()).thenReturn("vm-1-display");
+-        when(src.getInstanceName()).thenReturn("i-101");
+-        when(src.getState()).thenReturn(VirtualMachine.State.Running);
+-        when(src.getCreated()).thenReturn(new Date(1000L));
+-        when(src.getLastUpdated()).thenReturn(new Date(2000L));
+-        when(src.getTemplateUuid()).thenReturn("tmpl-1");
++
++        final UserVmJoinVO src = createMockUserVmJoinVO(
++                101L,
++                "vm-1",
++                "vm-1-name",
++                "vm-1-display",
++                "i-101",
++                VirtualMachine.State.Running,
++                new Date(1000L),
++                new Date(2000L),
++                "tmpl-1",
++                512,
++                2,
++                "offering-1",
++                "acct-1",
++                "ag-1",
++                "ud-1");
+         when(src.getHostUuid()).thenReturn("host-1");
+-        when(src.getRamSize()).thenReturn(512);
+-        when(src.getArch()).thenReturn("x86_64");
+-        when(src.getCpu()).thenReturn(2);
+-        when(src.getGuestOsDisplayName()).thenReturn("Linux");
+-        when(src.getServiceOfferingUuid()).thenReturn("offering-1");
+-        when(src.getAccountUuid()).thenReturn("acct-1");
+-        when(src.getAffinityGroupUuid()).thenReturn("ag-1");
+-        when(src.getUserDataUuid()).thenReturn("ud-1");
+-
+         final Vm vm = UserVmJoinVOToVmConverter.toVm(src, null, null, null, null, null, null, null, false);
+ 
+         assertEquals("vm-1", vm.getId());
+@@ -80,28 +78,11 @@
+ 
+     @Test
+     public void testToVm_UsesResolversAndMapsDownState() {
+-        final UserVmJoinVO src = mock(UserVmJoinVO.class);
+-        when(src.getId()).thenReturn(202L);
+-        when(src.getUuid()).thenReturn("vm-2");
+-        when(src.getName()).thenReturn("vm-2-name");
+-        when(src.getDisplayName()).thenReturn("vm-2-display");
+-        when(src.getInstanceName()).thenReturn("i-202");
+-        when(src.getState()).thenReturn(VirtualMachine.State.Stopped);
+-        when(src.getCreated()).thenReturn(new Date(3000L));
+-        when(src.getLastUpdated()).thenReturn(new Date(4000L));
+-        when(src.getTemplateUuid()).thenReturn("tmpl-2");
+         when(src.getHostUuid()).thenReturn(null);
+         when(src.getHostId()).thenReturn(22L);
+         when(src.getLastHostId()).thenReturn(null);
+-        when(src.getRamSize()).thenReturn(1024);
+-        when(src.getArch()).thenReturn("x86_64");
+-        when(src.getCpu()).thenReturn(4);
+-        when(src.getGuestOsDisplayName()).thenReturn("Linux");
+-        when(src.getServiceOfferingUuid()).thenReturn("offering-2");
+-        when(src.getAccountUuid()).thenReturn("acct-2");
+-        when(src.getAffinityGroupUuid()).thenReturn("ag-2");
+-        when(src.getUserDataUuid()).thenReturn("ud-2");
+ 
++        final UserVmJoinVO src = createMockUserVmJoinVO(202L, "vm-2", "vm-2-name", "vm-2-display", "i-202", VirtualMachine.State.Stopped, new Date(3000L), new Date(4000L), "tmpl-2", 1024, 4, "offering-2", "acct-2", "ag-2", "ud-2");
+         final HostJoinVO hostVo = mock(HostJoinVO.class);
+         when(hostVo.getUuid()).thenReturn("host-2");
+         when(hostVo.getClusterUuid()).thenReturn("cluster-2");
+@@ -137,4 +118,41 @@
+         assertEquals("ag-2", vm.getAffinityGroupId());
+         assertEquals("ud-2", vm.getUserDataId());
+     }
++
++    private static UserVmJoinVO createMockUserVmJoinVO(
++            long id,
++            String uuid,
++            String name,
++            String displayName,
++            String instanceName,
++            VirtualMachine.State state,
++            Date created,
++            Date lastUpdated,
++            String templateUuid,
++            int ramSize,
++            int cpu,
++            String serviceOfferingUuid,
++            String accountUuid,
++            String affinityGroupUuid,
++            String userDataUuid) {
++        final UserVmJoinVO src = mock(UserVmJoinVO.class);
++        when(src.getAccountUuid()).thenReturn(accountUuid);
++        when(src.getAffinityGroupUuid()).thenReturn(affinityGroupUuid);
++        when(src.getArch()).thenReturn("x86_64");
++        when(src.getCpu()).thenReturn(cpu);
++        when(src.getCreated()).thenReturn(created);
++        when(src.getDisplayName()).thenReturn(displayName);
++        when(src.getGuestOsDisplayName()).thenReturn("Linux");
++        when(src.getId()).thenReturn(id);
++        when(src.getInstanceName()).thenReturn(instanceName);
++        when(src.getLastUpdated()).thenReturn(lastUpdated);
++        when(src.getName()).thenReturn(name);
++        when(src.getRamSize()).thenReturn(ramSize);
++        when(src.getServiceOfferingUuid()).thenReturn(serviceOfferingUuid);
++        when(src.getState()).thenReturn(state);
++        when(src.getTemplateUuid()).thenReturn(templateUuid);
++        when(src.getUserDataUuid()).thenReturn(userDataUuid);
++        when(src.getUuid()).thenReturn(uuid);
++        return src;
++    }
+ }

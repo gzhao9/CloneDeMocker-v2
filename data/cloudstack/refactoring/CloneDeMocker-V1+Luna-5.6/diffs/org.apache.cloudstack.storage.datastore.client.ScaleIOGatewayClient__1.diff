@@ -1,0 +1,62 @@
+--- a/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/ScaleIOPrimaryDataStoreDriverTest.java
++++ b/plugins/storage/volume/scaleio/src/test/java/org/apache/cloudstack/storage/datastore/driver/ScaleIOPrimaryDataStoreDriverTest.java
+@@ -390,10 +390,9 @@
+         doNothing().when(scaleIOPrimaryDataStoreDriver)
+                 .revokeAccess(any(), any(), any());
+ 
+-        ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
++        ScaleIOGatewayClient client = createScaleIOGatewayClient(true);
+         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
+                 .getScaleIOClient(any(DataStore.class));
+-        when(client.deleteVolume(any())).thenReturn(true);
+ 
+         VolumeVO volume = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
+         when(volumeDao.findById(1L)).thenReturn(volume);
+@@ -426,10 +425,9 @@
+         when(destData.getDataStore()).thenReturn(destStore);
+         doNothing().when(scaleIOPrimaryDataStoreDriver).revokeAccess(any(), any(), any());
+ 
+-        ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
++        ScaleIOGatewayClient client = createScaleIOGatewayClient(false);
+         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
+                 .getScaleIOClient(any(DataStore.class));
+-        when(client.deleteVolume(any())).thenReturn(false);
+ 
+         VolumeVO volume = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
+         when(volumeDao.findById(1L)).thenReturn(volume);
+@@ -457,10 +455,9 @@
+         when(volumeTO.getPath()).thenReturn(srcVolumePath);
+         doNothing().when(scaleIOPrimaryDataStoreDriver).revokeVolumeAccess(any(), any(), any());
+ 
+-        ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
++        ScaleIOGatewayClient client = createScaleIOGatewayClient(true);
+         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
+                 .getScaleIOClient(any(DataStore.class));
+-        when(client.deleteVolume(any())).thenReturn(true);
+ 
+         scaleIOPrimaryDataStoreDriver.deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
+     }
+@@ -481,11 +478,10 @@
+         String sdcId = "7332760565f6340f";
+         doReturn(sdcId).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(srcStore, host);
+ 
+-        ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
++        ScaleIOGatewayClient client = createScaleIOGatewayClient(false);
+         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
+                 .getScaleIOClient(any(DataStore.class));
+         doReturn(true).when(client).unmapVolumeFromSdc(any(), any());
+-        when(client.deleteVolume(any())).thenReturn(false);
+ 
+         scaleIOPrimaryDataStoreDriver.deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
+     }
+@@ -597,4 +593,10 @@
+                         16L * (1024 * 1024 * 1024),
+                         true));
+     }
++
++    private static ScaleIOGatewayClient createScaleIOGatewayClient(boolean deleteVolumeReturn) {
++        ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
++        when(client.deleteVolume(any())).thenReturn(deleteVolumeReturn);
++        return client;
++    }
+ }

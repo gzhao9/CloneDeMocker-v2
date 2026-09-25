@@ -1,0 +1,46 @@
+--- a/plugins/metrics/src/test/java/org/apache/cloudstack/metrics/MetricsServiceImplTest.java
++++ b/plugins/metrics/src/test/java/org/apache/cloudstack/metrics/MetricsServiceImplTest.java
+@@ -32,6 +32,7 @@
+ import org.apache.cloudstack.response.VmMetricsStatsResponse;
+ import org.apache.commons.lang3.time.DateUtils;
+ import org.junit.Assert;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.mockito.ArgumentCaptor;
+@@ -123,6 +124,12 @@
+     @Mock
+     Filter filterMock;
+ 
++    private Date sharedEndDate;
++
++    @Before
++    public void setUp() {
++        sharedEndDate = Mockito.mock(Date.class);
++    }
+ 
+     private void prepareSearchCriteriaWhenUseSetParameters() {
+         Mockito.doNothing().when(scMock).setParameters(Mockito.anyString(), Mockito.any());
+@@ -248,10 +255,9 @@
+         Map<Long,List<VmStatsVO>> expected = new HashMap<Long,List<VmStatsVO>>();
+         expected.put(fakeVmId1, new ArrayList<VmStatsVO>());
+         Date startDate = Mockito.mock(Date.class);
+-        Date endDate = Mockito.mock(Date.class);
+ 
+         Map<Long,List<VmStatsVO>> result = spy.searchForVmMetricsStatsInternal(
+-                startDate, endDate, Arrays.asList(userVmVOMock));
++                startDate, sharedEndDate, Arrays.asList(userVmVOMock));
+ 
+         Mockito.verify(userVmVOMock).getId();
+         Mockito.verify(spy).findVmStatsAccordingToDateParams(
+@@ -264,9 +270,8 @@
+         Mockito.doNothing().when(spy).validateDateParams(Mockito.any(), Mockito.any());
+         Map<Long,List<VmStatsVO>> expected = new HashMap<Long,List<VmStatsVO>>();
+         Date startDate = Mockito.mock(Date.class);
+-        Date endDate = Mockito.mock(Date.class);
+         Map<Long,List<VmStatsVO>> result = spy.searchForVmMetricsStatsInternal(
+-                startDate, endDate, new ArrayList<UserVmVO>());
++                startDate, sharedEndDate, new ArrayList<UserVmVO>());
+ 
+         Mockito.verify(userVmVOMock, Mockito.never()).getId();
+         Mockito.verify(spy, Mockito.never()).findVmStatsAccordingToDateParams(

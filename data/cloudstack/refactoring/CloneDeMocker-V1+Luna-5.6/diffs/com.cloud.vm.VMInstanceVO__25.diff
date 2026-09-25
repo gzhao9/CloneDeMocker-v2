@@ -1,0 +1,47 @@
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -543,7 +543,7 @@
+     public void tryRestoreVMTestRestoreSucceeded() throws NoTransitionException {
+         BackupOffering offering = mock(BackupOffering.class);
+         VolumeVO volumeVO = mock(VolumeVO.class);
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVmInstanceVo();
+         BackupVO backup = mock(BackupVO.class);
+ 
+         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+@@ -558,7 +558,6 @@
+             Mockito.when(virtualMachineManager.stateTransitTo(Mockito.eq(vm), Mockito.eq(VirtualMachine.Event.RestoringRequested), Mockito.any())).thenReturn(true);
+             Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVO), Mockito.eq(Volume.Event.RestoreRequested))).thenReturn(true);
+ 
+-            Mockito.when(vm.getId()).thenReturn(1L);
+             Mockito.when(offering.getProvider()).thenReturn("veeam");
+             Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
+             Mockito.when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(true);
+@@ -571,7 +570,7 @@
+     public void tryRestoreVMTestRestoreFails() throws NoTransitionException {
+         BackupOffering offering = mock(BackupOffering.class);
+         VolumeVO volumeVO = mock(VolumeVO.class);
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
++        VMInstanceVO vm = createMockVmInstanceVo();
+         BackupVO backup = mock(BackupVO.class);
+ 
+         try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+@@ -588,7 +587,6 @@
+             Mockito.when(virtualMachineManager.stateTransitTo(Mockito.eq(vm), Mockito.eq(VirtualMachine.Event.RestoringFailed), Mockito.any())).thenReturn(true);
+             Mockito.when(volumeApiService.stateTransitTo(Mockito.eq(volumeVO), Mockito.eq(Volume.Event.RestoreFailed))).thenReturn(true);
+ 
+-            Mockito.when(vm.getId()).thenReturn(1L);
+             Mockito.when(offering.getProvider()).thenReturn("veeam");
+             Mockito.doReturn(backupProvider).when(backupManager).getBackupProvider("veeam");
+             Mockito.when(backupProvider.restoreVMFromBackup(vm, backup, false, null)).thenReturn(false);
+@@ -2874,4 +2872,10 @@
+         verify(backupOfferingDao).persist(any());
+         verify(backupOfferingDetailsDao, never()).saveDetails(any());
+     }
++
++    private static VMInstanceVO createMockVmInstanceVo() {
++        VMInstanceVO vm = mock(VMInstanceVO.class);
++        Mockito.when(vm.getId()).thenReturn(1L);
++        return vm;
++    }
+ }

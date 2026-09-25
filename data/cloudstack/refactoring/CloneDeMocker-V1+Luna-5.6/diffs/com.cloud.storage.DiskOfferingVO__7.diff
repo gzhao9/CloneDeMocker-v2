@@ -1,0 +1,76 @@
+--- a/server/src/test/java/com/cloud/configuration/ConfigurationManagerCloneIntegrationTest.java
++++ b/server/src/test/java/com/cloud/configuration/ConfigurationManagerCloneIntegrationTest.java
+@@ -355,12 +355,8 @@
+     public void testCloneDiskOfferingInheritsAllPropertiesFromSource() {
+         Long sourceId = 1L;
+ 
+-        DiskOfferingVO sourceOffering = mock(DiskOfferingVO.class);
+-        when(sourceOffering.getId()).thenReturn(sourceId);
+-        when(sourceOffering.getName()).thenReturn("source-disk");
+-        when(sourceOffering.getDisplayText()).thenReturn("Source Disk Display");
+-        when(sourceOffering.getDiskSize()).thenReturn(10L);
+-        when(sourceOffering.getTags()).thenReturn("tag1");
++        DiskOfferingVO sourceOffering = createMockDiskOffering(10L, "Source Disk Display", "source-disk", "tag1");
++        when(sourceOffering.getId()).thenReturn(sourceId);
+         when(sourceOffering.isCustomized()).thenReturn(false);
+         when(sourceOffering.getDisplayOffering()).thenReturn(true);
+         when(sourceOffering.isCustomizedIops()).thenReturn(false);
+@@ -382,12 +378,8 @@
+         when(cmd.getMinIops()).thenReturn(null);
+         when(cmd.getMaxIops()).thenReturn(null);
+ 
+-        DiskOfferingVO clonedOffering = mock(DiskOfferingVO.class);
+-        when(clonedOffering.getId()).thenReturn(2L);
+-        when(clonedOffering.getName()).thenReturn("cloned-disk-offering");
+-        when(clonedOffering.getDisplayText()).thenReturn("Source Disk Display");
+-        when(clonedOffering.getDiskSize()).thenReturn(10L);
+-        when(clonedOffering.getTags()).thenReturn("tag1");
++        DiskOfferingVO clonedOffering = createMockDiskOffering(10L, "Source Disk Display", "cloned-disk-offering", "tag1");
++        when(clonedOffering.getId()).thenReturn(2L);
+         when(diskOfferingDao.persist(any(DiskOfferingVO.class))).thenReturn(clonedOffering);
+ 
+         Mockito.doReturn(clonedOffering).when(configurationManager).createDiskOffering(
+@@ -411,12 +403,8 @@
+     public void testCloneDiskOfferingOverridesProvidedParameters() {
+         Long sourceId = 1L;
+ 
+-        DiskOfferingVO sourceOffering = mock(DiskOfferingVO.class);
+-        when(sourceOffering.getId()).thenReturn(sourceId);
+-        when(sourceOffering.getName()).thenReturn("source-disk");
+-        when(sourceOffering.getDisplayText()).thenReturn("Source Disk Display");
+-        when(sourceOffering.getDiskSize()).thenReturn(100L);
+-        when(sourceOffering.getTags()).thenReturn("tag1");
++        DiskOfferingVO sourceOffering = createMockDiskOffering(100L, "Source Disk Display", "source-disk", "tag1");
++        when(sourceOffering.getId()).thenReturn(sourceId);
+         when(sourceOffering.isCustomized()).thenReturn(false);
+         when(sourceOffering.getProvisioningType()).thenReturn(Storage.ProvisioningType.THIN);
+         when(sourceOffering.isUseLocalStorage()).thenReturn(false);
+@@ -436,12 +424,8 @@
+         when(diskOfferingDetailsDao.findZoneIds(sourceId)).thenReturn(Collections.emptyList());
+         when(diskOfferingDetailsDao.getDetail(eq(sourceId), anyString())).thenReturn(null);
+ 
+-        DiskOfferingVO clonedOffering = mock(DiskOfferingVO.class);
+-        when(clonedOffering.getId()).thenReturn(2L);
+-        when(clonedOffering.getName()).thenReturn("cloned-disk-offering");
+-        when(clonedOffering.getDisplayText()).thenReturn("New Disk Display");
+-        when(clonedOffering.getDiskSize()).thenReturn(21L);
+-        when(clonedOffering.getTags()).thenReturn("tag1,tag2");
++        DiskOfferingVO clonedOffering = createMockDiskOffering(21L, "New Disk Display", "cloned-disk-offering", "tag1,tag2");
++        when(clonedOffering.getId()).thenReturn(2L);
+ 
+         // Ensure the real createDiskOffering path will return our mocked offering when it calls persist
+         when(diskOfferingDao.persist(any(DiskOfferingVO.class))).thenReturn(clonedOffering);
+@@ -1051,4 +1035,13 @@
+         Assert.assertEquals("Should inherit availability", NetworkOffering.Availability.Required, result.getAvailability());
+         verify(networkOfferingDao).findById(sourceId);
+     }
++
++    private static DiskOfferingVO createMockDiskOffering(long diskSize, String displayText, String name, String tags) {
++        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
++        when(diskOffering.getDiskSize()).thenReturn(diskSize);
++        when(diskOffering.getDisplayText()).thenReturn(displayText);
++        when(diskOffering.getName()).thenReturn(name);
++        when(diskOffering.getTags()).thenReturn(tags);
++        return diskOffering;
++    }
+ }

@@ -1,0 +1,69 @@
+--- a/plugins/storage/volume/storpool/src/test/java/org/apache/cloudstack/storage/datastore/driver/StorPoolPrimaryDataStoreDriverTest.java
++++ b/plugins/storage/volume/storpool/src/test/java/org/apache/cloudstack/storage/datastore/driver/StorPoolPrimaryDataStoreDriverTest.java
+@@ -115,9 +115,8 @@
+     public void testMigrateVolumePassed(){
+ 
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+-        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+-        when(vm.getState()).thenReturn(State.Running);
++        VMInstanceVO vm = createMockVm(State.Running);
++        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+ 
+         when(StorPoolUtil.getSpConnection(destObj.getDataStore().getUuid(), destObj.getDataStore().getId(), detailsDao, storagePool)).thenReturn(conn);
+         StorPoolUtil.SpApiResponse resp = new StorPoolUtil.SpApiResponse();
+@@ -131,10 +130,9 @@
+     @Test
+     public void testMigrateVolumeNotPassed() {
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+-
+-        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+-        when(vm.getState()).thenReturn(State.Running);
++        VMInstanceVO vm = createMockVm(State.Running);
++
++        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+ 
+         when(StorPoolUtil.getSpConnection(destObj.getDataStore().getUuid(), destObj.getDataStore().getId(), detailsDao, storagePool)).thenReturn(conn);
+         StorPoolUtil.SpApiResponse resp = new StorPoolUtil.SpApiResponse();
+@@ -147,10 +145,9 @@
+     @Test
+     public void testCopyVolumeAttachedToVmPassed() {
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+-
+-        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+-        when(vm.getState()).thenReturn(State.Stopped);
++        VMInstanceVO vm = createMockVm(State.Stopped);
++
++        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+         String vmUuid = UUID.randomUUID().toString();
+         when(vm.getUuid()).thenReturn(vmUuid);
+ 
+@@ -167,10 +164,9 @@
+     @Test
+     public void testCopyVolumeAttachedToVmNotPassed() {
+ 
+-        VMInstanceVO vm = mock(VMInstanceVO.class);
+-
+-        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+-        when(vm.getState()).thenReturn(State.Stopped);
++        VMInstanceVO vm = createMockVm(State.Stopped);
++
++        setReturnsWhenSourceAndDestinationAreVolumes(srcStore, destStore, srcObj, destObj, srcTO, dstTO, dstPrimaryTo, vm);
+         String vmUuid = UUID.randomUUID().toString();
+         when(vm.getUuid()).thenReturn(vmUuid);
+ 
+@@ -234,6 +230,12 @@
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vm);
+     }
+ 
++    private static VMInstanceVO createMockVm(State state) {
++        VMInstanceVO vm = mock(VMInstanceVO.class);
++        when(vm.getState()).thenReturn(state);
++        return vm;
++    }
++
+     private static void setResponseError(StorPoolUtil.SpApiResponse resp) {
+         StorPoolUtil.SpApiError respErr = new StorPoolUtil.SpApiError();
+         respErr.setName("error");

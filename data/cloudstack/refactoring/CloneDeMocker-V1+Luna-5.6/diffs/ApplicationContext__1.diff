@@ -1,0 +1,28 @@
+--- a/server/src/test/java/org/apache/cloudstack/vm/lease/VMLeaseManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/vm/lease/VMLeaseManagerImplTest.java
+@@ -75,6 +75,8 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class VMLeaseManagerImplTest {
++    @Mock
++    private ApplicationContext mockAppContext;
+     public static final String DESTROY = "DESTROY";
+     public static final String VM_UUID = UUID.randomUUID().toString();
+     public static final String VM_NAME = "vm-name";
+@@ -190,7 +192,6 @@
+         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false);
+         // Mock the static ComponentContext
+         try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class)) {
+-            ApplicationContext mockAppContext = mock(ApplicationContext.class);
+             mockedComponentContext.when(ComponentContext::getApplicationContext).thenReturn(mockAppContext);
+             mockedComponentContext.when(() -> ComponentContext.inject(any())).thenReturn(true);
+             long jobId = vmLeaseManager.executeStopInstanceJob(vm, 123L);
+@@ -210,7 +211,7 @@
+     public void testExecuteDestroyInstanceJob() {
+         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false, DESTROY);
+         try (MockedStatic<ComponentContext> mockedComponentContext = Mockito.mockStatic(ComponentContext.class)) {
+-            ApplicationContext mockAppContext = mock(ApplicationContext.class);
++            // removed local mock; replaced with global field `mockAppContext`
+             mockedComponentContext.when(ComponentContext::getApplicationContext).thenReturn(mockAppContext);
+             mockedComponentContext.when(() -> ComponentContext.inject(any())).thenReturn(true);
+             long jobId = vmLeaseManager.executeDestroyInstanceJob(vm, 123L);

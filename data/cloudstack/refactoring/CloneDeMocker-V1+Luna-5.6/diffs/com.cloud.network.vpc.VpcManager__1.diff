@@ -1,0 +1,70 @@
+--- a/server/src/test/java/com/cloud/network/lb/AssignLoadBalancerTest.java
++++ b/server/src/test/java/com/cloud/network/lb/AssignLoadBalancerTest.java
+@@ -172,8 +172,8 @@
+         NetworkDao networkDao = Mockito.mock(NetworkDao.class);
+         AccountManager accountMgr = Mockito.mock(AccountManager.class);
+         AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
+-        VpcManager vpcMgr = Mockito.mock(VpcManager.class);
+-
++
++        VpcManager vpcMgr = createMockVpcManager();
+         _lbMgr._lbDao = lbDao;
+         _lbMgr._lb2VmMapDao = lb2VmMapDao;
+         _lbMgr._vmDao = userVmDao;
+@@ -192,7 +192,6 @@
+         when(accountDao.findById(anyLong())).thenReturn(Mockito.mock(AccountVO.class));
+         Mockito.doNothing().when(accountMgr).checkAccess(any(Account.class), any(SecurityChecker.AccessType.class), any(Boolean.class), any(Network.class));
+         when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
+-        when(vpcMgr.isNetworkOnVpcEnabledConserveMode(any())).thenReturn(false);
+ 
+         _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, null, false);
+     }
+@@ -222,7 +221,6 @@
+         AccountManager accountMgr = Mockito.mock(AccountManager.class);
+         NicSecondaryIpDao nicSecIpDao =  Mockito.mock(NicSecondaryIpDao.class);
+         AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
+-        VpcManager vpcMgr = Mockito.mock(VpcManager.class);
+ 
+         _lbMgr._lbDao = lbDao;
+         _lbMgr._lb2VmMapDao = lb2VmMapDao;
+@@ -242,8 +240,8 @@
+         when(lb2VmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(_lbvmMapList);
+         when (nicSecIpDao.findByIp4AddressAndNicId(anyString(), anyLong())).thenReturn(null);
+         when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
+-        when(vpcMgr.isNetworkOnVpcEnabledConserveMode(any())).thenReturn(false);
+-
++
++        VpcManager vpcMgr = createMockVpcManager();
+         _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, null, false);
+     }
+ 
+@@ -274,8 +272,8 @@
+         NicSecondaryIpDao nicSecIpDao =  Mockito.mock(NicSecondaryIpDao.class);
+         LoadBalancerVMMapVO lbVmMapVO = new LoadBalancerVMMapVO(1L, 1L, "10.1.1.175", false);
+         AutoScaleVmGroupDao autoScaleVmGroupDao = Mockito.mock(AutoScaleVmGroupDao.class);
+-        VpcManager vpcMgr = Mockito.mock(VpcManager.class);
+-
++
++        VpcManager vpcMgr = createMockVpcManager();
+         _lbMgr._lbDao = lbDao;
+         _lbMgr._lb2VmMapDao = lb2VmMapDao;
+         _lbMgr._vmDao = userVmDao;
+@@ -295,7 +293,6 @@
+         when(lb2VmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(_lbvmMapList);
+         when (nicSecIpDao.findByIp4AddressAndNicId(anyString(), anyLong())).thenReturn(null);
+         when(autoScaleVmGroupDao.isAutoScaleLoadBalancer(anyLong())).thenReturn(Boolean.FALSE);
+-        when(vpcMgr.isNetworkOnVpcEnabledConserveMode(any())).thenReturn(false);
+ 
+         _lbMgr.assignToLoadBalancer(1L, null, vmIdIpMap, null, false);
+     }
+@@ -305,4 +302,10 @@
+         CallContext.unregister();
+     }
+ 
++
++    private static VpcManager createMockVpcManager() {
++        VpcManager vpcMgr = Mockito.mock(VpcManager.class);
++        when(vpcMgr.isNetworkOnVpcEnabledConserveMode(any())).thenReturn(false);
++        return vpcMgr;
++    }
+ }
