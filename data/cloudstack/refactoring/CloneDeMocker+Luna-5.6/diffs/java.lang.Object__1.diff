@@ -1,0 +1,48 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -180,6 +180,8 @@
+     @Mock
+     LoadBalancerCertMapDao loadBalancerCertMapDao;
+ 
++    private Object opaqueMock;
++
+     TungstenElement tungstenElement;
+ 
+     MockedStatic<ApiDBUtils> apiDBUtilsMocked;
+@@ -191,6 +193,7 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
++        opaqueMock = mock(Object.class);
+         tungstenElement = new TungstenElement();
+         tungstenElement.tungstenFabricUtils = tungstenFabricUtils;
+         tungstenElement.networkModel = networkModel;
+@@ -885,26 +888,24 @@
+     public void postStateTransitionEventWithVmStartedTest() {
+         StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition = mock(StateMachine2.Transition.class);
+         VMInstanceVO vo = mock(VMInstanceVO.class);
+-        Object opaque = mock(Object.class);
+ 
+         when(transition.getCurrentState()).thenReturn(VirtualMachine.State.Starting);
+         when(transition.getToState()).thenReturn(VirtualMachine.State.Running);
+         when(tungstenService.addTungstenVmSecurityGroup(any(VMInstanceVO.class))).thenReturn(true);
+ 
+-        assertTrue(tungstenElement.postStateTransitionEvent(transition, vo, true, opaque));
++        assertTrue(tungstenElement.postStateTransitionEvent(transition, vo, true, opaqueMock));
+     }
+ 
+     @Test
+     public void postStateTransitionEventWithVmStopedTest() {
+         StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition = mock(StateMachine2.Transition.class);
+         VMInstanceVO vo = mock(VMInstanceVO.class);
+-        Object opaque = mock(Object.class);
+ 
+         when(transition.getCurrentState()).thenReturn(VirtualMachine.State.Stopping);
+         when(transition.getToState()).thenReturn(VirtualMachine.State.Stopped);
+         when(tungstenService.removeTungstenVmSecurityGroup(any(VMInstanceVO.class))).thenReturn(true);
+ 
+-        assertTrue(tungstenElement.postStateTransitionEvent(transition, vo, true, opaque));
++        assertTrue(tungstenElement.postStateTransitionEvent(transition, vo, true, opaqueMock));
+     }
+ 
+     @Test

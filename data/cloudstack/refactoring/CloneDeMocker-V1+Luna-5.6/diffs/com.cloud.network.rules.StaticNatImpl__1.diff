@@ -1,0 +1,81 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -254,7 +254,7 @@
+     @Test
+     public void applyStaticNatsAddRuleSuccessTest() {
+         Network network = mock(Network.class);
+-        StaticNatImpl staticNat = mock(StaticNatImpl.class);
++        StaticNatImpl staticNat = createMockStaticNat(false);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         TungstenAnswer assignFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
+@@ -262,7 +262,6 @@
+         Network publicNetwork = mock(Network.class);
+         List<StaticNatImpl> staticNatList = List.of(staticNat);
+ 
+-        when(staticNat.isForRevoke()).thenReturn(false);
+         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
+         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
+         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
+@@ -275,7 +274,7 @@
+     @Test
+     public void applyStaticNatsAddRuleFailTest() {
+         Network network = mock(Network.class);
+-        StaticNatImpl staticNat = mock(StaticNatImpl.class);
++        StaticNatImpl staticNat = createMockStaticNat(false);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         TungstenAnswer assignFloatingIpAnswer = MockTungstenAnswerFactory.get(false);
+@@ -283,7 +282,6 @@
+         Network publicNetwork = mock(Network.class);
+         List<StaticNatImpl> staticNatList = List.of(staticNat);
+ 
+-        when(staticNat.isForRevoke()).thenReturn(false);
+         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
+         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
+         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
+@@ -296,7 +294,6 @@
+     @Test
+     public void applyStaticNatsRevokeRuleSuccessTest() {
+         Network network = mock(Network.class);
+-        StaticNatImpl staticNat = mock(StaticNatImpl.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         TungstenAnswer releaseFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
+@@ -304,7 +301,7 @@
+         Network publicNetwork = mock(Network.class);
+         List<StaticNatImpl> staticNatList = List.of(staticNat);
+ 
+-        when(staticNat.isForRevoke()).thenReturn(true);
++        StaticNatImpl staticNat = createMockStaticNat(true);
+         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
+         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
+         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
+@@ -317,7 +314,7 @@
+     @Test
+     public void applyStaticNatsRevokeRuleFailTest() {
+         Network network = mock(Network.class);
+-        StaticNatImpl staticNat = mock(StaticNatImpl.class);
++        StaticNatImpl staticNat = createMockStaticNat(true);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+         TungstenAnswer releaseFloatingIpAnswer = MockTungstenAnswerFactory.get(false);
+@@ -325,7 +322,6 @@
+         Network publicNetwork = mock(Network.class);
+         List<StaticNatImpl> staticNatList = List.of(staticNat);
+ 
+-        when(staticNat.isForRevoke()).thenReturn(true);
+         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddressVO);
+         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vmInstanceVO);
+         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
+@@ -962,4 +958,10 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    private static StaticNatImpl createMockStaticNat(boolean isForRevoke) {
++        StaticNatImpl staticNat = mock(StaticNatImpl.class);
++        when(staticNat.isForRevoke()).thenReturn(isForRevoke);
++        return staticNat;
++    }
+ }

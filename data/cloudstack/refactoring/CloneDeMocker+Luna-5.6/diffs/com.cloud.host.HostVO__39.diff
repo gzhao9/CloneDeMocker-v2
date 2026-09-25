@@ -1,0 +1,91 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenGuestNetworkGuruTest.java
+@@ -138,6 +138,7 @@
+     VMInstanceDao vmInstanceDao;
+     @Mock
+     HostDao hostDao;
++    private final HostVO hostVoMock = mock(HostVO.class);
+     @Mock
+     NetworkDao networkDao;
+     @Mock
+@@ -383,13 +384,12 @@
+         final DeployDestination dest = mock(DeployDestination.class);
+         final ReservationContext context = mock(ReservationContext.class);
+         final VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+-        final HostVO host = mock(HostVO.class);
+ 
+         when(nic.getReservationStrategy()).thenReturn(Nic.ReservationStrategy.Start);
+         when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+-        when(hostDao.findById(anyLong())).thenReturn(host);
++        when(hostDao.findById(anyLong())).thenReturn(hostVoMock);
+ 
+         guru.reserve(nic, network, vm, dest, context);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class),
+@@ -402,9 +402,8 @@
+         final VirtualMachineProfile vm = mock(VirtualMachineProfile.class);
+         final IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+         final VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+-        final HostVO host = mock(HostVO.class);
+-
+-        when(hostDao.findById(anyLong())).thenReturn(host);
++
++        when(hostDao.findById(anyLong())).thenReturn(hostVoMock);
+         when(
+             tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong())).thenReturn(
+             new TungstenAnswer(new TungstenCommand(), true, ""));
+@@ -451,12 +450,11 @@
+         final Network network = mock(Network.class);
+         final NetworkDetailVO networkDetailVO = mock(NetworkDetailVO.class);
+         final TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+-        final HostVO hostVO = mock(HostVO.class);
+ 
+         when(network.getGuestType()).thenReturn(Network.GuestType.Shared);
+         when(networkDetailsDao.findDetail(anyLong(), anyString())).thenReturn(networkDetailVO);
+         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
+-        when(hostDao.findByPublicIp(any())).thenReturn(hostVO);
++        when(hostDao.findByPublicIp(any())).thenReturn(hostVoMock);
+ 
+         guru.trash(network, offering);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenNetworkPolicyCommand.class),
+@@ -477,12 +475,11 @@
+         final DeployDestination dest = mock(DeployDestination.class);
+         final ReservationContext context = mock(ReservationContext.class);
+         final VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+-        final HostVO hostVO = mock(HostVO.class);
+ 
+         when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(vmInstanceDao.findById(anyLong())).thenReturn(vmInstanceVO);
+-        when(hostDao.findById(anyLong())).thenReturn(hostVO);
++        when(hostDao.findById(anyLong())).thenReturn(hostVoMock);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenVirtualMachineCommand.class),
+             anyLong())).thenReturn(new TungstenAnswer(new TungstenCommand(), true, ""));
+ 
+@@ -498,11 +495,10 @@
+         final VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+         final ReservationContext context = mock(ReservationContext.class);
+         final VirtualMachine vm = mock(VirtualMachine.class);
+-        final HostVO hostVO = mock(HostVO.class);
+ 
+         when(vmProfile.getType()).thenReturn(VirtualMachine.Type.User);
+         when(vmProfile.getVirtualMachine()).thenReturn(vm);
+-        when(hostDao.findById(anyLong())).thenReturn(hostVO);
++        when(hostDao.findById(anyLong())).thenReturn(hostVoMock);
+ 
+         guru.rollbackMigration(nic, network, vmProfile, context, context);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class),
+@@ -516,11 +512,10 @@
+         final VirtualMachineProfile vmProfile = mock(VirtualMachineProfile.class);
+         final ReservationContext context = mock(ReservationContext.class);
+         final VirtualMachine vm = mock(VirtualMachine.class);
+-        final HostVO hostVO = mock(HostVO.class);
+ 
+         when(vmProfile.getType()).thenReturn(VirtualMachine.Type.User);
+         when(vmProfile.getVirtualMachine()).thenReturn(vm);
+-        when(hostDao.findById(anyLong())).thenReturn(hostVO);
++        when(hostDao.findById(anyLong())).thenReturn(hostVoMock);
+ 
+         guru.commitMigration(nic, network, vmProfile, context, context);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class),
