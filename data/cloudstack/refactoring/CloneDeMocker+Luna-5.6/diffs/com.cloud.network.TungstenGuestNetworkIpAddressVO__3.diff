@@ -1,0 +1,56 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -244,6 +244,8 @@
+     @Mock
+     TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao;
+     @Mock
++    private TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVOMock;
++    @Mock
+     TungstenProviderDao tungstenProviderDao;
+     @Mock
+     TungstenFabricUtils tungstenFabricUtils;
+@@ -563,12 +565,11 @@
+     public void allocateDnsIpAddressTest() {
+         NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
+-        TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
+ 
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenNetworkDnsCommand.class), anyLong())).thenReturn(getTungstenNetworkDnsAnswer);
+         when(networkVO.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(networkVO.getGuestType()).thenReturn(Network.GuestType.Isolated);
+-        when(tungstenGuestNetworkIpAddressDao.persist(any(TungstenGuestNetworkIpAddressVO.class))).thenReturn(tungstenGuestNetworkIpAddressVO);
++        when(tungstenGuestNetworkIpAddressDao.persist(any(TungstenGuestNetworkIpAddressVO.class))).thenReturn(tungstenGuestNetworkIpAddressVOMock);
+         when(networkVO.getCidr()).thenReturn("192.168.100.0/24");
+         when(getTungstenNetworkDnsAnswer.getDetails()).thenReturn("192.168.100.100");
+ 
+@@ -579,12 +580,11 @@
+     public void deallocateDnsIpAddressTest() {
+         NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
+-        TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
+ 
+         when(tungstenFabricUtils.sendTungstenCommand(any(GetTungstenNetworkDnsCommand.class), anyLong())).thenReturn(getTungstenNetworkDnsAnswer);
+         when(networkVO.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(networkVO.getGuestType()).thenReturn(Network.GuestType.Isolated);
+-        when(tungstenGuestNetworkIpAddressDao.findByNetworkAndGuestIpAddress(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
++        when(tungstenGuestNetworkIpAddressDao.findByNetworkAndGuestIpAddress(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVOMock);
+         when(getTungstenNetworkDnsAnswer.getDetails()).thenReturn("192.168.100.100");
+ 
+         tungstenService.deallocateDnsIpAddress(networkVO, null, "test");
+@@ -1643,7 +1643,6 @@
+     public void removeNetworkGatewayFromLogicalRouterTest() {
+         NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+-        TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
+         TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+@@ -1651,7 +1650,7 @@
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(networkDao.findByUuid(anyString())).thenReturn(networkVO);
+-        when(tungstenGuestNetworkIpAddressDao.findByNetworkAndLogicalRouter(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
++        when(tungstenGuestNetworkIpAddressDao.findByNetworkAndLogicalRouter(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVOMock);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenNetworkGatewayFromLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
+         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);

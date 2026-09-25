@@ -1,0 +1,76 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -351,7 +351,6 @@
+         List<LoadBalancerVO> loadBalancerVOList = List.of(loadBalancerVO);
+         TungstenFabricLBHealthMonitorVO tungstenFabricLBHealthMonitorVO = mock(TungstenFabricLBHealthMonitorVO.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+-        TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
+         TungstenAnswer createTungstenNetworkLoadbalancerAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer updateTungstenLoadBalancerPoolAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer updateTungstenLoadBalancerMemberAnswer = MockTungstenAnswerFactory.get(true);
+@@ -377,7 +376,7 @@
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddressVO);
+         when(ipAddressVO.getAddress()).thenReturn(ip);
+         when(lbVmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(loadBalancerVMMapVOList);
+-        when(tungstenGuestNetworkIpAddressVO.getGuestIpAddress()).thenReturn(ip);
++        TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = MockTungstenGuestNetworkIpAddressVO.createTungstenGuestNetworkIpAddressVO(ip);
+         when(ip.addr()).thenReturn("10.10.10.10");
+         when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkLoadbalancerCommand.class), anyLong())).thenReturn(createTungstenNetworkLoadbalancerAnswer);
+@@ -962,4 +961,18 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    public final class MockTungstenGuestNetworkIpAddressVO {
++
++        private MockTungstenGuestNetworkIpAddressVO() {
++        }
++
++        public static TungstenGuestNetworkIpAddressVO createTungstenGuestNetworkIpAddressVO(
++                com.cloud.utils.net.Ip ip) {
++            TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO =
++                    mock(TungstenGuestNetworkIpAddressVO.class);
++            when(tungstenGuestNetworkIpAddressVO.getGuestIpAddress()).thenReturn(ip);
++            return tungstenGuestNetworkIpAddressVO;
++        }
++    }
+ }
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -651,7 +651,6 @@
+         FirewallRuleVO firewallRuleVO = mock(FirewallRuleVO.class);
+         LoadBalancerCertMapVO loadBalancerCertMapVO = mock(LoadBalancerCertMapVO.class);
+         SslCertVO sslCertVO = mock(SslCertVO.class);
+-        TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
+         Ip ip = mock(Ip.class);
+         AccountVO accountVO = mock(AccountVO.class);
+         Loadbalancer loadbalancer = mock(Loadbalancer.class);
+@@ -675,7 +674,7 @@
+         when(ip.addr()).thenReturn("192.168.100.100");
+         when(getTungstenLoadBalancerAnswer.getApiObjectBase()).thenReturn(loadbalancer);
+         when(ipAddressVO.getAddress()).thenReturn(ip);
+-        when(tungstenGuestNetworkIpAddressVO.getGuestIpAddress()).thenReturn(ip);
++         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = MockTungstenGuestNetworkIpAddressVO.createTungstenGuestNetworkIpAddressVO(ip);
+ 
+         assertTrue(tungstenService.updateLoadBalancer(network, loadBalancingRule));
+     }
+@@ -1668,4 +1667,18 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    public final class MockTungstenGuestNetworkIpAddressVO {
++
++        private MockTungstenGuestNetworkIpAddressVO() {
++        }
++
++        public static TungstenGuestNetworkIpAddressVO createTungstenGuestNetworkIpAddressVO(
++                com.cloud.utils.net.Ip ip) {
++            TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO =
++                    mock(TungstenGuestNetworkIpAddressVO.class);
++            when(tungstenGuestNetworkIpAddressVO.getGuestIpAddress()).thenReturn(ip);
++            return tungstenGuestNetworkIpAddressVO;
++        }
++    }
+ }
