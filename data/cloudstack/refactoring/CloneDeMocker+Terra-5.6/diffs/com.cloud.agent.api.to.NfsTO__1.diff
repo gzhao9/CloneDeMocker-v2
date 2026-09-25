@@ -1,0 +1,33 @@
+--- a/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/guru/VMwareGuruTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/guru/VMwareGuruTest.java
+@@ -521,8 +521,7 @@
+         DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+         Mockito.doNothing().when(vmMo).exportVm(anyString(), anyString(), anyBoolean(), anyBoolean(), anyInt());
+-        NfsTO dataStore = Mockito.mock(NfsTO.class);
+-        Mockito.doReturn("nfs://10.1.1.4/testdir").when(dataStore).getUrl();
++        NfsTO dataStore = createMockNfsTO();
+ 
+         try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+             Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
+@@ -621,8 +620,7 @@
+ 
+     @Test
+     public void testRemoveVMTemplateFileOutOfBand() throws Exception {
+-        NfsTO dataStore = Mockito.mock(NfsTO.class);
+-        Mockito.doReturn("nfs://10.1.1.4/testdir").when(dataStore).getUrl();
++        NfsTO dataStore = createMockNfsTO();
+         String templateDir = "f887b7b3-3d1f-4a7d-93e5-3147f58866c6";
+         boolean result = vMwareGuru.removeVMTemplateOutOfBand(dataStore, templateDir);
+         assertTrue(result);
+@@ -647,4 +645,10 @@
+         Mockito.when(configSummary.getMemorySizeMB()).thenReturn(1024);
+         vMwareGuru.checkSourceVmResourcesAgainstSelectedOfferingResources(virtualMachineMO, 2, 1500, 2048);
+     }
++
++    private static NfsTO createMockNfsTO() {
++        NfsTO dataStore = Mockito.mock(NfsTO.class);
++        Mockito.doReturn("nfs://10.1.1.4/testdir").when(dataStore).getUrl();
++        return dataStore;
++    }
+ }
