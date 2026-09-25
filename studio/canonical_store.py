@@ -29,9 +29,29 @@ import hashlib
 import json
 import re
 import shutil
+import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
+
+
+def write_retrying(write: Callable[[], Any]) -> Any:
+    """
+    Windows 上另一个进程（如 IDE/桌面应用定期跑的 git status）对大结果文件做内存映射时，
+    以写方式打开会失败，Python 报成 OSError 22。等一下重试，而不是让车道 worker 崩溃。
+    On Windows, while another process (an IDE or desktop app's periodic `git status`) has a large
+    results file memory-mapped, opening it for writing fails, which Python reports as OSError 22.
+    Wait and retry instead of crashing the lane's worker. The open fails before truncating, so a
+    failed attempt leaves the file intact.
+    """
+    for attempt in range(10):
+        try:
+            return write()
+        except OSError as error:
+            if error.errno != 22 or attempt == 9:
+                raise
+            time.sleep(1 + attempt)
+
 
 CSV_COLUMNS = ["mciId", "classification", "repairRounds", "goalAchieved", "mutationRegressed",
                "aiAuditRisk", "diffFile", "totalSeconds", "generationSeconds", "totalTokens", "cacheHit"]
@@ -251,13 +271,17 @@ def merge(project: str, repository_root: Path, entries: list[dict[str, Any]],
         "mciSuccessRate": success / len(merged) if merged else None,
         "results": merged,
     }
-    results_path.write_text(json.dumps(canonical, ensure_ascii=False, indent=2), encoding="utf-8")
+    text = json.dumps(canonical, ensure_ascii=False, indent=2)
+    write_retrying(lambda: results_path.write_text(text, encoding="utf-8"))
 
-    with (out_dir / "refactoring-results.csv").open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=CSV_COLUMNS, extrasaction="ignore")
-        writer.writeheader()
-        for mci_id, entry in merged.items():
-            writer.writerow({**entry, "mciId": mci_id})
+    def write_csv() -> None:
+        with (out_dir / "refactoring-results.csv").open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=CSV_COLUMNS, extrasaction="ignore")
+            writer.writeheader()
+            for mci_id, entry in merged.items():
+                writer.writerow({**entry, "mciId": mci_id})
+
+    write_retrying(write_csv)
 
     return {
         "project": project,

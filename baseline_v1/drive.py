@@ -25,9 +25,6 @@ Slice K/N takes the MCIs whose crc32(id) % N == K, so the lanes never pick the s
 keeps the workspace `pair-<project>`; the others get `pair-<project>-<lane>`. Row writes on the
 host are serialised by baseline_v1/rowlock.py. `--start 0.5` begins the walk half-way in, for a
 machine joining a project that others already walk from both ends.
-
-`--claim` replaces slices: each lane claims an MCI right before running it (baseline_v1/lanes.py),
-so lanes can be added or stopped one at a time; baseline_v1/autoscale.py does that from host load.
 """
 from __future__ import annotations
 
@@ -45,8 +42,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
-from baseline_v1 import lanes  # noqa: E402
 from baseline_v1.rowlock import RowLock  # noqa: E402
+from studio.canonical_store import write_retrying  # noqa: E402
 
 RESULTS = REPO / "validation" / "results"
 RUNIDS = RESULTS / "pair-runids.json"
@@ -197,7 +194,8 @@ def merge_with_remote(base: str, rel: str) -> None:
         if missing:
             local["results"].update(missing)
             local["totalMcis"] = len(local["results"])
-            path.write_text(json.dumps(local, ensure_ascii=False, indent=2), encoding="utf-8", newline=chr(10))
+            text = json.dumps(local, ensure_ascii=False, indent=2)
+            write_retrying(lambda: path.write_text(text, encoding="utf-8", newline=chr(10)))
     else:
         import csv, io
         mine = list(csv.DictReader(path.open(encoding="utf-8")))
@@ -205,10 +203,13 @@ def merge_with_remote(base: str, rel: str) -> None:
         seen = {r.get("mciId") for r in mine}
         extra = [r for r in theirs if r.get("mciId") not in seen]
         if extra and mine:
-            with path.open("w", encoding="utf-8", newline="") as handle:
-                writer = csv.DictWriter(handle, fieldnames=list(mine[0].keys()), extrasaction="ignore")
-                writer.writeheader()
-                writer.writerows(mine + extra)
+            def write_csv() -> None:
+                with path.open("w", encoding="utf-8", newline="") as handle:
+                    writer = csv.DictWriter(handle, fieldnames=list(mine[0].keys()), extrasaction="ignore")
+                    writer.writeheader()
+                    writer.writerows(mine + extra)
+
+            write_retrying(write_csv)
 
 
 ROUTE: dict = {"reverse": False, "round1": None, "slice": (0, 1), "start": 0.0}
@@ -305,8 +306,7 @@ def run_id_for(project: str) -> str:
 def worker(lane: str, projects: list[str]) -> None:
     from baseline_v1 import run_pair
     run_pair.load_env()
-    run_pair.LANES_ON_HOST = ((lambda: max(1, len(lanes.live_lanes()))) if ROUTE.get("claim")
-                              else ROUTE["slice"][1])
+    run_pair.LANES_ON_HOST = ROUTE["slice"][1]
     run_pair.LANE = lane
     for project in projects:
         try:
@@ -321,26 +321,11 @@ def worker(lane: str, projects: list[str]) -> None:
             if count["n"] % SYNC_EVERY == 0:
                 sync(lane, proj, f"{count['n']} MCIs")
 
-        claim = release = None
-        suffix = lane if ROUTE["slice"][0] else ""
-        if ROUTE.get("claim"):
-            suffix = "" if lane == "L1" else lane
-
-            def claim(mci_id: str, proj: str = project) -> bool:
-                if lanes.stop_requested(lane):           # asked to shrink: leave between MCIs
-                    sync(lane, proj, "lane stopping")
-                    run_pair.log(f"[{lane}] stop requested; lane exits")
-                    sys.exit(0)
-                return lanes.claim(proj, mci_id, lane)
-
-            def release(mci_id: str, proj: str = project) -> None:
-                lanes.release(proj, mci_id)
-
         for attempt in range(2):                     # a second pass retries tool errors once
+            k, n = ROUTE["slice"]
             summary = run_pair.run_project(run_id, project, after_mci=after,
                                            should_run=make_should_run(project), reverse=ROUTE["reverse"],
-                                           start=ROUTE["start"], workspace_suffix=suffix,
-                                           claim=claim, release=release)
+                                           start=ROUTE["start"], workspace_suffix=lane if k else "")
             sync(lane, project, "pass end")
             if not summary["remaining"]:
                 break
@@ -353,24 +338,11 @@ def worker(lane: str, projects: list[str]) -> None:
 def supervise(lane: str, projects: list[str]) -> None:
     log = (RESULTS / f"pair-lane-{lane}.log").open("a", encoding="utf-8")
     restarts: list[float] = []
-    if ROUTE.get("claim"):
-        lanes.clear_stop(lane)
-        lanes.register(lane)
-    try:
-        _supervise(lane, projects, log, restarts)
-    finally:
-        if ROUTE.get("claim"):
-            lanes.unregister(lane)
-            lanes.clear_stop(lane)
-
-
-def _supervise(lane: str, projects: list[str], log, restarts: list[float]) -> None:
     while True:
         roots = [a for name in projects if name in PROJECT_ROOTS for a in ("--root", f"{name}={PROJECT_ROOTS[name]}")]
         route = ((["--reverse"] if ROUTE["reverse"] else []) + (["--round1-failures", ROUTE["round1"]] if ROUTE["round1"] else [])
                  + (["--inherit-round1-env"] if ROUTE.get("inherit_env") else [])
-                 + ["--slice", "{}/{}".format(*ROUTE["slice"]), "--start", str(ROUTE["start"])]
-                 + (["--claim"] if ROUTE.get("claim") else []))
+                 + ["--slice", "{}/{}".format(*ROUTE["slice"]), "--start", str(ROUTE["start"])])
         child = subprocess.Popen([sys.executable, __file__, "--lane", lane, "--worker", *roots, *route, *projects],
                                  cwd=REPO, stdout=log, stderr=subprocess.STDOUT)
         code = child.wait()
@@ -401,8 +373,6 @@ if __name__ == "__main__":
                         help="K/N: this lane takes MCIs with crc32(id) %% N == K (N lanes on one host)")
     parser.add_argument("--start", type=float, default=0.0,
                         help="0..1: begin the walk this far into the MCI list, wrapping around")
-    parser.add_argument("--claim", action="store_true",
-                        help="claim MCIs one at a time instead of slicing; lanes can come and go")
     parser.add_argument("projects", nargs="+")
     args = parser.parse_args()
     ROUTE["reverse"] = args.reverse
@@ -413,16 +383,11 @@ if __name__ == "__main__":
     if not 0 <= ROUTE["slice"][0] < ROUTE["slice"][1]:
         parser.error("--slice K/N needs 0 <= K < N")
     ROUTE["start"] = args.start
-    ROUTE["claim"] = args.claim
-    if args.claim and ROUTE["slice"][1] > 1:
-        parser.error("--claim and --slice K/N are alternatives")
     # CloudStack's build runs `bash` (exec-maven-plugin in engine/schema). A lane started outside
     # a Git Bash shell (WMI, Task Scheduler) has only Git\cmd on PATH, so every build failed in
     # 5 s and the MCI was recorded as FAILED_BEHAVIORAL_EQUIVALENCE (A, 2026-09-25 17:39-18:15).
-    # Git bash goes first even when some bash is found: C:\Windows\System32\bash.exe (WSL) can
-    # shadow it and cannot run the build's scripts (D-005).
-    if os.name == "nt":
-        for extra in (r"C:\Program Files\Git\usr\bin", r"C:\Program Files\Git\bin"):
+    if os.name == "nt" and not shutil.which("bash"):
+        for extra in (r"C:\Program Files\Git\bin", r"C:\Program Files\Git\usr\bin"):
             if Path(extra, "bash.exe").is_file():
                 os.environ["PATH"] = extra + os.pathsep + os.environ.get("PATH", "")
         if not shutil.which("bash"):
