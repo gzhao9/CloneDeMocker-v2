@@ -31,6 +31,16 @@ files. They are only files you have not pulled yet. They are not your changes.
 - To publish your own files, use `python scripts/safe_push.py -m "why" <paths>`. Never pull
   with `--autostash`, and never push with `--force`.
 
+- **`git fetch` updates only the remote-tracking ref.** A check that fetches and then reads the
+  working tree, or `git status`, learns nothing about what arrived. Ask the ref itself:
+  `git ls-tree -r --name-only github/main -- <path>`. A watcher that fetched and then looked at
+  disk left three letters unseen on the remote for nine hours, one of them a liveness check.
+- **A running lane keeps the code it started with.** `drive.py`'s supervisor respawns each
+  worker from `__file__`, so a `.py` you update on disk takes effect at the **next respawn**, not
+  when you save it. Workers that had run 14 hours were still executing the previous day's code
+  while the disk held six newer files. Updating the file is not deploying it: either restart the
+  worker or say plainly that the change is not live yet.
+
 ## 3. Running and stopping lanes
 
 - On Linux (gwz-pc), CloudStack needs `CLONEDEMOCKER_MAVEN_ARGS=-Dnoredist` in the launch
@@ -60,3 +70,25 @@ files. They are only files you have not pulled yet. They are not your changes.
 
 `.env` holds API keys. Never commit it. Never print a key in a log, a letter, or a commit
 message. Never put credentials in a remote URL.
+
+## 5. Traps that corrupt data without failing
+
+None of these raise. Each one was found only after it had already written something wrong.
+
+- **An index-formatted glob rolls over.** `safe_name()` numbers files `%04d`, so the batch
+  reaches `1000-*.json` and a glob of `0*.json` silently stops seeing new work. It cost 68 rows
+  their `producedBy`/`platform` stamps, and two letters asserting to peers the opposite of the
+  truth. Match `[0-9]*`, and when a count looks too low, suspect the pattern before the data.
+- **Never decode a letter or a data file to move it.** Read the blob id and write that
+  (`git rev-parse <ref>:<path>` → `update-index --cacheinfo`). A text round-trip through the
+  Windows console codec (GBK) archived one letter as an empty file.
+- **Regenerating a shared file drops fields you do not know about.** A publisher that rebuilt
+  its own rows deleted a peer's `resampleOutcome` on every run, about once every two minutes.
+  Carry unknown keys forward (`entry.setdefault(k, v)` from the stored row) instead of writing
+  only what you produce.
+- **Windows: `CREATE_NO_WINDOW` and `DETACHED_PROCESS` are mutually exclusive.** Passing both
+  gives every child its own visible console window; `DETACHED_PROCESS` wins. Pass
+  `CREATE_NO_WINDOW` alone.
+- **Check which command produced which line.** Running `git ls-tree <remote>` and a local `ls`
+  in one block and reading the joined output as one source is how a letter that had never been
+  pushed was reported as delivered.
