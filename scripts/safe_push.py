@@ -25,7 +25,7 @@ ME = os.environ.get("AGENT_ID", "A")
 
 
 def git(*args: str, env: dict | None = None, check: bool = False) -> subprocess.CompletedProcess:
-    done = subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True,
+    done = subprocess.run(["git", *args], cwd=REPO, capture_output=True, encoding="utf-8", errors="replace",
                           env={**os.environ, **(env or {})})
     if check and done.returncode:
         sys.exit(f"safe_push: git {' '.join(args)} failed: {done.stderr.strip()}")
@@ -43,12 +43,12 @@ def attempt(paths: list[str], letters: list[str], message: str) -> bool:
         allowed_deletes = set()
         for letter in letters:
             unread = f"collab/inbox/{ME}/unread/{letter}.md"
-            content = git("show", f"{base}:{unread}")
-            if content.returncode:
+            # The blob is moved as is (its id), never decoded: a text round-trip through the
+            # console codec once archived an empty letter (B-074, GBK on Windows).
+            blob = git("rev-parse", "--verify", "-q", f"{base}:{unread}").stdout.strip()
+            if not blob:
                 print(f"safe_push: {unread} is not on {REMOTE}/main; skipped")
                 continue
-            blob = subprocess.run(["git", "hash-object", "-w", "--stdin"], cwd=REPO, input=content.stdout,
-                                  capture_output=True, text=True).stdout.strip()
             git("update-index", "--add", "--cacheinfo", f"100644,{blob},{unread.replace('/unread/', '/read/')}", env=idx)
             git("update-index", "--force-remove", unread, env=idx)
             allowed_deletes.add(unread)
