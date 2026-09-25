@@ -1,0 +1,33 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
+@@ -321,8 +321,7 @@
+ 
+     @Test
+     public void getDeliveryJobsReturnsEmptyListWhenEventCategoryIsNotActionEvent() throws EventBusException {
+-        Event event = Mockito.mock(Event.class);
+-        Mockito.when(event.getEventCategory()).thenReturn("NON_ACTION_EVENT");
++        Event event = createMockEvent("NON_ACTION_EVENT");
+ 
+         List<Runnable> jobs = webhookServiceImpl.getDeliveryJobs(event);
+ 
+@@ -331,8 +330,7 @@
+ 
+     @Test
+     public void getDeliveryJobsThrowsExceptionWhenEventAccountIdIsNull() {
+-        Event event = Mockito.mock(Event.class);
+-        Mockito.when(event.getEventCategory()).thenReturn(EventCategory.ACTION_EVENT.getName());
++        Event event = createMockEvent(EventCategory.ACTION_EVENT.getName());
+         Mockito.when(event.getResourceAccountId()).thenReturn(null);
+ 
+         Assert.assertThrows(EventBusException.class, () -> webhookServiceImpl.getDeliveryJobs(event));
+@@ -670,4 +668,10 @@
+ 
+         Mockito.verify(cache, Mockito.times(1)).invalidate(123L);
+     }
++
++    private static Event createMockEvent(String eventCategory) {
++        Event event = Mockito.mock(Event.class);
++        Mockito.when(event.getEventCategory()).thenReturn(eventCategory);
++        return event;
++    }
+ }

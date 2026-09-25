@@ -1,0 +1,89 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookApiServiceImplTest.java
+@@ -100,6 +100,8 @@
+     @Mock
+     Account caller;
+ 
++    private WebhookFilterResponse sharedFilterResponse;
++
+     @Spy
+     @InjectMocks
+     WebhookApiServiceImpl webhookApiServiceImpl = new WebhookApiServiceImpl();
+@@ -108,6 +110,7 @@
+ 
+     @Before
+     public void setup() {
++        sharedFilterResponse = Mockito.mock(WebhookFilterResponse.class);
+         callContextMocked = Mockito.mockStatic(CallContext.class);
+         CallContext callContextMock = Mockito.mock(CallContext.class);
+         callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+@@ -1309,7 +1312,6 @@
+         WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+         Mockito.when(filter.getWebhookId()).thenReturn(1L);
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+-        WebhookFilterResponse filterResponse = Mockito.mock(WebhookFilterResponse.class);
+ 
+         Mockito.when(cmd.getId()).thenReturn(null);
+         Mockito.when(cmd.getWebhookId()).thenReturn(1L);
+@@ -1318,13 +1320,13 @@
+         Mockito.when(webhookFilterDao.searchBy(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong()))
+                 .thenReturn(new Pair<>(List.of(filter), 1));
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+-        Mockito.doReturn(filterResponse).when(webhookApiServiceImpl).createWebhookFilterResponse(filter, webhook);
++        Mockito.doReturn(sharedFilterResponse).when(webhookApiServiceImpl).createWebhookFilterResponse(filter, webhook);
+ 
+         ListResponse<WebhookFilterResponse> response = webhookApiServiceImpl.listWebhookFilters(cmd);
+ 
+         Assert.assertNotNull(response);
+         Assert.assertEquals(1, response.getResponses().size());
+-        Assert.assertEquals(filterResponse, response.getResponses().get(0));
++        Assert.assertEquals(sharedFilterResponse, response.getResponses().get(0));
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)
+@@ -1353,7 +1355,6 @@
+         AddWebhookFilterCmd cmd = Mockito.mock(AddWebhookFilterCmd.class);
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+         WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+-        WebhookFilterResponse filterResponse = Mockito.mock(WebhookFilterResponse.class);
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+         Mockito.when(cmd.getType()).thenReturn("EventType");
+@@ -1362,12 +1363,12 @@
+         Mockito.when(cmd.getValue()).thenReturn("value");
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+         Mockito.when(webhookFilterDao.persist(Mockito.any(WebhookFilterVO.class))).thenReturn(filter);
+-        Mockito.doReturn(filterResponse).when(webhookApiServiceImpl).createWebhookFilterResponse(filter, webhook);
++        Mockito.doReturn(sharedFilterResponse).when(webhookApiServiceImpl).createWebhookFilterResponse(filter, webhook);
+ 
+         WebhookFilterResponse response = webhookApiServiceImpl.addWebhookFilter(cmd);
+ 
+         Assert.assertNotNull(response);
+-        Assert.assertEquals(filterResponse, response);
++        Assert.assertEquals(sharedFilterResponse, response);
+     }
+ 
+     @Test
+@@ -1376,7 +1377,6 @@
+         WebhookVO webhook = Mockito.mock(WebhookVO.class);
+         WebhookFilterVO filter = Mockito.mock(WebhookFilterVO.class);
+         WebhookFilterVO newFilter = Mockito.mock(WebhookFilterVO.class);
+-        WebhookFilterResponse filterResponse = Mockito.mock(WebhookFilterResponse.class);
+ 
+         Mockito.when(cmd.getId()).thenReturn(1L);
+         Mockito.when(webhook.getId()).thenReturn(1L);
+@@ -1391,12 +1391,12 @@
+         Mockito.when(webhookDao.findById(1L)).thenReturn(webhook);
+         Mockito.when(webhookFilterDao.listByWebhook(1L)).thenReturn(List.of(filter));
+         Mockito.when(webhookFilterDao.persist(Mockito.any(WebhookFilterVO.class))).thenReturn(newFilter);
+-        Mockito.doReturn(filterResponse).when(webhookApiServiceImpl).createWebhookFilterResponse(newFilter, webhook);
++        Mockito.doReturn(sharedFilterResponse).when(webhookApiServiceImpl).createWebhookFilterResponse(newFilter, webhook);
+ 
+         WebhookFilterResponse response = webhookApiServiceImpl.addWebhookFilter(cmd);
+ 
+         Assert.assertNotNull(response);
+-        Assert.assertEquals(filterResponse, response);
++        Assert.assertEquals(sharedFilterResponse, response);
+     }
+ 
+     @Test(expected = InvalidParameterValueException.class)

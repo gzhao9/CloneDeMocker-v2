@@ -1,0 +1,68 @@
+--- a/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
++++ b/server/src/test/java/com/cloud/storage/StorageManagerImplTest.java
+@@ -53,6 +53,7 @@
+ import org.apache.cloudstack.storage.object.ObjectStore;
+ import org.apache.commons.collections.MapUtils;
+ import org.junit.Assert;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.mockito.InjectMocks;
+@@ -102,6 +103,13 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class StorageManagerImplTest {
+ 
++    private DiskProfile diskProfile;
++
++    @Before
++    public void setUp() {
++        diskProfile = Mockito.mock(DiskProfile.class);
++    }
++
+     @Mock
+     VolumeDao _volumeDao;
+ 
+@@ -328,7 +336,7 @@
+     public void testStoragePoolHasEnoughIopsNullPoolIops() {
+         StoragePool pool = Mockito.mock(StoragePool.class);
+         Mockito.when(pool.getCapacityIops()).thenReturn(null);
+-        List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
++        List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(Mockito.mock(Volume.class), diskProfile));
+         assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, list, pool, false));
+     }
+ 
+@@ -339,7 +347,7 @@
+         Mockito.when(pool.getCapacityIops()).thenReturn(1000L);
+         Mockito.when(storagePoolDao.findById(1L)).thenReturn(pool);
+         Mockito.when(capacityManager.getUsedIops(pool)).thenReturn(500L);
+-        List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
++        List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(Mockito.mock(Volume.class), diskProfile));
+         assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, list, pool, true));
+     }
+ 
+@@ -350,7 +358,7 @@
+         Mockito.when(pool.getCapacityIops()).thenReturn(550L);
+         Mockito.when(storagePoolDao.findById(1L)).thenReturn(pool);
+         Mockito.when(capacityManager.getUsedIops(pool)).thenReturn(500L);
+-        List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
++        List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(Mockito.mock(Volume.class), diskProfile));
+         Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughIops(100L, list, pool, true));
+     }
+ 
+@@ -381,14 +389,14 @@
+         List<Pair<Volume, DiskProfile>> list = new ArrayList<>();
+         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
+-        list = List.of(new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
++        list = List.of(new Pair<>(Mockito.mock(Volume.class), diskProfile));
+         Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughIops(list, null));
+     }
+ 
+     @Test
+     public void testStoragePoolHasEnoughIopsWithVolPoolNullIops() {
+         List<Pair<Volume, DiskProfile>> list = List.of(
+-                new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
++                new Pair<>(Mockito.mock(Volume.class), diskProfile));
+         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+         Mockito.when(pool.getCapacityIops()).thenReturn(null);
+         assertTrue(storageManagerImpl.storagePoolHasEnoughIops(list, pool));

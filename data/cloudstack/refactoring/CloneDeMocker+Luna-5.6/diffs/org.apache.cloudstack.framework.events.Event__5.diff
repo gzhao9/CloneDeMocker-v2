@@ -1,0 +1,84 @@
+--- a/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
++++ b/plugins/event-bus/webhook/src/test/java/org/apache/cloudstack/mom/webhook/WebhookServiceImplTest.java
+@@ -77,6 +77,8 @@
+     @Mock
+     AccountManager accountManager;
+ 
++    private Event eventMock;
++
+     @Spy
+     @InjectMocks
+     private WebhookServiceImpl webhookServiceImpl;
+@@ -85,6 +87,7 @@
+ 
+     @Before
+     public void setup() {
++        eventMock = Mockito.mock(Event.class);
+         componentContextMockedStatic = Mockito.mockStatic(ComponentContext.class);
+         componentContextMockedStatic.when(() -> ComponentContext.inject(Mockito.any(WebhookDeliveryThread.class)))
+                 .thenAnswer(invocation -> invocation.getArgument(0));
+@@ -114,13 +117,12 @@
+ 
+     @Test
+     public void getDeliveryJobInjectsDependencies() {
+-        Event event = Mockito.mock(Event.class);
+         Webhook webhook = Mockito.mock(Webhook.class);
+         DeliveryConfig configs = new DeliveryConfig(1, 1000, null, false, true, true);
+ 
+-        WebhookDeliveryThread job = webhookServiceImpl.getDeliveryJob(event, webhook, configs);
+-
+-        Mockito.verify(webhookServiceImpl, Mockito.times(1)).getDeliveryJob(event, webhook, configs);
++        WebhookDeliveryThread job = webhookServiceImpl.getDeliveryJob(eventMock, webhook, configs);
++
++        Mockito.verify(webhookServiceImpl, Mockito.times(1)).getDeliveryJob(eventMock, webhook, configs);
+         componentContextMockedStatic.verify(() -> ComponentContext.inject(job), Mockito.times(1));
+     }
+ 
+@@ -136,9 +138,8 @@
+ 
+     @Test
+     public void getEventValueByFilterTypeReturnsNullWhenFilterTypeIsNotEventType() {
+-        Event event = Mockito.mock(Event.class);
+-
+-        String result = webhookServiceImpl.getEventValueByFilterType(event, null);
++
++        String result = webhookServiceImpl.getEventValueByFilterType(eventMock, null);
+ 
+         Assert.assertNull(result);
+     }
+@@ -557,15 +558,14 @@
+ 
+     @Test
+     public void handleEventSubmitsJobsToExecutor() throws EventBusException {
+-        Event event = Mockito.mock(Event.class);
+         Runnable job1 = Mockito.mock(Runnable.class);
+         Runnable job2 = Mockito.mock(Runnable.class);
+         ExecutorService webhookJobExecutor = Mockito.mock(ExecutorService.class);
+         ReflectionTestUtils.setField(webhookServiceImpl, "webhookJobExecutor", webhookJobExecutor);
+ 
+-        Mockito.doReturn(List.of(job1, job2)).when(webhookServiceImpl).getDeliveryJobs(event);
+-
+-        webhookServiceImpl.handleEvent(event);
++        Mockito.doReturn(List.of(job1, job2)).when(webhookServiceImpl).getDeliveryJobs(eventMock);
++
++        webhookServiceImpl.handleEvent(eventMock);
+ 
+         Mockito.verify(webhookJobExecutor, Mockito.times(1)).submit(job1);
+         Mockito.verify(webhookJobExecutor, Mockito.times(1)).submit(job2);
+@@ -573,13 +573,12 @@
+ 
+     @Test
+     public void handleEventDoesNotSubmitJobsWhenNoJobsExist() throws EventBusException {
+-        Event event = Mockito.mock(Event.class);
+         ExecutorService webhookJobExecutor = Mockito.mock(ExecutorService.class);
+         ReflectionTestUtils.setField(webhookServiceImpl, "webhookJobExecutor", webhookJobExecutor);
+ 
+-        Mockito.doReturn(new ArrayList<>()).when(webhookServiceImpl).getDeliveryJobs(event);
+-
+-        webhookServiceImpl.handleEvent(event);
++        Mockito.doReturn(new ArrayList<>()).when(webhookServiceImpl).getDeliveryJobs(eventMock);
++
++        webhookServiceImpl.handleEvent(eventMock);
+ 
+         Mockito.verify(webhookJobExecutor, Mockito.never()).submit(Mockito.any(Runnable.class));
+     }

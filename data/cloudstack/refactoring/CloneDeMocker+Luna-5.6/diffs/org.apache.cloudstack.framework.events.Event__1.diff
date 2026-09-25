@@ -1,0 +1,56 @@
+--- a/plugins/event-bus/inmemory/src/test/java/org/apache/cloudstack/mom/inmemory/InMemoryEventBusTest.java
++++ b/plugins/event-bus/inmemory/src/test/java/org/apache/cloudstack/mom/inmemory/InMemoryEventBusTest.java
+@@ -31,11 +31,19 @@
+ import org.apache.cloudstack.framework.events.EventBusException;
+ import org.apache.cloudstack.framework.events.EventSubscriber;
+ import org.apache.cloudstack.framework.events.EventTopic;
++import org.junit.Before;
+ import org.junit.Test;
+ 
+ import com.cloud.utils.UuidUtils;
+ 
+ public class InMemoryEventBusTest {
++
++    private Event mockEvent;
++
++    @Before
++    public void setUp() {
++        mockEvent = mock(Event.class);
++    }
+ 
+     @Test
+     public void testConfigure() throws Exception {
+@@ -130,7 +138,6 @@
+     public void testPublish() throws Exception {
+         EventTopic topic = mock(EventTopic.class);
+         EventSubscriber subscriber = mock(EventSubscriber.class);
+-        Event event = mock(Event.class);
+ 
+         InMemoryEventBus bus = new InMemoryEventBus();
+ 
+@@ -141,9 +148,9 @@
+         assertTrue(UuidUtils.isUuid(uuidStr));
+         assertTrue(bus.totalSubscribers() == 1);
+ 
+-        bus.publish(event);
++        bus.publish(mockEvent);
+ 
+-        verify(subscriber, times(1)).onEvent(event);
++        verify(subscriber, times(1)).onEvent(mockEvent);
+ 
+         bus.unsubscribe(uuid, subscriber);
+         assertTrue(bus.totalSubscribers() == 0);
+@@ -152,11 +159,10 @@
+     @Test
+     public void testPublishEmpty() throws Exception {
+         EventSubscriber subscriber = mock(EventSubscriber.class);
+-        Event event = mock(Event.class);
+ 
+         InMemoryEventBus bus = new InMemoryEventBus();
+-        bus.publish(event);
++        bus.publish(mockEvent);
+ 
+-        verify(subscriber, times(0)).onEvent(event);
++        verify(subscriber, times(0)).onEvent(mockEvent);
+     }
+ }

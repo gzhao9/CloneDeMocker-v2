@@ -1,0 +1,59 @@
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
+@@ -74,6 +74,11 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class NASBackupProviderTest {
++    private static VMInstanceDetailVO createMockVMInstanceDetailVO(String value) {
++        VMInstanceDetailVO existing = mock(VMInstanceDetailVO.class);
++        Mockito.when(existing.getValue()).thenReturn(value);
++        return existing;
++    }
+     @Spy
+     @InjectMocks
+     private NASBackupProvider nasBackupProvider;
+@@ -565,8 +570,7 @@
+         Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(RestoreBackupCommand.class))).thenReturn(answer);
+ 
+         // Pre-existing checkpoint detail so removeDetail has something to "clear".
+-        VMInstanceDetailVO existing = mock(VMInstanceDetailVO.class);
+-        Mockito.when(existing.getValue()).thenReturn("backup-1715000000");
++        VMInstanceDetailVO existing = createMockVMInstanceDetailVO("backup-1715000000");
+         Mockito.when(vmInstanceDetailsDao.findDetail(vmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(existing);
+ 
+         boolean ok = nasBackupProvider.restoreVMFromBackup(vm, backup, false, null);
+@@ -631,8 +635,7 @@
+         Mockito.when(targetVm.getId()).thenReturn(targetVmId);
+         Mockito.when(vmInstanceDao.findVMByInstanceName(targetVmName)).thenReturn(targetVm);
+ 
+-        VMInstanceDetailVO existing = mock(VMInstanceDetailVO.class);
+-        Mockito.when(existing.getValue()).thenReturn("backup-1718000000");
++        VMInstanceDetailVO existing = createMockVMInstanceDetailVO("backup-1718000000");
+         Mockito.when(vmInstanceDetailsDao.findDetail(targetVmId, NASBackupChainKeys.VM_ACTIVE_CHECKPOINT_ID)).thenReturn(existing);
+ 
+         Pair<Boolean, String> result = nasBackupProvider.restoreBackedUpVolume(
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -150,6 +150,11 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class BackupManagerTest {
++    private static VMInstanceDetailVO createMockVMInstanceDetailVO(String value) {
++        VMInstanceDetailVO existing = mock(VMInstanceDetailVO.class);
++        when(existing.getValue()).thenReturn(value);
++        return existing;
++    }
+     @Spy
+     @InjectMocks
+     BackupManagerImpl backupManager = new BackupManagerImpl();
+@@ -1035,9 +1040,8 @@
+         when(template.getUuid()).thenReturn("template-uuid");
+         when(vmTemplateDao.findById(2L)).thenReturn(template);
+ 
+-        VMInstanceDetailVO vmInstanceDetail = mock(VMInstanceDetailVO.class);
++        VMInstanceDetailVO vmInstanceDetail = createMockVMInstanceDetailVO("mocked-detail-value");
+         when(vmInstanceDetail.getName()).thenReturn("mocked-detail-name");
+-        when(vmInstanceDetail.getValue()).thenReturn("mocked-detail-value");
+         List<VMInstanceDetailVO> vmDetails = Collections.singletonList(vmInstanceDetail);
+         when(vmInstanceDetailsDao.listDetails(vmId)).thenReturn(vmDetails);
+ 
