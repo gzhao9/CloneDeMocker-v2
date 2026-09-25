@@ -1,0 +1,55 @@
+--- a/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
++++ b/server/src/test/java/com/cloud/network/IpAddressManagerTest.java
+@@ -154,7 +154,7 @@
+         lenient().when(vo.getAddress()).thenReturn(new Ip(publicIpAddress));
+         lenient().when(vo.getId()).thenReturn(1l);
+ 
+-        when(ipAddressDao.findById(anyLong())).thenReturn(vo);
++        ipAddressDao = createMockIpAddressDao(vo);
+         StaticNat snat = new StaticNatImpl(1, 1, 1, 1, publicIpAddress, false);
+ 
+         List<IPAddressVO> ips = ipAddressManager.getStaticNatSourceIps(Collections.singletonList(snat));
+--- a/server/src/test/java/com/cloud/network/NetworkModelTest.java
++++ b/server/src/test/java/com/cloud/network/NetworkModelTest.java
+@@ -160,8 +160,6 @@
+     @Test
+     public void testGetSourceNatIpAddressForGuestNetwork() {
+         NetworkModelImpl modelImpl = new NetworkModelImpl();
+-        IPAddressDao ipAddressDao = mock(IPAddressDao.class);
+-        modelImpl._ipAddressDao = ipAddressDao;
+         List<IPAddressVO> fakeList = new ArrayList<IPAddressVO>();
+         IPAddressVO fakeIp = new IPAddressVO(new Ip("75.75.75.75"), 1, 0xaabbccddeeffL, 10, false);
+         fakeList.add(fakeIp);
+@@ -171,8 +169,9 @@
+         when(fakeVlanDao.findById(anyLong())).thenReturn(mock(VlanVO.class));
+         modelImpl._vlanDao = fakeVlanDao;
+         when(fakeSearch.create()).thenReturn(mock(SearchCriteria.class));
++        IPAddressDao ipAddressDao = createMockIpAddressDao(fakeIp);
++        modelImpl._ipAddressDao = ipAddressDao;
+         when(ipAddressDao.search(any(SearchCriteria.class), (Filter) isNull())).thenReturn(fakeList);
+-        when(ipAddressDao.findById(anyLong())).thenReturn(fakeIp);
+         Account fakeAccount = mock(Account.class);
+         when(fakeAccount.getId()).thenReturn(1L);
+         Network fakeNetwork = mock(Network.class);
+--- a/server/src/test/java/com/cloud/network/MockIPAddressDao.java
++++ b/server/src/test/java/com/cloud/network/MockIPAddressDao.java
+@@ -0,0 +1,19 @@
++package com.cloud.network;
++
++import com.cloud.network.dao.IPAddressDao;
++import com.cloud.network.dao.IPAddressVO;
++
++import static org.mockito.ArgumentMatchers.anyLong;
++import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.when;
++
++public final class MockIPAddressDao {
++    private MockIPAddressDao() {
++    }
++
++    public static IPAddressDao createMockIpAddressDao(IPAddressVO findByIdResult) {
++        IPAddressDao ipAddressDao = mock(IPAddressDao.class);
++        when(ipAddressDao.findById(anyLong())).thenReturn(findByIdResult);
++        return ipAddressDao;
++    }
++}

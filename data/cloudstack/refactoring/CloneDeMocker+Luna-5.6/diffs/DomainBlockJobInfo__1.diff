@@ -1,0 +1,59 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateVolumeCommandWrapperTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/wrapper/LibvirtMigrateVolumeCommandWrapperTest.java
+@@ -30,6 +30,7 @@
+ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+ import org.apache.cloudstack.storage.to.VolumeObjectTO;
+ import org.junit.Assert;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.libvirt.Connect;
+@@ -67,6 +68,8 @@
+ 
+     @Mock
+     LibvirtUtilitiesHelper libvirtUtilitiesHelper;
++
++    private DomainBlockJobInfo domainBlockJobInfo;
+ 
+     private String domxml = "<domain type='kvm' id='1'>\n" +
+             "  <name>i-2-27-VM</name>\n" +
+@@ -219,6 +222,11 @@
+             "  </seclabel>\n" +
+             "</domain>\n";
+ 
++    @Before
++    public void setUp() {
++        domainBlockJobInfo = Mockito.mock(DomainBlockJobInfo.class);
++    }
++
+     @Test
+     public void testPowerFlexMigrateVolumeMethod() {
+         VolumeObjectTO srcVolumeObjectTO = Mockito.mock(VolumeObjectTO.class);
+@@ -357,10 +365,9 @@
+         String srcPath = "bec108c400000018:vol-60-7acb-9e22";
+         String destPath = "01b381820000001c:vol-60-ec76-b7dc";
+         Mockito.doReturn(60).when(command).getWait();
+-        DomainBlockJobInfo blockJobInfo = Mockito.mock(DomainBlockJobInfo.class);
+-        Mockito.doReturn(blockJobInfo).when(dm).getBlockJobInfo(destDiskLabel, 0);
+-        blockJobInfo.cur = 100;
+-        blockJobInfo.end = 100;
++        Mockito.doReturn(domainBlockJobInfo).when(dm).getBlockJobInfo(destDiskLabel, 0);
++        domainBlockJobInfo.cur = 100;
++        domainBlockJobInfo.end = 100;
+ 
+         MigrateVolumeAnswer answer = libvirtMigrateVolumeCommandWrapper.checkBlockJobStatus(command, dm, destDiskLabel, srcPath, destPath, libvirtComputingResource, conn, null);
+ 
+@@ -375,10 +382,9 @@
+         String srcPath = "bec108c400000018:vol-60-7acb-9e22";
+         String destPath = "01b381820000001c:vol-60-ec76-b7dc";
+         Mockito.doReturn(1).when(command).getWait();
+-        DomainBlockJobInfo blockJobInfo = Mockito.mock(DomainBlockJobInfo.class);
+-        Mockito.doReturn(blockJobInfo).when(dm).getBlockJobInfo(destDiskLabel, 0);
+-        blockJobInfo.cur = 10;
+-        blockJobInfo.end = 100;
++        Mockito.doReturn(domainBlockJobInfo).when(dm).getBlockJobInfo(destDiskLabel, 0);
++        domainBlockJobInfo.cur = 10;
++        domainBlockJobInfo.end = 100;
+ 
+         MigrateVolumeAnswer answer = libvirtMigrateVolumeCommandWrapper.checkBlockJobStatus(command, dm, destDiskLabel, srcPath, destPath, libvirtComputingResource, conn, null);
+ 
