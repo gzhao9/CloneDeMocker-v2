@@ -1,0 +1,57 @@
+--- a/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
++++ b/server/src/test/java/com/cloud/storage/VolumeApiServiceImplTest.java
+@@ -2141,13 +2141,12 @@
+     @Test
+     public void testGetPoolForAllocatedOrUploadedVolumeForAttach_Success() {
+         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
+-        UserVmVO vm = Mockito.mock(UserVmVO.class);
++        UserVmVO vm = createMockUserVm();
+         ClusterVO cluster = Mockito.mock(ClusterVO.class);
+         HostPodVO pod = Mockito.mock(HostPodVO.class);
+         DataCenterVO zone = mockZone();
+         mockDiskOffering();
+         StoragePool pool = Mockito.mock(StoragePool.class);
+-        when(vm.getDataCenterId()).thenReturn(1L);
+         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(1L, 2L));
+         when(clusterDao.findById(1L)).thenReturn(cluster);
+         when(cluster.getPodId()).thenReturn(1L);
+@@ -2163,13 +2162,12 @@
+     @Test
+     public void testGetPoolForAllocatedOrUploadedVolumeForAttach_NoSuitablePoolFound_ReturnsNull() {
+         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
+-        UserVmVO vm = Mockito.mock(UserVmVO.class);
++        UserVmVO vm = createMockUserVm();
+         DataCenterVO zone = mockZone();
+         Pair<Long, Long> clusterHostId = new Pair<>(1L, 2L);
+         ClusterVO cluster = Mockito.mock(ClusterVO.class);
+         HostPodVO pod = Mockito.mock(HostPodVO.class);
+         mockDiskOffering();
+-        when(vm.getDataCenterId()).thenReturn(1L);
+         when(clusterDao.findById(1L)).thenReturn(cluster);
+         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(clusterHostId);
+         when(podDao.findById(anyLong())).thenReturn(pod);
+@@ -2182,12 +2180,11 @@
+     @Test
+     public void testGetSuitablePoolForAllocatedOrUploadedVolumeForAttach_NoCluster() {
+         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
+-        UserVmVO vm = Mockito.mock(UserVmVO.class);
+         DataCenterVO zone = mockZone();
+         HostPodVO pod = Mockito.mock(HostPodVO.class);
+         mockDiskOffering();
+         StoragePool pool = Mockito.mock(StoragePool.class);
+-        when(vm.getDataCenterId()).thenReturn(1L);
++        UserVmVO vm = createMockUserVm();
+         when(vm.getPodIdToDeployIn()).thenReturn(2L);
+         when(virtualMachineManager.findClusterAndHostIdForVm(vm, false)).thenReturn(new Pair<>(null, 2L));
+         when(podDao.findById(2L)).thenReturn(pod);
+@@ -2896,4 +2893,10 @@
+                     e.getMessage() != null && e.getMessage().contains("VM should be in"));
+         }
+     }
++
++    private static UserVmVO createMockUserVm() {
++        UserVmVO vm = Mockito.mock(UserVmVO.class);
++        when(vm.getDataCenterId()).thenReturn(1L);
++        return vm;
++    }
+ }
