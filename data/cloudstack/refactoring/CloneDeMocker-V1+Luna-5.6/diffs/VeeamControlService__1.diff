@@ -1,0 +1,46 @@
+--- a/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/VeeamControlServerTest.java
++++ b/plugins/integrations/veeam-control-service/src/test/java/org/apache/cloudstack/veeam/VeeamControlServerTest.java
+@@ -17,6 +17,7 @@
+ 
+ package org.apache.cloudstack.veeam;
+ 
++import org.mockito.Mock;
+ import static org.junit.Assert.assertEquals;
+ import static org.junit.Assert.assertNotNull;
+ import static org.junit.Assert.assertNull;
+@@ -49,6 +50,8 @@
+ import org.springframework.mock.web.MockHttpServletResponse;
+ 
+ public class VeeamControlServerTest {
++    @Mock
++    private VeeamControlService veeamControlService;
+ 
+     private static final String KEY_ENABLED = "integration.veeam.control.enabled";
+     private static final String KEY_PORT = "integration.veeam.control.port";
+@@ -97,7 +100,7 @@
+         when(low.priority()).thenReturn(1);
+         when(high.priority()).thenReturn(10);
+ 
+-        final VeeamControlServer server = new VeeamControlServer(List.of(low, high), mock(VeeamControlService.class));
++        final VeeamControlServer server = new VeeamControlServer(List.of(low, high), veeamControlService);
+         final List<RouteHandler> handlers = getRouteHandlers(server);
+ 
+         assertEquals(high, handlers.get(0));
+@@ -109,7 +112,7 @@
+         globalValues.put(KEY_ENABLED, "false");
+         resetConfigKeyCache(VeeamControlService.Enabled);
+ 
+-        final VeeamControlServer server = new VeeamControlServer(List.of(), mock(VeeamControlService.class));
++        final VeeamControlServer server = new VeeamControlServer(List.of(), veeamControlService);
+         server.startIfEnabled();
+ 
+         assertNull(getJettyServer(server));
+@@ -140,7 +143,7 @@
+ 
+     @Test
+     public void testStopStopsExistingJettyServerAndClearsReference() throws Exception {
+-        final VeeamControlServer server = new VeeamControlServer(List.of(), mock(VeeamControlService.class));
++        final VeeamControlServer server = new VeeamControlServer(List.of(), veeamControlService);
+         final Server jetty = mock(Server.class);
+         setJettyServer(server, jetty);
+ 
