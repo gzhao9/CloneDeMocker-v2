@@ -1,0 +1,42 @@
+--- a/server/src/test/java/com/cloud/server/ManagementServerImplTest.java
++++ b/server/src/test/java/com/cloud/server/ManagementServerImplTest.java
+@@ -801,16 +801,14 @@
+ 
+     @Test
+     public void testZoneWideVolumeRequiresStorageMotionNonManaged() {
+-        PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);
+-        Mockito.when(dataStore.isManaged()).thenReturn(false);
++        PrimaryDataStore dataStore = createMockPrimaryDataStore(false);
+         Assert.assertFalse(spy.zoneWideVolumeRequiresStorageMotion(dataStore,
+                 Mockito.mock(Host.class), Mockito.mock(Host.class)));
+     }
+ 
+     @Test
+     public void testZoneWideVolumeRequiresStorageMotionSameClusterHost() {
+-        PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);
+-        Mockito.when(dataStore.isManaged()).thenReturn(true);
++        PrimaryDataStore dataStore = createMockPrimaryDataStore(true);
+         Host host1 = Mockito.mock(Host.class);
+         Mockito.when(host1.getClusterId()).thenReturn(1L);
+         Host host2 = Mockito.mock(Host.class);
+@@ -820,8 +818,7 @@
+ 
+     @Test
+     public void testZoneWideVolumeRequiresStorageMotionDriverDependent() {
+-        PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);
+-        Mockito.when(dataStore.isManaged()).thenReturn(true);
++        PrimaryDataStore dataStore = createMockPrimaryDataStore(true);
+         PrimaryDataStoreDriver driver = Mockito.mock(PrimaryDataStoreDriver.class);
+         Mockito.when(dataStore.getDriver()).thenReturn(driver);
+         Host host1 = Mockito.mock(Host.class);
+@@ -2493,4 +2490,10 @@
+         Assert.assertEquals(5L, (long) deploymentPlan.getPodId());
+         Assert.assertEquals(4L, (long) deploymentPlan.getClusterId());
+     }
++
++    private static PrimaryDataStore createMockPrimaryDataStore(boolean managed) {
++        PrimaryDataStore dataStore = Mockito.mock(PrimaryDataStore.class);
++        Mockito.when(dataStore.isManaged()).thenReturn(managed);
++        return dataStore;
++    }
+ }

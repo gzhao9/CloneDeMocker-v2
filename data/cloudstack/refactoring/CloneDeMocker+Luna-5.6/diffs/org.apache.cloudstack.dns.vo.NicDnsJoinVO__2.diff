@@ -1,0 +1,56 @@
+--- a/server/src/test/java/org/apache/cloudstack/dns/DnsProviderManagerImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/dns/DnsProviderManagerImplTest.java
+@@ -1336,8 +1336,7 @@
+ 
+     @Test
+     public void testIsDnsCollisionReturnsTrueForDifferentInstance() {
+-        NicDnsJoinVO existing = mock(NicDnsJoinVO.class);
+-        when(existing.getInstanceId()).thenReturn(99L);
++        NicDnsJoinVO existing = createMockNicDnsJoin(99L);
+         when(nicDnsJoinDao.findActiveByDnsRecordAndZone(ZONE_ID, "vm.example.com")).thenReturn(existing);
+ 
+         try (MockedStatic<ActionEventUtils> aeMock =
+@@ -1361,9 +1360,7 @@
+ 
+     @Test
+     public void testIsDnsCollisionReturnsFalseWhenSameInstance() {
+-        NicDnsJoinVO existing =
+-                mock(NicDnsJoinVO.class);
+-        when(existing.getInstanceId()).thenReturn(42L);
++        NicDnsJoinVO existing = createMockNicDnsJoin(42L);
+         when(nicDnsJoinDao.findActiveByDnsRecordAndZone(ZONE_ID, "vm.example.com")).thenReturn(existing);
+         boolean result = (boolean) ReflectionTestUtils.invokeMethod(
+                 manager, "isDnsCollision", "vm.example.com", ZONE_ID, 42L);
+@@ -1507,9 +1504,7 @@
+         when(dnsZoneDao.findById(ZONE_ID)).thenReturn(zoneVO);
+ 
+         // collision: different instance owns the record
+-        NicDnsJoinVO colliding =
+-                mock(NicDnsJoinVO.class);
+-        when(colliding.getInstanceId()).thenReturn(999L);
++        NicDnsJoinVO colliding = createMockNicDnsJoin(999L);
+         when(nicDnsJoinDao.findActiveByDnsRecordAndZone(eq(ZONE_ID), anyString())).thenReturn(colliding);
+ 
+         try (MockedStatic<Transaction> txMock =
+@@ -1626,9 +1621,7 @@
+         when(dnsServerDao.findById(SERVER_ID)).thenReturn(serverVO);
+ 
+         // collision on the new FQDN
+-        NicDnsJoinVO colliding =
+-                mock(NicDnsJoinVO.class);
+-        when(colliding.getInstanceId()).thenReturn(999L);
++        NicDnsJoinVO colliding = createMockNicDnsJoin(999L);
+         when(nicDnsJoinDao.findActiveByDnsRecordAndZone(eq(ZONE_ID), anyString())).thenReturn(colliding);
+         when(nicDnsJoinDao.listActiveByVmIdZoneAndDnsRecord(eq(63L), eq(ZONE_ID), anyString()))
+                 .thenReturn(Collections.emptyList());
+@@ -1656,4 +1649,10 @@
+             verify(nicDetailsDao, never()).addDetail(anyLong(), anyString(), anyString(), eq(true));
+         }
+     }
++
++    private static NicDnsJoinVO createMockNicDnsJoin(long instanceId) {
++        NicDnsJoinVO existing = mock(NicDnsJoinVO.class);
++        when(existing.getInstanceId()).thenReturn(instanceId);
++        return existing;
++    }
+ }

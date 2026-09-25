@@ -1,0 +1,97 @@
+--- a/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
++++ b/plugins/backup/kboss/src/test/java/org/apache/cloudstack/backup/KbossBackupProviderTest.java
+@@ -1530,7 +1530,7 @@
+         doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+         doReturn(true).when(answerMock).getResult();
+         doReturn("wrongHash").when(answerMock).getDetails();
+-        doReturn("correctHash").when(backupDetailVoMock).getValue();
++        backupDetailVoMock = MockBackupDetailVO.createBackupDetailVOMock("correctHash");
+         doNothing().when(kbossBackupProviderSpy).setBackupAsInvalidAndSendAlert(any(), any());
+ 
+         boolean result = kbossBackupProviderSpy.validateWithHash(backupId, backupVoMock, backupDetailVoMock);
+@@ -1548,8 +1548,8 @@
+         doReturn(answerMock).when(kbossBackupProviderSpy).sendBackupCommand(anyLong(), any());
+         doReturn(true).when(answerMock).getResult();
+         doReturn("correctHash").when(answerMock).getDetails();
+-        doReturn("correctHash").when(backupDetailVoMock).getValue();
+-
++
++        backupDetailVoMock = MockBackupDetailVO.createBackupDetailVOMock("correctHash");
+         boolean result = kbossBackupProviderSpy.validateWithHash(backupId, backupVoMock, backupDetailVoMock);
+ 
+         assertTrue(result);
+@@ -3113,4 +3113,17 @@
+         verify(kbossBackupProviderSpy).releaseBackup(backupId);
+     }
+ 
++
++    public final class MockBackupDetailVO {
++
++        private MockBackupDetailVO() {
++        }
++
++        public static org.apache.cloudstack.backup.BackupDetailVO createBackupDetailVOMock(String value) {
++            org.apache.cloudstack.backup.BackupDetailVO backupDetailVoMock =
++                    org.mockito.Mockito.mock(org.apache.cloudstack.backup.BackupDetailVO.class);
++            doReturn(value).when(backupDetailVoMock).getValue();
++            return backupDetailVoMock;
++        }
++    }
+ }
+--- a/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/InternalBackupServiceImplTest.java
+@@ -433,10 +433,10 @@
+ 
+     @Test
+     public void downloadScreenshotTestImageStoreObjectExistsReturnsCreatedResponse() {
++        backupDetailVoMock = MockBackupDetailVO.createBackupDetailVOMock(SCREENSHOT_PATH);
+         doReturn(backupDetailVoMock).when(backupDetailDaoMock).findDetail(BACKUP_ID, BackupDetailsDao.SCREENSHOT_PATH);
+         doReturn(backupDetailVoMock2).when(backupDetailDaoMock).findDetail(BACKUP_ID, BackupDetailsDao.IMAGE_STORE_ID);
+-        doReturn(String.valueOf(IMAGE_STORE_ID)).when(backupDetailVoMock2).getValue();
+-        doReturn(SCREENSHOT_PATH).when(backupDetailVoMock).getValue();
++        backupDetailVoMock2 = MockBackupDetailVO.createBackupDetailVOMock(String.valueOf(IMAGE_STORE_ID));
+         doReturn(imageStoreEntityMock).when(dataStoreMgrMock).getDataStore(IMAGE_STORE_ID, DataStoreRole.Image);
+         doReturn(imageStoreObjectDownloadVoMock).when(imageStoreObjectDownloadDaoMock)
+                 .findByStoreIdAndPath(IMAGE_STORE_ID, SCREENSHOT_PATH);
+@@ -457,8 +457,8 @@
+     public void downloadScreenshotTestImageStoreObjectMissingButPersistSucceedsReturnsCreatedResponse() {
+         doReturn(backupDetailVoMock).when(backupDetailDaoMock).findDetail(BACKUP_ID, BackupDetailsDao.SCREENSHOT_PATH);
+         doReturn(backupDetailVoMock2).when(backupDetailDaoMock).findDetail(BACKUP_ID, BackupDetailsDao.IMAGE_STORE_ID);
+-        doReturn(String.valueOf(IMAGE_STORE_ID)).when(backupDetailVoMock2).getValue();
+-        doReturn(SCREENSHOT_PATH).when(backupDetailVoMock).getValue();
++        backupDetailVoMock2 = MockBackupDetailVO.createBackupDetailVOMock(String.valueOf(IMAGE_STORE_ID));
++        backupDetailVoMock = MockBackupDetailVO.createBackupDetailVOMock(SCREENSHOT_PATH);
+         doReturn(imageStoreEntityMock).when(dataStoreMgrMock).getDataStore(IMAGE_STORE_ID, DataStoreRole.Image);
+         doReturn(null).when(imageStoreObjectDownloadDaoMock).findByStoreIdAndPath(IMAGE_STORE_ID, SCREENSHOT_PATH);
+         doReturn(123L).when(imageStoreEntityMock).getId();
+@@ -479,10 +479,10 @@
+ 
+     @Test
+     public void downloadScreenshotTestImageStoreObjectMissingAndPersistReturnsNullReturnsNotCreated() {
++        backupDetailVoMock = MockBackupDetailVO.createBackupDetailVOMock(SCREENSHOT_PATH);
+         doReturn(backupDetailVoMock).when(backupDetailDaoMock).findDetail(BACKUP_ID, BackupDetailsDao.SCREENSHOT_PATH);
++        backupDetailVoMock2 = MockBackupDetailVO.createBackupDetailVOMock(String.valueOf(IMAGE_STORE_ID));
+         doReturn(backupDetailVoMock2).when(backupDetailDaoMock).findDetail(BACKUP_ID, BackupDetailsDao.IMAGE_STORE_ID);
+-        doReturn(String.valueOf(IMAGE_STORE_ID)).when(backupDetailVoMock2).getValue();
+-        doReturn(SCREENSHOT_PATH).when(backupDetailVoMock).getValue();
+         doReturn(imageStoreEntityMock).when(dataStoreMgrMock).getDataStore(IMAGE_STORE_ID, DataStoreRole.Image);
+         doReturn(null).when(imageStoreObjectDownloadDaoMock).findByStoreIdAndPath(IMAGE_STORE_ID, SCREENSHOT_PATH);
+         doReturn(123L).when(imageStoreEntityMock).getId();
+@@ -548,4 +548,17 @@
+         verify(internalBackupServiceImplSpy).getInternalBackupProviderForZone(ZONE_ID);
+         verify(internalBackupProviderMock).prepareVmForSnapshotRevert(vmSnapshotMock, virtualMachineMock);
+     }
++
++    public final class MockBackupDetailVO {
++
++        private MockBackupDetailVO() {
++        }
++
++        public static org.apache.cloudstack.backup.BackupDetailVO createBackupDetailVOMock(String value) {
++            org.apache.cloudstack.backup.BackupDetailVO backupDetailVoMock =
++                    org.mockito.Mockito.mock(org.apache.cloudstack.backup.BackupDetailVO.class);
++            doReturn(value).when(backupDetailVoMock).getValue();
++            return backupDetailVoMock;
++        }
++    }
+ }
