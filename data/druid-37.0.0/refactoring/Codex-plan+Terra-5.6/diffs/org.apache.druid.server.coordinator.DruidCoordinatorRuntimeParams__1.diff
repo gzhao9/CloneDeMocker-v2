@@ -1,0 +1,90 @@
+--- a/server/src/test/java/org/apache/druid/server/coordinator/duty/KillDatasourceMetadataTest.java
++++ b/server/src/test/java/org/apache/druid/server/coordinator/duty/KillDatasourceMetadataTest.java
+@@ -45,7 +45,6 @@
+   @Mock
+   private MetadataSupervisorManager mockMetadataSupervisorManager;
+ 
+-  @Mock
+   private DruidCoordinatorRuntimeParams mockDruidCoordinatorRuntimeParams;
+ 
+   private KillDatasourceMetadata killDatasourceMetadata;
+@@ -55,7 +54,8 @@
+   public void setup()
+   {
+     runStats = new CoordinatorRunStats();
+-    Mockito.when(mockDruidCoordinatorRuntimeParams.getCoordinatorStats()).thenReturn(runStats);
++    mockDruidCoordinatorRuntimeParams = MockDruidCoordinatorRuntimeParamsWithCoordinatorStats
++        .createMockDruidCoordinatorRuntimeParams(runStats);
+   }
+ 
+   @Test
+@@ -72,8 +72,6 @@
+   @Test
+   public void testRunNotSkipIfLastRunMoreThanPeriod()
+   {
+-    Mockito.when(mockDruidCoordinatorRuntimeParams.getCoordinatorStats()).thenReturn(runStats);
+-
+     final MetadataCleanupConfig config
+         = new MetadataCleanupConfig(true, new Duration("PT6S"), new Duration("PT1S"));
+     killDatasourceMetadata = new KillDatasourceMetadata(
+--- a/server/src/test/java/org/apache/druid/server/coordinator/duty/KillSupervisorsCustomDutyTest.java
++++ b/server/src/test/java/org/apache/druid/server/coordinator/duty/KillSupervisorsCustomDutyTest.java
+@@ -38,9 +38,6 @@
+   @Mock
+   private MetadataSupervisorManager mockMetadataSupervisorManager;
+ 
+-  @Mock
+-  private DruidCoordinatorRuntimeParams mockDruidCoordinatorRuntimeParams;
+-
+   private KillSupervisorsCustomDuty killSupervisors;
+ 
+   @Test
+@@ -57,7 +54,8 @@
+   public void testRun()
+   {
+     final CoordinatorRunStats runStats = new CoordinatorRunStats();
+-    Mockito.when(mockDruidCoordinatorRuntimeParams.getCoordinatorStats()).thenReturn(runStats);
++    final DruidCoordinatorRuntimeParams mockDruidCoordinatorRuntimeParams = MockDruidCoordinatorRuntimeParamsWithCoordinatorStats
++        .createMockDruidCoordinatorRuntimeParams(runStats);
+     killSupervisors = new KillSupervisorsCustomDuty(
+         new Duration("PT1S"),
+         mockMetadataSupervisorManager
+--- a/server/src/test/java/org/apache/druid/server/coordinator/duty/MockDruidCoordinatorRuntimeParamsWithCoordinatorStats.java
++++ b/server/src/test/java/org/apache/druid/server/coordinator/duty/MockDruidCoordinatorRuntimeParamsWithCoordinatorStats.java
+@@ -0,0 +1,36 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++package org.apache.druid.server.coordinator.duty;
++
++import org.apache.druid.server.coordinator.DruidCoordinatorRuntimeParams;
++import org.apache.druid.server.coordinator.stats.CoordinatorRunStats;
++import org.mockito.Mockito;
++
++public class MockDruidCoordinatorRuntimeParamsWithCoordinatorStats
++{
++  public static DruidCoordinatorRuntimeParams createMockDruidCoordinatorRuntimeParams(
++      CoordinatorRunStats runStats
++  )
++  {
++    final DruidCoordinatorRuntimeParams mockDruidCoordinatorRuntimeParams = Mockito.mock(DruidCoordinatorRuntimeParams.class);
++    Mockito.when(mockDruidCoordinatorRuntimeParams.getCoordinatorStats()).thenReturn(runStats);
++    return mockDruidCoordinatorRuntimeParams;
++  }
++}
