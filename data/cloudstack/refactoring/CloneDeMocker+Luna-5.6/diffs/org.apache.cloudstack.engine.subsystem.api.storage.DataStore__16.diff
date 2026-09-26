@@ -1,0 +1,110 @@
+--- a/server/src/test/java/org/apache/cloudstack/storage/browser/StorageBrowserImplTest.java
++++ b/server/src/test/java/org/apache/cloudstack/storage/browser/StorageBrowserImplTest.java
+@@ -84,6 +84,8 @@
+     @Mock
+     EndPointSelector endPointSelector;
+ 
++    private DataStore dataStoreMock;
++
+     @Mock
+     VMTemplatePoolDao templatePoolDao;
+ 
+@@ -105,6 +107,7 @@
+     @Before
+     public void setUp() throws Exception {
+         closeable = MockitoAnnotations.openMocks(this);
++        dataStoreMock = Mockito.mock(DataStore.class);
+     }
+ 
+     @After
+@@ -182,11 +185,10 @@
+         ImageStoreJoinVO imageStore = Mockito.mock(ImageStoreJoinVO.class);
+         Mockito.when(imageStoreJoinDao.findById(imageStoreId)).thenReturn(imageStore);
+ 
+-        DataStore dataStore = Mockito.mock(DataStore.class);
+-        Mockito.when(dataStoreMgr.getDataStore(imageStoreId, imageStore.getRole())).thenReturn(dataStore);
++        Mockito.when(dataStoreMgr.getDataStore(imageStoreId, imageStore.getRole())).thenReturn(dataStoreMock);
+ 
+         ListDataStoreObjectsAnswer answer = Mockito.mock(ListDataStoreObjectsAnswer.class);
+-        Mockito.doReturn(answer).when(storageBrowser).listObjectsInStore(dataStore, path, 0, 10);
++        Mockito.doReturn(answer).when(storageBrowser).listObjectsInStore(dataStoreMock, path, 0, 10);
+ 
+         ListResponse<DataStoreObjectResponse> response = storageBrowser.listImageStoreObjects(cmd);
+ 
+@@ -203,11 +205,10 @@
+         Mockito.when(cmd.getStartIndex()).thenReturn(0L);
+         Mockito.when(cmd.getPageSizeVal()).thenReturn(10L);
+ 
+-        DataStore dataStore = Mockito.mock(DataStore.class);
+-        Mockito.when(dataStoreMgr.getDataStore(storeId, DataStoreRole.Primary)).thenReturn(dataStore);
++        Mockito.when(dataStoreMgr.getDataStore(storeId, DataStoreRole.Primary)).thenReturn(dataStoreMock);
+ 
+         ListDataStoreObjectsAnswer answer = Mockito.mock(ListDataStoreObjectsAnswer.class);
+-        Mockito.doReturn(answer).when(storageBrowser).listObjectsInStore(dataStore, path, 0, 10);
++        Mockito.doReturn(answer).when(storageBrowser).listObjectsInStore(dataStoreMock, path, 0, 10);
+ 
+         ListResponse<DataStoreObjectResponse> response = storageBrowser.listPrimaryStoreObjects(cmd);
+ 
+@@ -230,15 +231,14 @@
+ 
+     @Test
+     public void testListObjectsInStoreNoEndpoint() {
+-        DataStore dataStore = Mockito.mock(DataStore.class);
+         String path = "path/to/store";
+         int startIndex = 0;
+         int pageSize = 10;
+ 
+-        Mockito.when(endPointSelector.select(dataStore)).thenReturn(null);
++        Mockito.when(endPointSelector.select(dataStoreMock)).thenReturn(null);
+ 
+         try {
+-            storageBrowser.listObjectsInStore(dataStore, path, startIndex, pageSize);
++            storageBrowser.listObjectsInStore(dataStoreMock, path, startIndex, pageSize);
+         } catch (CloudRuntimeException exception) {
+             Assert.assertEquals("No remote endpoint to send command", exception.getMessage());
+         }
+@@ -246,19 +246,18 @@
+ 
+     @Test
+     public void testListObjectsInStoreBadCommand() {
+-        DataStore dataStore = Mockito.mock(DataStore.class);
+         String path = "path/to/store";
+         int startIndex = 0;
+         int pageSize = 10;
+ 
+         EndPoint ep = Mockito.mock(EndPoint.class);
+ 
+-        Mockito.when(endPointSelector.select(dataStore)).thenReturn(ep);
++        Mockito.when(endPointSelector.select(dataStoreMock)).thenReturn(ep);
+         Answer answer = Mockito.mock(UnsupportedAnswer.class);
+         Mockito.when(ep.sendMessage(Mockito.any())).thenReturn(answer);
+ 
+         try {
+-            storageBrowser.listObjectsInStore(dataStore, path, startIndex, pageSize);
++            storageBrowser.listObjectsInStore(dataStoreMock, path, startIndex, pageSize);
+         } catch (CloudRuntimeException exception) {
+             Assert.assertEquals("Failed to list datastore objects", exception.getMessage());
+         }
+@@ -289,20 +288,19 @@
+ 
+     @Test
+     public void testListObjectsInStore() {
+-        DataStore dataStore = Mockito.mock(DataStore.class);
+         String path = "path/to/store";
+         int startIndex = 0;
+         int pageSize = 10;
+ 
+         EndPoint ep = Mockito.mock(EndPoint.class);
+ 
+-        Mockito.when(endPointSelector.select(dataStore)).thenReturn(ep);
++        Mockito.when(endPointSelector.select(dataStoreMock)).thenReturn(ep);
+         ListDataStoreObjectsAnswer answer = Mockito.mock(ListDataStoreObjectsAnswer.class);
+         Mockito.when(ep.sendMessage(Mockito.any())).thenReturn(answer);
+         Mockito.when(answer.getResult()).thenReturn(true);
+         Mockito.when(answer.isPathExists()).thenReturn(true);
+ 
+-        Assert.assertEquals(answer, storageBrowser.listObjectsInStore(dataStore, path, startIndex, pageSize));
++        Assert.assertEquals(answer, storageBrowser.listObjectsInStore(dataStoreMock, path, startIndex, pageSize));
+     }
+ 
+     @Test

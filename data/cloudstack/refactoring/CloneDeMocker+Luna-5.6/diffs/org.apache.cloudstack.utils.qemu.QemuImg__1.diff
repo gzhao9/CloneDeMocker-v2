@@ -1,0 +1,60 @@
+--- a/plugins/hypervisors/kvm/src/test/java/org/apache/cloudstack/utils/rbd/RbdEncryptionTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/org/apache/cloudstack/utils/rbd/RbdEncryptionTest.java
+@@ -26,6 +26,7 @@
+ import org.apache.cloudstack.utils.qemu.QemuImgFile;
+ import org.apache.cloudstack.utils.qemu.QemuObject;
+ import org.junit.Assert;
++import org.junit.Before;
+ import org.junit.Test;
+ import org.junit.runner.RunWith;
+ import org.mockito.ArgumentCaptor;
+@@ -46,6 +47,12 @@
+ public class RbdEncryptionTest {
+ 
+     private final RbdEncryption rbdEncryption = new RbdEncryption();
++    private QemuImg qemuImgMock;
++
++    @Before
++    public void setUp() {
++        qemuImgMock = Mockito.mock(QemuImg.class);
++    }
+ 
+     @Test
+     public void buildFormatScriptWithCephxAuth() {
+@@ -89,8 +96,7 @@
+     @Test
+     public void importTemplateFromRbdSourceConvertsThroughQemuImg() throws Exception {
+         RbdEncryption spy = Mockito.spy(new RbdEncryption());
+-        QemuImg qemuImg = Mockito.mock(QemuImg.class);
+-        Mockito.doReturn(qemuImg).when(spy).createQemuImg();
++        Mockito.doReturn(qemuImgMock).when(spy).createQemuImg();
+ 
+         spy.importTemplate("srcpool", "srcimg", null, null, "1.2.3.4", 6789, "cloudstack", "secret",
+                 "cloudstack", "dst", "passphrase".getBytes(StandardCharsets.UTF_8), CryptSetup.LuksType.LUKS2);
+@@ -98,7 +104,7 @@
+         ArgumentCaptor<QemuImageOptions> srcOpts = ArgumentCaptor.forClass(QemuImageOptions.class);
+         ArgumentCaptor<QemuImageOptions> destOpts = ArgumentCaptor.forClass(QemuImageOptions.class);
+         ArgumentCaptor<List<QemuObject>> objects = ArgumentCaptor.forClass(List.class);
+-        Mockito.verify(qemuImg).convertIntoExistingTarget(Mockito.any(QemuImgFile.class), Mockito.isNull(),
++        Mockito.verify(qemuImgMock).convertIntoExistingTarget(Mockito.any(QemuImgFile.class), Mockito.isNull(),
+                 objects.capture(), srcOpts.capture(), destOpts.capture(), Mockito.eq(false));
+ 
+         String src = String.join(" ", srcOpts.getValue().toCommandFlag());
+@@ -127,15 +133,14 @@
+     @Test
+     public void importTemplateFromFileSourceForcesSourceFormat() throws Exception {
+         RbdEncryption spy = Mockito.spy(new RbdEncryption());
+-        QemuImg qemuImg = Mockito.mock(QemuImg.class);
+-        Mockito.doReturn(qemuImg).when(spy).createQemuImg();
++        Mockito.doReturn(qemuImgMock).when(spy).createQemuImg();
+ 
+         spy.importTemplate(null, null, "/tmp/tmpl.qcow2", "QCOW2", "1.2.3.4", 6789, "cloudstack", "secret",
+                 "cloudstack", "dst", "passphrase".getBytes(StandardCharsets.UTF_8), CryptSetup.LuksType.LUKS2);
+ 
+         ArgumentCaptor<QemuImgFile> srcFile = ArgumentCaptor.forClass(QemuImgFile.class);
+         ArgumentCaptor<QemuImageOptions> srcOpts = ArgumentCaptor.forClass(QemuImageOptions.class);
+-        Mockito.verify(qemuImg).convertIntoExistingTarget(srcFile.capture(), Mockito.isNull(),
++        Mockito.verify(qemuImgMock).convertIntoExistingTarget(srcFile.capture(), Mockito.isNull(),
+                 Mockito.anyList(), srcOpts.capture(), Mockito.any(QemuImageOptions.class), Mockito.eq(true));
+ 
+         Assert.assertEquals(QemuImg.PhysicalDiskFormat.QCOW2, srcFile.getValue().getFormat());
