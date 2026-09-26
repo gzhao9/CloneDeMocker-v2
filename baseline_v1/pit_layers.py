@@ -297,7 +297,15 @@ def _validate(harness: ProjectHarness, ws: Workspace, scope: BuildScope) -> dict
     started = time.time()
     evidence = harness.validate(ws.dir, run_pit=True, scope=scope).as_dict()
     matrix = mutation_matrix(ws.dir, started, scope.modules) if evidence.get("pitStatus") == "PASSED" else {}
-    return {"host": HOST, "at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "evidence": slim(evidence),
+    slimmed = slim(evidence) or {}
+    # The harness's own mutant summary reads every fresh report in the workspace, so it can include other
+    # modules (E-013). Score and counts come from the module-scoped matrix instead; its mutant list is dropped.
+    slimmed.pop("mutants", None)
+    if matrix:
+        statuses = [value.split("|", 1)[0] for value in matrix.values()]
+        slimmed["mutationScore"] = statuses.count("KILLED") / len(statuses)
+        slimmed["mutationCounts"] = {s: statuses.count(s) for s in sorted(set(statuses))}
+    return {"host": HOST, "at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "evidence": slimmed,
             "matrix": matrix, "seconds": round(time.time() - started, 1)}
 
 
