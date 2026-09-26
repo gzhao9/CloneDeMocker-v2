@@ -206,20 +206,32 @@ def compare(base: dict[str, str], cand: dict[str, str]) -> dict:
         status, _, killers = value.partition("|")
         return status, set(filter(None, killers.split(";")))
 
-    lost, gained, killers_lost, missing = [], [], {}, 0
+    # PIT counts these as detected. KILLED <-> TIMED_OUT under host load is not a lost kill: kiota's
+    # okHttp L1 flipped one mutant KILLED -> TIMED_OUT on an identical re-run.
+    detected = {"KILLED", "TIMED_OUT", "MEMORY_ERROR", "RUN_ERROR"}
+    lost, gained, changed, killers_lost, missing = [], [], {}, {}, 0
     for key, value in base.items():
         if key not in cand:
             missing += 1
             continue
         (bs, bk), (cs, ck) = split(value), split(cand[key])
-        if bs == "KILLED" and cs != "KILLED":
+        if bs in detected and cs not in detected:
             lost.append(key)
-        elif bs != "KILLED" and cs == "KILLED":
+        elif bs not in detected and cs in detected:
             gained.append(key)
+        elif bs != cs and bs in detected:
+            changed[key] = f"{bs}->{cs}"
         elif bs == cs == "KILLED" and bk - ck:
             killers_lost[key] = sorted(bk - ck)
-    return {"killedLost": sorted(lost), "killedGained": sorted(gained), "killersLost": killers_lost,
-            "mutantsOnlyInBaseline": missing, "mutantsOnlyInCandidate": len(set(cand) - set(base))}
+    return {"killedLost": sorted(lost), "killedGained": sorted(gained), "detectedStatusChanged": changed,
+            "killersLost": killers_lost, "mutantsOnlyInBaseline": missing,
+            "mutantsOnlyInCandidate": len(set(cand) - set(base))}
+
+
+def matrix_diff(base: dict[str, str], cand: dict[str, str]) -> dict:
+    """The candidate matrix as a delta from the baseline, so any comparison can be recomputed offline."""
+    return {"changed": {k: v for k, v in cand.items() if base.get(k) != v},
+            "missing": sorted(k for k in base if k not in cand)}
 
 
 def skip_failing_tests_in_pom(pom: Path) -> None:
@@ -428,7 +440,9 @@ def main() -> None:
             ws.restore()
         record["mcis"] = mcis
         matrix = record.pop("matrix")
-        record["comparison"] = compare(baseline(module)["matrix"], matrix) if matrix else None
+        base_matrix = baseline(module)["matrix"]
+        record["comparison"] = compare(base_matrix, matrix) if matrix else None
+        record["matrixDiff"] = matrix_diff(base_matrix, matrix) if matrix else None
         return record
 
     k = 0
