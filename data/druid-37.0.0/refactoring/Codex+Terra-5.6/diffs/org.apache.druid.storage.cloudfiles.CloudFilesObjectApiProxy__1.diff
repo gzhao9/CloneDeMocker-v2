@@ -1,0 +1,80 @@
+--- a/extensions-contrib/cloudfiles-extensions/src/test/java/org/apache/druid/storage/cloudfiles/CloudFilesByteSourceTest.java
++++ b/extensions-contrib/cloudfiles-extensions/src/test/java/org/apache/druid/storage/cloudfiles/CloudFilesByteSourceTest.java
+@@ -38,21 +38,19 @@
+   {
+     final String path = "path";
+ 
+-    CloudFilesObjectApiProxy objectApi = mock(CloudFilesObjectApiProxy.class);
+-    CloudFilesObject cloudFilesObject = mock(CloudFilesObject.class);
+-    Payload payload = mock(Payload.class);
+-    InputStream stream = mock(InputStream.class);
+-
+-    when(objectApi.get(path, 0)).thenReturn(cloudFilesObject);
++    final CloudFilesObject cloudFilesObject = mock(CloudFilesObject.class);
++    final CloudFilesObjectApiProxy objectApi = makeObjectApi(path, cloudFilesObject);
++    final Payload payload = mock(Payload.class);
++    final InputStream stream = mock(InputStream.class);
+     when(cloudFilesObject.getPayload()).thenReturn(payload);
+     when(payload.openStream()).thenReturn(stream);
+     payload.close();
+ 
+-    CloudFilesByteSource byteSource = new CloudFilesByteSource(objectApi, path);
++    final CloudFilesByteSource byteSource = new CloudFilesByteSource(objectApi, path);
+     Assert.assertEquals(stream, byteSource.openStream());
+     byteSource.closeStream();
+ 
+-    verify(objectApi).get(path, 0);
++    verifyObjectApi(objectApi, path);
+     verify(cloudFilesObject).getPayload();
+     verify(payload).openStream();
+   }
+@@ -62,30 +60,40 @@
+   {
+     final String path = "path";
+ 
+-    CloudFilesObjectApiProxy objectApi = mock(CloudFilesObjectApiProxy.class);
+-    CloudFilesObject cloudFilesObject = mock(CloudFilesObject.class);
+-    Payload payload = mock(Payload.class);
+-    InputStream stream = mock(InputStream.class);
+-
+-    when(objectApi.get(path, 0)).thenReturn(cloudFilesObject);
++    final CloudFilesObject cloudFilesObject = mock(CloudFilesObject.class);
++    final CloudFilesObjectApiProxy objectApi = makeObjectApi(path, cloudFilesObject);
++    final Payload payload = mock(Payload.class);
++    final InputStream stream = mock(InputStream.class);
+     when(cloudFilesObject.getPayload()).thenReturn(payload);
+     when(payload.openStream()).thenThrow(new IOException())
+                               .thenReturn(stream);
+     payload.close();
+ 
+-    CloudFilesByteSource byteSource = new CloudFilesByteSource(objectApi, path);
++    final CloudFilesByteSource byteSource = new CloudFilesByteSource(objectApi, path);
+     try {
+       byteSource.openStream();
+     }
+-    catch (Exception e) {
++    catch (final Exception e) {
+       Assert.assertEquals("Recoverable exception", e.getMessage());
+     }
+ 
+     Assert.assertEquals(stream, byteSource.openStream());
+     byteSource.closeStream();
+ 
+-    verify(objectApi).get(path, 0);
++    verifyObjectApi(objectApi, path);
+     verify(cloudFilesObject).getPayload();
+     verify(payload, times(2)).openStream();
+   }
++
++  private CloudFilesObjectApiProxy makeObjectApi(final String path, final CloudFilesObject cloudFilesObject)
++  {
++    final CloudFilesObjectApiProxy objectApi = mock(CloudFilesObjectApiProxy.class);
++    when(objectApi.get(path, 0)).thenReturn(cloudFilesObject);
++    return objectApi;
++  }
++
++  private void verifyObjectApi(final CloudFilesObjectApiProxy objectApi, final String path)
++  {
++    verify(objectApi).get(path, 0);
++  }
+ }
