@@ -335,6 +335,9 @@ class ProjectHarness:
     # Maven: run PIT after `test-compile` in the same reactor, so -am siblings resolve from this build's
     # target/ rather than whatever ~/.m2 holds (missing or stale jars; C-030). Off by default.
     pit_in_reactor: bool = False
+    # The caller's workspace POM limits surefire to the scoped modules (pit_layers binds skipTests), so the
+    # whole-module test phase needs no -Dtest package filter.
+    tests_scoped_by_pom: bool = False
 
     def __init__(self, maven_repo_local: str | Path | None = None) -> None:
         """
@@ -778,11 +781,16 @@ class ProjectHarness:
                 # Whole-module runs: -am puts every upstream module in the reactor, and a bare `test`
                 # would run all of their tests too (dubbo-common's failed netty4's baseline). Keep
                 # surefire to the target modules' own test packages, with its default name patterns.
-                patterns = [f"{glob[:-2].replace('.', '/')}/**/{name}" for glob in scope.pit_tests
-                            for name in ("Test*", "*Test", "*Tests", "*TestCase")]
+                # With tests_scoped_by_pom the workspace POM already skips upstream modules' tests, so no
+                # package filter is needed: it reached 9,035 chars for CloudStack's server and cmd.exe
+                # (mvn.cmd) rejects anything over 8,191 (B-085). Only the exclusions remain.
+                patterns = [] if self.tests_scoped_by_pom else [
+                    f"{glob[:-2].replace('.', '/')}/**/{name}" for glob in scope.pit_tests
+                    for name in ("Test*", "*Test", "*Tests", "*TestCase")]
                 patterns += [f"!{name}" for name in scope.excluded_tests]
-                test_filter = [f"-Dtest={','.join(patterns)}", "-DfailIfNoTests=false",
-                               "-Dsurefire.failIfNoSpecifiedTests=false"]
+                if patterns:
+                    test_filter = [f"-Dtest={','.join(patterns)}", "-DfailIfNoTests=false",
+                                   "-Dsurefire.failIfNoSpecifiedTests=false"]
             pit_command = [*prefix, *(["test-compile"] if self.pit_in_reactor else []),
                            "org.pitest:pitest-maven:mutationCoverage", "-DoutputFormats=XML"]
             if scope is not None and scope.test_classes:
