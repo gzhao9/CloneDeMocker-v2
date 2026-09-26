@@ -1,0 +1,126 @@
+--- a/processing/src/test/java/org/apache/druid/query/aggregation/any/DoubleAnyAggregatorFactoryTest.java
++++ b/processing/src/test/java/org/apache/druid/query/aggregation/any/DoubleAnyAggregatorFactoryTest.java
+@@ -44,7 +44,6 @@
+   private static final int POSITION = 2;
+   private static final ByteBuffer BUFFER = ByteBuffer.allocate(128);
+ 
+-  @Mock
+   private ColumnCapabilities capabilities;
+   @Mock
+   private ColumnInspector columnInspector;
+@@ -80,8 +79,8 @@
+   @Test
+   public void factorizeVectorForNumericTypeShouldReturnDoubleVectorAggregator()
+   {
++    capabilities = MockColumnCapabilitiesForAnyAggregation.createMockColumnCapabilities(true);
+     Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
+-    Mockito.doReturn(true).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+     Assert.assertEquals(DoubleAnyVectorAggregator.class, aggregator.getClass());
+@@ -90,8 +89,8 @@
+   @Test
+   public void factorizeVectorForStringTypeShouldReturnDoubleVectorAggregatorWithNilSelector()
+   {
++    capabilities = MockColumnCapabilitiesForAnyAggregation.createMockColumnCapabilities(false);
+     Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
+-    Mockito.doReturn(false).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+     Assert.assertNull(aggregator.get(BUFFER, POSITION));
+--- a/processing/src/test/java/org/apache/druid/query/aggregation/any/FloatAnyAggregatorFactoryTest.java
++++ b/processing/src/test/java/org/apache/druid/query/aggregation/any/FloatAnyAggregatorFactoryTest.java
+@@ -44,7 +44,6 @@
+   private static final int POSITION = 2;
+   private static final ByteBuffer BUFFER = ByteBuffer.allocate(128);
+ 
+-  @Mock
+   private ColumnCapabilities capabilities;
+   @Mock
+   private ColumnInspector columnInspector;
+@@ -80,8 +79,8 @@
+   @Test
+   public void factorizeVectorForNumericTypeShouldReturnFloatVectorAggregator()
+   {
++    capabilities = MockColumnCapabilitiesForAnyAggregation.createMockColumnCapabilities(true);
+     Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
+-    Mockito.doReturn(true).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+     Assert.assertEquals(FloatAnyVectorAggregator.class, aggregator.getClass());
+@@ -90,8 +89,8 @@
+   @Test
+   public void factorizeVectorForStringTypeShouldReturnFloatVectorAggregatorWithNilSelector()
+   {
++    capabilities = MockColumnCapabilitiesForAnyAggregation.createMockColumnCapabilities(false);
+     Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
+-    Mockito.doReturn(false).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+     Assert.assertNull(aggregator.get(BUFFER, POSITION));
+--- a/processing/src/test/java/org/apache/druid/query/aggregation/any/LongAnyAggregatorFactoryTest.java
++++ b/processing/src/test/java/org/apache/druid/query/aggregation/any/LongAnyAggregatorFactoryTest.java
+@@ -44,7 +44,6 @@
+   private static final int POSITION = 2;
+   private static final ByteBuffer BUFFER = ByteBuffer.allocate(128);
+ 
+-  @Mock
+   private ColumnCapabilities capabilities;
+   @Mock
+   private ColumnInspector columnInspector;
+@@ -80,8 +79,8 @@
+   @Test
+   public void factorizeVectorWithNumericColumnShouldReturnLongVectorAggregator()
+   {
++    capabilities = MockColumnCapabilitiesForAnyAggregation.createMockColumnCapabilities(true);
+     Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
+-    Mockito.doReturn(true).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+     Assert.assertEquals(LongAnyVectorAggregator.class, aggregator.getClass());
+@@ -90,8 +89,8 @@
+   @Test
+   public void factorizeVectorForStringTypeShouldReturnLongVectorAggregatorWithNilSelector()
+   {
++    capabilities = MockColumnCapabilitiesForAnyAggregation.createMockColumnCapabilities(false);
+     Mockito.doReturn(capabilities).when(selectorFactory).getColumnCapabilities(FIELD_NAME);
+-    Mockito.doReturn(false).when(capabilities).isNumeric();
+     VectorAggregator aggregator = target.factorizeVector(selectorFactory);
+     Assert.assertNotNull(aggregator);
+     Assert.assertNull(aggregator.get(BUFFER, POSITION));
+--- a/processing/src/test/java/org/apache/druid/query/aggregation/any/MockColumnCapabilitiesForAnyAggregation.java
++++ b/processing/src/test/java/org/apache/druid/query/aggregation/any/MockColumnCapabilitiesForAnyAggregation.java
+@@ -0,0 +1,33 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++package org.apache.druid.query.aggregation.any;
++
++import org.apache.druid.segment.column.ColumnCapabilities;
++import org.mockito.Mockito;
++
++public class MockColumnCapabilitiesForAnyAggregation
++{
++  public static ColumnCapabilities createMockColumnCapabilities(final boolean isNumeric)
++  {
++    final ColumnCapabilities capabilities = Mockito.mock(ColumnCapabilities.class);
++    Mockito.doReturn(isNumeric).when(capabilities).isNumeric();
++    return capabilities;
++  }
++}
