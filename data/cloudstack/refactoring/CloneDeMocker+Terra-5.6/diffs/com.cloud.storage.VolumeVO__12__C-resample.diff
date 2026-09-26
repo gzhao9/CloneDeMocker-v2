@@ -1,0 +1,64 @@
+--- a/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
++++ b/plugins/backup/nas/src/test/java/org/apache/cloudstack/backup/NASBackupProviderTest.java
+@@ -74,6 +74,11 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class NASBackupProviderTest {
++    private VolumeVO createReadyVolume() {
++        VolumeVO volume = mock(VolumeVO.class);
++        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
++        return volume;
++    }
+     @Spy
+     @InjectMocks
+     private NASBackupProvider nasBackupProvider;
+@@ -235,11 +240,9 @@
+         Mockito.when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+         Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+ 
+-        VolumeVO volume1 = mock(VolumeVO.class);
+-        Mockito.when(volume1.getState()).thenReturn(Volume.State.Ready);
++        VolumeVO volume1 = createReadyVolume();
+         Mockito.when(volume1.getSize()).thenReturn(100L);
+-        VolumeVO volume2 = mock(VolumeVO.class);
+-        Mockito.when(volume2.getState()).thenReturn(Volume.State.Ready);
++        VolumeVO volume2 = createReadyVolume();
+         Mockito.when(volume2.getSize()).thenReturn(200L);
+         Mockito.when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume1, volume2));
+ 
+--- a/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
++++ b/server/src/test/java/org/apache/cloudstack/backup/BackupManagerTest.java
+@@ -150,6 +150,11 @@
+ 
+ @RunWith(MockitoJUnitRunner.class)
+ public class BackupManagerTest {
++    private VolumeVO createReadyVolume() {
++        VolumeVO volume = mock(VolumeVO.class);
++        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
++        return volume;
++    }
+     @Spy
+     @InjectMocks
+     BackupManagerImpl backupManager = new BackupManagerImpl();
+@@ -715,9 +720,8 @@
+         when(backupScheduleDao.findById(scheduleId)).thenReturn(schedule);
+         when(schedule.getMaxBackups()).thenReturn(2);
+ 
+-        VolumeVO volume = mock(VolumeVO.class);
++        VolumeVO volume = createReadyVolume();
+         when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+-        when(volume.getState()).thenReturn(Volume.State.Ready);
+         when(volumeApiService.getVolumePhysicalSize(null, null, null)).thenReturn(newBackupSize);
+ 
+         BackupProvider backupProvider = mock(BackupProvider.class);
+@@ -820,9 +824,8 @@
+         when(vm.getBackupOfferingId()).thenReturn(backupOfferingId);
+         when(vm.getAccountId()).thenReturn(accountId);
+ 
+-        VolumeVO volume = mock(VolumeVO.class);
++        VolumeVO volume = createReadyVolume();
+         when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+-        when(volume.getState()).thenReturn(Volume.State.Ready);
+         when(volumeApiService.getVolumePhysicalSize(null, null, null)).thenReturn(size);
+ 
+         overrideBackupFrameworkConfigValue();

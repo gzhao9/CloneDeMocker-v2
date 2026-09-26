@@ -1,0 +1,81 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -1288,7 +1288,7 @@
+         TungstenAnswer createTungstenFirewallRuleAnswer = MockTungstenAnswerFactory.get(true);
+         net.juniper.tungsten.api.types.FirewallRule firewallRule = mock(net.juniper.tungsten.api.types.FirewallRule.class);
+         ActionListType actionListType = mock(ActionListType.class);
+-        ObjectReference<ApiPropertyBase> serviceGroup = mock(ObjectReference.class);
++        ObjectReference<ApiPropertyBase> serviceGroup = createMockApiPropertyReference("service");
+         FirewallRuleEndpointType firewallRuleEndpointType1 = mock(FirewallRuleEndpointType.class);
+         FirewallRuleEndpointType firewallRuleEndpointType2 = mock(FirewallRuleEndpointType.class);
+         FirewallRuleMatchTagsType firewallRuleMatchTagsType = mock(FirewallRuleMatchTagsType.class);
+@@ -1300,7 +1300,6 @@
+         when(firewallRule.getActionList()).thenReturn(actionListType);
+         when(actionListType.getSimpleAction()).thenReturn("pass");
+         when(firewallRule.getServiceGroup()).thenReturn(List.of(serviceGroup));
+-        when(serviceGroup.getReferredName()).thenReturn(List.of("service"));
+         when(firewallRule.getEndpoint1()).thenReturn(firewallRuleEndpointType1);
+         when(firewallRule.getEndpoint2()).thenReturn(firewallRuleEndpointType2);
+         when(firewallRuleEndpointType1.getTags()).thenReturn(List.of("tag"));
+@@ -1333,7 +1332,7 @@
+     public void createTungstenApplicationPolicySetTest() {
+         TungstenAnswer createTungstenApplicationPolicySetAnswer = MockTungstenAnswerFactory.get(true);
+         ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
+-        ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
++        ObjectReference<ApiPropertyBase> objectReference = createMockApiPropertyReference("tag");
+         ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+@@ -1341,7 +1340,6 @@
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenApplicationPolicySetCommand.class), anyLong())).thenReturn(createTungstenApplicationPolicySetAnswer);
+         when(createTungstenApplicationPolicySetAnswer.getApiObjectBase()).thenReturn(applicationPolicySet);
+         when(applicationPolicySet.getTag()).thenReturn(List.of(objectReference));
+-        when(objectReference.getReferredName()).thenReturn(List.of("tag"));
+         when(applicationPolicySet.getFirewallPolicy()).thenReturn(List.of(firewallSequenceObjectReference));
+         when(firewallSequenceObjectReference.getReferredName()).thenReturn(List.of("firewallrule"));
+ 
+@@ -1352,15 +1350,14 @@
+     public void listTungstenApplicationPolicySetTest() {
+         TungstenAnswer listTungstenApplicationPolicySetAnswer = MockTungstenAnswerFactory.get(true);
+         ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
+-        ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
+         ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenApplicationPolicySetCommand.class), anyLong())).thenReturn(listTungstenApplicationPolicySetAnswer);
+         doReturn(List.of(applicationPolicySet)).when(listTungstenApplicationPolicySetAnswer).getApiObjectBaseList();
++        ObjectReference<ApiPropertyBase> objectReference = createMockApiPropertyReference("tag");
+         when(applicationPolicySet.getTag()).thenReturn(List.of(objectReference));
+-        when(objectReference.getReferredName()).thenReturn(List.of("tag"));
+         when(applicationPolicySet.getFirewallPolicy()).thenReturn(List.of(firewallSequenceObjectReference));
+         when(firewallSequenceObjectReference.getReferredName()).thenReturn(List.of("firewallrule"));
+ 
+@@ -1388,7 +1385,7 @@
+         TungstenAnswer listTungstenFirewallRuleAnswer = MockTungstenAnswerFactory.get(true);
+         net.juniper.tungsten.api.types.FirewallRule firewallRule = mock(net.juniper.tungsten.api.types.FirewallRule.class);
+         ActionListType actionListType = mock(ActionListType.class);
+-        ObjectReference<ApiPropertyBase> serviceGroup = mock(ObjectReference.class);
++        ObjectReference<ApiPropertyBase> serviceGroup = createMockApiPropertyReference("service");
+         FirewallRuleEndpointType firewallRuleEndpointType1 = mock(FirewallRuleEndpointType.class);
+         FirewallRuleEndpointType firewallRuleEndpointType2 = mock(FirewallRuleEndpointType.class);
+         FirewallRuleMatchTagsType firewallRuleMatchTagsType = mock(FirewallRuleMatchTagsType.class);
+@@ -1400,7 +1397,6 @@
+         when(firewallRule.getActionList()).thenReturn(actionListType);
+         when(actionListType.getSimpleAction()).thenReturn("pass");
+         when(firewallRule.getServiceGroup()).thenReturn(List.of(serviceGroup));
+-        when(serviceGroup.getReferredName()).thenReturn(List.of("service"));
+         when(firewallRule.getEndpoint1()).thenReturn(firewallRuleEndpointType1);
+         when(firewallRule.getEndpoint2()).thenReturn(firewallRuleEndpointType2);
+         when(firewallRuleEndpointType1.getTags()).thenReturn(List.of("tag"));
+@@ -1668,4 +1664,10 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    private static ObjectReference<ApiPropertyBase> createMockApiPropertyReference(String referredName) {
++        ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
++        when(objectReference.getReferredName()).thenReturn(List.of(referredName));
++        return objectReference;
++    }
+ }
