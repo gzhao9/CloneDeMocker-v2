@@ -1,0 +1,45 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/supervisor/autoscaler/CostBasedAutoScalerTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/supervisor/autoscaler/CostBasedAutoScalerTest.java
+@@ -442,12 +442,11 @@
+     SupervisorSpec spec = Mockito.mock(SupervisorSpec.class);
+     SeekableStreamSupervisor supervisor = Mockito.mock(SeekableStreamSupervisor.class);
+     ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+-    SeekableStreamSupervisorIOConfig ioConfig = Mockito.mock(SeekableStreamSupervisorIOConfig.class);
++    final SeekableStreamSupervisorIOConfig ioConfig = createIoConfig("stream");
+ 
+     when(spec.getId()).thenReturn("s-up");
+     when(spec.getDataSources()).thenReturn(List.of("test-datasource"));
+     when(supervisor.getIoConfig()).thenReturn(ioConfig);
+-    when(ioConfig.getStream()).thenReturn("stream");
+ 
+     CostBasedAutoScalerConfig cfgWithDefaults = CostBasedAutoScalerConfig.builder()
+                                                                          .taskCountMax(10)
+@@ -487,13 +486,12 @@
+     SupervisorSpec spec = Mockito.mock(SupervisorSpec.class);
+     SeekableStreamSupervisor supervisor = Mockito.mock(SeekableStreamSupervisor.class);
+     ServiceEmitter emitter = Mockito.mock(ServiceEmitter.class);
+-    SeekableStreamSupervisorIOConfig ioConfig = Mockito.mock(SeekableStreamSupervisorIOConfig.class);
++    final SeekableStreamSupervisorIOConfig ioConfig = createIoConfig("test-stream");
+ 
+     when(spec.getId()).thenReturn("test-supervisor");
+     when(spec.getDataSources()).thenReturn(List.of("test-datasource"));
+     when(spec.isSuspended()).thenReturn(false);
+     when(supervisor.getIoConfig()).thenReturn(ioConfig);
+-    when(ioConfig.getStream()).thenReturn("test-stream");
+     when(ioConfig.getTaskDuration()).thenReturn(Duration.standardHours(1));
+     when(supervisor.computeLagStats()).thenReturn(new LagStats(100, 100, 100));
+     // No task stats means the moving average rate is unavailable
+@@ -530,6 +528,13 @@
+     );
+   }
+ 
++  private SeekableStreamSupervisorIOConfig createIoConfig(final String stream)
++  {
++    final SeekableStreamSupervisorIOConfig ioConfig = Mockito.mock(SeekableStreamSupervisorIOConfig.class);
++    when(ioConfig.getStream()).thenReturn(stream);
++    return ioConfig;
++  }
++
+   private boolean contains(int[] array, int value)
+   {
+     for (int i : array) {
