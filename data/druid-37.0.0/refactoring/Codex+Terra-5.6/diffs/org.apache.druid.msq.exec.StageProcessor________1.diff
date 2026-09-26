@@ -1,0 +1,48 @@
+--- a/multi-stage-query/src/test/java/org/apache/druid/msq/exec/ProcessingBuffersSetTest.java
++++ b/multi-stage-query/src/test/java/org/apache/druid/msq/exec/ProcessingBuffersSetTest.java
+@@ -104,13 +104,7 @@
+   @Test
+   public void test_acquireForStage_usesProcessingBuffersFalse()
+   {
+-    // Create a mock StageDefinition and StageProcessor
+-    final StageDefinition stageDef = Mockito.mock(StageDefinition.class);
+-    final StageProcessor<?, ?> stageProcessor = Mockito.mock(StageProcessor.class);
+-
+-    // Configure mocks: processor factory does not use processing buffers
+-    Mockito.when(stageDef.getProcessor()).thenReturn(stageProcessor);
+-    Mockito.when(stageProcessor.usesProcessingBuffers()).thenReturn(false);
++    final StageDefinition stageDef = mockStageDefinition(false);
+ 
+     // Create a ProcessingBuffersSet
+     final ProcessingBuffersSet buffersSet =
+@@ -126,13 +120,7 @@
+   @Test
+   public void test_acquireForStage_usesProcessingBuffersTrue()
+   {
+-    // Create a mock StageDefinition and StageProcessor
+-    final StageDefinition stageDef = Mockito.mock(StageDefinition.class);
+-    final StageProcessor<?, ?> stageProcessor = Mockito.mock(StageProcessor.class);
+-
+-    // Configure mocks: processor factory does use processing buffers
+-    Mockito.when(stageDef.getProcessor()).thenReturn(stageProcessor);
+-    Mockito.when(stageProcessor.usesProcessingBuffers()).thenReturn(true);
++    final StageDefinition stageDef = mockStageDefinition(true);
+ 
+     // Create a ProcessingBuffersSet
+     final ProcessingBuffersSet buffersSet =
+@@ -146,4 +134,15 @@
+     Assert.assertEquals(1024, buffers.getBufferPool().take().get().capacity());
+     Assert.assertThrows(NoSuchElementException.class, () -> buffers.getBufferPool().take());
+   }
++
++  private static StageDefinition mockStageDefinition(final boolean usesProcessingBuffers)
++  {
++    final StageDefinition stageDef = Mockito.mock(StageDefinition.class);
++    final StageProcessor<?, ?> stageProcessor = Mockito.mock(StageProcessor.class);
++
++    Mockito.when(stageDef.getProcessor()).thenReturn(stageProcessor);
++    Mockito.when(stageProcessor.usesProcessingBuffers()).thenReturn(usesProcessingBuffers);
++
++    return stageDef;
++  }
+ }
