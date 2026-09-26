@@ -12,7 +12,7 @@ compared with the baseline mutant by mutant: kills lost or gained, and tests tha
 mutant. If a layer with several MCIs fails to compile or its tests fail, the first MCI is kept and
 the rest move to a new layer at the end, so every MCI is still measured. A run whose tests fail is
 repeated once first: one flaky test in a 3642-test module (D-010) must not void a baseline or split
-a layer. A stored baseline whose tests failed is retried when the tool restarts.
+a layer. A stored baseline that compiled but whose tests or PIT failed is retried once when the tool restarts.
 
 `--slice K/N` runs only the modules with crc32(scope) % N == K, so several processes can share one
 project on one host (E-012). Each slice has its own workspace (pitlayers-<project>-<K>) and files
@@ -387,7 +387,9 @@ def main() -> None:
 
     def baseline(module: str) -> dict:
         stored = baselines.get(module)
-        if stored is None or (tests_failed(stored) and not stored.get("retriedOnRestart")):
+        incomplete = stored is not None and (stored.get("evidence") or {}).get("compileStatus") == "PASSED" and (
+            (stored.get("evidence") or {}).get("pitStatus") != "PASSED")      # tests or PIT failed (D-010, D-011)
+        if stored is None or (incomplete and not stored.get("retriedOnRestart")):
             retry = stored is not None
             ws.restore()
             record = validate(harness, ws, scopes[module])
