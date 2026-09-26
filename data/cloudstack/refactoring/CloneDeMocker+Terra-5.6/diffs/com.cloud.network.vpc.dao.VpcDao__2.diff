@@ -1,0 +1,78 @@
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisElementTest.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisElementTest.java
+@@ -132,7 +132,7 @@
+         Mockito.when(networkDao.findById(networkId)).thenReturn(networkVO);
+         Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(dataCenterVO);
+         Mockito.when(domainDao.findById(domainId)).thenReturn(domain);
+-        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpc);
++        NetrisMockVpcDaoForFindById.stubFindById(vpcDao, vpcId, vpc);
+         ReservationContext context = Mockito.mock(ReservationContext.class);
+         netrisElement.destroy(network, context);
+         Mockito.verify(netrisService).deleteVnetResource(zoneId, accountId, domainId, vpcName, vpcId,
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisPublicNetworkGuruTest.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisPublicNetworkGuruTest.java
+@@ -115,7 +115,7 @@
+         Mockito.when(nicProfile.getIPv4Address()).thenReturn(vrNicIp);
+         Mockito.when(ipAddressDao.findByIp(vrNicIp)).thenReturn(ipAddressVpcVR);
+         Mockito.when(ipAddressVpcVR.getVpcId()).thenReturn(vpcId);
+-        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpc);
++        NetrisMockVpcDaoForFindById.stubFindById(vpcDao, vpcId, vpc);
+         Mockito.when(vpc.getId()).thenReturn(vpcId);
+         Mockito.when(ipAddressDao.listByAssociatedVpc(vpcId, true))
+                 .thenReturn(Arrays.asList(ipAddressVpcVR, ipAddressVpcSourceNat));
+@@ -178,7 +178,7 @@
+ 
+     @Test(expected = CloudRuntimeException.class)
+     public void testAllocateNetrisNetworkSourceNatIps() throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+-        Mockito.when(vpcDao.findById(vpcId)).thenReturn(null);
++        NetrisMockVpcDaoForFindById.stubFindById(vpcDao, vpcId, null);
+         guru.allocate(network, nicProfile, virtualMachineProfile);
+     }
+ 
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxElementTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxElementTest.java
+@@ -278,7 +278,7 @@
+         rule.setState(FirewallRule.State.Revoke);
+         Network.Service service = new Network.Service("service1", new Network.Capability("capability"));
+         VpcVO vpcVO = Mockito.mock(VpcVO.class);
+-        when(vpcDao.findById(1L)).thenReturn(vpcVO);
++        NsxMockVpcDaoForFindById.stubFindById(vpcDao, 1L, vpcVO);
+         when(vpcVO.getDomainId()).thenReturn(2L);
+         IPAddressVO ipAddress = new IPAddressVO(new Ip("10.1.13.10"), 1L, 1L, 1L,false);
+         when(ApiDBUtils.findIpAddressById(anyLong())).thenReturn(ipAddress);
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisMockVpcDaoForFindById.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisMockVpcDaoForFindById.java
+@@ -0,0 +1,15 @@
++package org.apache.cloudstack.service;
++
++import com.cloud.network.vpc.VpcVO;
++import com.cloud.network.vpc.dao.VpcDao;
++
++import org.mockito.Mockito;
++
++public final class NetrisMockVpcDaoForFindById {
++    private NetrisMockVpcDaoForFindById() {
++    }
++
++    public static void stubFindById(VpcDao vpcDao, long vpcId, VpcVO vpc) {
++        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpc);
++    }
++}
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxMockVpcDaoForFindById.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxMockVpcDaoForFindById.java
+@@ -0,0 +1,15 @@
++package org.apache.cloudstack.service;
++
++import com.cloud.network.vpc.VpcVO;
++import com.cloud.network.vpc.dao.VpcDao;
++
++import org.mockito.Mockito;
++
++public final class NsxMockVpcDaoForFindById {
++    private NsxMockVpcDaoForFindById() {
++    }
++
++    public static void stubFindById(VpcDao vpcDao, long vpcId, VpcVO vpc) {
++        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpc);
++    }
++}

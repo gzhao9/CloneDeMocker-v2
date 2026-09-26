@@ -1,0 +1,44 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
+@@ -242,13 +242,12 @@
+         Network network = Mockito.mock(Network.class);
+         NicProfile nicProfile = Mockito.mock(NicProfile.class);
+         VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+-        VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
+         Pair<String, String> dns = new Pair<>("10.1.5.1", "8.8.8.8");
+         String macAddress = "00:00:00:11:1D:1E:CD";
+ 
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
++        VirtualMachine virtualMachine = createMockVirtualMachine(VirtualMachine.Type.User);
+         when(vmProfile.getVirtualMachine()).thenReturn(virtualMachine);
+-        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.User);
+         when(networkModel.getNetworkIp4Dns(any(Network.class), nullable(DataCenter.class))).thenReturn(dns);
+         when(nicProfile.getMacAddress()).thenReturn(macAddress);
+         when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
+@@ -262,14 +261,13 @@
+         Network network = Mockito.mock(Network.class);
+         NicProfile nicProfile = Mockito.mock(NicProfile.class);
+         VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+-        VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
+         Pair<String, String> dns = new Pair<>("10.1.5.1", "8.8.8.8");
+         String macAddress = "00:00:00:11:1D:1E:CD";
+ 
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(vmProfile.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
++        VirtualMachine virtualMachine = createMockVirtualMachine(VirtualMachine.Type.DomainRouter);
+         when(vmProfile.getVirtualMachine()).thenReturn(virtualMachine);
+-        when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+         when(network.getId()).thenReturn(2L);
+         when(nicProfile.getMacAddress()).thenReturn(macAddress);
+         when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
+@@ -326,4 +324,10 @@
+         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class),
+                 anyLong());
+     }
++
++    private static VirtualMachine createMockVirtualMachine(VirtualMachine.Type type) {
++        VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
++        when(virtualMachine.getType()).thenReturn(type);
++        return virtualMachine;
++    }
+ }

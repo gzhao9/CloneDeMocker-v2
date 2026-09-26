@@ -1,0 +1,84 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxElementTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxElementTest.java
+@@ -244,7 +244,7 @@
+         when(ipAddressDao.findByIdIncludingRemoved(anyLong())).thenReturn(ipAddress);
+         when(vmInstanceDao.findByIdIncludingRemoved(anyLong())).thenReturn(vm);
+         when(networkModel.getNicInNetworkIncludingRemoved(anyLong(), anyLong())).thenReturn(nic);
+-        when(vpcDao.findById(anyLong())).thenReturn(vpc);
++        MockVpcDaoWithFindById.mockFindById(vpcDao, vpc);
+         when(vpc.getId()).thenReturn(1L);
+         when(vpc.getName()).thenReturn("vpc1");
+         when(nsxService.createStaticNatRule(anyLong(), anyLong(), anyLong(), anyLong(), anyString(), anyBoolean(), anyLong(), anyString(), anyString())).thenReturn(true);
+@@ -290,7 +290,7 @@
+     @Test
+     public void testGetVpcOrNetworkReturnsVpcIfVpcIdPresent() {
+         VpcVO vpc = new VpcVO();
+-        when(vpcDao.findById(anyLong())).thenReturn(vpc);
++        MockVpcDaoWithFindById.mockFindById(vpcDao, vpc);
+ 
+         Pair<VpcVO, NetworkVO> vpcNetworkPair = nsxElement.getVpcOrNetwork(1L, 1L);
+         assertNotNull(vpcNetworkPair.first());
+@@ -377,7 +377,7 @@
+         VpcVO vpc = Mockito.mock(VpcVO.class);
+ 
+         IPAddressVO ipAddress = new IPAddressVO(new Ip("10.1.13.10"), 1L, 1L, 1L,false);
+-        when(vpcDao.findById(anyLong())).thenReturn(vpc);
++        MockVpcDaoWithFindById.mockFindById(vpcDao, vpc);
+         when(vpc.getDomainId()).thenReturn(2L);
+         when(vpc.getAccountId()).thenReturn(5L);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddress);
+@@ -400,7 +400,7 @@
+         VpcVO vpc = Mockito.mock(VpcVO.class);
+ 
+         IPAddressVO ipAddress = new IPAddressVO(new Ip("10.1.13.10"), 1L, 1L, 1L,false);
+-        when(vpcDao.findById(anyLong())).thenReturn(vpc);
++        MockVpcDaoWithFindById.mockFindById(vpcDao, vpc);
+         when(vpc.getDomainId()).thenReturn(2L);
+         when(vpc.getAccountId()).thenReturn(5L);
+         when(ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(ipAddress);
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
+@@ -155,7 +155,7 @@
+         when(plan.getDataCenterId()).thenReturn(1L);
+         when(plan.getPhysicalNetworkId()).thenReturn(1L);
+ 
+-        when(vpcDao.findById(anyLong())).thenReturn(vpcVO);
++        MockVpcDaoWithFindById.mockFindById(vpcDao, vpcVO);
+ 
+         when(vpcVO.getName()).thenReturn("VPC01");
+ 
+@@ -278,7 +278,7 @@
+         when(network.getVpcId()).thenReturn(51L);
+         when(dcDao.findById(anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+         when(accountDao.findById(anyLong())).thenReturn(Mockito.mock(AccountVO.class));
+-        when(vpcDao.findById(anyLong())).thenReturn(Mockito.mock(VpcVO.class));
++        MockVpcDaoWithFindById.mockFindById(vpcDao, Mockito.mock(VpcVO.class));
+         when(domainDao.findById(anyLong())).thenReturn(Mockito.mock(DomainVO.class));
+         when(nicProfile.getIPv4Address()).thenReturn("10.1.13.10");
+         when(nsxControllerUtils.sendNsxCommand(any(CreateNsxDhcpRelayConfigCommand.class),
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
+@@ -160,7 +160,7 @@
+ 
+         when(profile.getIPv4Address()).thenReturn(publicIpVR);
+         when(ipAddressDao.findByIp(anyString())).thenReturn(srcNatIpOnVR);
+-        when(vpcDao.findById(anyLong())).thenReturn(vpcVO);
++        MockVpcDaoWithFindById.mockFindById(vpcDao, vpcVO);
+         when(ipAddressDao.listByAssociatedVpc(12L, true)).thenReturn(sourceNatList);
+         when(vlanDetailsDao.findDetail(anyLong(), anyString())).thenReturn(vlanDetailVO);
+         when(vpcVO.getVpcOfferingId()).thenReturn(12L);
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/MockVpcDaoWithFindById.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/MockVpcDaoWithFindById.java
+@@ -0,0 +1,12 @@
++package org.apache.cloudstack.service;
++
++import org.mockito.Mockito;
++
++import com.cloud.network.vpc.VpcVO;
++import com.cloud.network.vpc.dao.VpcDao;
++
++public class MockVpcDaoWithFindById {
++    public static void mockFindById(VpcDao vpcDao, VpcVO vpc) {
++        Mockito.when(vpcDao.findById(Mockito.anyLong())).thenReturn(vpc);
++    }
++}
