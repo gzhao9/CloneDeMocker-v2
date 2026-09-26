@@ -1,0 +1,173 @@
+--- a/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/CiscoVnmcElementTest.java
++++ b/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/CiscoVnmcElementTest.java
+@@ -93,7 +93,7 @@
+     CiscoVnmcElement _element = new CiscoVnmcElement();
+     AgentManager _agentMgr = mock(AgentManager.class);
+     NetworkOrchestrationService _networkMgr = mock(NetworkOrchestrationService.class);
+-    NetworkModel _networkModel = mock(NetworkModel.class);
++    NetworkModel _networkModel;
+     HostDao _hostDao = mock(HostDao.class);
+     NetworkServiceMapDao _ntwkSrvcDao = mock(NetworkServiceMapDao.class);
+     ConfigurationManager _configMgr = mock(ConfigurationManager.class);
+@@ -111,6 +111,7 @@
+         _element._resourceMgr = mock(ResourceManager.class);
+         _element._agentMgr = _agentMgr;
+         _element._networkMgr = _networkMgr;
++        _networkModel = createMockNetworkModel(Provider.CiscoVnmc, 1L, null);
+         _element._networkModel = _networkModel;
+         _element._hostDao = _hostDao;
+         _element._configMgr = _configMgr;
+@@ -122,8 +123,8 @@
+         _element._vlanDao = _vlanDao;
+         _element._entityMgr = _entityMgr;
+ 
+-        // Standard responses
+-        when(_networkModel.isProviderForNetwork(Provider.CiscoVnmc, 1L)).thenReturn(true);
++
++
+ 
+         _element.configure("CiscoVnmcTestElement", Collections.<String, Object> emptyMap());
+     }
+@@ -280,8 +281,8 @@
+         IpAddress ipAddress = mock(IpAddress.class);
+         when(ipAddress.getAddress()).thenReturn(ip);
+ 
++        _networkModel = createMockNetworkModel(Provider.CiscoVnmc, network.getId(), Service.Firewall);
+         when(_networkModel.getIp(anyLong())).thenReturn(ipAddress);
+-        when(_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, Provider.CiscoVnmc)).thenReturn(true);
+ 
+         List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
+         devices.add(mock(CiscoVnmcControllerVO.class));
+@@ -325,8 +326,8 @@
+         when(ipAddress.getAddress()).thenReturn(ip);
+         when(ipAddress.getVlanId()).thenReturn(1L);
+ 
++        _networkModel = createMockNetworkModel(Provider.CiscoVnmc, network.getId(), Service.PortForwarding);
+         when(_networkModel.getIp(anyLong())).thenReturn(ipAddress);
+-        when(_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.PortForwarding, Provider.CiscoVnmc)).thenReturn(true);
+ 
+         List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
+         devices.add(mock(CiscoVnmcControllerVO.class));
+@@ -375,8 +376,8 @@
+         when(ipAddress.getAddress()).thenReturn(ip);
+         when(ipAddress.getVlanId()).thenReturn(1L);
+ 
++        _networkModel = createMockNetworkModel(Provider.CiscoVnmc, network.getId(), Service.StaticNat);
+         when(_networkModel.getIp(anyLong())).thenReturn(ipAddress);
+-        when(_networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.StaticNat, Provider.CiscoVnmc)).thenReturn(true);
+ 
+         List<CiscoVnmcControllerVO> devices = new ArrayList<CiscoVnmcControllerVO>();
+         devices.add(mock(CiscoVnmcControllerVO.class));
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/element/NiciraNvpElementTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/element/NiciraNvpElementTest.java
+@@ -159,7 +159,7 @@
+         when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+         when(network.getGuestType()).thenReturn(GuestType.Isolated);
+ 
+-        when(networkModel.isProviderForNetwork(Provider.NiciraNvp, NETWORK_ID)).thenReturn(true);
++        element.networkModel = networkModel = MockNetworkModel.createMockNetworkModel(Provider.NiciraNvp, NETWORK_ID, Service.SourceNat);
+         when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
+ 
+         final NiciraNvpDeviceVO device = mock(NiciraNvpDeviceVO.class);
+@@ -186,8 +186,6 @@
+         when(context.getDomain()).thenReturn(dom);
+         when(context.getAccount()).thenReturn(acc);
+ 
+-        //ISOLATED NETWORK
+-        when(networkModel.isProviderSupportServiceInNetwork(NETWORK_ID, Service.SourceNat, Provider.NiciraNvp)).thenReturn(true);
+ 
+         PublicIp sourceNatIp = mock(PublicIp.class);
+         Ip ip = mock(Ip.class);
+--- a/server/src/test/java/com/cloud/network/element/VirtualRouterElementTest.java
++++ b/server/src/test/java/com/cloud/network/element/VirtualRouterElementTest.java
+@@ -476,9 +476,9 @@
+         lenient().when(network.getDataCenterId()).thenReturn(dataCenterId);
+         when(network.getVpcId()).thenReturn(null);
+ 
++        virtualRouterElement._networkMdl = MockNetworkModel.createMockNetworkModel(Network.Provider.VirtualRouter, networkId, null);
+         when(virtualRouterElement._networkMdl.getPhysicalNetworkId(network)).thenReturn(physicalNetworkId);
+         when(virtualRouterElement._networkMdl.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName())).thenReturn(true);
+-        when(virtualRouterElement._networkMdl.isProviderForNetwork(Network.Provider.VirtualRouter, networkId)).thenReturn(true);
+ 
+         assertTrue(virtualRouterElement.canHandle(network, null));
+     }
+@@ -506,9 +506,9 @@
+ 
+         lenient().when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+ 
++        virtualRouterElement._networkMdl = MockNetworkModel.createMockNetworkModel(Network.Provider.VirtualRouter, networkId, service);
+         when(virtualRouterElement._networkMdl.getPhysicalNetworkId(network)).thenReturn(physicalNetworkId);
+         when(virtualRouterElement._networkMdl.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName())).thenReturn(true);
+-        when(virtualRouterElement._networkMdl.isProviderSupportServiceInNetwork(networkId, service, Network.Provider.VirtualRouter)).thenReturn(true);
+ 
+         lenient().when(virtualRouterElement._dcDao.findById(dataCenterId)).thenReturn(Mockito.mock(DataCenterVO.class));
+ 
+--- a/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/MockNetworkModel.java
++++ b/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/MockNetworkModel.java
+@@ -0,0 +1,20 @@
++package com.cloud.network.element;
++
++import com.cloud.network.Network;
++import com.cloud.network.NetworkModel;
++import org.mockito.Mockito;
++
++public final class MockNetworkModel {
++    private MockNetworkModel() {
++    }
++
++    public static NetworkModel createMockNetworkModel(Network.Provider provider, long networkId,
++            Network.Service service) {
++        NetworkModel networkModel = Mockito.mock(NetworkModel.class);
++        Mockito.when(networkModel.isProviderForNetwork(provider, networkId)).thenReturn(true);
++        if (service != null) {
++            Mockito.when(networkModel.isProviderSupportServiceInNetwork(networkId, service, provider)).thenReturn(true);
++        }
++        return networkModel;
++    }
++}
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/element/MockNetworkModel.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/element/MockNetworkModel.java
+@@ -0,0 +1,20 @@
++package com.cloud.network.element;
++
++import com.cloud.network.Network;
++import com.cloud.network.NetworkModel;
++import org.mockito.Mockito;
++
++public final class MockNetworkModel {
++    private MockNetworkModel() {
++    }
++
++    public static NetworkModel createMockNetworkModel(Network.Provider provider, long networkId,
++            Network.Service service) {
++        NetworkModel networkModel = Mockito.mock(NetworkModel.class);
++        Mockito.when(networkModel.isProviderForNetwork(provider, networkId)).thenReturn(true);
++        if (service != null) {
++            Mockito.when(networkModel.isProviderSupportServiceInNetwork(networkId, service, provider)).thenReturn(true);
++        }
++        return networkModel;
++    }
++}
+--- a/server/src/test/java/com/cloud/network/element/MockNetworkModel.java
++++ b/server/src/test/java/com/cloud/network/element/MockNetworkModel.java
+@@ -0,0 +1,20 @@
++package com.cloud.network.element;
++
++import com.cloud.network.Network;
++import com.cloud.network.NetworkModel;
++import org.mockito.Mockito;
++
++public final class MockNetworkModel {
++    private MockNetworkModel() {
++    }
++
++    public static NetworkModel createMockNetworkModel(Network.Provider provider, long networkId,
++            Network.Service service) {
++        NetworkModel networkModel = Mockito.mock(NetworkModel.class);
++        Mockito.when(networkModel.isProviderForNetwork(provider, networkId)).thenReturn(true);
++        if (service != null) {
++            Mockito.when(networkModel.isProviderSupportServiceInNetwork(networkId, service, provider)).thenReturn(true);
++        }
++        return networkModel;
++    }
++}

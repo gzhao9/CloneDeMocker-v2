@@ -1,0 +1,92 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxApiClientTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxApiClientTest.java
+@@ -145,11 +145,10 @@
+         String lbServerPoolName = NsxControllerUtils.getServerPoolName(TIER_1_GATEWAY_NAME, 1L);
+         List<NsxLoadBalancerMember> memberList = List.of(new NsxLoadBalancerMember(1L, "10.0.0.1", 80));
+ 
+-        LbPools lbPools = Mockito.mock(LbPools.class);
++        LbPools lbPools = createMockLbPools(lbServerPoolName);
+         LbMonitorProfiles lbMonitorProfiles = mockLbMonitorProfiles();
+ 
+         Mockito.when(nsxService.apply(LbPools.class)).thenReturn(lbPools);
+-        Mockito.when(lbPools.get(lbServerPoolName)).thenThrow(new NotFound(null, null));
+ 
+         client.createNsxLbServerPool(memberList, TIER_1_GATEWAY_NAME, lbServerPoolName, "roundrobin", "80", "TCP");
+ 
+@@ -162,7 +161,7 @@
+         String lbServerPoolName = NsxControllerUtils.getServerPoolName(TIER_1_GATEWAY_NAME, 1L);
+         List<NsxLoadBalancerMember> memberList = List.of(new NsxLoadBalancerMember(1L, "10.0.0.1", 80));
+ 
+-        LbPools lbPools = Mockito.mock(LbPools.class);
++        LbPools lbPools = createMockLbPools(lbServerPoolName);
+         LbMonitorProfiles lbMonitorProfiles = Mockito.mock(LbMonitorProfiles.class);
+         Structure monitorStructure = Mockito.mock(Structure.class, Mockito.RETURNS_DEEP_STUBS);
+ 
+@@ -170,7 +169,6 @@
+         Mockito.when(nsxService.apply(LbMonitorProfiles.class)).thenReturn(lbMonitorProfiles);
+         Mockito.when(lbMonitorProfiles.get(anyString())).thenThrow(new NotFound(null, null)).thenReturn(monitorStructure);
+         Mockito.when(monitorStructure._getDataValue().getField("path").toString()).thenReturn("/infra/lb-monitor-profiles/test");
+-        Mockito.when(lbPools.get(lbServerPoolName)).thenThrow(new NotFound(null, null));
+ 
+         client.createNsxLbServerPool(memberList, TIER_1_GATEWAY_NAME, lbServerPoolName, "roundrobin", "80", "TCP");
+ 
+@@ -183,7 +181,7 @@
+         String lbServerPoolName = NsxControllerUtils.getServerPoolName(TIER_1_GATEWAY_NAME, 1L);
+         List<NsxLoadBalancerMember> memberList = List.of(new NsxLoadBalancerMember(1L, "10.0.0.1", 80));
+ 
+-        LbPools lbPools = Mockito.mock(LbPools.class);
++        LbPools lbPools = createMockLbPools(lbServerPoolName);
+         LbMonitorProfiles lbMonitorProfiles = Mockito.mock(LbMonitorProfiles.class);
+         Structure monitorStructure = Mockito.mock(Structure.class, Mockito.RETURNS_DEEP_STUBS);
+ 
+@@ -191,7 +189,6 @@
+         Mockito.when(nsxService.apply(LbMonitorProfiles.class)).thenReturn(lbMonitorProfiles);
+         Mockito.when(lbMonitorProfiles.get(anyString())).thenThrow(new NotFound(null, null)).thenReturn(monitorStructure);
+         Mockito.when(monitorStructure._getDataValue().getField("path").toString()).thenReturn("/infra/lb-monitor-profiles/test");
+-        Mockito.when(lbPools.get(lbServerPoolName)).thenThrow(new NotFound(null, null));
+ 
+         client.createNsxLbServerPool(memberList, TIER_1_GATEWAY_NAME, lbServerPoolName, "roundrobin", "80", "UDP");
+ 
+@@ -297,11 +294,9 @@
+         String lbServerPoolName = NsxControllerUtils.getServerPoolName(TIER_1_GATEWAY_NAME, 1L);
+         List<NsxLoadBalancerMember> memberList = List.of(new NsxLoadBalancerMember(1L, "10.0.0.1", 80));
+ 
+-        LbPools lbPools = Mockito.mock(LbPools.class);
+-
+         mockLbMonitorProfiles();
+-        Mockito.when(nsxService.apply(LbPools.class)).thenReturn(lbPools);
+-        Mockito.when(lbPools.get(lbServerPoolName)).thenThrow(new NotFound(null, null));
++        LbPools lbPools = createMockLbPools(lbServerPoolName);
++        Mockito.when(nsxService.apply(LbPools.class)).thenReturn(lbPools);
+ 
+         client.createNsxLbServerPool(memberList, TIER_1_GATEWAY_NAME, lbServerPoolName, "roundrobin", "80", "TCP");
+ 
+@@ -374,14 +369,13 @@
+         String lbServerPoolName = NsxControllerUtils.getServerPoolName(TIER_1_GATEWAY_NAME, 1L);
+         List<NsxLoadBalancerMember> memberList = List.of(new NsxLoadBalancerMember(1L, "10.0.0.1", 80));
+ 
+-        LbPools lbPools = Mockito.mock(LbPools.class);
++        LbPools lbPools = createMockLbPools(lbServerPoolName);
+         Structure errorData = Mockito.mock(Structure.class);
+         ApiError apiError = new ApiError();
+         apiError.setErrorData(errorData);
+ 
+         mockLbMonitorProfiles();
+         Mockito.when(nsxService.apply(LbPools.class)).thenReturn(lbPools);
+-        Mockito.when(lbPools.get(lbServerPoolName)).thenThrow(new NotFound(null, null));
+         when(errorData._convertTo(ApiError.class)).thenReturn(apiError);
+         doThrow(new Error(List.of(), errorData)).when(lbPools).patch(eq(lbServerPoolName), any(LBPool.class));
+ 
+@@ -389,6 +383,12 @@
+             client.createNsxLbServerPool(memberList, TIER_1_GATEWAY_NAME, lbServerPoolName, "roundrobin", "80", "TCP");
+         });
+         assertTrue(thrownException.getMessage().startsWith("Failed to create NSX LB server pool, due to"));
++    }
++
++    private static LbPools createMockLbPools(String lbServerPoolName) {
++        LbPools lbPools = Mockito.mock(LbPools.class);
++        Mockito.when(lbPools.get(lbServerPoolName)).thenThrow(new NotFound(null, null));
++        return lbPools;
+     }
+ 
+     private LbMonitorProfiles mockLbMonitorProfiles() {

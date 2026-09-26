@@ -1,0 +1,71 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
+@@ -147,7 +147,7 @@
+ 
+         when(physicalNetwork.getIsolationMethods()).thenReturn(List.of("NSX"));
+ 
+-        when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
++        offering = MockNetworkOffering.createMockNetworkOffering(Networks.TrafficType.Guest);
+         when(offering.getGuestType()).thenReturn(Network.GuestType.Isolated);
+         when(offering.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.NATTED);
+         when(offering.getId()).thenReturn(1L);
+@@ -326,4 +326,17 @@
+         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class),
+                 anyLong());
+     }
++
++    public final class MockNetworkOffering {
++        private MockNetworkOffering() {
++        }
++
++        public static com.cloud.offering.NetworkOffering createMockNetworkOffering(
++                com.cloud.network.Networks.TrafficType trafficType) {
++            com.cloud.offering.NetworkOffering offering =
++                    Mockito.mock(com.cloud.offering.NetworkOffering.class);
++            when(offering.getTrafficType()).thenReturn(trafficType);
++            return offering;
++        }
++    }
+ }
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
+@@ -97,8 +97,7 @@
+         ReflectionTestUtils.setField(guru, "nsxControllerUtils", nsxControllerUtils);
+         ReflectionTestUtils.setField(guru, "networkModel", networkModel);
+ 
+-        offering = Mockito.mock(NetworkOffering.class);
+-        when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Public);
++        offering = MockNetworkOffering.createMockNetworkOffering(Networks.TrafficType.Public);
+         when(offering.isSystemOnly()).thenReturn(true);
+         when(networkModel.isProviderForNetworkOffering(eq(Network.Provider.Nsx), anyLong())).thenReturn(true);
+     }
+@@ -110,10 +109,9 @@
+ 
+     @Test
+     public void testCannotHandle() {
+-        NetworkOffering offering = Mockito.mock(NetworkOffering.class);
+ 
+-        when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+ 
++        NetworkOffering offering = MockNetworkOffering.createMockNetworkOffering(Networks.TrafficType.Guest);
+         Assert.assertFalse(guru.canHandle(offering));
+     }
+ 
+@@ -179,4 +177,17 @@
+                 anyLong());
+ 
+     }
++
++    public final class MockNetworkOffering {
++        private MockNetworkOffering() {
++        }
++
++        public static com.cloud.offering.NetworkOffering createMockNetworkOffering(
++                com.cloud.network.Networks.TrafficType trafficType) {
++            com.cloud.offering.NetworkOffering offering =
++                    Mockito.mock(com.cloud.offering.NetworkOffering.class);
++            when(offering.getTrafficType()).thenReturn(trafficType);
++            return offering;
++        }
++    }
+ }

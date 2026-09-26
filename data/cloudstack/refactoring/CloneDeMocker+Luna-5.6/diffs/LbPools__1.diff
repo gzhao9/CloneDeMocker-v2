@@ -1,0 +1,72 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxApiClientTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxApiClientTest.java
+@@ -212,11 +212,10 @@
+                 createPoolMember(1L, "10.0.0.1", 80)
+         );
+ 
+-        LbPools lbPools = Mockito.mock(LbPools.class);
+         LBPool existingPool = Mockito.mock(LBPool.class);
+ 
+-        Mockito.when(nsxService.apply(LbPools.class)).thenReturn(lbPools);
+-        Mockito.when(lbPools.get(lbServerPoolName)).thenReturn(existingPool);
++        LbPools lbPools = createMockLbPools(lbServerPoolName, existingPool);
++        Mockito.when(nsxService.apply(LbPools.class)).thenReturn(lbPools);
+         Mockito.when(existingPool.getMembers()).thenReturn(sameMembers);
+ 
+         client.createNsxLbServerPool(memberList, TIER_1_GATEWAY_NAME, lbServerPoolName, "roundrobin", "80", "TCP");
+@@ -229,11 +228,10 @@
+     public void testCreateNsxLbServerPoolPoolExistsWithoutMembersAndEmptyUpdateSkipsPatch() {
+         String lbServerPoolName = NsxControllerUtils.getServerPoolName(TIER_1_GATEWAY_NAME, 1L);
+ 
+-        LbPools lbPools = Mockito.mock(LbPools.class);
+         LBPool existingPool = Mockito.mock(LBPool.class);
+ 
+-        Mockito.when(nsxService.apply(LbPools.class)).thenReturn(lbPools);
+-        Mockito.when(lbPools.get(lbServerPoolName)).thenReturn(existingPool);
++        LbPools lbPools = createMockLbPools(lbServerPoolName, existingPool);
++        Mockito.when(nsxService.apply(LbPools.class)).thenReturn(lbPools);
+         Mockito.when(existingPool.getMembers()).thenReturn(null);
+ 
+         client.createNsxLbServerPool(List.of(), TIER_1_GATEWAY_NAME, lbServerPoolName, "roundrobin", "80", "TCP");
+@@ -251,11 +249,10 @@
+                 new NsxLoadBalancerMember(2L, "10.0.0.2", 80)
+         );
+ 
+-        LbPools lbPools = Mockito.mock(LbPools.class);
+         LBPool existingPool = Mockito.mock(LBPool.class);
+-
+-        Mockito.when(nsxService.apply(LbPools.class)).thenReturn(lbPools);
+-        Mockito.when(lbPools.get(lbServerPoolName)).thenReturn(existingPool);
++        LbPools lbPools = createMockLbPools(lbServerPoolName, existingPool);
++
++        Mockito.when(nsxService.apply(LbPools.class)).thenReturn(lbPools);
+         Mockito.when(existingPool.getMembers()).thenReturn(List.of(
+                 createPoolMember(1L, "10.0.0.1", 80),
+                 createPoolMember(1L, "10.0.0.1", 80),
+@@ -277,12 +274,10 @@
+                 new NsxLoadBalancerMember(2L, "10.0.0.2", 80)
+         );
+ 
+-        LbPools lbPools = Mockito.mock(LbPools.class);
+         LBPool existingPool = Mockito.mock(LBPool.class);
+ 
+         mockLbMonitorProfiles();
+-        Mockito.when(nsxService.apply(LbPools.class)).thenReturn(lbPools);
+-        Mockito.when(lbPools.get(lbServerPoolName)).thenReturn(existingPool);
++        LbPools lbPools = createMockLbPools(lbServerPoolName, existingPool);
+         Mockito.when(existingPool.getMembers()).thenReturn(List.of(
+                 createPoolMember(1L, "10.0.0.10", 80)
+         ));
+@@ -391,6 +386,12 @@
+         assertTrue(thrownException.getMessage().startsWith("Failed to create NSX LB server pool, due to"));
+     }
+ 
++    private static LbPools createMockLbPools(String lbServerPoolName, LBPool existingPool) {
++        LbPools lbPools = Mockito.mock(LbPools.class);
++        Mockito.when(lbPools.get(lbServerPoolName)).thenReturn(existingPool);
++        return lbPools;
++    }
++
+     private LbMonitorProfiles mockLbMonitorProfiles() {
+         LbMonitorProfiles lbMonitorProfiles = Mockito.mock(LbMonitorProfiles.class);
+         Structure monitorStructure = Mockito.mock(Structure.class, Mockito.RETURNS_DEEP_STUBS);

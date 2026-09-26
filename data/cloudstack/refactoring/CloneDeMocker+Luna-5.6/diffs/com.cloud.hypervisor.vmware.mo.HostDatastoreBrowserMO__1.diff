@@ -1,0 +1,66 @@
+--- a/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/vmware/resource/VmwareResourceTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/vmware/resource/VmwareResourceTest.java
+@@ -673,7 +673,6 @@
+     public void testExecuteWithValidPath() throws Exception {
+         // Setup
+         ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "valid/path", 0, 10);
+-        HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+         HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+         FileInfo fileInfo = mock(FileInfo.class);
+         List<FileInfo> fileInfoList = new ArrayList<>();
+@@ -682,7 +681,7 @@
+ 
+         doReturn(context).when(vmwareResource).getServiceContext(any());
+         doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+-        when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
++        HostDatastoreBrowserMO browserMo = createMockHostDatastoreBrowserMo(results);
+         when(results.getFile()).thenReturn(fileInfoList);
+         when(fileInfo.getPath()).thenReturn("file.txt");
+         when(fileInfo.getFileSize()).thenReturn(1L);
+@@ -752,7 +751,6 @@
+     public void testExecuteWithRootPath() throws Exception {
+         // Setup
+         ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "/", 0, 10);
+-        HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+         HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+         FileInfo fileInfo = mock(FileInfo.class);
+         List<FileInfo> fileInfoList = new ArrayList<>();
+@@ -761,7 +759,7 @@
+ 
+         doReturn(context).when(vmwareResource).getServiceContext();
+         doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+-        when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
++        HostDatastoreBrowserMO browserMo = createMockHostDatastoreBrowserMo(results);
+         when(results.getFile()).thenReturn(fileInfoList);
+         when(fileInfo.getPath()).thenReturn("file.txt");
+         when(fileInfo.getFileSize()).thenReturn(1L);
+@@ -797,7 +795,6 @@
+     public void testExecuteWithEmptyPath() throws Exception {
+         // Setup
+         ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "", 0, 10);
+-        HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+         HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+         FileInfo fileInfo = mock(FileInfo.class);
+         List<FileInfo> fileInfoList = new ArrayList<>();
+@@ -806,7 +803,7 @@
+ 
+         doReturn(context).when(vmwareResource).getServiceContext();
+         doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+-        when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
++        HostDatastoreBrowserMO browserMo = createMockHostDatastoreBrowserMo(results);
+         when(results.getFile()).thenReturn(fileInfoList);
+         when(fileInfo.getPath()).thenReturn("file.txt");
+         when(fileInfo.getFileSize()).thenReturn(1L);
+@@ -836,6 +833,12 @@
+         assertEquals(Collections.singletonList(false), answer.getIsDirs());
+         assertEquals(Collections.singletonList(1L), answer.getSizes());
+         assertEquals(Collections.singletonList(date.getTime()), answer.getLastModified());
++    }
++
++    private static HostDatastoreBrowserMO createMockHostDatastoreBrowserMo(HostDatastoreBrowserSearchResults results) {
++        HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
++        when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
++        return browserMo;
+     }
+ 
+     @Test

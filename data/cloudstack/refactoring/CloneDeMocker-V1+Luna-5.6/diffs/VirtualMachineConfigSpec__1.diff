@@ -1,0 +1,47 @@
+--- a/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/vmware/resource/VmwareResourceTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/vmware/resource/VmwareResourceTest.java
+@@ -842,15 +842,14 @@
+     public void testAddVirtualTPMDevice() throws Exception {
+         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+         VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+-        VirtualMachineConfigSpec vmConfigSpec = Mockito.mock(VirtualMachineConfigSpec.class);
+         Map<String, String> details = new HashMap<>();
+         details.put(ApiConstants.BootType.UEFI.toString(), "SECURE");
+         details.put(VmDetailConstants.VIRTUAL_TPM_ENABLED, "true");
+         when(vmSpec.getDetails()).thenReturn(details);
+         when(vmMo.getAllDeviceList()).thenReturn(new ArrayList<>());
+         List<VirtualDeviceConfigSpec> deviceChanges = Mockito.mock(List.class);
+-        when(vmConfigSpec.getDeviceChange()).thenReturn(deviceChanges);
+-
++
++        VirtualMachineConfigSpec vmConfigSpec = createMockVirtualMachineConfigSpec(deviceChanges);
+         vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec);
+         Mockito.verify(vmwareResource, Mockito.times(1)).addVirtualTPMDevice(vmConfigSpec);
+         Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
+@@ -860,7 +859,6 @@
+     public void testRemoveVirtualTPMDevice() throws Exception {
+         VirtualMachineMO vmMo = Mockito.mock(VirtualMachineMO.class);
+         VirtualMachineTO vmSpec = Mockito.mock(VirtualMachineTO.class);
+-        VirtualMachineConfigSpec vmConfigSpec = Mockito.mock(VirtualMachineConfigSpec.class);
+         Map<String, String> details = new HashMap<>();
+         details.put(ApiConstants.BootType.UEFI.toString(), "SECURE");
+         details.put(VmDetailConstants.VIRTUAL_TPM_ENABLED, "false");
+@@ -868,10 +866,16 @@
+         VirtualTPM tpm = new VirtualTPM();
+         when(vmMo.getAllDeviceList()).thenReturn(List.of(tpm));
+         List<VirtualDeviceConfigSpec> deviceChanges = Mockito.mock(List.class);
+-        when(vmConfigSpec.getDeviceChange()).thenReturn(deviceChanges);
+-
++
++        VirtualMachineConfigSpec vmConfigSpec = createMockVirtualMachineConfigSpec(deviceChanges);
+         vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec);
+         Mockito.verify(vmwareResource, Mockito.times(1)).removeVirtualTPMDevice(vmConfigSpec, tpm);
+         Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
+     }
++
++    private static VirtualMachineConfigSpec createMockVirtualMachineConfigSpec(List<VirtualDeviceConfigSpec> deviceChanges) {
++        VirtualMachineConfigSpec vmConfigSpec = Mockito.mock(VirtualMachineConfigSpec.class);
++        when(vmConfigSpec.getDeviceChange()).thenReturn(deviceChanges);
++        return vmConfigSpec;
++    }
+ }

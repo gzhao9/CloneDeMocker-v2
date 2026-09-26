@@ -1,0 +1,95 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -235,6 +235,8 @@
+     EntityManager entityMgr;
+     @Mock
+     NetworkModel networkModel;
++
++    private NetworkVO networkVOField;
+     @Mock
+     DomainDao domainDao;
+     @Mock
+@@ -280,6 +282,7 @@
+ 
+     @Before
+     public void setup() {
++        networkVOField = mock(NetworkVO.class);
+         closeable = MockitoAnnotations.openMocks(this);
+         tungstenService = new TungstenServiceImpl();
+         tungstenService.projectDao = projectDao;
+@@ -319,11 +322,10 @@
+     @Test
+     public void createTungstenFloatingIpTest() throws Exception {
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+-        NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer createTungstenFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
+         Ip ip = mock(Ip.class);
+ 
+-        when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(networkVO);
++        when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(networkVOField);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenFloatingIpCommand.class), anyLong())).thenReturn(createTungstenFloatingIpAnswer);
+         when(ipAddressVO.getAddress()).thenReturn(ip);
+ 
+@@ -333,10 +335,9 @@
+     @Test
+     public void deleteTungstenFloatingIpWithIpAddressTest() throws Exception {
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+-        NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer deleteTungstenFloatingIpAnswer = MockTungstenAnswerFactory.get(true);
+ 
+-        when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(networkVO);
++        when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(networkVOField);
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenFloatingIpCommand.class), anyLong())).thenReturn(deleteTungstenFloatingIpAnswer);
+ 
+         assertTrue(ReflectionTestUtils.invokeMethod(tungstenService, "deleteTungstenFloatingIp", 1L, ipAddressVO));
+@@ -927,7 +928,6 @@
+ 
+     @Test
+     public void listTungstenPolicyTest() {
+-        NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer listTungstenPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenNetworkPolicy tungstenNetworkPolicy = mock(TungstenNetworkPolicy.class);
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+@@ -935,7 +935,7 @@
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+-        when(networkDao.findById(anyLong())).thenReturn(networkVO);
++        when(networkDao.findById(anyLong())).thenReturn(networkVOField);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenPolicyCommand.class), anyLong())).thenReturn(listTungstenPolicyAnswer);
+         when(listTungstenPolicyAnswer.getTungstenModelList()).thenReturn(List.of(tungstenNetworkPolicy));
+         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
+@@ -1604,7 +1604,6 @@
+ 
+     @Test
+     public void addNetworkGatewayToLogicalRouterTest() {
+-        NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+         LogicalRouter logicalRouter = mock(LogicalRouter.class);
+@@ -1612,7 +1611,7 @@
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+-        when(networkDao.findByUuid(anyString())).thenReturn(networkVO);
++        when(networkDao.findByUuid(anyString())).thenReturn(networkVOField);
+         when(ipAddressManager.acquireLastGuestIpAddress(any(Network.class))).thenReturn("192.168.100.100");
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenNetworkGatewayToLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
+@@ -1641,7 +1640,6 @@
+ 
+     @Test
+     public void removeNetworkGatewayFromLogicalRouterTest() {
+-        NetworkVO networkVO = mock(NetworkVO.class);
+         TungstenAnswer tungstenAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO = mock(TungstenGuestNetworkIpAddressVO.class);
+         TungstenLogicalRouter tungstenLogicalRouter = mock(TungstenLogicalRouter.class);
+@@ -1650,7 +1648,7 @@
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+-        when(networkDao.findByUuid(anyString())).thenReturn(networkVO);
++        when(networkDao.findByUuid(anyString())).thenReturn(networkVOField);
+         when(tungstenGuestNetworkIpAddressDao.findByNetworkAndLogicalRouter(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenNetworkGatewayFromLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);

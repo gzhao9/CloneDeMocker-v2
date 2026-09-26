@@ -1,0 +1,80 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -1317,14 +1317,13 @@
+     public void createTungstenFirewallPolicyTest() {
+         TungstenAnswer createTungstenFirewallPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         FirewallPolicy firewallPolicy = mock(FirewallPolicy.class);
+-        ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
++        ObjectReference<FirewallSequence> firewallSequenceObjectReference = createMockFirewallSequenceObjectReference();
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenFirewallPolicyCommand.class), anyLong())).thenReturn(createTungstenFirewallPolicyAnswer);
+         when(createTungstenFirewallPolicyAnswer.getApiObjectBase()).thenReturn(firewallPolicy);
+         when(firewallPolicy.getFirewallRule()).thenReturn(List.of(firewallSequenceObjectReference));
+-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(List.of("firewallrule"));
+ 
+         assertNotNull(tungstenService.createTungstenFirewallPolicy(1L, "f5ba12c8-d4c5-4c20-a57d-67a9b6fca652","test", 1));
+     }
+@@ -1334,7 +1333,6 @@
+         TungstenAnswer createTungstenApplicationPolicySetAnswer = MockTungstenAnswerFactory.get(true);
+         ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
+         ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
+-        ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+@@ -1342,8 +1340,8 @@
+         when(createTungstenApplicationPolicySetAnswer.getApiObjectBase()).thenReturn(applicationPolicySet);
+         when(applicationPolicySet.getTag()).thenReturn(List.of(objectReference));
+         when(objectReference.getReferredName()).thenReturn(List.of("tag"));
++        ObjectReference<FirewallSequence> firewallSequenceObjectReference = createMockFirewallSequenceObjectReference();
+         when(applicationPolicySet.getFirewallPolicy()).thenReturn(List.of(firewallSequenceObjectReference));
+-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(List.of("firewallrule"));
+ 
+         assertNotNull(tungstenService.createTungstenApplicationPolicySet(1L, "test"));
+     }
+@@ -1353,7 +1351,7 @@
+         TungstenAnswer listTungstenApplicationPolicySetAnswer = MockTungstenAnswerFactory.get(true);
+         ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
+         ObjectReference<ApiPropertyBase> objectReference = mock(ObjectReference.class);
+-        ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
++        ObjectReference<FirewallSequence> firewallSequenceObjectReference = createMockFirewallSequenceObjectReference();
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+@@ -1362,7 +1360,6 @@
+         when(applicationPolicySet.getTag()).thenReturn(List.of(objectReference));
+         when(objectReference.getReferredName()).thenReturn(List.of("tag"));
+         when(applicationPolicySet.getFirewallPolicy()).thenReturn(List.of(firewallSequenceObjectReference));
+-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(List.of("firewallrule"));
+ 
+         assertNotNull(tungstenService.listTungstenApplicationPolicySet(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
+@@ -1371,14 +1368,13 @@
+     public void listTungstenFirewallPolicyTest() {
+         TungstenAnswer listTungstenFirewallPolicyAnswer = MockTungstenAnswerFactory.get(true);
+         FirewallPolicy firewallPolicy = mock(FirewallPolicy.class);
+-        ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenFirewallPolicyCommand.class), anyLong())).thenReturn(listTungstenFirewallPolicyAnswer);
+         doReturn(List.of(firewallPolicy)).when(listTungstenFirewallPolicyAnswer).getApiObjectBaseList();
++        ObjectReference<FirewallSequence> firewallSequenceObjectReference = createMockFirewallSequenceObjectReference();
+         when(firewallPolicy.getFirewallRule()).thenReturn(List.of(firewallSequenceObjectReference));
+-        when(firewallSequenceObjectReference.getReferredName()).thenReturn(List.of("firewallrule"));
+ 
+         assertNotNull(tungstenService.listTungstenFirewallPolicy(1L, "948f421c-edde-4518-a391-09299cc25dc2", "8b4637b6-5629-46de-8fb2-d0b0502bfa85"));
+     }
+@@ -1668,4 +1664,10 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    private static ObjectReference<FirewallSequence> createMockFirewallSequenceObjectReference() {
++        ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
++        when(firewallSequenceObjectReference.getReferredName()).thenReturn(List.of("firewallrule"));
++        return firewallSequenceObjectReference;
++    }
+ }
