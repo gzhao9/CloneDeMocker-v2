@@ -1,0 +1,124 @@
+--- a/processing/src/test/java/org/apache/druid/data/input/impl/CloudObjectInputSourceTest.java
++++ b/processing/src/test/java/org/apache/druid/data/input/impl/CloudObjectInputSourceTest.java
+@@ -75,10 +75,7 @@
+   @Test
+   public void testGetUris()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, URIS, null, null, null, SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
++    final CloudObjectInputSource inputSource = createInputSource(URIS, null, null, null);
+ 
+     Assert.assertEquals(
+         URIS,
+@@ -89,10 +86,7 @@
+   @Test
+   public void testGetPrefixes()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, null, PREFIXES, null, null, SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
++    final CloudObjectInputSource inputSource = createInputSource(null, PREFIXES, null, null);
+ 
+     Assert.assertEquals(
+         PREFIXES,
+@@ -103,10 +97,7 @@
+   @Test
+   public void testGetObjectGlob()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, URIS, null, null, "**.parquet", SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
++    final CloudObjectInputSource inputSource = createInputSource(URIS, null, null, "**.parquet");
+ 
+     Assert.assertEquals("**.parquet", inputSource.getObjectGlob());
+   }
+@@ -114,15 +105,8 @@
+   @Test
+   public void testInequality()
+   {
+-    CloudObjectInputSource inputSource1 = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, URIS, null, null, "**.parquet", SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
+-
+-    CloudObjectInputSource inputSource2 = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, URIS, null, null, "**.csv", SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
++    final CloudObjectInputSource inputSource1 = createInputSource(URIS, null, null, "**.parquet");
++    final CloudObjectInputSource inputSource2 = createInputSource(URIS, null, null, "**.csv");
+ 
+     Assert.assertEquals("**.parquet", inputSource1.getObjectGlob());
+     Assert.assertEquals("**.csv", inputSource2.getObjectGlob());
+@@ -132,10 +116,7 @@
+   @Test
+   public void testWithUrisFilter()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, URIS2, null, null, "**.csv", SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
++    final CloudObjectInputSource inputSource = createInputSource(URIS2, null, null, "**.csv");
+     Mockito.when(inputSource.getSplitWidget()).thenReturn(new MockSplitWidget());
+ 
+     Stream<InputSplit<List<CloudObjectLocation>>> splits = inputSource.createSplits(
+@@ -158,10 +139,7 @@
+   @Test
+   public void testWithUris()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, URIS, null, null, null, SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
++    final CloudObjectInputSource inputSource = createInputSource(URIS, null, null, null);
+     Mockito.when(inputSource.getSplitWidget()).thenReturn(new MockSplitWidget());
+ 
+     Stream<InputSplit<List<CloudObjectLocation>>> splits = inputSource.createSplits(
+@@ -184,10 +162,7 @@
+   @Test
+   public void testWithObjectsFilter()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, null, null, OBJECTS_BEFORE_GLOB, "**.csv", SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
++    final CloudObjectInputSource inputSource = createInputSource(null, null, OBJECTS_BEFORE_GLOB, "**.csv");
+     Mockito.when(inputSource.getSplitWidget()).thenReturn(new MockSplitWidget());
+ 
+     Stream<InputSplit<List<CloudObjectLocation>>> splits = inputSource.createSplits(
+@@ -210,10 +185,7 @@
+   @Test
+   public void testWithObjects()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, null, null, OBJECTS, null, SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
++    final CloudObjectInputSource inputSource = createInputSource(null, null, OBJECTS, null);
+     Mockito.when(inputSource.getSplitWidget()).thenReturn(new MockSplitWidget());
+ 
+     Stream<InputSplit<List<CloudObjectLocation>>> splits = inputSource.createSplits(
+@@ -241,6 +213,19 @@
+     PathMatcher m2 = FileSystems.getDefault().getPathMatcher("glob:db/date=2022-08-01/*.parquet");
+     Assert.assertTrue(m2.matches(Paths.get("db/date=2022-08-01/001.parquet")));
+     Assert.assertFalse(m2.matches(Paths.get("db/date=2022-08-01/_junk/0/001.parquet")));
++  }
++
++  private CloudObjectInputSource createInputSource(
++      final List<URI> uris,
++      final List<URI> prefixes,
++      final List<CloudObjectLocation> objects,
++      final String objectGlob
++  )
++  {
++    return Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
++        .useConstructor(SCHEME, uris, prefixes, objects, objectGlob, SystemFields.none())
++        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
++    );
+   }
+ 
+   private static class MockSplitWidget implements CloudObjectSplitWidget
