@@ -526,6 +526,11 @@ def main() -> None:
         stored = baselines.get(module)
         incomplete = stored is not None and (stored.get("evidence") or {}).get("compileStatus") == "PASSED" and (
             (stored.get("evidence") or {}).get("pitStatus") != "PASSED")      # tests or PIT failed (D-010, D-011)
+        wanted = not any(part in module for part in args.kill_first)
+        if stored is not None and stored.get("fullMatrix", True) != wanted:
+            # A baseline made in the other mode cannot anchor these runs (killer sets differ by mode, D-015).
+            run_pair.log(f"  PIT-LAYERS {args.project} baseline {module}: stored in the other matrix mode; re-running")
+            stored = None
         if stored is None or (incomplete and not stored.get("retriedOnRestart")):
             retry = stored is not None
             ws.restore()
