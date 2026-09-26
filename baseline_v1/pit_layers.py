@@ -30,7 +30,9 @@ is reused, so a restart does not reshuffle layers.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
+import re
 import os
 import shutil
 import socket
@@ -415,6 +417,35 @@ class Workspace:
         self.written = []
 
 
+def failing_test_classes(ws_dir: Path, modules: tuple[str, ...], since: float, tail: str) -> list[str]:
+    """Test classes that failed, errored or crashed the fork in the scoped modules' fresh surefire reports."""
+    found: set[str] = set()
+    for module in modules or (".",):
+        reports = long_path(ws_dir / module / "target" / "surefire-reports")
+        if not reports.is_dir():
+            continue
+        for report in reports.glob("TEST-*.xml"):
+            if report.stat().st_mtime < since:
+                continue
+            try:
+                root = ET.parse(report).getroot()
+            except (OSError, ET.ParseError):
+                continue
+            for case in root.iter("testcase"):
+                if case.find("failure") is not None or case.find("error") is not None:
+                    found.add(case.attrib.get("classname") or root.attrib.get("name", ""))
+    # A crashed fork writes no XML for its test; surefire names it under "Crashed tests:".
+    lines = (tail or "").splitlines()
+    for i, line in enumerate(lines):
+        if "Crashed tests:" in line:
+            for follow in lines[i + 1:]:
+                m = re.fullmatch(r"\[ERROR\]\s+([\w$]+(?:\.[\w$]+)+)\s*", follow)
+                if not m:
+                    break
+                found.add(m.group(1))
+    return sorted(c for c in found if c)
+
+
 def tests_failed(record: dict) -> bool:
     e = record.get("evidence") or {}
     return e.get("compileStatus") == "PASSED" and e.get("testStatus") != "PASSED"
@@ -539,6 +570,9 @@ def main() -> None:
                                     pit_tests=package_patterns(project_root, dirs, "test"))
     base_path = REPO / "data" / args.project / OUT_DIR / f"baseline-{HOST}{suffix}.json"
     baselines = json.loads(base_path.read_text(encoding="utf-8")) if base_path.is_file() else {}
+    for module, stored in baselines.items():
+        if module in scopes and stored.get("excludedTests"):
+            scopes[module] = dataclasses.replace(scopes[module], excluded_tests=tuple(stored["excludedTests"]))
     pending = 0
 
     def save(path: Path, value) -> None:
@@ -569,7 +603,23 @@ def main() -> None:
         if stored is None or (incomplete and not stored.get("retriedOnRestart")):
             retry = stored is not None
             ws.restore()
+            started = time.time()
             record = validate(matrix_mode(module), ws, scopes[module])
+            if tests_failed(record) and (ws.dir / "pom.xml").is_file():
+                # Tests that fail on the untouched code twice (a database the host lacks, a fork-crashing test;
+                # C-027, C-029) are left out of this module's test and PIT phases, in the baseline and every layer.
+                failing = failing_test_classes(ws.dir, scopes[module].modules, started - 1,
+                                               (record.get("evidence") or {}).get("diagnosticsTail", ""))
+                new = [c for c in failing if c not in scopes[module].excluded_tests]
+                if new:
+                    scopes[module] = dataclasses.replace(
+                        scopes[module], excluded_tests=tuple(sorted(set(scopes[module].excluded_tests) | set(new))))
+                    run_pair.log(f"  PIT-LAYERS {args.project} baseline {module}: excluding {len(new)} test classes "
+                                 f"failing on the original code: {', '.join(new)[:300]}")
+                    ws.restore()
+                    record = validate(matrix_mode(module), ws, scopes[module])
+            if scopes[module].excluded_tests:
+                record["excludedTests"] = list(scopes[module].excluded_tests)
             if retry:
                 record["retriedOnRestart"] = True
             baselines[module] = record

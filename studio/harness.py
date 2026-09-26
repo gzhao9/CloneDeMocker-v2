@@ -310,6 +310,9 @@ class BuildScope:
     # Used by the whole-module layered PIT (baseline_v1/pit_layers.py).
     pit_classes: tuple[str, ...] = ()
     pit_tests: tuple[str, ...] = ()
+    # Test classes (FQN) left out of both the test phase and PIT, e.g. tests that need a database the host
+    # does not have (C-029). Maven only; pit_layers applies the same set to a module's baseline and layers.
+    excluded_tests: tuple[str, ...] = ()
 
     def describe(self) -> str:
         if not self.modules:
@@ -774,6 +777,7 @@ class ProjectHarness:
                 # surefire to the target modules' own test packages, with its default name patterns.
                 patterns = [f"{glob[:-2].replace('.', '/')}/**/{name}" for glob in scope.pit_tests
                             for name in ("Test*", "*Test", "*Tests", "*TestCase")]
+                patterns += [f"!{name}" for name in scope.excluded_tests]
                 test_filter = [f"-Dtest={','.join(patterns)}", "-DfailIfNoTests=false",
                                "-Dsurefire.failIfNoSpecifiedTests=false"]
             pit_command = [*prefix, "org.pitest:pitest-maven:mutationCoverage", "-DoutputFormats=XML"]
@@ -794,6 +798,8 @@ class ProjectHarness:
                 pit_command.extend([f"-DtargetClasses={','.join(scope.pit_classes)}",
                                     f"-DtargetTests={','.join(scope.pit_tests or scope.pit_classes)}",
                                     "-DfailWhenNoMutations=false"])
+            if scope is not None and scope.excluded_tests:
+                pit_command.append(f"-DexcludedTestClasses={','.join(scope.excluded_tests)}")
             if self.pit_full_matrix:
                 pit_command.append("-DfullMutationMatrix=true")
             if self.pit_threads:
