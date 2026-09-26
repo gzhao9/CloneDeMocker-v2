@@ -174,11 +174,20 @@ def package_patterns(root: Path, modules: tuple[str, ...], kind: str) -> tuple[s
     return tuple(f"{k}.*" for k in kept)
 
 
-def mutation_matrix(workspace: Path, since: float) -> dict[str, str]:
-    """{mutant key: "STATUS|test;test"} from every fresh mutations.xml (fullMutationMatrix)."""
+def mutation_matrix(workspace: Path, since: float, modules: tuple[str, ...] = ()) -> dict[str, str]:
+    """{mutant key: "STATUS|test;test"} from the fresh mutations.xml of the scoped modules only.
+
+    Only reports under the scoped modules' own directories count. Reading every fresh report in the
+    shared workspace picked up other modules' reports: a report written a second before `since` was
+    taken, so kiota's azure baseline also held okHttp's mutants (E-013)."""
     matrix: dict[str, str] = {}
-    for report in long_path(workspace).rglob("mutations.xml"):
+    base_dir = long_path(workspace)
+    wanted = [tuple(Path(m).parts) for m in modules]
+    for report in base_dir.rglob("mutations.xml"):
         if "pit-reports" not in report.parts or report.stat().st_mtime < since:
+            continue
+        rel = Path(str(report)).relative_to(base_dir).parts
+        if wanted and not any(rel[:len(w)] == w and "pit-reports" in rel[len(w):len(w) + 3] for w in wanted):
             continue
         try:
             root = ET.parse(report).getroot()
@@ -287,7 +296,7 @@ def validate(harness: ProjectHarness, ws: Workspace, scope: BuildScope) -> dict:
 def _validate(harness: ProjectHarness, ws: Workspace, scope: BuildScope) -> dict:
     started = time.time()
     evidence = harness.validate(ws.dir, run_pit=True, scope=scope).as_dict()
-    matrix = mutation_matrix(ws.dir, started - 1) if evidence.get("pitStatus") == "PASSED" else {}
+    matrix = mutation_matrix(ws.dir, started, scope.modules) if evidence.get("pitStatus") == "PASSED" else {}
     return {"host": HOST, "at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "evidence": slim(evidence),
             "matrix": matrix, "seconds": round(time.time() - started, 1)}
 
