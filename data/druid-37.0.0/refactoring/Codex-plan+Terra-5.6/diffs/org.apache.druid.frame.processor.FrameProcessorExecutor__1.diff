@@ -1,0 +1,85 @@
+--- a/multi-stage-query/src/test/java/org/apache/druid/msq/exec/RunWorkOrderTest.java
++++ b/multi-stage-query/src/test/java/org/apache/druid/msq/exec/RunWorkOrderTest.java
+@@ -32,11 +32,11 @@
+ public class RunWorkOrderTest
+ {
+   private static final String CANCELLATION_ID = "my-cancellation-id";
++  private final FrameProcessorExecutor frameProcessorExecutor = Mockito.mock(FrameProcessorExecutor.class);
+ 
+   @Test
+   public void test_stop()
+   {
+-    final FrameProcessorExecutor exec = Mockito.mock(FrameProcessorExecutor.class);
+     final WorkOrder workOrder = Mockito.mock(WorkOrder.class);
+     final CounterTracker counters = Mockito.mock(CounterTracker.class);
+     final WorkerContext workerContext = Mockito.mock(WorkerContext.class);
+@@ -52,7 +52,7 @@
+             workOrder,
+             inputChannelFactory,
+             counters,
+-            exec,
++            frameProcessorExecutor,
+             CANCELLATION_ID,
+             workerContext,
+             frameContext,
+@@ -64,7 +64,7 @@
+     // Calling a second time doesn't do anything special.
+     runWorkOrder.stop(null);
+ 
+-    Mockito.verify(exec).cancel(CANCELLATION_ID);
++    Mockito.verify(frameProcessorExecutor).cancel(CANCELLATION_ID);
+     Mockito.verify(frameContext).close();
+     Mockito.verify(listener).onFailure(ArgumentMatchers.any(MSQException.class));
+   }
+@@ -72,7 +72,6 @@
+   @Test
+   public void test_stop_error()
+   {
+-    final FrameProcessorExecutor exec = Mockito.mock(FrameProcessorExecutor.class);
+     final WorkOrder workOrder = Mockito.mock(WorkOrder.class);
+     final CounterTracker counters = Mockito.mock(CounterTracker.class);
+     final WorkerContext workerContext = Mockito.mock(WorkerContext.class);
+@@ -88,7 +87,7 @@
+             workOrder,
+             inputChannelFactory,
+             counters,
+-            exec,
++            frameProcessorExecutor,
+             CANCELLATION_ID,
+             workerContext,
+             frameContext,
+@@ -105,7 +104,7 @@
+     // Calling a second time doesn't do anything special. We already tried our best.
+     runWorkOrder.stop(null);
+ 
+-    Mockito.verify(exec).cancel(CANCELLATION_ID);
++    Mockito.verify(frameProcessorExecutor).cancel(CANCELLATION_ID);
+     Mockito.verify(frameContext).close();
+     Mockito.verify(listener).onFailure(ArgumentMatchers.eq(exception));
+   }
+@@ -151,7 +150,6 @@
+   @Test
+   public void test_stop_errorDuringFrameContextClose()
+   {
+-    final FrameProcessorExecutor exec = Mockito.mock(FrameProcessorExecutor.class);
+     final WorkOrder workOrder = Mockito.mock(WorkOrder.class);
+     final CounterTracker counters = Mockito.mock(CounterTracker.class);
+     final WorkerContext workerContext = Mockito.mock(WorkerContext.class);
+@@ -169,7 +167,7 @@
+             workOrder,
+             inputChannelFactory,
+             counters,
+-            exec,
++            frameProcessorExecutor,
+             CANCELLATION_ID,
+             workerContext,
+             frameContext,
+@@ -181,7 +179,7 @@
+         () -> runWorkOrder.stop(null)
+     );
+ 
+-    Mockito.verify(exec).cancel(CANCELLATION_ID);
++    Mockito.verify(frameProcessorExecutor).cancel(CANCELLATION_ID);
+     Mockito.verify(frameContext).close();
+     Mockito.verify(listener).onFailure(ArgumentMatchers.eq(exception));
+   }
