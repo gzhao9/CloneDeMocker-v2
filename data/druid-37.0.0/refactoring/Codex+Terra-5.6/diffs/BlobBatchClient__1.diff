@@ -1,0 +1,41 @@
+--- a/extensions-core/azure-extensions/src/test/java/org/apache/druid/storage/azure/AzureStorageTest.java
++++ b/extensions-core/azure-extensions/src/test/java/org/apache/druid/storage/azure/AzureStorageTest.java
+@@ -242,9 +242,7 @@
+     Mockito.doReturn(blobContainerClient).when(blobServiceClient).getBlobContainerClient(CONTAINER);
+     Mockito.doReturn(blobServiceClient).when(azureClientFactory).getBlobServiceClient(null, STORAGE_ACCOUNT);
+     Mockito.doReturn(blobBatchClient).when(azureClientFactory).getBlobBatchClient(blobContainerClient);
+-    Mockito.doReturn(pagedIterable).when(blobBatchClient).deleteBlobs(
+-        captor.capture(), ArgumentMatchers.eq(DeleteSnapshotsOptionType.INCLUDE)
+-    );
++    mockDeleteBlobs(blobBatchClient, pagedIterable, captor);
+ 
+     boolean deleteSuccessful = azureStorage.batchDeleteFiles(CONTAINER, ImmutableList.of(BLOB_NAME), null);
+     assertEquals(captor.getValue().get(0), containerUrl + "/" + BLOB_NAME);
+@@ -291,9 +289,7 @@
+     Mockito.doReturn(blobContainerClient).when(blobServiceClient).getBlobContainerClient(CONTAINER);
+     Mockito.doReturn(blobServiceClient).when(azureClientFactory).getBlobServiceClient(null, STORAGE_ACCOUNT);
+     Mockito.doReturn(blobBatchClient).when(azureClientFactory).getBlobBatchClient(blobContainerClient);
+-    Mockito.doReturn(pagedIterable).when(blobBatchClient).deleteBlobs(
+-        captor.capture(), ArgumentMatchers.eq(DeleteSnapshotsOptionType.INCLUDE)
+-    );
++    mockDeleteBlobs(blobBatchClient, pagedIterable, captor);
+ 
+ 
+     List<String> blobNameList = new ArrayList<>();
+@@ -328,5 +324,16 @@
+     Mockito.verify(blobClient).upload(captor.capture(), captor2.capture(), overrideArgument.capture());
+     assertTrue(overrideArgument.getValue());
+   }
++
++  private void mockDeleteBlobs(
++      final BlobBatchClient blobBatchClient,
++      final PagedIterable<BlobItem> pagedIterable,
++      final ArgumentCaptor<List<String>> captor
++  )
++  {
++    Mockito.doReturn(pagedIterable).when(blobBatchClient).deleteBlobs(
++        captor.capture(), ArgumentMatchers.eq(DeleteSnapshotsOptionType.INCLUDE)
++    );
++  }
+ }
+ 
