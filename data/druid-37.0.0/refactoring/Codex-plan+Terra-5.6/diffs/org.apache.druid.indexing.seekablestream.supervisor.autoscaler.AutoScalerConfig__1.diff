@@ -1,0 +1,59 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/supervisor/SeekableStreamSupervisorIOConfigTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/seekablestream/supervisor/SeekableStreamSupervisorIOConfigTest.java
+@@ -46,6 +46,14 @@
+       2, 3
+   );
+ 
++  private static AutoScalerConfig createMockAutoScalerConfig(final int taskCountStart)
++  {
++    final AutoScalerConfig autoScalerConfig = mock(AutoScalerConfig.class);
++    when(autoScalerConfig.getEnableTaskAutoScaler()).thenReturn(true);
++    when(autoScalerConfig.getTaskCountStart()).thenReturn(taskCountStart);
++    return autoScalerConfig;
++  }
++
+   @Test
+   public void testAllDefaults()
+   {
+@@ -99,9 +107,7 @@
+     LagAggregator lagAggregator = mock(LagAggregator.class);
+ 
+     // autoScalerEnabled = true
+-    AutoScalerConfig autoScalerConfig = mock(AutoScalerConfig.class);
+-    when(autoScalerConfig.getEnableTaskAutoScaler()).thenReturn(true);
+-    when(autoScalerConfig.getTaskCountStart()).thenReturn(5);
++    AutoScalerConfig autoScalerConfig = createMockAutoScalerConfig(5);
+     when(autoScalerConfig.getTaskCountMin()).thenReturn(3);
+ 
+     SeekableStreamSupervisorIOConfig configAuto = new SeekableStreamSupervisorIOConfig(
+@@ -282,11 +288,9 @@
+   {
+     LagAggregator lagAggregator = mock(LagAggregator.class);
+ 
+-    AutoScalerConfig autoScalerConfig = mock(AutoScalerConfig.class);
++    AutoScalerConfig autoScalerConfig = createMockAutoScalerConfig(10);
+ 
+     // Autoscaler enabled, stopTaskCountRatio set
+-    when(autoScalerConfig.getEnableTaskAutoScaler()).thenReturn(true);
+-    when(autoScalerConfig.getTaskCountStart()).thenReturn(10);
+     when(autoScalerConfig.getStopTaskCountRatio()).thenReturn(0.5);
+ 
+     SeekableStreamSupervisorIOConfig config = new SeekableStreamSupervisorIOConfig(
+@@ -318,8 +322,6 @@
+     Assert.assertEquals(1, config.getMaxAllowedStops());
+ 
+     // Autoscaler enabled, stopTaskCountRatio unset, stopTaskCount set
+-    when(autoScalerConfig.getEnableTaskAutoScaler()).thenReturn(true);
+-    when(autoScalerConfig.getTaskCountStart()).thenReturn(10);
+     when(autoScalerConfig.getStopTaskCountRatio()).thenReturn(null);
+ 
+     SeekableStreamSupervisorIOConfig config2 = new SeekableStreamSupervisorIOConfig(
+@@ -348,8 +350,6 @@
+ 
+ 
+     // Autoscaler enabled, stopTaskCountRatio unset, stopTaskCount unset
+-    when(autoScalerConfig.getEnableTaskAutoScaler()).thenReturn(true);
+-    when(autoScalerConfig.getTaskCountStart()).thenReturn(10);
+     when(autoScalerConfig.getStopTaskCountRatio()).thenReturn(null);
+ 
+     SeekableStreamSupervisorIOConfig config3 = new SeekableStreamSupervisorIOConfig(
