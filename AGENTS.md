@@ -104,3 +104,8 @@ None of these raise. Each one was found only after it had already written someth
 - **Check which command produced which line.** Running `git ls-tree <remote>` and a local `ls`
   in one block and reading the joined output as one source is how a letter that had never been
   pushed was reported as delivered.
+- **`FETCH_HEAD` belongs to whichever process fetched last.** Every lane, publisher, and watcher in
+  a clone fetches, so a script that fetches and then reads `FETCH_HEAD:<path>` a moment later can
+  get another process's result, or none at all. C's publisher failed this way while a pair re-run
+  and a PIT run were fetching too. Resolve the sha once (`git rev-parse refs/remotes/<remote>/main`
+  right after the fetch) and pass that sha everywhere.
