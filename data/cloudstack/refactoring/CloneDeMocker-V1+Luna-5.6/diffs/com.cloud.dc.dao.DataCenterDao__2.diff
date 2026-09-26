@@ -1,0 +1,99 @@
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisElementTest.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisElementTest.java
+@@ -130,7 +130,7 @@
+         Mockito.when(domain.getId()).thenReturn(domainId);
+         Mockito.when(accountManager.getAccount(accountId)).thenReturn(account);
+         Mockito.when(networkDao.findById(networkId)).thenReturn(networkVO);
+-        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createDataCenterDao(zoneId, dataCenterVO);
+         Mockito.when(domainDao.findById(domainId)).thenReturn(domain);
+         Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpc);
+         ReservationContext context = Mockito.mock(ReservationContext.class);
+@@ -138,4 +138,18 @@
+         Mockito.verify(netrisService).deleteVnetResource(zoneId, accountId, domainId, vpcName, vpcId,
+                 networkName, networkId, networkCidr);
+     }
++
++    public final class MockDataCenterDao {
++        private MockDataCenterDao() {
++        }
++
++        public static com.cloud.dc.dao.DataCenterDao createDataCenterDao(
++                long id,
++                com.cloud.dc.DataCenterVO dataCenter) {
++            com.cloud.dc.dao.DataCenterDao dataCenterDao =
++                    Mockito.mock(com.cloud.dc.dao.DataCenterDao.class);
++            Mockito.when(dataCenterDao.findById(id)).thenReturn(dataCenter);
++            return dataCenterDao;
++        }
++    }
+ }
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisGuestNetworkGuruTest.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisGuestNetworkGuruTest.java
+@@ -130,7 +130,7 @@
+         Mockito.when(networkOfferingServiceMapDao.isProviderForNetworkOffering(networkOfferingId, Network.Provider.Netris)).thenReturn(true);
+         Mockito.when(plan.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+         Mockito.when(plan.getDataCenterId()).thenReturn(zoneId);
+-        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zone);
++        dataCenterDao = MockDataCenterDao.createDataCenterDao(zoneId, zone);
+         Mockito.when(zone.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
+         Mockito.when(zone.getGuestNetworkCidr()).thenReturn("172.20.0.0/16");
+         Mockito.when(zone.getId()).thenReturn(zoneId);
+@@ -227,4 +227,18 @@
+         Assert.assertEquals(String.format("netris://%s", vnet), implemented.getBroadcastUri().toString());
+         Assert.assertEquals(Network.State.Implemented, implemented.getState());
+     }
++
++    public final class MockDataCenterDao {
++        private MockDataCenterDao() {
++        }
++
++        public static com.cloud.dc.dao.DataCenterDao createDataCenterDao(
++                long id,
++                com.cloud.dc.DataCenterVO dataCenter) {
++            com.cloud.dc.dao.DataCenterDao dataCenterDao =
++                    Mockito.mock(com.cloud.dc.dao.DataCenterDao.class);
++            Mockito.when(dataCenterDao.findById(id)).thenReturn(dataCenter);
++            return dataCenterDao;
++        }
++    }
+ }
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisProviderServiceImplTest.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisProviderServiceImplTest.java
+@@ -102,7 +102,7 @@
+         Mockito.when(providerVO.getZoneId()).thenReturn(ZONE_ID);
+ 
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+-        Mockito.when(dataCenterDao.findById(ZONE_ID)).thenReturn(zone);
++        dataCenterDao = MockDataCenterDao.createDataCenterDao(ZONE_ID, zone);
+         Mockito.when(zone.getName()).thenReturn("test-zone");
+ 
+         // Execute
+@@ -193,7 +193,7 @@
+         Mockito.when(provider.getNetrisTag()).thenReturn(NETRIS_TAG);
+ 
+         DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+-        Mockito.when(dataCenterDao.findById(ZONE_ID)).thenReturn(zone);
++        dataCenterDao = MockDataCenterDao.createDataCenterDao(ZONE_ID, zone);
+         Mockito.when(zone.getName()).thenReturn("test-zone");
+ 
+         // Execute
+@@ -217,4 +217,18 @@
+         // Execute
+         netrisProviderService.createNetrisProviderResponse(provider);
+     }
++
++    public final class MockDataCenterDao {
++        private MockDataCenterDao() {
++        }
++
++        public static com.cloud.dc.dao.DataCenterDao createDataCenterDao(
++                long id,
++                com.cloud.dc.DataCenterVO dataCenter) {
++            com.cloud.dc.dao.DataCenterDao dataCenterDao =
++                    Mockito.mock(com.cloud.dc.dao.DataCenterDao.class);
++            Mockito.when(dataCenterDao.findById(id)).thenReturn(dataCenter);
++            return dataCenterDao;
++        }
++    }
+ }

@@ -1,0 +1,368 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -770,7 +770,7 @@
+ 
+         when(physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetworkVO);
+         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProviderVO);
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(networkModel.getSystemNetworkByZoneAndTrafficType(anyLong(), eq(Networks.TrafficType.Public))).thenReturn(publicNetwork);
+         when(vlanDao.listVlansByNetworkIdIncludingRemoved(anyLong())).thenReturn(vlanVOList);
+         when(hostPodDao.listByDataCenterId(anyLong())).thenReturn(hostPodVOList);
+@@ -788,13 +788,13 @@
+         HostVO hostVO = mock(HostVO.class);
+         TungstenProviderVO tungstenProvider = mock(TungstenProviderVO.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         NetworkVO network = mock(NetworkVO.class);
+ 
+         when(hostVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProvider);
+         when(hostVO.getPublicIpAddress()).thenReturn("192.168.100.100");
+         when(tungstenProvider.getGateway()).thenReturn("192.168.100.100");
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+         when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
+         when(networkDao.listByZoneSecurityGroup(anyLong())).thenReturn(List.of(network));
+@@ -813,7 +813,7 @@
+         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProvider);
+         when(hostVO.getPublicIpAddress()).thenReturn("192.168.100.100");
+         when(tungstenProvider.getGateway()).thenReturn("192.168.100.100");
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = createMockDataCenterDao(dataCenterVO);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+         when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(false);
+ 
+@@ -962,4 +962,16 @@
+         tungstenElement.commitMigration(nic, network, vm, src, dest);
+         verify(tungstenFabricUtils, times(1)).sendTungstenCommand(any(DeleteTungstenVRouterPortCommand.class), anyLong());
+     }
++
++    public final class MockDataCenterDao {
++
++        private MockDataCenterDao() {
++        }
++
++        public static DataCenterDao createMockDataCenterDao(DataCenterVO dataCenterVO) {
++            DataCenterDao dataCenterDao = mock(DataCenterDao.class);
++            when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++            return dataCenterDao;
++        }
++    }
+ }
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -880,7 +880,7 @@
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenPolicyCommand.class), anyLong())).thenReturn(createTungstenPolicyAnswer);
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(createTungstenPolicyAnswer.getTungstenModel()).thenReturn(tungstenNetworkPolicy);
+         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
+ 
+@@ -900,7 +900,7 @@
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenPolicyRuleCommand.class), anyLong())).thenReturn(addTungstenPolicyRuleAnswer);
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(addTungstenPolicyRuleAnswer.getApiObjectBase()).thenReturn(networkPolicy);
+         when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
+         when(policyEntriesType.getPolicyRule()).thenReturn(List.of(policyRuleType));
+@@ -934,7 +934,7 @@
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = createMockDataCenterDao(dataCenterVO);
+         when(networkDao.findById(anyLong())).thenReturn(networkVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenPolicyCommand.class), anyLong())).thenReturn(listTungstenPolicyAnswer);
+         when(listTungstenPolicyAnswer.getTungstenModelList()).thenReturn(List.of(tungstenNetworkPolicy));
+@@ -951,7 +951,7 @@
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenNetworkCommand.class), anyLong())).thenReturn(listTungstenNetworkAnswer);
+         doReturn(List.of(virtualNetwork)).when(listTungstenNetworkAnswer).getApiObjectBaseList();
+         when((virtualNetwork.getName())).thenReturn("guestNetwork1");
+@@ -965,7 +965,7 @@
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenNicCommand.class), anyLong())).thenReturn(listTungstenNicAnswer);
+         doReturn(List.of(virtualMachineInterface)).when(listTungstenNicAnswer).getApiObjectBaseList();
+ 
+@@ -978,7 +978,7 @@
+         VirtualMachine virtualMachine = mock(VirtualMachine.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenVmCommand.class), anyLong())).thenReturn(listTungstenVmAnswer);
+         doReturn(List.of(virtualMachine)).when(listTungstenVmAnswer).getApiObjectBaseList();
+ 
+@@ -1006,7 +1006,7 @@
+         PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenPolicyRuleCommand.class), anyLong())).thenReturn(listTungstenPolicyRuleAnswer);
+         doReturn(networkPolicy).when(listTungstenPolicyRuleAnswer).getApiObjectBase();
+         when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
+@@ -1035,7 +1035,7 @@
+         PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        DataCenterDao dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenPolicyRuleCommand.class), anyLong())).thenReturn(listTungstenPolicyRuleAnswer);
+         doReturn(networkPolicy).when(listTungstenPolicyRuleAnswer).getApiObjectBase();
+         when(networkPolicy.getEntries()).thenReturn(policyEntriesType);
+@@ -1060,7 +1060,7 @@
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenPolicyRuleCommand.class), anyLong())).thenReturn(removeTungstenPolicyRuleAnswer);
+         when(removeTungstenPolicyRuleAnswer.getTungstenModel()).thenReturn(tungstenNetworkPolicy);
+         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
+@@ -1080,7 +1080,7 @@
+         NetworkPolicy networkPolicy = mock(NetworkPolicy.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenTagCommand.class), anyLong())).thenReturn(createTungstenTagAnswer);
+         when(createTungstenTagAnswer.getTungstenModel()).thenReturn(tungstenTag);
+         when(tungstenTag.getTag()).thenReturn(tag);
+@@ -1099,7 +1099,7 @@
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenTagTypeCommand.class), anyLong())).thenReturn(createTungstenTagTypeAnswer);
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(createTungstenTagTypeAnswer.getApiObjectBase()).thenReturn(tagtype);
+ 
+         assertNotNull(tungstenService.createTungstenTagType(1L, "testTagType"));
+@@ -1117,7 +1117,7 @@
+         ApplicationPolicySet applicationPolicySet = mock(ApplicationPolicySet.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenTagCommand.class), anyLong())).thenReturn(listTungstenTagAnswer);
+         when(listTungstenTagAnswer.getTungstenModelList()).thenReturn(List.of(tungstenTag));
+         when(tungstenTag.getTag()).thenReturn(tag);
+@@ -1137,7 +1137,7 @@
+         TagType tagtype = mock(TagType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenTagTypeCommand.class), anyLong())).thenReturn(listTungstenTagTypeAnswer);
+         doReturn(List.of(tagtype)).when(listTungstenTagTypeAnswer).getApiObjectBaseList();
+ 
+@@ -1170,7 +1170,7 @@
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenNetworkPolicyCommand.class), anyLong())).thenReturn(applyTungstenPolicyAnswer);
+         when(applyTungstenPolicyAnswer.getTungstenModel()).thenReturn(tungstenNetworkPolicy);
+         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
+@@ -1190,7 +1190,7 @@
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ApplyTungstenTagCommand.class), anyLong())).thenReturn(applyTungstenTagAnswer);
+         when(applyTungstenTagAnswer.getTungstenModel()).thenReturn(tungstenTag);
+         when(tungstenTag.getTag()).thenReturn(tag);
+@@ -1212,7 +1212,7 @@
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenPolicyCommand.class), anyLong())).thenReturn(removeTungstenPolicyAnswer);
+         when(removeTungstenPolicyAnswer.getTungstenModel()).thenReturn(tungstenNetworkPolicy);
+         when(tungstenNetworkPolicy.getNetworkPolicy()).thenReturn(networkPolicy);
+@@ -1232,7 +1232,7 @@
+         VirtualMachineInterface virtualMachineInterface = mock(VirtualMachineInterface.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenTagCommand.class), anyLong())).thenReturn(removeTungstenTagAnswer);
+         when(removeTungstenTagAnswer.getTungstenModel()).thenReturn(tungstenTag);
+         when(tungstenTag.getTag()).thenReturn(tag);
+@@ -1255,7 +1255,7 @@
+         SubnetType subnetType = mock(SubnetType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenAddressGroupCommand.class), anyLong())).thenReturn(createTungstenAddressGroupAnswer);
+         when(createTungstenAddressGroupAnswer.getApiObjectBase()).thenReturn(addressGroup);
+         when(addressGroup.getPrefix()).thenReturn(subnetListType);
+@@ -1273,7 +1273,7 @@
+         PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        DataCenterDao dataCenterDao = createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenServiceGroupCommand.class), anyLong())).thenReturn(createTungstenServiceGroupAnswer);
+         when(createTungstenServiceGroupAnswer.getApiObjectBase()).thenReturn(serviceGroup);
+         when(serviceGroup.getFirewallServiceList()).thenReturn(firewallServiceGroupType);
+@@ -1294,7 +1294,7 @@
+         FirewallRuleMatchTagsType firewallRuleMatchTagsType = mock(FirewallRuleMatchTagsType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenFirewallRuleCommand.class), anyLong())).thenReturn(createTungstenFirewallRuleAnswer);
+         when(createTungstenFirewallRuleAnswer.getApiObjectBase()).thenReturn(firewallRule);
+         when(firewallRule.getActionList()).thenReturn(actionListType);
+@@ -1320,7 +1320,7 @@
+         ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenFirewallPolicyCommand.class), anyLong())).thenReturn(createTungstenFirewallPolicyAnswer);
+         when(createTungstenFirewallPolicyAnswer.getApiObjectBase()).thenReturn(firewallPolicy);
+         when(firewallPolicy.getFirewallRule()).thenReturn(List.of(firewallSequenceObjectReference));
+@@ -1337,7 +1337,7 @@
+         ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        DataCenterDao dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenApplicationPolicySetCommand.class), anyLong())).thenReturn(createTungstenApplicationPolicySetAnswer);
+         when(createTungstenApplicationPolicySetAnswer.getApiObjectBase()).thenReturn(applicationPolicySet);
+         when(applicationPolicySet.getTag()).thenReturn(List.of(objectReference));
+@@ -1356,7 +1356,7 @@
+         ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenApplicationPolicySetCommand.class), anyLong())).thenReturn(listTungstenApplicationPolicySetAnswer);
+         doReturn(List.of(applicationPolicySet)).when(listTungstenApplicationPolicySetAnswer).getApiObjectBaseList();
+         when(applicationPolicySet.getTag()).thenReturn(List.of(objectReference));
+@@ -1374,7 +1374,7 @@
+         ObjectReference<FirewallSequence> firewallSequenceObjectReference = mock(ObjectReference.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenFirewallPolicyCommand.class), anyLong())).thenReturn(listTungstenFirewallPolicyAnswer);
+         doReturn(List.of(firewallPolicy)).when(listTungstenFirewallPolicyAnswer).getApiObjectBaseList();
+         when(firewallPolicy.getFirewallRule()).thenReturn(List.of(firewallSequenceObjectReference));
+@@ -1394,7 +1394,7 @@
+         FirewallRuleMatchTagsType firewallRuleMatchTagsType = mock(FirewallRuleMatchTagsType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenFirewallRuleCommand.class), anyLong())).thenReturn(listTungstenFirewallRuleAnswer);
+         doReturn(List.of(firewallRule)).when(listTungstenFirewallRuleAnswer).getApiObjectBaseList();
+         when(firewallRule.getActionList()).thenReturn(actionListType);
+@@ -1420,7 +1420,7 @@
+         SubnetType subnetType = mock(SubnetType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenAddressGroupCommand.class), anyLong())).thenReturn(listTungstenAddressGroupAnswer);
+         doReturn(List.of(addressGroup)).when(listTungstenAddressGroupAnswer).getApiObjectBaseList();
+         when(addressGroup.getPrefix()).thenReturn(subnetListType);
+@@ -1439,7 +1439,7 @@
+         PortType portType = mock(PortType.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenServiceGroupCommand.class), anyLong())).thenReturn(listTungstenServiceGroupAnswer);
+         doReturn(List.of(serviceGroup)).when(listTungstenServiceGroupAnswer).getApiObjectBaseList();
+         when(serviceGroup.getFirewallServiceList()).thenReturn(firewallServiceGroupType);
+@@ -1547,7 +1547,7 @@
+         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
+         TungstenAnswer addTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
+         when(securityGroupManager.getSecurityGroupsForVm(anyLong())).thenReturn(List.of(securityGroupVO));
+         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
+@@ -1579,7 +1579,7 @@
+         TungstenAnswer removeTungstenSecurityGroupRuleAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenSecurityGroupRuleVO tungstenSecurityGroupRuleVO = mock(TungstenSecurityGroupRuleVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
+ 
+         assertTrue(tungstenService.removeTungstenVmSecurityGroup(vmInstanceVO));
+@@ -1593,7 +1593,7 @@
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenRoutingLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+         when(tungstenAnswer.getTungstenModel()).thenReturn(tungstenLogicalRouter);
+         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
+@@ -1611,7 +1611,7 @@
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(networkDao.findByUuid(anyString())).thenReturn(networkVO);
+         when(ipAddressManager.acquireLastGuestIpAddress(any(Network.class))).thenReturn("192.168.100.100");
+         when(tungstenFabricUtils.sendTungstenCommand(any(AddTungstenNetworkGatewayToLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+@@ -1630,7 +1630,7 @@
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(ListTungstenRoutingLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+         when(tungstenAnswer.getTungstenModelList()).thenReturn(List.of(tungstenLogicalRouter));
+         when(tungstenLogicalRouter.getLogicalRouter()).thenReturn(logicalRouter);
+@@ -1649,7 +1649,7 @@
+         VirtualNetwork virtualNetwork = mock(VirtualNetwork.class);
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+-        when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++        dataCenterDao = MockDataCenterDao.createMockDataCenterDao(dataCenterVO);
+         when(networkDao.findByUuid(anyString())).thenReturn(networkVO);
+         when(tungstenGuestNetworkIpAddressDao.findByNetworkAndLogicalRouter(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(RemoveTungstenNetworkGatewayFromLogicalRouterCommand.class), anyLong())).thenReturn(tungstenAnswer);
+@@ -1668,4 +1668,16 @@
+ 
+         assertTrue(tungstenService.deleteLogicalRouter(1L, "948f421c-edde-4518-a391-09299cc25dc2"));
+     }
++
++    public final class MockDataCenterDao {
++
++        private MockDataCenterDao() {
++        }
++
++        public static DataCenterDao createMockDataCenterDao(DataCenterVO dataCenterVO) {
++            DataCenterDao dataCenterDao = mock(DataCenterDao.class);
++            when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
++            return dataCenterDao;
++        }
++    }
+ }
