@@ -1,0 +1,42 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateStatusActionTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateStatusActionTest.java
+@@ -40,6 +40,7 @@
+ {
+ 
+   private static final String ID = "id";
++  private final TaskRunner runner = mock(TaskRunner.class);
+ 
+   @Test
+   public void testActionCallsTaskRunner()
+@@ -47,7 +48,6 @@
+     UpdateStatusAction action = new UpdateStatusAction("successful");
+     Task task = NoopTask.create();
+     TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+-    TaskRunner runner = mock(TaskRunner.class);
+     when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
+     action.perform(task, toolbox);
+     verify(runner, times(1)).updateStatus(eq(task), eq(TaskStatus.success(task.getId())));
+@@ -59,7 +59,6 @@
+     UpdateStatusAction action = new UpdateStatusAction("failure");
+     Task task = NoopTask.create();
+     TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+-    TaskRunner runner = mock(TaskRunner.class);
+     when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
+     action.perform(task, toolbox);
+     verify(runner, times(1)).updateStatus(eq(task), eq(TaskStatus.failure(task.getId(), "Error with task")));
+@@ -70,7 +69,6 @@
+   {
+     Task task = NoopTask.create();
+     TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+-    TaskRunner runner = mock(TaskRunner.class);
+     when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
+     TaskStatus taskStatus = TaskStatus.failure(task.getId(), "custom error message");
+     UpdateStatusAction action = new UpdateStatusAction("failure", taskStatus);
+@@ -84,7 +82,6 @@
+     UpdateStatusAction action = new UpdateStatusAction("", TaskStatus.success(ID));
+     Task task = NoopTask.create();
+     TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+-    TaskRunner runner = mock(TaskRunner.class);
+     when(toolbox.getTaskRunner()).thenReturn(Optional.absent());
+     action.perform(task, toolbox);
+     verify(runner, never()).updateStatus(any(), any());
