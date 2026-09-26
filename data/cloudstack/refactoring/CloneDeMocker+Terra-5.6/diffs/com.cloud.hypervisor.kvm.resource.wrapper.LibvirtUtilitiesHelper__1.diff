@@ -1,0 +1,51 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -5508,8 +5508,8 @@
+ 
+     @Test
+     public void testUpdateHostPasswordCommand() {
+-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final Script script = Mockito.mock(Script.class);
++        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = createMockLibvirtUtilitiesHelper(script);
+ 
+         final String hostIp = "127.0.0.1";
+         final String username = "root";
+@@ -5519,7 +5519,6 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         when(libvirtComputingResourceMock.getUpdateHostPasswdPath()).thenReturn("/tmp");
+-        when(libvirtUtilitiesHelper.buildScript(libvirtComputingResourceMock.getUpdateHostPasswdPath())).thenReturn(script);
+ 
+         when(script.execute()).thenReturn(null);
+ 
+@@ -5533,8 +5532,8 @@
+ 
+     @Test
+     public void testUpdateHostPasswordCommandFail() {
+-        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final Script script = Mockito.mock(Script.class);
++        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = createMockLibvirtUtilitiesHelper(script);
+ 
+         final String hostIp = "127.0.0.1";
+         final String username = "root";
+@@ -5544,7 +5543,6 @@
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+         when(libvirtComputingResourceMock.getUpdateHostPasswdPath()).thenReturn("/tmp");
+-        when(libvirtUtilitiesHelper.buildScript(libvirtComputingResourceMock.getUpdateHostPasswdPath())).thenReturn(script);
+ 
+         when(script.execute()).thenReturn("#FAIL");
+ 
+@@ -5778,6 +5776,12 @@
+ 
+         Mockito.doReturn(valueExpected).when(domainMock).getMaxMemory();
+         Assert.assertEquals(valueExpected, LibvirtComputingResource.getDomainMemory(domainMock));
++    }
++
++    private static LibvirtUtilitiesHelper createMockLibvirtUtilitiesHelper(Script script) {
++        final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
++        when(libvirtUtilitiesHelper.buildScript("/tmp")).thenReturn(script);
++        return libvirtUtilitiesHelper;
+     }
+ 
+     private VcpuInfo createVcpuInfoWithState(VcpuInfo.VcpuState state) {
