@@ -324,6 +324,11 @@ class ProjectHarness:
     # makes PIT run every covering test per mutant and record all killing tests (XML).
     pit_full_matrix: bool = False
     pit_threads: int = 0
+    # Tests that fail under PIT's own runner on unmutated code (network-heavy dubbo tests pass
+    # in surefire but not there) are left out of mutation analysis instead of aborting PIT.
+    # Gradle only: pitest-maven 1.30.0 has no user property for skipFailingTests, so Maven needs
+    # it in the POM (baseline_v1/pit_layers.py writes it into its own workspace).
+    pit_skip_failing_tests: bool = False
 
     def __init__(self, maven_repo_local: str | Path | None = None) -> None:
         """
@@ -763,6 +768,14 @@ class ProjectHarness:
             prefix = [executable, *repo_args, *self._english_output_args(), *style_check_skip_args,
                       *self._extra_maven_args(), *self._scope_args(root, scope)]
             test_filter = self._test_filter_args(scope)
+            if not test_filter and scope is not None and scope.pit_tests:
+                # Whole-module runs: -am puts every upstream module in the reactor, and a bare `test`
+                # would run all of their tests too (dubbo-common's failed netty4's baseline). Keep
+                # surefire to the target modules' own test packages, with its default name patterns.
+                patterns = [f"{glob[:-2].replace('.', '/')}/**/{name}" for glob in scope.pit_tests
+                            for name in ("Test*", "*Test", "*Tests", "*TestCase")]
+                test_filter = [f"-Dtest={','.join(patterns)}", "-DfailIfNoTests=false",
+                               "-Dsurefire.failIfNoSpecifiedTests=false"]
             pit_command = [*prefix, "org.pitest:pitest-maven:mutationCoverage", "-DoutputFormats=XML"]
             if scope is not None and scope.test_classes:
                 pattern = ",".join(sorted(scope.test_classes))
@@ -882,6 +895,8 @@ class ProjectHarness:
             pit_properties.append("-PcloneDeMockerPitFullMatrix=true")
         if self.pit_threads:
             pit_properties.append(f"-PcloneDeMockerPitThreads={self.pit_threads}")
+        if self.pit_skip_failing_tests:
+            pit_properties.append("-PcloneDeMockerPitSkipFailingTests=true")
         if source_sets - {"test"}:
             pit_properties.append(f"-PcloneDeMockerPitTestSourceSets={','.join(sorted(source_sets))}")
         return (

@@ -101,6 +101,7 @@ def pitClasses = cloneDeMockerList('cloneDeMockerPitClasses')
 def pitTestSourceSets = cloneDeMockerList('cloneDeMockerPitTestSourceSets')
 def pitFullMatrix = (gradle.startParameter.projectProperties['cloneDeMockerPitFullMatrix'] ?: '') == 'true'
 def pitThreads = (gradle.startParameter.projectProperties['cloneDeMockerPitThreads'] ?: '0') as int
+def pitSkipFailing = (gradle.startParameter.projectProperties['cloneDeMockerPitSkipFailingTests'] ?: '') == 'true'
 allprojects {{ p ->
     // 等价于 Maven 的 -Dsurefire.failIfNoSpecifiedTests=false：同一组 --tests 过滤会套到每个
     // 范围内模块上，某个模块里没有匹配的类不应该让整个构建失败。目标类是否真的执行过，
@@ -132,6 +133,7 @@ allprojects {{ p ->
                 failWhenNoMutations = false
                 if (pitFullMatrix) fullMutationMatrix = true
                 if (pitThreads > 0) threads = pitThreads
+                if (pitSkipFailing) skipFailingTests = true
                 // 与 Maven 输出位置 target/pit-reports 同名，变异报告收集逻辑不必区分构建工具。
                 // Named like Maven's target/pit-reports so mutation collection need not care
                 // which build tool produced the report.

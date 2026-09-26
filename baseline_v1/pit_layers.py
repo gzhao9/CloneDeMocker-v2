@@ -10,7 +10,13 @@ XML names every killing test. The baseline runs once per module on the original 
 all setups); each layer then runs once on the same scope with the layer's diffs applied. A layer is
 compared with the baseline mutant by mutant: kills lost or gained, and tests that stopped killing a
 mutant. If a layer with several MCIs fails to compile or its tests fail, the first MCI is kept and
-the rest move to a new layer at the end, so every MCI is still measured.
+the rest move to a new layer at the end, so every MCI is still measured. A run whose tests fail is
+repeated once first: one flaky test in a 3642-test module (D-010) must not void a baseline or split
+a layer. A stored baseline whose tests failed is retried when the tool restarts.
+
+`--slice K/N` runs only the modules with crc32(scope) % N == K, so several processes can share one
+project on one host (E-012). Each slice has its own workspace (pitlayers-<project>-<K>) and files
+(<host>-<K>.json, baseline-<host>-<K>.json).
 
 Output (one file per host; hosts never write the same file):
     data/<project>/pit-layers/baseline-<host>.json            {scope: evidence + matrix}
@@ -33,6 +39,7 @@ import sys
 import tempfile
 import time
 import xml.etree.ElementTree as ET
+import zlib
 from collections import defaultdict
 from pathlib import Path
 
@@ -206,15 +213,42 @@ def compare(base: dict[str, str], cand: dict[str, str]) -> dict:
             "mutantsOnlyInBaseline": missing, "mutantsOnlyInCandidate": len(set(cand) - set(base))}
 
 
+def skip_failing_tests_in_pom(pom: Path) -> None:
+    """Set skipFailingTests on the workspace's pitest-maven plugin. pitest-maven 1.30.0 has no user
+    property for it, so -DskipFailingTests is ignored; dubbo-remoting-netty4 has 12 tests that pass in
+    surefire but fail under PIT's runner, and without this PIT aborts the whole module."""
+    if not pom.is_file():
+        return
+    ns = "http://maven.apache.org/POM/4.0.0"
+    ET.register_namespace("", ns)
+    tree = ET.parse(pom)
+    for plugin in tree.getroot().iter(f"{{{ns}}}plugin"):
+        artifact = plugin.find(f"{{{ns}}}artifactId")
+        if artifact is None or artifact.text != "pitest-maven":
+            continue
+        config = plugin.find(f"{{{ns}}}configuration")
+        if config is None:
+            config = ET.SubElement(plugin, f"{{{ns}}}configuration")
+        flag = config.find(f"{{{ns}}}skipFailingTests")
+        if flag is None:
+            flag = ET.SubElement(config, f"{{{ns}}}skipFailingTests")
+        if flag.text != "true":
+            flag.text = "true"
+            tree.write(pom, encoding="utf-8", xml_declaration=True)
+        return
+
+
 class Workspace:
     """One copy of the project for all runs; a layer's files are written in and restored afterwards."""
 
-    def __init__(self, project_root: Path, project: str, harness: ProjectHarness):
+    def __init__(self, project_root: Path, project: str, harness: ProjectHarness, suffix: str = ""):
         self.root = project_root
-        self.dir = _workspace_root(project_root, f"pitlayers-{project}")
+        self.dir = _workspace_root(project_root, f"pitlayers-{project}{suffix}")
         if not self.dir.is_dir():
             RefactoringAgent._copy_project(project_root, self.dir)
         ensure_pit_junit5_support(self.dir, harness.maven_repo_local)
+        if harness.pit_skip_failing_tests:
+            skip_failing_tests_in_pom(self.dir / "pom.xml")
         self.written: list[str] = []
 
     def apply(self, contents: dict[str, str]) -> None:
@@ -235,7 +269,22 @@ class Workspace:
         self.written = []
 
 
+def tests_failed(record: dict) -> bool:
+    e = record.get("evidence") or {}
+    return e.get("compileStatus") == "PASSED" and e.get("testStatus") != "PASSED"
+
+
 def validate(harness: ProjectHarness, ws: Workspace, scope: BuildScope) -> dict:
+    """One run; if it compiles but its tests fail, once more (flaky tests, D-010)."""
+    first = _validate(harness, ws, scope)
+    if not tests_failed(first):
+        return first
+    second = _validate(harness, ws, scope)
+    second["retriedAfter"] = {"testStatus": (first["evidence"] or {}).get("testStatus"), "seconds": first["seconds"]}
+    return second
+
+
+def _validate(harness: ProjectHarness, ws: Workspace, scope: BuildScope) -> dict:
     started = time.time()
     evidence = harness.validate(ws.dir, run_pit=True, scope=scope).as_dict()
     matrix = mutation_matrix(ws.dir, started - 1) if evidence.get("pitStatus") == "PASSED" else {}
@@ -256,7 +305,16 @@ def main() -> None:
     parser.add_argument("--publish-every", type=int, default=10, help="also publish after this many runs")
     parser.add_argument("--plan-only", action="store_true", help="print the layers and stop; nothing is built")
     parser.add_argument("--no-publish", action="store_true")
+    parser.add_argument("--slice", default="0/1", help="K/N: only modules with crc32(scope) %% N == K")
     args = parser.parse_args()
+    k_slice, _, n_slice = args.slice.partition("/")
+    k_slice, n_slice = int(k_slice), int(n_slice or 1)
+    if not 0 <= k_slice < n_slice:
+        parser.error("--slice K/N needs 0 <= K < N")
+    suffix = f"-{k_slice}" if n_slice > 1 else ""
+
+    def mine(module: str) -> bool:
+        return n_slice == 1 or zlib.crc32(module.encode("utf-8")) % n_slice == k_slice
     for pair in args.root:
         name, _, path = pair.partition("=")
         drive.PROJECT_ROOTS[name] = path
@@ -270,7 +328,7 @@ def main() -> None:
     for setup in setups:
         directory = base / setup
         rows = json.loads((directory / "refactoring-results.json").read_text(encoding="utf-8-sig"))["results"]
-        out_path = directory / OUT_DIR / f"{HOST}.json"
+        out_path = directory / OUT_DIR / f"{HOST}{suffix}.json"
         out = json.loads(out_path.read_text(encoding="utf-8")) if out_path.is_file() else {"plan": {}, "runs": {}}
         diffs, bymod = {}, defaultdict(list)
         for mci in sorted(rows, key=lambda m: order.get(m, len(order))):
@@ -280,6 +338,8 @@ def main() -> None:
                 continue
             module = module_of(row)
             if args.noredist == "only" and not gated(module) or args.noredist == "skip" and gated(module):
+                continue
+            if not mine(module):
                 continue
             diffs[mci] = path.read_text(encoding="utf-8")
             bymod[module].append(mci)
@@ -302,13 +362,14 @@ def main() -> None:
     harness = ProjectHarness()
     harness.pit_full_matrix = True
     harness.pit_threads = args.threads
-    ws = Workspace(project_root, args.project, harness)
+    harness.pit_skip_failing_tests = True
+    ws = Workspace(project_root, args.project, harness, suffix)
     scopes = {}
     for module in modules:
         dirs = module_dirs(module)
         scopes[module] = BuildScope(modules=dirs, pit_classes=package_patterns(project_root, dirs, "main"),
                                     pit_tests=package_patterns(project_root, dirs, "test"))
-    base_path = REPO / "data" / args.project / OUT_DIR / f"baseline-{HOST}.json"
+    base_path = REPO / "data" / args.project / OUT_DIR / f"baseline-{HOST}{suffix}.json"
     baselines = json.loads(base_path.read_text(encoding="utf-8")) if base_path.is_file() else {}
     pending = 0
 
@@ -325,9 +386,13 @@ def main() -> None:
         pending = 0
 
     def baseline(module: str) -> dict:
-        if module not in baselines:
+        stored = baselines.get(module)
+        if stored is None or (tests_failed(stored) and not stored.get("retriedOnRestart")):
+            retry = stored is not None
             ws.restore()
             record = validate(harness, ws, scopes[module])
+            if retry:
+                record["retriedOnRestart"] = True
             baselines[module] = record
             save(base_path, baselines)
             e = record["evidence"] or {}
