@@ -1,0 +1,59 @@
+--- a/multi-stage-query/src/test/java/org/apache/druid/msq/dart/controller/DartControllerRegistryTest.java
++++ b/multi-stage-query/src/test/java/org/apache/druid/msq/dart/controller/DartControllerRegistryTest.java
+@@ -151,11 +151,7 @@
+   public void test_getQueryInfoAndReport_runningQuery()
+   {
+     final DartControllerRegistry registry = new DartControllerRegistry(makeConfig(10, Period.hours(1)));
+-    final Controller controller = Mockito.mock(Controller.class);
+-    final ControllerContext controllerContext = Mockito.mock(ControllerContext.class);
+-    Mockito.when(controller.queryId()).thenReturn("dart1");
+-    Mockito.when(controller.getControllerContext()).thenReturn(controllerContext);
+-    Mockito.when(controllerContext.selfNode()).thenReturn(Mockito.mock(DruidNode.class));
++    final Controller controller = makeController("dart1");
+ 
+     // Set up live reports
+     final TaskReport.ReportMap liveReportMap = new TaskReport.ReportMap();
+@@ -188,11 +184,7 @@
+   public void test_getQueryInfoAndReport_runningQuery_noLiveReports()
+   {
+     final DartControllerRegistry registry = new DartControllerRegistry(makeConfig(10, Period.hours(1)));
+-    final Controller controller = Mockito.mock(Controller.class);
+-    final ControllerContext controllerContext = Mockito.mock(ControllerContext.class);
+-    Mockito.when(controller.queryId()).thenReturn("dart1");
+-    Mockito.when(controller.getControllerContext()).thenReturn(controllerContext);
+-    Mockito.when(controllerContext.selfNode()).thenReturn(Mockito.mock(DruidNode.class));
++    final Controller controller = makeController("dart1");
+     Mockito.when(controller.liveReports()).thenReturn(null);
+ 
+     final ControllerHolder holder = new ControllerHolder(
+@@ -268,11 +260,7 @@
+       final String identity
+   )
+   {
+-    final Controller controller = Mockito.mock(Controller.class);
+-    final ControllerContext controllerContext = Mockito.mock(ControllerContext.class);
+-    Mockito.when(controller.queryId()).thenReturn(dartQueryId);
+-    Mockito.when(controller.getControllerContext()).thenReturn(controllerContext);
+-    Mockito.when(controllerContext.selfNode()).thenReturn(Mockito.mock(DruidNode.class));
++    final Controller controller = makeController(dartQueryId);
+ 
+     return new ControllerHolder(
+         controller,
+@@ -281,6 +269,17 @@
+         makeAuthenticationResult(identity),
+         DateTimes.of("2000")
+     );
++  }
++
++  private static Controller makeController(final String dartQueryId)
++  {
++    final Controller controller = Mockito.mock(Controller.class);
++    final ControllerContext controllerContext = Mockito.mock(ControllerContext.class);
++    Mockito.when(controller.queryId()).thenReturn(dartQueryId);
++    Mockito.when(controller.getControllerContext()).thenReturn(controllerContext);
++    Mockito.when(controllerContext.selfNode()).thenReturn(Mockito.mock(DruidNode.class));
++
++    return controller;
+   }
+ 
+   private static AuthenticationResult makeAuthenticationResult(final String identity)
