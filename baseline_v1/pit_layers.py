@@ -301,9 +301,39 @@ def skip_failing_tests_in_pom(pom: Path) -> None:
             if flag.text != value:
                 flag.text, changed = value, True
         changed |= set_pom_property(tree, ns, "true")
+        changed |= skip_tests_outside_scope(project, ns)
         if changed:
             tree.write(pom, encoding="utf-8", xml_declaration=True)
         return
+
+
+def skip_tests_outside_scope(project, ns: str) -> bool:
+    """Bind surefire's skipTests to the same property, so `-pl X -am test` tests X alone. The -Dtest package
+    filter also matched upstream modules sharing com.cloud.* roots, and server's MySQL-only DAO tests failed
+    engine/orchestration's baseline on every host (D-018). The upstream modules still compile."""
+    build = project.find(f"{{{ns}}}build")
+    if build is None:
+        build = ET.SubElement(project, f"{{{ns}}}build")
+    plugins = build.find(f"{{{ns}}}plugins")
+    if plugins is None:
+        plugins = ET.SubElement(build, f"{{{ns}}}plugins")
+    surefire = next((pl for pl in plugins.findall(f"{{{ns}}}plugin")
+                     if (pl.findtext(f"{{{ns}}}artifactId") or "") == "maven-surefire-plugin"), None)
+    if surefire is None:
+        surefire = ET.SubElement(plugins, f"{{{ns}}}plugin")
+        ET.SubElement(surefire, f"{{{ns}}}groupId").text = "org.apache.maven.plugins"
+        ET.SubElement(surefire, f"{{{ns}}}artifactId").text = "maven-surefire-plugin"
+    config = surefire.find(f"{{{ns}}}configuration")
+    if config is None:
+        config = ET.SubElement(surefire, f"{{{ns}}}configuration")
+    flag = config.find(f"{{{ns}}}skipTests")
+    if flag is None:
+        flag = ET.SubElement(config, f"{{{ns}}}skipTests")
+    value = "${" + PIT_SKIP_PROPERTY + "}"
+    if flag.text == value:
+        return False
+    flag.text = value
+    return True
 
 
 PIT_SKIP_PROPERTY = "cloneDeMockerPitSkip"
