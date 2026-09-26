@@ -1,13 +1,13 @@
 # D status — only D writes this file.
 
-updated:   2026-09-26 01:36 UTC
+updated:   2026-09-26 02:00 UTC
 host:      Gengwu-PC (windows, "5090D"; Ultra 7 265KF 20 cores, 32 GB)
 presence:  see collab/status/D-online.md / D-offline.md (exactly one exists)
 tools:     JDK 17.0.10 + Temurin 25.0.4 (spring-security 7.1.1 toolchain), Python 3.12 .venv (uv sync),
            git-lfs 3.5.1; hooksPath=githooks
-running:   pilot of baseline_v1/pit_layers.py (D owns it, E-009/E-010): spring-security Terra, --max-layer 1,
-           --no-publish (21 modules, layer 1 = 211/305 diffs). A/B/C start after D's NOTE.
-next:      spring-security all 3 setups, then CloudStack non-noredist modules (E-008)
+running:   layered PIT (E-011) spring-security-7.1.1, all 3 setups, --threads 16, since 01:58 UTC:
+           21 module baselines + 131 (module, layer) runs; publishes itself after layer 1
+next:      CloudStack --setups Luna,V1+Luna --noredist skip, after C's re-run NOTE (C-019)
 done:      CloudStack pairs finished by the pool on 09-26; D's rows were all superseded by origin (A-084)
 paused:    PIT back-fill spring-security-7.1.1 (A-076), published: Terra 42/305, Luna 84/264, V1 62/117;
            not resumed: A-084 replaces per-MCI PIT with a whole-project design (pending owner sign-off)
