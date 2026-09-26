@@ -1,0 +1,60 @@
+--- a/core/src/test/java/com/cloud/resource/ServerResourceBaseTest.java
++++ b/core/src/test/java/com/cloud/resource/ServerResourceBaseTest.java
+@@ -73,9 +73,7 @@
+ 
+     @Test
+     public void isValidNicToUseAsPrivateNicTestReturnFalseWhenNicNameStartsWithOneOfTheAvoidList() {
+-        NetworkInterface networkInterfaceMock = Mockito.mock(NetworkInterface.class);
+-        Mockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
+-        Mockito.when(networkInterfaceMock.getName()).thenReturn("vniftest", "vnbrtest", "pethtest", "viftest", "virbrtest");
++        NetworkInterface networkInterfaceMock = createMockNetworkInterface("vniftest", "vnbrtest", "pethtest", "viftest", "virbrtest");
+ 
+         Arrays.asList(NIC_NAME_STARTS_TO_AVOID).forEach(type -> Assert.assertFalse(serverResourceBaseSpy.isValidNicToUseAsPrivateNic(networkInterfaceMock)));
+     }
+@@ -91,9 +89,7 @@
+ 
+     @Test
+     public void isValidNicToUseAsPrivateNicTestReturnFalseWhenNetUtilsGetNicParamsReturnsNull() {
+-        NetworkInterface networkInterfaceMock = Mockito.mock(NetworkInterface.class);
+-        Mockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
+-        Mockito.when(networkInterfaceMock.getName()).thenReturn("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
++        NetworkInterface networkInterfaceMock = createMockNetworkInterface("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
+ 
+         try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+             Mockito.when(NetUtils.getNicParams(Mockito.anyString())).thenReturn(null);
+@@ -106,9 +102,7 @@
+ 
+     @Test
+     public void isValidNicToUseAsPrivateNicTestReturnFalseWhenNetUtilsGetNicParamsReturnsFirstElementNull() {
+-        NetworkInterface networkInterfaceMock = Mockito.mock(NetworkInterface.class);
+-        Mockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
+-        Mockito.when(networkInterfaceMock.getName()).thenReturn("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
++        NetworkInterface networkInterfaceMock = createMockNetworkInterface("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
+ 
+         try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+             Mockito.when(NetUtils.getNicParams(Mockito.anyString())).thenReturn(new String[]{null});
+@@ -121,9 +115,7 @@
+ 
+     @Test
+     public void isValidNicToUseAsPrivateNicTestReturnTrueWhenNetUtilsGetNicParamsReturnsAValidFirstElement() {
+-        NetworkInterface networkInterfaceMock = Mockito.mock(NetworkInterface.class);
+-        Mockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
+-        Mockito.when(networkInterfaceMock.getName()).thenReturn("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
++        NetworkInterface networkInterfaceMock = createMockNetworkInterface("testvnif", "testvnbr", "testpeth", "testvif", "testvirbr");
+ 
+         try (MockedStatic<NetUtils> ignored = Mockito.mockStatic(NetUtils.class)) {
+             Mockito.when(NetUtils.getNicParams(Mockito.anyString())).thenReturn(new String[]{"test"});
+@@ -213,6 +205,13 @@
+ 
+             verifyAndAssertNetworkInterfaces(mockedNetUtils, "cloudbr0", "cloudbr1", "cloudbr2", "cloudbr3");
+         }
++    }
++
++    private static NetworkInterface createMockNetworkInterface(String firstName, String... additionalNames) {
++        NetworkInterface networkInterfaceMock = Mockito.mock(NetworkInterface.class);
++        Mockito.when(networkInterfaceMock.isVirtual()).thenReturn(false);
++        Mockito.when(networkInterfaceMock.getName()).thenReturn(firstName, additionalNames);
++        return networkInterfaceMock;
+     }
+ 
+     private Map<String, Object> createParamsMap(String... params) {

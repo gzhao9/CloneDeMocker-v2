@@ -1,0 +1,192 @@
+--- a/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/guru/VMwareGuruTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/guru/VMwareGuruTest.java
+@@ -121,6 +121,9 @@
+     @Mock
+     NfsMountManager mountManager;
+ 
++    @Mock
++    private VimPortType vimPortMock;
++
+     private static MockedStatic<VmwareHelper> mockedVmwareHelper;
+ 
+     @BeforeClass
+@@ -231,16 +234,15 @@
+ 
+         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+-        VimPortType vimPort = Mockito.mock(VimPortType.class);
+-        VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+-        VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+-        Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+-        Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
+-        Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
+-        DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+-
+-        try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+-            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
++        VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
++        VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
++        Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
++        Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
++        Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
++        DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
++
++        try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
++            Mockito.doReturn(vimPortMock).when(mockVmwareClient).getService();
+             Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+             Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+             Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+@@ -268,7 +270,6 @@
+ 
+         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+-        VimPortType vimPort = Mockito.mock(VimPortType.class);
+         VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+         VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+         Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+@@ -284,7 +285,7 @@
+         when(VmwareHelper.getUnmanagedInstance(hostMo, vmMo)).thenReturn(instance);
+ 
+         try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+-            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
++            Mockito.doReturn(vimPortMock).when(mockVmwareClient).getService();
+             Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+             Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+             Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+@@ -312,7 +313,6 @@
+ 
+         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+-        VimPortType vimPort = Mockito.mock(VimPortType.class);
+         VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+         VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+         Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+@@ -331,7 +331,7 @@
+         Mockito.doReturn(datastores).when(vmMo).getAllDatastores();
+ 
+         try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+-            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
++            Mockito.doReturn(vimPortMock).when(mockVmwareClient).getService();
+             Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+             Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+             Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+@@ -359,7 +359,6 @@
+ 
+         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+-        VimPortType vimPort = Mockito.mock(VimPortType.class);
+         VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+         VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+         Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+@@ -383,7 +382,7 @@
+         Mockito.lenient().doReturn(false).when(vmMo).createFullClone(anyString(), any(ManagedObjectReference.class), any(ManagedObjectReference.class), any(ManagedObjectReference.class), any(Storage.ProvisioningType.class));
+ 
+         try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+-            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
++            Mockito.doReturn(vimPortMock).when(mockVmwareClient).getService();
+             Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+             Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+             Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+@@ -413,7 +412,6 @@
+ 
+         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+-        VimPortType vimPort = Mockito.mock(VimPortType.class);
+         VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+         VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+         Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+@@ -443,7 +441,7 @@
+         Mockito.doReturn(disks).when(instance).getDisks();
+ 
+         try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+-            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
++            Mockito.doReturn(vimPortMock).when(mockVmwareClient).getService();
+             Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+             Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+             Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+@@ -475,16 +473,15 @@
+         DataStoreTO dataStore = Mockito.mock(DataStoreTO.class);
+         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+-        VimPortType vimPort = Mockito.mock(VimPortType.class);
+-        VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+-        VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+-        Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+-        Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
+-        Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
+-        DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+-
+-        try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+-            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
++        VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
++        VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
++        Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
++        Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
++        Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
++        DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
++
++        try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
++            Mockito.doReturn(vimPortMock).when(mockVmwareClient).getService();
+             Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+             Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+             Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+@@ -512,7 +509,6 @@
+ 
+         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+-        VimPortType vimPort = Mockito.mock(VimPortType.class);
+         VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+         VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+         Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+@@ -525,7 +521,7 @@
+         Mockito.doReturn("nfs://10.1.1.4/testdir").when(dataStore).getUrl();
+ 
+         try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+-            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
++            Mockito.doReturn(vimPortMock).when(mockVmwareClient).getService();
+             Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+             Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+             Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+@@ -555,16 +551,15 @@
+ 
+         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+-        VimPortType vimPort = Mockito.mock(VimPortType.class);
+-        VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+-        VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+-        Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+-        Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
+-        Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
+-        DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
+-
+-        try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+-            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
++        VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
++        VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
++        Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
++        Mockito.doReturn(mor).when(vmwareContext).getRootFolder();
++        Mockito.doReturn(mor).when(vimClient).getDecendentMoRef(any(ManagedObjectReference.class), anyString(), anyString());
++        DatacenterMO dataCenterMO = spy(new DatacenterMO(vmwareContext, datacenterName));
++
++        try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
++            Mockito.doReturn(vimPortMock).when(mockVmwareClient).getService();
+             Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+             Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+             Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();
+@@ -593,7 +588,6 @@
+ 
+         ManagedObjectReference mor = Mockito.mock(ManagedObjectReference.class);
+         ServiceContent serviceContent = Mockito.mock(ServiceContent.class);
+-        VimPortType vimPort = Mockito.mock(VimPortType.class);
+         VmwareClient vimClient = spy(new VmwareClient(vCenterHost));
+         VmwareContext vmwareContext = spy(new VmwareContext(vimClient, vCenterHost));
+         Mockito.doReturn(vimClient).when(vmwareContext).getVimClient();
+@@ -604,7 +598,7 @@
+         Mockito.doReturn(true).when(vmMo).destroy();
+ 
+         try (MockedConstruction<VmwareClient> ignored1 = Mockito.mockConstruction(VmwareClient.class, withSettings().spiedInstance(vimClient), (mockVmwareClient, contextVmwareClient) -> {
+-            Mockito.doReturn(vimPort).when(mockVmwareClient).getService();
++            Mockito.doReturn(vimPortMock).when(mockVmwareClient).getService();
+             Mockito.doReturn(serviceContent).when(mockVmwareClient).getServiceContent();
+             Mockito.doNothing().when(mockVmwareClient).connect(anyString(), anyString(), anyString());
+             Mockito.doReturn(mor).when(mockVmwareClient).getRootFolder();

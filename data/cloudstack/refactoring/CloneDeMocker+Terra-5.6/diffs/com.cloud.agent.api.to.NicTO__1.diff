@@ -1,0 +1,86 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -790,6 +790,12 @@
+         verifySerialDevices(parse(serialDef.toString()), "");
+     }
+ 
++    private static NicTO createMockNic(String macReturn) {
++        final NicTO nic = Mockito.mock(NicTO.class);
++        when(nic.getMac()).thenReturn(macReturn);
++        return nic;
++    }
++
+     private VirtualMachineTO createDefaultVM(boolean limitCpuUse) {
+         int id = random.nextInt(65534);
+         String name = "test-instance-1";
+@@ -3567,7 +3573,7 @@
+ 
+     @Test
+     public void testPlugNicCommandMatchMack() {
+-        final NicTO nic = Mockito.mock(NicTO.class);
++        final NicTO nic = createMockNic("00:00:00:00");
+         final String instanceName = "Test";
+         final Type vmtype = Type.DomainRouter;
+ 
+@@ -3586,8 +3592,6 @@
+ 
+         when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+ 
+-        when(nic.getMac()).thenReturn("00:00:00:00");
+-
+         try {
+             when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+             when(libvirtComputingResourceMock.getDomain(conn, instanceName)).thenReturn(vm);
+@@ -3612,7 +3616,7 @@
+ 
+     @Test
+     public void testPlugNicCommandNoMatchMack() {
+-        final NicTO nic = Mockito.mock(NicTO.class);
++        final NicTO nic = createMockNic("00:00:00:01");
+         final String instanceName = "Test";
+         final Type vmtype = Type.DomainRouter;
+ 
+@@ -3633,7 +3637,6 @@
+ 
+         when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+ 
+-        when(nic.getMac()).thenReturn("00:00:00:01");
+         when(nic.getName()).thenReturn("br0");
+ 
+         try {
+@@ -3709,7 +3712,7 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testPlugNicCommandInternalError() {
+-        final NicTO nic = Mockito.mock(NicTO.class);
++        final NicTO nic = createMockNic("00:00:00:01");
+         final String instanceName = "Test";
+         final Type vmtype = Type.DomainRouter;
+ 
+@@ -3729,8 +3732,6 @@
+ 
+         when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+ 
+-        when(nic.getMac()).thenReturn("00:00:00:01");
+-
+         try {
+             when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
+             when(libvirtComputingResourceMock.getDomain(conn, instanceName)).thenReturn(vm);
+@@ -3766,7 +3767,7 @@
+ 
+     @Test
+     public void testUnPlugNicCommandMatchMack() {
+-        final NicTO nic = Mockito.mock(NicTO.class);
++        final NicTO nic = createMockNic("00:00:00:00");
+         final String instanceName = "Test";
+ 
+         final UnPlugNicCommand command = new UnPlugNicCommand(nic, instanceName);
+@@ -3788,8 +3789,6 @@
+ 
+         when(intDef.getBrName()).thenReturn("br0");
+         when(intDef.getMacAddress()).thenReturn("00:00:00:00");
+-
+-        when(nic.getMac()).thenReturn("00:00:00:00");
+ 
+         try {
+             when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);

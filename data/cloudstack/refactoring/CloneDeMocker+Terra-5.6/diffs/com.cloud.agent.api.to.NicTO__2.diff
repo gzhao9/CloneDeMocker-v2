@@ -1,0 +1,117 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -790,6 +790,12 @@
+         verifySerialDevices(parse(serialDef.toString()), "");
+     }
+ 
++    private static NicTO createMockNicTO(TrafficType trafficTypeReturn) {
++        final NicTO nicTO = Mockito.mock(NicTO.class);
++        when(nicTO.getType()).thenReturn(trafficTypeReturn);
++        return nicTO;
++    }
++
+     private VirtualMachineTO createDefaultVM(boolean limitCpuUse) {
+         int id = random.nextInt(65534);
+         String name = "test-instance-1";
+@@ -1508,7 +1514,7 @@
+ 
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+         final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+-        final NicTO nicTO = Mockito.mock(NicTO.class);
++        final NicTO nicTO = createMockNicTO(TrafficType.Guest);
+         final DiskTO diskTO = Mockito.mock(DiskTO.class);
+         final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+ 
+@@ -1524,7 +1530,6 @@
+         when(vm.getNics()).thenReturn(new NicTO[]{nicTO});
+         when(vm.getDisks()).thenReturn(new DiskTO[]{diskTO});
+ 
+-        when(nicTO.getType()).thenReturn(TrafficType.Guest);
+         when(diskTO.getType()).thenReturn(Volume.Type.ISO);
+ 
+         when(libvirtComputingResourceMock.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
+@@ -1556,7 +1561,7 @@
+ 
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+         final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+-        final NicTO nicTO = Mockito.mock(NicTO.class);
++        final NicTO nicTO = createMockNicTO(TrafficType.Guest);
+         final DiskTO diskTO = Mockito.mock(DiskTO.class);
+         final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+ 
+@@ -1572,7 +1577,6 @@
+         when(vm.getNics()).thenReturn(new NicTO[]{nicTO});
+         when(vm.getDisks()).thenReturn(new DiskTO[]{diskTO});
+ 
+-        when(nicTO.getType()).thenReturn(TrafficType.Guest);
+         when(diskTO.getType()).thenReturn(Volume.Type.ISO);
+ 
+         when(libvirtComputingResourceMock.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
+@@ -1646,7 +1650,7 @@
+ 
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+         final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+-        final NicTO nicTO = Mockito.mock(NicTO.class);
++        final NicTO nicTO = createMockNicTO(TrafficType.Guest);
+         final DiskTO volume = Mockito.mock(DiskTO.class);
+         final VifDriver vifDriver = Mockito.mock(VifDriver.class);
+ 
+@@ -1662,7 +1666,6 @@
+         when(vm.getNics()).thenReturn(new NicTO[]{nicTO});
+         when(vm.getDisks()).thenReturn(new DiskTO[]{volume});
+ 
+-        when(nicTO.getType()).thenReturn(TrafficType.Guest);
+         when(volume.getType()).thenReturn(Volume.Type.ISO);
+ 
+         when(libvirtComputingResourceMock.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
+@@ -1702,7 +1705,7 @@
+ 
+         final VirtualMachineTO vm = Mockito.mock(VirtualMachineTO.class);
+         final KVMStoragePoolManager storagePoolManager = Mockito.mock(KVMStoragePoolManager.class);
+-        final NicTO nicTO = Mockito.mock(NicTO.class);
++        final NicTO nicTO = createMockNicTO(TrafficType.Guest);
+         final DiskTO volume = Mockito.mock(DiskTO.class);
+ 
+         final PrepareForMigrationCommand command = new PrepareForMigrationCommand(vm);
+@@ -1715,7 +1718,6 @@
+         }
+ 
+         when(vm.getNics()).thenReturn(new NicTO[]{nicTO});
+-        when(nicTO.getType()).thenReturn(TrafficType.Guest);
+ 
+         BDDMockito.given(libvirtComputingResourceMock.getVifDriver(nicTO.getType(), nicTO.getName())).willAnswer(invocationOnMock -> {throw new InternalErrorException("Exception Occurred");});
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolManager);
+@@ -5312,7 +5314,7 @@
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+         final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
+ 
+-        final NicTO nic = Mockito.mock(NicTO.class);
++        final NicTO nic = createMockNicTO(TrafficType.Control);
+         final NicTO[] nics = new NicTO[]{nic};
+ 
+         final String vmName = "Test";
+@@ -5346,7 +5348,6 @@
+             when(libvirtComputingResourceMock.passCmdLine(vmName, vmSpec.getBootArgs())).thenReturn(true);
+ 
+             when(nic.getIp()).thenReturn(controlIp);
+-            when(nic.getType()).thenReturn(TrafficType.Control);
+             when(libvirtComputingResourceMock.getVirtRouterResource()).thenReturn(virtRouterResource);
+             when(virtRouterResource.connect(controlIp, 1, 5000)).thenReturn(true);
+             when(virtRouterResource.isSystemVMSetup(vmName, controlIp)).thenReturn(true);
+@@ -5391,7 +5392,7 @@
+         final LibvirtVMDef vmDef = Mockito.mock(LibvirtVMDef.class);
+         final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
+ 
+-        final NicTO nic = Mockito.mock(NicTO.class);
++        final NicTO nic = createMockNicTO(TrafficType.Control);
+         final NicTO[] nics = new NicTO[]{nic};
+ 
+         final String vmName = "Test";
+@@ -5426,7 +5427,6 @@
+             when(libvirtComputingResourceMock.passCmdLine(vmName, vmSpec.getBootArgs())).thenReturn(true);
+ 
+             when(nic.getIp()).thenReturn(controlIp);
+-            when(nic.getType()).thenReturn(TrafficType.Control);
+             when(libvirtComputingResourceMock.getVirtRouterResource()).thenReturn(virtRouterResource);
+             when(virtRouterResource.connect(controlIp, 1, 5000)).thenReturn(true);
+             when(virtRouterResource.isSystemVMSetup(vmName, controlIp)).thenReturn(true);
