@@ -1,0 +1,48 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/overlord/ImmutableWorkerInfoTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/overlord/ImmutableWorkerInfoTest.java
+@@ -239,9 +239,7 @@
+     // Parallel index task
+     TaskResource taskResource0 = mock(TaskResource.class);
+     when(taskResource0.getRequiredCapacity()).thenReturn(3);
+-    Task parallelIndexTask = mock(ParallelIndexSupervisorTask.class);
+-    when(parallelIndexTask.getType()).thenReturn(ParallelIndexSupervisorTask.TYPE);
+-    when(parallelIndexTask.getTaskResource()).thenReturn(taskResource0);
++    Task parallelIndexTask = mockTask(ParallelIndexSupervisorTask.class, ParallelIndexSupervisorTask.TYPE, taskResource0);
+ 
+     // Since task satisifies parallel and total slot constraints, can run
+     Assert.assertTrue(workerInfo.canRunTask(parallelIndexTask, 0.5));
+@@ -253,9 +251,7 @@
+     // Some other indexing task
+     TaskResource taskResource1 = mock(TaskResource.class);
+     when(taskResource1.getRequiredCapacity()).thenReturn(5);
+-    Task anyOtherTask = mock(IndexTask.class);
+-    when(anyOtherTask.getType()).thenReturn("index");
+-    when(anyOtherTask.getTaskResource()).thenReturn(taskResource1);
++    Task anyOtherTask = mockTask(IndexTask.class, "index", taskResource1);
+ 
+     // Not a parallel index task ->  satisfies parallel index constraint
+     // But does not satisfy the total slot constraint and cannot run (11 > 10)
+@@ -266,9 +262,7 @@
+     TaskResource taskResource2 = mock(TaskResource.class);
+     when(taskResource2.getRequiredCapacity()).thenReturn(1);
+     when(taskResource2.getAvailabilityGroup()).thenReturn("grp1");
+-    Task grp1Task = mock(IndexTask.class);
+-    when(grp1Task.getType()).thenReturn("blah");
+-    when(grp1Task.getTaskResource()).thenReturn(taskResource2);
++    Task grp1Task = mockTask(IndexTask.class, "blah", taskResource2);
+ 
+     // Satisifies parallel index and total index slot constraints but cannot run due availability
+     Assert.assertFalse(workerInfo.canRunTask(grp1Task, 0.3));
+@@ -284,4 +278,12 @@
+       Assert.assertNotEquals(o1.hashCode(), o2.hashCode());
+     }
+   }
++
++  private <T extends Task> T mockTask(final Class<T> taskClass, final String type, final TaskResource taskResource)
++  {
++    final T task = mock(taskClass);
++    when(task.getType()).thenReturn(type);
++    when(task.getTaskResource()).thenReturn(taskResource);
++    return task;
++  }
+ }
