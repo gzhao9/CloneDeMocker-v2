@@ -413,6 +413,11 @@ def _validate(harness: ProjectHarness, ws: Workspace, scope: BuildScope) -> dict
     # The harness's own mutant summary reads every fresh report in the workspace, so it can include other
     # modules (E-013). Score and counts come from the module-scoped matrix instead; its mutant list is dropped.
     slimmed.pop("mutants", None)
+    if any(slimmed.get(k) not in ("PASSED", "NOT_RUN", None) for k in ("compileStatus", "testStatus", "pitStatus")):
+        # Keep the tail of the build output on failure: surefire fork crashes (druid indexing-service, CloudStack
+        # server) could not be told from host problems without it (C-027).
+        text = "\n".join(str(d) for d in evidence.get("diagnostics") or [])
+        slimmed["diagnosticsTail"] = text[-12000:]
     if matrix:
         statuses = [value.split("|", 1)[0] for value in matrix.values()]
         slimmed["mutationScore"] = statuses.count("KILLED") / len(statuses)
