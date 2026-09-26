@@ -234,7 +234,7 @@ def run_one(project: str, mci: str, variant: str, model: str, sandbox: str, serv
     agent = CodexAgent(service, provider=RefactoringAgent._openai_provider("default"))
     result = agent.run(run_id, [mci], model, user_instruction="", run_pit=False, api_profile="default",
                        use_mock=False, sequence_selection=None, max_retries=0, use_cache=False,
-                       progress_callback=None, workspace_id=f"codex-{project}")
+                       progress_callback=None, workspace_id=f"codex-{project}" + ("" if variant == "neutral" else f"-{variant}"))
     entry = canonical_store.entry_from_agent_result(mci, result)
     entry.update({"codexExit": code, "codexWallSeconds": wall, "codexUsage": usage,
                   "codexChangedFiles": changed, "codexNewFiles": added, "codexOutOfScope": out_of_scope,
