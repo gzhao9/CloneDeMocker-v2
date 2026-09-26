@@ -500,6 +500,8 @@ def main() -> None:
     parser.add_argument("--publish-every", type=int, default=10, help="also publish after this many runs")
     parser.add_argument("--plan-only", action="store_true", help="print the layers and stop; nothing is built")
     parser.add_argument("--no-publish", action="store_true")
+    parser.add_argument("--single-baseline", action="store_true",
+                        help="run each module's baseline once: no repeat run, so no unstable-mutant filter (owner, E-016)")
     parser.add_argument("--slice", default="0/1", help="K/N: only modules with crc32(scope) %% N == K")
     parser.add_argument("--kill-first", action="append", default=[], metavar="MODULE",
                         help="module scope (substring) that runs without fullMutationMatrix: each mutant stops at its "
@@ -629,7 +631,7 @@ def main() -> None:
                          f"test {e.get('testStatus')} pit {e.get('pitStatus')} score {e.get('mutationScore')} "
                          f"mutants {len(record['matrix'])} {record['seconds']}s")
         record = baselines[module]
-        if record.get("matrix") and "unstable" not in record:
+        if record.get("matrix") and "unstable" not in record and not args.single_baseline:
             # A second run of the untouched code marks the mutants that move on their own.
             ws.restore()
             again = validate(matrix_mode(module), ws, scopes[module])
