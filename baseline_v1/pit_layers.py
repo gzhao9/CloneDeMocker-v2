@@ -201,21 +201,39 @@ def mutation_matrix(workspace: Path, since: float, modules: tuple[str, ...] = ()
     return matrix
 
 
-def compare(base: dict[str, str], cand: dict[str, str]) -> dict:
-    def split(value: str):
-        status, _, killers = value.partition("|")
-        return status, set(filter(None, killers.split(";")))
+def split(value: str):
+    status, _, killers = value.partition("|")
+    return status, set(filter(None, killers.split(";")))
+
+
+def unstable_mutants(first: dict[str, str], second: dict[str, str]) -> dict[str, str]:
+    """Mutants whose status or killing tests differ between two baseline runs of the same code."""
+    return {k: f"{first.get(k, '-')} || {second.get(k, '-')}" for k in set(first) | set(second)
+            if first.get(k) != second.get(k)}
+
+
+def compare(base: dict[str, str], cand: dict[str, str], unstable: dict | None = None) -> dict:
+    """Candidate vs baseline, mutant by mutant. Mutants that differed between two baseline runs
+    (`unstable`) and any change into or out of TIMED_OUT are counted apart: under host load they
+    move without any code change (kiota getRetryAfter:150, dubbo nacos TIMED_OUT -> SURVIVED)."""
+    unstable = unstable or {}
 
     # PIT counts these as detected. KILLED <-> TIMED_OUT under host load is not a lost kill: kiota's
     # okHttp L1 flipped one mutant KILLED -> TIMED_OUT on an identical re-run.
     detected = {"KILLED", "TIMED_OUT", "MEMORY_ERROR", "RUN_ERROR"}
     lost, gained, changed, killers_lost, missing = [], [], {}, {}, 0
+    timeout_flips, skipped = {}, 0
     for key, value in base.items():
         if key not in cand:
             missing += 1
             continue
         (bs, bk), (cs, ck) = split(value), split(cand[key])
-        if bs in detected and cs not in detected:
+        if key in unstable:
+            skipped += value != cand[key]
+            continue
+        if bs != cs and "TIMED_OUT" in (bs, cs):
+            timeout_flips[key] = f"{bs}->{cs}"
+        elif bs in detected and cs not in detected:
             lost.append(key)
         elif bs not in detected and cs in detected:
             gained.append(key)
@@ -224,8 +242,15 @@ def compare(base: dict[str, str], cand: dict[str, str]) -> dict:
         elif bs == cs == "KILLED" and bk - ck:
             killers_lost[key] = sorted(bk - ck)
     return {"killedLost": sorted(lost), "killedGained": sorted(gained), "detectedStatusChanged": changed,
-            "killersLost": killers_lost, "mutantsOnlyInBaseline": missing,
+            "killersLost": killers_lost, "timeoutFlips": timeout_flips, "unstableChangesSkipped": skipped,
+            "unstableMutants": len(unstable), "mutantsOnlyInBaseline": missing,
             "mutantsOnlyInCandidate": len(set(cand) - set(base))}
+
+
+def candidate_from_diff(base: dict[str, str], diff: dict) -> dict[str, str]:
+    cand = {k: v for k, v in base.items() if k not in set(diff.get("missing") or [])}
+    cand.update(diff.get("changed") or {})
+    return cand
 
 
 def matrix_diff(base: dict[str, str], cand: dict[str, str]) -> dict:
@@ -430,7 +455,33 @@ def main() -> None:
             run_pair.log(f"  PIT-LAYERS {args.project} baseline {module}: compile {e.get('compileStatus')} "
                          f"test {e.get('testStatus')} pit {e.get('pitStatus')} score {e.get('mutationScore')} "
                          f"mutants {len(record['matrix'])} {record['seconds']}s")
-        return baselines[module]
+        record = baselines[module]
+        if record.get("matrix") and "unstable" not in record:
+            # A second run of the untouched code marks the mutants that move on their own.
+            ws.restore()
+            again = validate(harness, ws, scopes[module])
+            if again.get("matrix"):
+                record["unstable"] = unstable_mutants(record["matrix"], again["matrix"])
+                record["repeatSeconds"] = again["seconds"]
+                save(base_path, baselines)
+                run_pair.log(f"  PIT-LAYERS {args.project} baseline {module}: repeat run, "
+                             f"{len(record['unstable'])} of {len(record['matrix'])} mutants unstable")
+                recompare(module)
+        return record
+
+    def recompare(module: str) -> None:
+        """Re-derive stored layer comparisons of this module under the current rules, from their diffs."""
+        base = baselines[module]
+        for s in setups:
+            d = data[s]
+            touched = False
+            for key, run in d["out"]["runs"].items():
+                if key.rsplit("#L", 1)[0] == module and run.get("matrixDiff"):
+                    run["comparison"] = compare(base["matrix"], candidate_from_diff(base["matrix"], run["matrixDiff"]),
+                                                base.get("unstable"))
+                    touched = True
+            if touched:
+                save(d["out_path"], d["out"])
 
     def run_layer(d: dict, module: str, mcis: list[str]) -> dict:
         ws.apply(layer_contents(mcis, d["diffs"], project_root))
@@ -440,8 +491,9 @@ def main() -> None:
             ws.restore()
         record["mcis"] = mcis
         matrix = record.pop("matrix")
-        base_matrix = baseline(module)["matrix"]
-        record["comparison"] = compare(base_matrix, matrix) if matrix else None
+        base = baseline(module)
+        base_matrix = base["matrix"]
+        record["comparison"] = compare(base_matrix, matrix, base.get("unstable")) if matrix else None
         record["matrixDiff"] = matrix_diff(base_matrix, matrix) if matrix else None
         return record
 
