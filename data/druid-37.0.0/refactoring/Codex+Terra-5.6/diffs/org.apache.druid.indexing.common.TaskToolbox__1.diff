@@ -1,0 +1,310 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/common/task/AbstractTaskTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/common/task/AbstractTaskTest.java
+@@ -68,30 +68,11 @@
+   @Test
+   public void testSetupAndCleanupIsCalledWtihParameter() throws Exception
+   {
+-    // These tests apparently use Mockito.  Mockito is bad as we've seen it rewrite byte code and effectively cause
+-    // impact to other totally unrelated tests.  Mockito needs to be completely erradicated from the codebase.  This
+-    // comment is here to either cause me to do it in this commit or just for posterity so that it is clear that it
+-    // should happen in the future.
+-    TaskToolbox toolbox = mock(TaskToolbox.class);
+-    when(toolbox.getAttemptId()).thenReturn("1");
+-
+-    DruidNode node = new DruidNode("foo", "foo", false, 1, 2, true, true);
+-    when(toolbox.getTaskExecutorNode()).thenReturn(node);
+-
+-    TaskLogPusher pusher = mock(TaskLogPusher.class);
+-    when(toolbox.getTaskLogPusher()).thenReturn(pusher);
+-
+-    TaskConfig config = mock(TaskConfig.class);
+-    when(config.isEncapsulatedTask()).thenReturn(true);
+-    File folder = temporaryFolder.newFolder();
+-    when(config.getTaskDir(eq("myID"))).thenReturn(folder);
+-    when(toolbox.getConfig()).thenReturn(config);
+-    when(toolbox.getJsonMapper()).thenReturn(objectMapper);
+-
+-    TaskActionClient taskActionClient = mock(TaskActionClient.class);
+-    when(taskActionClient.submit(any())).thenReturn(TaskConfig.class);
+-    when(toolbox.getTaskActionClient()).thenReturn(taskActionClient);
+-    when(toolbox.getTaskReportFileWriter()).thenReturn(new SingleFileTaskReportFileWriter(temporaryFolder.newFile()));
++    final ToolboxTestData testData = createToolboxTestData();
++    when(testData.config.isEncapsulatedTask()).thenReturn(true);
++    final File folder = temporaryFolder.newFolder();
++    when(testData.config.getTaskDir(eq("myID"))).thenReturn(folder);
++    when(testData.toolbox.getTaskReportFileWriter()).thenReturn(new SingleFileTaskReportFileWriter(temporaryFolder.newFile()));
+ 
+ 
+     AbstractTask task = new NoopTask("myID", null, null, 1, 0, null)
+@@ -110,36 +91,21 @@
+         return result;
+       }
+     };
+-    task.run(toolbox);
++    task.run(testData.toolbox);
+ 
+     // call it 3 times, once to update location in setup, then one for status and location in cleanup
+-    Mockito.verify(taskActionClient, times(3)).submit(any());
+-    verify(pusher, times(1)).pushTaskReports(eq("myID"), any());
+-    verify(pusher, times(1)).pushTaskStatus(eq("myID"), any());
++    Mockito.verify(testData.taskActionClient, times(3)).submit(any());
++    verify(testData.pusher, times(1)).pushTaskReports(eq("myID"), any());
++    verify(testData.pusher, times(1)).pushTaskStatus(eq("myID"), any());
+   }
+ 
+   @Test
+   public void testWithNoEncapsulatedTask() throws Exception
+   {
+-    TaskToolbox toolbox = mock(TaskToolbox.class);
+-    when(toolbox.getAttemptId()).thenReturn("1");
+-
+-    DruidNode node = new DruidNode("foo", "foo", false, 1, 2, true, true);
+-    when(toolbox.getTaskExecutorNode()).thenReturn(node);
+-
+-    TaskLogPusher pusher = mock(TaskLogPusher.class);
+-    when(toolbox.getTaskLogPusher()).thenReturn(pusher);
+-
+-    TaskConfig config = mock(TaskConfig.class);
+-    when(config.isEncapsulatedTask()).thenReturn(false);
+-    File folder = temporaryFolder.newFolder();
+-    when(config.getTaskDir(eq("myID"))).thenReturn(folder);
+-    when(toolbox.getConfig()).thenReturn(config);
+-    when(toolbox.getJsonMapper()).thenReturn(objectMapper);
+-
+-    TaskActionClient taskActionClient = mock(TaskActionClient.class);
+-    when(taskActionClient.submit(any())).thenReturn(TaskConfig.class);
+-    when(toolbox.getTaskActionClient()).thenReturn(taskActionClient);
++    final ToolboxTestData testData = createToolboxTestData();
++    when(testData.config.isEncapsulatedTask()).thenReturn(false);
++    final File folder = temporaryFolder.newFolder();
++    when(testData.config.getTaskDir(eq("myID"))).thenReturn(folder);
+ 
+ 
+     AbstractTask task = new NoopTask("myID", null, null, 1, 0, null)
+@@ -156,123 +122,122 @@
+         return result;
+       }
+     };
+-    task.run(toolbox);
++    task.run(testData.toolbox);
+ 
+     // encapsulated task is set to false, should never get called
+-    Mockito.verify(taskActionClient, never()).submit(any());
+-    verify(pusher, never()).pushTaskReports(eq("myID"), any());
++    Mockito.verify(testData.taskActionClient, never()).submit(any());
++    verify(testData.pusher, never()).pushTaskReports(eq("myID"), any());
+   }
+ 
+   @Test
+   public void testTaskFailureWithoutExceptionGetsReportedCorrectly() throws Exception
+   {
+-    TaskToolbox toolbox = mock(TaskToolbox.class);
++    final ToolboxTestData testData = createToolboxTestData();
++    when(testData.config.isEncapsulatedTask()).thenReturn(true);
++    final File folder = temporaryFolder.newFolder();
++    when(testData.config.getTaskDir(eq("myID"))).thenReturn(folder);
++    when(testData.toolbox.getTaskReportFileWriter()).thenReturn(new SingleFileTaskReportFileWriter(temporaryFolder.newFile()));
++
++    TaskStatus taskStatus = TaskStatus.failure("myId", "failed");
++    AbstractTask task = new NoopTask("myID", null, null, 1, 0, null)
++    {
++      @Override
++      public TaskStatus runTask(TaskToolbox toolbox)
++      {
++        return taskStatus;
++      }
++    };
++    task.run(testData.toolbox);
++    final UpdateStatusAction action = new UpdateStatusAction("", taskStatus);
++    verify(testData.taskActionClient).submit(eq(action));
++  }
++
++  @Test
++  public void testNullStackStatusGetsReportedCorrectly() throws Exception
++  {
++    final ToolboxTestData testData = createToolboxTestData();
++    when(testData.toolbox.getTaskReportFileWriter()).thenReturn(new SingleFileTaskReportFileWriter(temporaryFolder.newFile()));
++    when(testData.config.isEncapsulatedTask()).thenReturn(true);
++    final File folder = temporaryFolder.newFolder();
++    when(testData.config.getTaskDir(eq("myID"))).thenReturn(folder);
++    AbstractTask task = new NoopTask("myID", null, null, 1, 0, null)
++    {
++      @Nullable
++      @Override
++      public TaskStatus runTask(TaskToolbox toolbox)
++      {
++        // Simulate the scenario where taskStatus is never set and cleanUp is called with null.
++        return null;
++      }
++    };
++    task.run(testData.toolbox);
++    final UpdateStatusAction action = new UpdateStatusAction("", TaskStatus.failure(task.getId(), "Task failed to run"));
++    verify(testData.taskActionClient).submit(eq(action));
++  }
++
++  @Test
++  public void testSetupFailsGetsReportedCorrectly() throws Exception
++  {
++    final ToolboxTestData testData = createToolboxTestData();
++    when(testData.config.isEncapsulatedTask()).thenReturn(true);
++    final File folder = temporaryFolder.newFolder();
++    when(testData.config.getTaskDir(eq("myID"))).thenReturn(folder);
++    AbstractTask task = new NoopTask("myID", null, null, 1, 0, null)
++    {
++      @Nullable
++      @Override
++      public String setup(TaskToolbox toolbox)
++      {
++        return "setup error";
++      }
++    };
++    task.run(testData.toolbox);
++    final UpdateStatusAction action = new UpdateStatusAction("", TaskStatus.failure(task.getId(), "setup error"));
++    verify(testData.taskActionClient).submit(eq(action));
++  }
++
++  private ToolboxTestData createToolboxTestData()
++  {
++    // These tests apparently use Mockito.  Mockito is bad as we've seen it rewrite byte code and effectively cause
++    // impact to other totally unrelated tests.  Mockito needs to be completely erradicated from the codebase.  This
++    // comment is here to either cause me to do it in this commit or just for posterity so that it is clear that it
++    // should happen in the future.
++    final TaskToolbox toolbox = mock(TaskToolbox.class);
++    final DruidNode node = new DruidNode("foo", "foo", false, 1, 2, true, true);
++    final TaskLogPusher pusher = mock(TaskLogPusher.class);
++    final TaskConfig config = mock(TaskConfig.class);
++    final TaskActionClient taskActionClient = mock(TaskActionClient.class);
++
+     when(toolbox.getAttemptId()).thenReturn("1");
+-
+-    DruidNode node = new DruidNode("foo", "foo", false, 1, 2, true, true);
+     when(toolbox.getTaskExecutorNode()).thenReturn(node);
+-
+-    TaskLogPusher pusher = mock(TaskLogPusher.class);
+     when(toolbox.getTaskLogPusher()).thenReturn(pusher);
+-
+-    TaskConfig config = mock(TaskConfig.class);
+-    when(config.isEncapsulatedTask()).thenReturn(true);
+-    File folder = temporaryFolder.newFolder();
+-    when(config.getTaskDir(eq("myID"))).thenReturn(folder);
+     when(toolbox.getConfig()).thenReturn(config);
+     when(toolbox.getJsonMapper()).thenReturn(objectMapper);
+-
+-    TaskActionClient taskActionClient = mock(TaskActionClient.class);
++    when(toolbox.getTaskActionClient()).thenReturn(taskActionClient);
+     when(taskActionClient.submit(any())).thenReturn(TaskConfig.class);
+-    when(toolbox.getTaskActionClient()).thenReturn(taskActionClient);
+-    when(toolbox.getTaskReportFileWriter()).thenReturn(new SingleFileTaskReportFileWriter(temporaryFolder.newFile()));
+-
+-    TaskStatus taskStatus = TaskStatus.failure("myId", "failed");
+-    AbstractTask task = new NoopTask("myID", null, null, 1, 0, null)
+-    {
+-      @Override
+-      public TaskStatus runTask(TaskToolbox toolbox)
+-      {
+-        return taskStatus;
+-      }
+-    };
+-    task.run(toolbox);
+-    UpdateStatusAction action = new UpdateStatusAction("", taskStatus);
+-    verify(taskActionClient).submit(eq(action));
+-  }
+-
+-  @Test
+-  public void testNullStackStatusGetsReportedCorrectly() throws Exception
+-  {
+-    TaskToolbox toolbox = mock(TaskToolbox.class);
+-    when(toolbox.getAttemptId()).thenReturn("1");
+-    when(toolbox.getTaskReportFileWriter()).thenReturn(new SingleFileTaskReportFileWriter(temporaryFolder.newFile()));
+-
+-    DruidNode node = new DruidNode("foo", "foo", false, 1, 2, true, true);
+-    when(toolbox.getTaskExecutorNode()).thenReturn(node);
+-
+-    TaskLogPusher pusher = mock(TaskLogPusher.class);
+-    when(toolbox.getTaskLogPusher()).thenReturn(pusher);
+-
+-    TaskConfig config = mock(TaskConfig.class);
+-    when(config.isEncapsulatedTask()).thenReturn(true);
+-    File folder = temporaryFolder.newFolder();
+-    when(config.getTaskDir(eq("myID"))).thenReturn(folder);
+-    when(toolbox.getConfig()).thenReturn(config);
+-    when(toolbox.getJsonMapper()).thenReturn(objectMapper);
+-
+-    TaskActionClient taskActionClient = mock(TaskActionClient.class);
+-    when(taskActionClient.submit(any())).thenReturn(TaskConfig.class);
+-    when(toolbox.getTaskActionClient()).thenReturn(taskActionClient);
+-    AbstractTask task = new NoopTask("myID", null, null, 1, 0, null)
+-    {
+-      @Nullable
+-      @Override
+-      public TaskStatus runTask(TaskToolbox toolbox)
+-      {
+-        // Simulate the scenario where taskStatus is never set and cleanUp is called with null.
+-        return null;
+-      }
+-    };
+-    task.run(toolbox);
+-    UpdateStatusAction action = new UpdateStatusAction("", TaskStatus.failure(task.getId(), "Task failed to run"));
+-    verify(taskActionClient).submit(eq(action));
+-  }
+-
+-  @Test
+-  public void testSetupFailsGetsReportedCorrectly() throws Exception
+-  {
+-    TaskToolbox toolbox = mock(TaskToolbox.class);
+-    when(toolbox.getAttemptId()).thenReturn("1");
+-
+-    DruidNode node = new DruidNode("foo", "foo", false, 1, 2, true, true);
+-    when(toolbox.getTaskExecutorNode()).thenReturn(node);
+-
+-    TaskLogPusher pusher = mock(TaskLogPusher.class);
+-    when(toolbox.getTaskLogPusher()).thenReturn(pusher);
+-
+-    TaskConfig config = mock(TaskConfig.class);
+-    when(config.isEncapsulatedTask()).thenReturn(true);
+-    File folder = temporaryFolder.newFolder();
+-    when(config.getTaskDir(eq("myID"))).thenReturn(folder);
+-    when(toolbox.getConfig()).thenReturn(config);
+-    when(toolbox.getJsonMapper()).thenReturn(objectMapper);
+-
+-    TaskActionClient taskActionClient = mock(TaskActionClient.class);
+-    when(taskActionClient.submit(any())).thenReturn(TaskConfig.class);
+-    when(toolbox.getTaskActionClient()).thenReturn(taskActionClient);
+-    AbstractTask task = new NoopTask("myID", null, null, 1, 0, null)
+-    {
+-      @Nullable
+-      @Override
+-      public String setup(TaskToolbox toolbox)
+-      {
+-        return "setup error";
+-      }
+-    };
+-    task.run(toolbox);
+-    UpdateStatusAction action = new UpdateStatusAction("", TaskStatus.failure(task.getId(), "setup error"));
+-    verify(taskActionClient).submit(eq(action));
++
++    return new ToolboxTestData(toolbox, pusher, config, taskActionClient);
++  }
++
++  private static class ToolboxTestData
++  {
++    private final TaskToolbox toolbox;
++    private final TaskLogPusher pusher;
++    private final TaskConfig config;
++    private final TaskActionClient taskActionClient;
++
++    private ToolboxTestData(
++        final TaskToolbox toolbox,
++        final TaskLogPusher pusher,
++        final TaskConfig config,
++        final TaskActionClient taskActionClient
++    )
++    {
++      this.toolbox = toolbox;
++      this.pusher = pusher;
++      this.config = config;
++      this.taskActionClient = taskActionClient;
++    }
+   }
+ 
+ 
