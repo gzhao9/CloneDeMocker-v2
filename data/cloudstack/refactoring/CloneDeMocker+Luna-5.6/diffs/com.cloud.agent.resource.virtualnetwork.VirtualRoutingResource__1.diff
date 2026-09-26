@@ -1,0 +1,43 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -2992,13 +2992,11 @@
+ 
+         final CheckSshCommand command = new CheckSshCommand(instanceName, ip, port);
+ 
+-        final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
+-
+         final String privateIp = command.getIp();
+         final int cmdPort = command.getPort();
+ 
++        final VirtualRoutingResource virtRouterResource = createMockVirtRouterResource(true);
+         when(libvirtComputingResourceMock.getVirtRouterResource()).thenReturn(virtRouterResource);
+-        when(virtRouterResource.connect(privateIp, cmdPort)).thenReturn(true);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -3018,13 +3016,12 @@
+ 
+         final CheckSshCommand command = new CheckSshCommand(instanceName, ip, port);
+ 
+-        final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
++        final VirtualRoutingResource virtRouterResource = createMockVirtRouterResource(false);
+ 
+         final String privateIp = command.getIp();
+         final int cmdPort = command.getPort();
+ 
+         when(libvirtComputingResourceMock.getVirtRouterResource()).thenReturn(virtRouterResource);
+-        when(virtRouterResource.connect(privateIp, cmdPort)).thenReturn(false);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -7698,4 +7695,10 @@
+         Pair<Integer, Long> result = libvirtComputingResourceSpy.getPeriodAndQuota(cpuQuotaPercentage);
+         Assert.assertEquals(expectedResult, result);
+     }
++
++    private static VirtualRoutingResource createMockVirtRouterResource(boolean connectReturn) {
++        final VirtualRoutingResource virtRouterResource = Mockito.mock(VirtualRoutingResource.class);
++        when(virtRouterResource.connect(Mockito.anyString(), Mockito.anyInt())).thenReturn(connectReturn);
++        return virtRouterResource;
++    }
+ }

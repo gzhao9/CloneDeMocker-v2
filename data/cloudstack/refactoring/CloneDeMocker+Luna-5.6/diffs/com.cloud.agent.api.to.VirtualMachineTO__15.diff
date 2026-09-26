@@ -1,0 +1,148 @@
+--- a/plugins/hypervisors/external/src/test/java/org/apache/cloudstack/hypervisor/external/provisioner/ExternalPathPayloadProvisionerTest.java
++++ b/plugins/hypervisors/external/src/test/java/org/apache/cloudstack/hypervisor/external/provisioner/ExternalPathPayloadProvisionerTest.java
+@@ -175,13 +175,18 @@
+         testScript.setWritable(true);
+     }
+ 
++    private static VirtualMachineTO createMockVirtualMachineTO() {
++        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        when(vmTO.getUuid()).thenReturn("test-uuid");
++        return vmTO;
++    }
++
+     @Test
+     public void testLoadAccessDetails() {
+         Map<String, Map<String, String>> externalDetails = new HashMap<>();
+         externalDetails.put(ApiConstants.EXTENSION, Map.of("key1", "value1"));
+ 
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(vmTO.getName()).thenReturn("test-vm");
+ 
+         Map<String, Object> result = provisioner.loadAccessDetails(externalDetails, vmTO);
+@@ -195,8 +200,7 @@
+ 
+     @Test
+     public void testLoadAccessDetailsWithNullExternalDetails() {
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(vmTO.getName()).thenReturn("test-vm");
+ 
+         Map<String, Object> result = provisioner.loadAccessDetails(null, vmTO);
+@@ -355,8 +359,7 @@
+     @Test
+     public void testStartInstance() {
+         StartCommand cmd = mock(StartCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(cmd.getVirtualMachine()).thenReturn(vmTO);
+         when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
+         when(cmd.getWait()).thenReturn(30);
+@@ -373,8 +376,7 @@
+     @Test
+     public void testStartInstanceDeploy() {
+         StartCommand cmd = mock(StartCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         Map<String, String> details = new HashMap<>();
+         details.put("deployvm", "true");
+         when(vmTO.getDetails()).thenReturn(details);
+@@ -394,8 +396,7 @@
+     @Test
+     public void testStartInstanceError() {
+         StartCommand cmd = mock(StartCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(cmd.getVirtualMachine()).thenReturn(vmTO);
+         when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
+         when(cmd.getWait()).thenReturn(30);
+@@ -413,8 +414,7 @@
+     @Test
+     public void testStopInstance() {
+         StopCommand cmd = mock(StopCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(cmd.getVirtualMachine()).thenReturn(vmTO);
+         when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
+         when(cmd.getWait()).thenReturn(30);
+@@ -430,8 +430,7 @@
+     @Test
+     public void testRebootInstance() {
+         RebootCommand cmd = mock(RebootCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(cmd.getVirtualMachine()).thenReturn(vmTO);
+         when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
+         when(cmd.getWait()).thenReturn(30);
+@@ -447,8 +446,7 @@
+     @Test
+     public void testExpungeInstance() {
+         StopCommand cmd = mock(StopCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(cmd.getVirtualMachine()).thenReturn(vmTO);
+         when(cmd.getExternalDetails()).thenReturn(new HashMap<>());
+         when(cmd.getWait()).thenReturn(30);
+@@ -809,9 +807,8 @@
+     @Test
+     public void getInstanceConsoleReturnsAnswerWhenConsoleDetailsAreValid() {
+         GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(cmd.getVirtualMachine()).thenReturn(vmTO);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
+ 
+         Map<String, Object> accessDetails = new HashMap<>();
+         when(provisioner.loadAccessDetails(any(), eq(vmTO))).thenReturn(accessDetails);
+@@ -847,9 +844,8 @@
+     @Test
+     public void getInstanceConsoleReturnsErrorWhenExternalSystemFails() {
+         GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(cmd.getVirtualMachine()).thenReturn(vmTO);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
+ 
+         doReturn(new Pair<>(false, "External system error")).when(provisioner)
+                 .getInstanceConsoleOnExternalSystem(anyString(), anyString(), anyString(), anyMap(), anyInt());
+@@ -863,9 +859,8 @@
+     @Test
+     public void getInstanceConsoleReturnsErrorWhenConsoleObjectIsMissing() {
+         GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(cmd.getVirtualMachine()).thenReturn(vmTO);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
+ 
+         String invalidOutput = "{\"invalid_key\":\"value\"}";
+         doReturn(new Pair<>(true, invalidOutput)).when(provisioner)
+@@ -880,9 +875,8 @@
+     @Test
+     public void getInstanceConsoleReturnsErrorWhenRequiredFieldsAreMissing() {
+         GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(cmd.getVirtualMachine()).thenReturn(vmTO);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
+ 
+         String incompleteOutput = "{\"console\":{\"host\":\"127.0.0.1\"}}";
+         doReturn(new Pair<>(true, incompleteOutput)).when(provisioner)
+@@ -897,9 +891,8 @@
+     @Test
+     public void getInstanceConsoleReturnsErrorWhenOutputParsingFails() {
+         GetExternalConsoleCommand cmd = mock(GetExternalConsoleCommand.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
++        VirtualMachineTO vmTO = createMockVirtualMachineTO();
+         when(cmd.getVirtualMachine()).thenReturn(vmTO);
+-        when(vmTO.getUuid()).thenReturn("test-uuid");
+ 
+         String malformedOutput = "{console:invalid}";
+         doReturn(new Pair<>(true, malformedOutput)).when(provisioner)

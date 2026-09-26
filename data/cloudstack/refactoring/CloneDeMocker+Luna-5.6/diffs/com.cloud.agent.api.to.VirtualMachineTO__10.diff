@@ -1,0 +1,52 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -790,6 +790,12 @@
+         verifySerialDevices(parse(serialDef.toString()), "");
+     }
+ 
++    private static VirtualMachineTO createMockVirtualMachineTO(Map<String, String> details) {
++        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
++        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
++        return virtualMachineTO;
++    }
++
+     private VirtualMachineTO createDefaultVM(boolean limitCpuUse) {
+         int id = random.nextInt(65534);
+         String name = "test-instance-1";
+@@ -6658,21 +6664,19 @@
+ 
+     @Test
+     public void testGetDiskModelFromVMDetailVirtioBlk() {
+-        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+         Map<String, String> details = new HashMap<>();
+         details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "virtio-blk");
+-        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
++        VirtualMachineTO virtualMachineTO = createMockVirtualMachineTO(details);
+         DiskDef.DiskBus diskBus = libvirtComputingResourceSpy.getDiskModelFromVMDetail(virtualMachineTO);
+         assertEquals(DiskDef.DiskBus.VIRTIOBLK, diskBus);
+     }
+ 
+     @Test
+     public void testCreateTpmDef() {
+-        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+         Map<String, String> details = new HashMap<>();
+         details.put(VmDetailConstants.VIRTUAL_TPM_MODEL, "tpm-tis");
+         details.put(VmDetailConstants.VIRTUAL_TPM_VERSION, "2.0");
+-        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
++        VirtualMachineTO virtualMachineTO = createMockVirtualMachineTO(details);
+         LibvirtVMDef.TpmDef tpmDef = libvirtComputingResourceSpy.createTpmDef(virtualMachineTO);
+         assertEquals(LibvirtVMDef.TpmDef.TpmModel.TIS, tpmDef.getModel());
+         assertEquals(LibvirtVMDef.TpmDef.TpmVersion.V2_0, tpmDef.getVersion());
+@@ -6680,11 +6684,10 @@
+ 
+     @Test
+     public void testCreateTpmDefWithInvalidVersion() {
+-        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+         Map<String, String> details = new HashMap<>();
+         details.put(VmDetailConstants.VIRTUAL_TPM_MODEL, "tpm-crb");
+         details.put(VmDetailConstants.VIRTUAL_TPM_VERSION, "3.0");
+-        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
++        VirtualMachineTO virtualMachineTO = createMockVirtualMachineTO(details);
+         LibvirtVMDef.TpmDef tpmDef = libvirtComputingResourceSpy.createTpmDef(virtualMachineTO);
+         assertEquals(LibvirtVMDef.TpmDef.TpmModel.CRB, tpmDef.getModel());
+         assertEquals(LibvirtVMDef.TpmDef.TpmVersion.V2_0, tpmDef.getVersion());

@@ -1,0 +1,43 @@
+--- a/plugins/hypervisors/external/src/test/java/org/apache/cloudstack/hypervisor/external/provisioner/ExternalPathPayloadProvisionerTest.java
++++ b/plugins/hypervisors/external/src/test/java/org/apache/cloudstack/hypervisor/external/provisioner/ExternalPathPayloadProvisionerTest.java
+@@ -121,6 +121,7 @@
+     @Mock
+     private ExtensionsManager extensionsManager;
+ 
++    private VirtualMachineTO virtualMachineTO;
+     private File tempDir;
+     private File tempDataDir;
+     private Properties testProperties;
+@@ -128,6 +129,7 @@
+ 
+     @Before
+     public void setUp() throws IOException {
++        virtualMachineTO = mock(VirtualMachineTO.class);
+         tempDir = Files.createTempDirectory("extensions-test").toFile();
+         tempDataDir = Files.createTempDirectory("extensions-data-test").toFile();
+ 
+@@ -476,8 +478,7 @@
+         when(userVmDao.listByLastHostId(anyLong())).thenReturn(new ArrayList<>());
+ 
+         when(hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External)).thenReturn(hypervisorGuru);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+-        when(hypervisorGuru.implement(any(VirtualMachineProfile.class))).thenReturn(vmTO);
++        when(hypervisorGuru.implement(any(VirtualMachineProfile.class))).thenReturn(virtualMachineTO);
+ 
+         doReturn(new Pair<>(true, "PowerOn")).when(provisioner)
+             .executeExternalCommand(anyString(), anyString(), anyMap(), anyInt(), anyString(), anyString());
+@@ -796,12 +797,11 @@
+     @Test
+     public void getVirtualMachineTOReturnsValidTOWhenVmIsNotNull() {
+         VirtualMachine vm = mock(VirtualMachine.class);
+-        VirtualMachineTO vmTO = mock(VirtualMachineTO.class);
+         when(hypervisorGuruManager.getGuru(Hypervisor.HypervisorType.External)).thenReturn(hypervisorGuru);
+-        when(hypervisorGuru.implement(any(VirtualMachineProfile.class))).thenReturn(vmTO);
++        when(hypervisorGuru.implement(any(VirtualMachineProfile.class))).thenReturn(virtualMachineTO);
+         VirtualMachineTO result = provisioner.getVirtualMachineTO(vm);
+         assertNotNull(result);
+-        assertEquals(vmTO, result);
++        assertEquals(virtualMachineTO, result);
+         Mockito.verify(hypervisorGuruManager).getGuru(Hypervisor.HypervisorType.External);
+         Mockito.verify(hypervisorGuru).implement(any(VirtualMachineProfile.class));
+     }

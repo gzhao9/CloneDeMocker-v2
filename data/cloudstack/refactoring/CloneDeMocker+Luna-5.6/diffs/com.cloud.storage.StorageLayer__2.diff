@@ -1,0 +1,125 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -261,6 +261,8 @@
+     @Mock
+     private Map<String, String> details;
+ 
++    private final StorageLayer storageMock = Mockito.mock(StorageLayer.class);
++
+     private static final String PHYSICAL_DISK_PATH = "/path/to/disk";
+     private static final int DEV_ID = 1;
+     private static final DiskDef.DiskBus DISK_BUS_TYPE = DiskDef.DiskBus.VIRTIO;
+@@ -4233,7 +4235,6 @@
+         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMStoragePool snapshotPool = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk snapshot = Mockito.mock(KVMPhysicalDisk.class);
+-        final StorageLayer storage = Mockito.mock(StorageLayer.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final TemplateLocation location = Mockito.mock(TemplateLocation.class);
+         final Processor qcow2Processor = Mockito.mock(Processor.class);
+@@ -4249,7 +4250,7 @@
+         when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl())).thenReturn(secondaryPool);
+         when(snapshotPool.getPhysicalDisk(command.getSnapshotName())).thenReturn(snapshot);
+         when(secondaryPool.getLocalPath()).thenReturn(localPath);
+-        when(libvirtComputingResourceMock.getStorage()).thenReturn(storage);
++        when(libvirtComputingResourceMock.getStorage()).thenReturn(storageMock);
+ 
+         when(libvirtComputingResourceMock.createTmplPath()).thenReturn(templatePath);
+         when(libvirtComputingResourceMock.getCmdsTimeout()).thenReturn(1);
+@@ -4259,11 +4260,11 @@
+         final String tmplPath = secondaryPool.getLocalPath() + File.separator + templateInstallFolder;
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtUtilitiesHelper.buildTemplateLocation(storage, tmplPath)).thenReturn(location);
++        when(libvirtUtilitiesHelper.buildTemplateLocation(storageMock, tmplPath)).thenReturn(location);
+         when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(tmplName);
+ 
+         try {
+-            when(libvirtUtilitiesHelper.buildQCOW2Processor(storage)).thenReturn(qcow2Processor);
++            when(libvirtUtilitiesHelper.buildQCOW2Processor(storageMock)).thenReturn(qcow2Processor);
+             when(qcow2Processor.process(tmplPath, null, tmplName)).thenReturn(info);
+         } catch (final ConfigurationException e) {
+             fail(e.getMessage());
+@@ -4307,7 +4308,6 @@
+         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMStoragePool snapshotPool = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk snapshot = Mockito.mock(KVMPhysicalDisk.class);
+-        final StorageLayer storage = Mockito.mock(StorageLayer.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final TemplateLocation location = Mockito.mock(TemplateLocation.class);
+         final Processor qcow2Processor = Mockito.mock(Processor.class);
+@@ -4323,7 +4323,7 @@
+         when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl())).thenReturn(secondaryPool);
+         when(snapshotPool.getPhysicalDisk(command.getSnapshotName())).thenReturn(snapshot);
+         when(secondaryPool.getLocalPath()).thenReturn(localPath);
+-        when(libvirtComputingResourceMock.getStorage()).thenReturn(storage);
++        when(libvirtComputingResourceMock.getStorage()).thenReturn(storageMock);
+ 
+         when(libvirtComputingResourceMock.createTmplPath()).thenReturn(templatePath);
+         when(libvirtComputingResourceMock.getCmdsTimeout()).thenReturn(1);
+@@ -4336,7 +4336,7 @@
+         when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(tmplName);
+ 
+         try {
+-            when(libvirtUtilitiesHelper.buildQCOW2Processor(storage)).thenThrow(ConfigurationException.class);
++            when(libvirtUtilitiesHelper.buildQCOW2Processor(storageMock)).thenThrow(ConfigurationException.class);
+         } catch (final ConfigurationException e) {
+             fail(e.getMessage());
+         }
+@@ -4377,7 +4377,6 @@
+         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMStoragePool snapshotPool = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk snapshot = Mockito.mock(KVMPhysicalDisk.class);
+-        final StorageLayer storage = Mockito.mock(StorageLayer.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final TemplateLocation location = Mockito.mock(TemplateLocation.class);
+         final Processor qcow2Processor = Mockito.mock(Processor.class);
+@@ -4392,7 +4391,7 @@
+         when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl())).thenReturn(secondaryPool);
+         when(snapshotPool.getPhysicalDisk(command.getSnapshotName())).thenReturn(snapshot);
+         when(secondaryPool.getLocalPath()).thenReturn(localPath);
+-        when(libvirtComputingResourceMock.getStorage()).thenReturn(storage);
++        when(libvirtComputingResourceMock.getStorage()).thenReturn(storageMock);
+ 
+         when(libvirtComputingResourceMock.createTmplPath()).thenReturn(templatePath);
+         when(libvirtComputingResourceMock.getCmdsTimeout()).thenReturn(1);
+@@ -4405,7 +4404,7 @@
+         when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(tmplName);
+ 
+         try {
+-            when(libvirtUtilitiesHelper.buildQCOW2Processor(storage)).thenReturn(qcow2Processor);
++            when(libvirtUtilitiesHelper.buildQCOW2Processor(storageMock)).thenReturn(qcow2Processor);
+             when(qcow2Processor.process(tmplPath, null, tmplName)).thenThrow(InternalErrorException.class);
+         } catch (final ConfigurationException e) {
+             fail(e.getMessage());
+@@ -4449,7 +4448,6 @@
+         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+         final KVMStoragePool snapshotPool = Mockito.mock(KVMStoragePool.class);
+         final KVMPhysicalDisk snapshot = Mockito.mock(KVMPhysicalDisk.class);
+-        final StorageLayer storage = Mockito.mock(StorageLayer.class);
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final TemplateLocation location = Mockito.mock(TemplateLocation.class);
+         final Processor qcow2Processor = Mockito.mock(Processor.class);
+@@ -4465,7 +4463,7 @@
+         when(storagePoolMgr.getStoragePoolByURI(command.getSecondaryStorageUrl())).thenReturn(secondaryPool);
+         when(snapshotPool.getPhysicalDisk(command.getSnapshotName())).thenReturn(snapshot);
+         when(secondaryPool.getLocalPath()).thenReturn(localPath);
+-        when(libvirtComputingResourceMock.getStorage()).thenReturn(storage);
++        when(libvirtComputingResourceMock.getStorage()).thenReturn(storageMock);
+ 
+         when(libvirtComputingResourceMock.createTmplPath()).thenReturn(templatePath);
+         when(libvirtComputingResourceMock.getCmdsTimeout()).thenReturn(1);
+@@ -4475,11 +4473,11 @@
+         final String tmplPath = secondaryPool.getLocalPath() + File.separator + templateInstallFolder;
+ 
+         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
+-        when(libvirtUtilitiesHelper.buildTemplateLocation(storage, tmplPath)).thenReturn(location);
++        when(libvirtUtilitiesHelper.buildTemplateLocation(storageMock, tmplPath)).thenReturn(location);
+         when(libvirtUtilitiesHelper.generateUUIDName()).thenReturn(tmplName);
+ 
+         try {
+-            when(libvirtUtilitiesHelper.buildQCOW2Processor(storage)).thenReturn(qcow2Processor);
++            when(libvirtUtilitiesHelper.buildQCOW2Processor(storageMock)).thenReturn(qcow2Processor);
+             when(qcow2Processor.process(tmplPath, null, tmplName)).thenReturn(info);
+ 
+             when(location.create(1, true, tmplName)).thenThrow(IOException.class);
