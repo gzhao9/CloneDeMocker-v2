@@ -1,0 +1,49 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -265,6 +265,7 @@
+     SecurityGroupRuleDao securityGroupRuleDao;
+     @Mock
+     SecurityGroupManager securityGroupManager;
++    private SecurityGroup securityGroupMock;
+     @Mock
+     NicSecondaryIpDao nicSecIpDao;
+     @Mock
+@@ -281,6 +282,7 @@
+     @Before
+     public void setup() {
+         closeable = MockitoAnnotations.openMocks(this);
++        securityGroupMock = mock(SecurityGroup.class);
+         tungstenService = new TungstenServiceImpl();
+         tungstenService.projectDao = projectDao;
+         tungstenService.tungstenProviderDao = tungstenProviderDao;
+@@ -682,7 +684,6 @@
+ 
+     @Test
+     public void createTungstenSecurityGroupTest() {
+-        SecurityGroup securityGroup = mock(SecurityGroup.class);
+         ProjectVO projectVO = mock(ProjectVO.class);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         DomainVO domainVO = mock(DomainVO.class);
+@@ -698,20 +699,19 @@
+ 
+         try (MockedStatic<Transaction> transactionMocked = Mockito.mockStatic(Transaction.class)) {
+             transactionMocked.when(() -> Transaction.execute(any(TransactionCallback.class))).thenReturn(List.of(tungstenSecurityGroupRuleVO));
+-            assertTrue(tungstenService.createTungstenSecurityGroup(securityGroup));
++            assertTrue(tungstenService.createTungstenSecurityGroup(securityGroupMock));
+         }
+     }
+ 
+     @Test
+     public void deleteTungstenSecurityGroupTest() {
+-        SecurityGroup securityGroup = mock(SecurityGroup.class);
+         TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
+         TungstenAnswer deleteTungstenSecurityGroupAnswer = MockTungstenAnswerFactory.get(true);
+ 
+         when(tungstenProviderDao.findAll()).thenReturn(List.of(tungstenProviderVO));
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenSecurityGroupCommand.class), anyLong())).thenReturn(deleteTungstenSecurityGroupAnswer);
+ 
+-        assertTrue(tungstenService.deleteTungstenSecurityGroup(securityGroup));
++        assertTrue(tungstenService.deleteTungstenSecurityGroup(securityGroupMock));
+     }
+ 
+     @Test

@@ -1,0 +1,90 @@
+--- a/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisElementTest.java
++++ b/plugins/network-elements/netris/src/test/java/org/apache/cloudstack/service/NetrisElementTest.java
+@@ -112,13 +112,9 @@
+         String networkCidr = "10.10.30.0/24";
+         VpcVO vpc = Mockito.mock(VpcVO.class);
+         Mockito.when(vpc.getName()).thenReturn(vpcName);
+-        Network network = Mockito.mock(Network.class);
+-        Mockito.when(network.getAccountId()).thenReturn(accountId);
+-        Mockito.when(network.getId()).thenReturn(networkId);
+-        Mockito.when(network.getDataCenterId()).thenReturn(zoneId);
++        Network network = MockNetwork.createMockNetwork(accountId, zoneId, networkId, vpcId);
+         Mockito.when(network.getName()).thenReturn(networkName);
+         Mockito.when(network.getCidr()).thenReturn(networkCidr);
+-        Mockito.when(network.getVpcId()).thenReturn(vpcId);
+         Account account = Mockito.mock(Account.class);
+         Mockito.when(account.getId()).thenReturn(accountId);
+         Mockito.when(account.getDomainId()).thenReturn(domainId);
+@@ -138,4 +134,22 @@
+         Mockito.verify(netrisService).deleteVnetResource(zoneId, accountId, domainId, vpcName, vpcId,
+                 networkName, networkId, networkCidr);
+     }
++
++    public final class MockNetwork {
++        private MockNetwork() {
++        }
++
++        public static com.cloud.network.Network createMockNetwork(
++                long accountId,
++                long dataCenterId,
++                long networkId,
++                long vpcId) {
++            com.cloud.network.Network network = Mockito.mock(com.cloud.network.Network.class);
++            Mockito.when(network.getAccountId()).thenReturn(accountId);
++            Mockito.when(network.getDataCenterId()).thenReturn(dataCenterId);
++            Mockito.when(network.getId()).thenReturn(networkId);
++            Mockito.when(network.getVpcId()).thenReturn(vpcId);
++            return network;
++        }
++    }
+ }
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxGuestNetworkGuruTest.java
+@@ -259,23 +259,19 @@
+ 
+     @Test
+     public void testAllocateForDomainRouter() throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+-        Network network = Mockito.mock(Network.class);
+         NicProfile nicProfile = Mockito.mock(NicProfile.class);
+         VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+         VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
+         Pair<String, String> dns = new Pair<>("10.1.5.1", "8.8.8.8");
+         String macAddress = "00:00:00:11:1D:1E:CD";
+ 
++        Network network = MockNetwork.createMockNetwork(5L, 1L, 2L, 51L);
+         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+         when(vmProfile.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+         when(vmProfile.getVirtualMachine()).thenReturn(virtualMachine);
+         when(virtualMachine.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
+-        when(network.getId()).thenReturn(2L);
+         when(nicProfile.getMacAddress()).thenReturn(macAddress);
+         when(networkOfferingDao.isIpv6Supported(anyLong())).thenReturn(false);
+-        when(network.getDataCenterId()).thenReturn(1L);
+-        when(network.getAccountId()).thenReturn(5L);
+-        when(network.getVpcId()).thenReturn(51L);
+         when(dcDao.findById(anyLong())).thenReturn(Mockito.mock(DataCenterVO.class));
+         when(accountDao.findById(anyLong())).thenReturn(Mockito.mock(AccountVO.class));
+         when(vpcDao.findById(anyLong())).thenReturn(Mockito.mock(VpcVO.class));
+@@ -326,4 +322,22 @@
+         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateNsxSegmentCommand.class),
+                 anyLong());
+     }
++
++    public final class MockNetwork {
++        private MockNetwork() {
++        }
++
++        public static com.cloud.network.Network createMockNetwork(
++                long accountId,
++                long dataCenterId,
++                long networkId,
++                long vpcId) {
++            com.cloud.network.Network network = Mockito.mock(com.cloud.network.Network.class);
++            Mockito.when(network.getAccountId()).thenReturn(accountId);
++            Mockito.when(network.getDataCenterId()).thenReturn(dataCenterId);
++            Mockito.when(network.getId()).thenReturn(networkId);
++            Mockito.when(network.getVpcId()).thenReturn(vpcId);
++            return network;
++        }
++    }
+ }

@@ -1,0 +1,75 @@
+--- a/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/vmware/resource/VmwareResourceTest.java
++++ b/plugins/hypervisors/vmware/src/test/java/com/cloud/hypervisor/vmware/resource/VmwareResourceTest.java
+@@ -675,18 +675,15 @@
+         ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "valid/path", 0, 10);
+         HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+         HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+-        FileInfo fileInfo = mock(FileInfo.class);
+         List<FileInfo> fileInfoList = new ArrayList<>();
+         fileInfoList.add(fileInfo);
+         Date date = new Date();
+ 
++        FileInfo fileInfo = createMockFileInfo(VmwareHelper.getXMLGregorianCalendar(date, 0));
+         doReturn(context).when(vmwareResource).getServiceContext(any());
+         doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+         when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
+         when(results.getFile()).thenReturn(fileInfoList);
+-        when(fileInfo.getPath()).thenReturn("file.txt");
+-        when(fileInfo.getFileSize()).thenReturn(1L);
+-        when(fileInfo.getModification()).thenReturn(VmwareHelper.getXMLGregorianCalendar(date, 0));
+ 
+         // Execute
+         ListDataStoreObjectsAnswer answer;
+@@ -754,7 +751,7 @@
+         ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "/", 0, 10);
+         HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+         HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+-        FileInfo fileInfo = mock(FileInfo.class);
++        FileInfo fileInfo = createMockFileInfo(VmwareHelper.getXMLGregorianCalendar(date, 0));
+         List<FileInfo> fileInfoList = new ArrayList<>();
+         fileInfoList.add(fileInfo);
+         Date date = new Date();
+@@ -763,9 +760,6 @@
+         doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+         when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
+         when(results.getFile()).thenReturn(fileInfoList);
+-        when(fileInfo.getPath()).thenReturn("file.txt");
+-        when(fileInfo.getFileSize()).thenReturn(1L);
+-        when(fileInfo.getModification()).thenReturn(VmwareHelper.getXMLGregorianCalendar(date, 0));
+ 
+         // Execute
+         ListDataStoreObjectsAnswer answer;
+@@ -799,7 +793,6 @@
+         ListDataStoreObjectsCommand cmd = new ListDataStoreObjectsCommand(destDataStoreTO, "", 0, 10);
+         HostDatastoreBrowserMO browserMo = mock(HostDatastoreBrowserMO.class);
+         HostDatastoreBrowserSearchResults results = mock(HostDatastoreBrowserSearchResults.class);
+-        FileInfo fileInfo = mock(FileInfo.class);
+         List<FileInfo> fileInfoList = new ArrayList<>();
+         fileInfoList.add(fileInfo);
+         Date date = new Date();
+@@ -808,10 +801,8 @@
+         doReturn(hyperHost).when(vmwareResource).getHyperHost(context);
+         when(browserMo.searchDatastore(anyString(), any(HostDatastoreBrowserSearchSpec.class))).thenReturn(results);
+         when(results.getFile()).thenReturn(fileInfoList);
+-        when(fileInfo.getPath()).thenReturn("file.txt");
+-        when(fileInfo.getFileSize()).thenReturn(1L);
+-        when(fileInfo.getModification()).thenReturn(VmwareHelper.getXMLGregorianCalendar(date, 0));
+-
++
++        FileInfo fileInfo = createMockFileInfo(VmwareHelper.getXMLGregorianCalendar(date, 0));
+         ListDataStoreObjectsAnswer answer;
+         try (MockedStatic<HypervisorHostHelper> ignored = mockStatic(HypervisorHostHelper.class);
+              MockedConstruction<DatastoreMO> ignored2 = mockConstruction(DatastoreMO.class, (mock, context1) -> {
+@@ -874,4 +865,12 @@
+         Mockito.verify(vmwareResource, Mockito.times(1)).removeVirtualTPMDevice(vmConfigSpec, tpm);
+         Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
+     }
++
++    private static FileInfo createMockFileInfo(XMLGregorianCalendar modification) {
++        FileInfo fileInfo = mock(FileInfo.class);
++        when(fileInfo.getPath()).thenReturn("file.txt");
++        when(fileInfo.getFileSize()).thenReturn(1L);
++        when(fileInfo.getModification()).thenReturn(modification);
++        return fileInfo;
++    }
+ }

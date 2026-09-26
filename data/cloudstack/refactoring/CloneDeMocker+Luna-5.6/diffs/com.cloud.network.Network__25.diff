@@ -1,0 +1,58 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
+@@ -83,9 +83,11 @@
+     NsxControllerUtils nsxControllerUtils;
+     @Mock
+     NetworkModel networkModel;
++    private Network networkMock;
+ 
+     @Before
+     public void setup() {
++        networkMock = Mockito.mock(Network.class);
+         guru = new NsxPublicNetworkGuru();
+ 
+         ReflectionTestUtils.setField(guru, "_ipAddressDao", ipAddressDao);
+@@ -120,24 +122,22 @@
+     @Test
+     public void testDesign() {
+         DeploymentPlan plan = Mockito.mock(DeploymentPlan.class);
+-        Network network = Mockito.mock(Network.class);
+         Account account = Mockito.mock(Account.class);
+ 
+ //        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+ 
+-        Network designedNetwork = guru.design(offering, plan, network, "net1", 1L, account);
++        Network designedNetwork = guru.design(offering, plan, networkMock, "net1", 1L, account);
+         Assert.assertEquals(Networks.TrafficType.Public, designedNetwork.getTrafficType());
+     }
+ 
+     @Test
+     public void testDesign_whenOfferingIsForGuestTraffic() {
+         DeploymentPlan plan = Mockito.mock(DeploymentPlan.class);
+-        Network network = Mockito.mock(Network.class);
+         Account account = Mockito.mock(Account.class);
+ 
+         when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+ 
+-        Network designedNetwork = guru.design(offering, plan, network, "net1", 1L, account);
++        Network designedNetwork = guru.design(offering, plan, networkMock, "net1", 1L, account);
+         Assert.assertNull(designedNetwork);
+     }
+ 
+@@ -145,7 +145,6 @@
+     public void testAllocate() throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
+         String publicIpVR = "10.1.12.10";
+         String publicIpNSX = "10.1.13.10";
+-        Network network = Mockito.mock(Network.class);
+         NicProfile profile = Mockito.mock(NicProfile.class);
+         VirtualMachineProfile vmProfile = Mockito.mock(VirtualMachineProfile.class);
+         IPAddressVO srcNatIpOnVR = new IPAddressVO(new Ip(publicIpVR), 2L , 0xaabbccddeeffL, 2L, true);
+@@ -173,7 +172,7 @@
+         when(nsxControllerUtils.sendNsxCommand(any(CreateOrUpdateNsxTier1NatRuleCommand.class),
+                 anyLong())).thenReturn(new NsxAnswer(new NsxCommand(), true, ""));
+ 
+-        guru.allocate(network, profile, vmProfile);
++        guru.allocate(networkMock, profile, vmProfile);
+ 
+         verify(nsxControllerUtils, times(1)).sendNsxCommand(any(CreateOrUpdateNsxTier1NatRuleCommand.class),
+                 anyLong());

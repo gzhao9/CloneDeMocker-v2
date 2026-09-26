@@ -1,0 +1,44 @@
+--- a/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
++++ b/plugins/network-elements/nsx/src/test/java/org/apache/cloudstack/service/NsxPublicNetworkGuruTest.java
+@@ -64,6 +64,7 @@
+ @RunWith(MockitoJUnitRunner.class)
+ public class NsxPublicNetworkGuruTest {
+ 
++    private Account accountMock;
+     NetworkOffering offering;
+ 
+     NsxPublicNetworkGuru guru;
+@@ -87,6 +88,7 @@
+     @Before
+     public void setup() {
+         guru = new NsxPublicNetworkGuru();
++        accountMock = Mockito.mock(Account.class);
+ 
+         ReflectionTestUtils.setField(guru, "_ipAddressDao", ipAddressDao);
+         ReflectionTestUtils.setField(guru, "vpcDao", vpcDao);
+@@ -121,11 +123,10 @@
+     public void testDesign() {
+         DeploymentPlan plan = Mockito.mock(DeploymentPlan.class);
+         Network network = Mockito.mock(Network.class);
+-        Account account = Mockito.mock(Account.class);
+ 
+ //        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Public);
+ 
+-        Network designedNetwork = guru.design(offering, plan, network, "net1", 1L, account);
++        Network designedNetwork = guru.design(offering, plan, network, "net1", 1L, accountMock);
+         Assert.assertEquals(Networks.TrafficType.Public, designedNetwork.getTrafficType());
+     }
+ 
+@@ -133,11 +134,10 @@
+     public void testDesign_whenOfferingIsForGuestTraffic() {
+         DeploymentPlan plan = Mockito.mock(DeploymentPlan.class);
+         Network network = Mockito.mock(Network.class);
+-        Account account = Mockito.mock(Account.class);
+ 
+         when(offering.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+ 
+-        Network designedNetwork = guru.design(offering, plan, network, "net1", 1L, account);
++        Network designedNetwork = guru.design(offering, plan, network, "net1", 1L, accountMock);
+         Assert.assertNull(designedNetwork);
+     }
+ 

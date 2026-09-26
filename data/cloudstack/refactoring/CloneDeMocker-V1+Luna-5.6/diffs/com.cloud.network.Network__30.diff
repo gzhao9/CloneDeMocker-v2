@@ -1,0 +1,89 @@
+--- a/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/CiscoVnmcElementTest.java
++++ b/plugins/network-elements/cisco-vnmc/src/test/java/com/cloud/network/element/CiscoVnmcElementTest.java
+@@ -130,9 +130,7 @@
+ 
+     @Test
+     public void canHandleTest() {
+-        Network network = mock(Network.class);
+-        when(network.getId()).thenReturn(1L);
+-        when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vlan);
++        Network network = MockNetwork.createMockNetwork(1L, BroadcastDomainType.Vlan);
+         assertTrue(_element.canHandle(network));
+ 
+         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.UnDecided);
+@@ -406,4 +404,24 @@
+ 
+         assertTrue(_element.applyStaticNats(network, rules));
+     }
++
++    public final class MockNetwork {
++
++        private MockNetwork() {
++            // Utility class
++        }
++
++        public static com.cloud.network.Network createMockNetwork(
++                long networkId,
++                com.cloud.network.Networks.BroadcastDomainType broadcastDomainType,
++                com.cloud.network.Networks.BroadcastDomainType... additionalBroadcastDomainTypes) {
++            com.cloud.network.Network network = mock(com.cloud.network.Network.class);
++
++            when(network.getId()).thenReturn(networkId);
++            when(network.getBroadcastDomainType())
++                    .thenReturn(broadcastDomainType, additionalBroadcastDomainTypes);
++
++            return network;
++        }
++    }
+ }
+--- a/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/element/NiciraNvpElementTest.java
++++ b/plugins/network-elements/nicira-nvp/src/test/java/com/cloud/network/element/NiciraNvpElementTest.java
+@@ -122,10 +122,8 @@
+ 
+     @Test
+     public void canHandleTest() {
+-        final Network net = mock(Network.class);
+-        when(net.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
+-        when(net.getId()).thenReturn(NETWORK_ID);
+-
++
++        final Network net = MockNetwork.createMockNetwork(NETWORK_ID, BroadcastDomainType.Lswitch);
+         when(ntwkSrvcDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NiciraNvp)).thenReturn(true);
+         // Golden path
+         assertTrue(element.canHandle(net, Service.Connectivity));
+@@ -209,9 +207,7 @@
+ 
+     @Test
+     public void applyIpTest() throws ResourceUnavailableException {
+-        final Network network = mock(Network.class);
+-        when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Lswitch);
+-        when(network.getId()).thenReturn(NETWORK_ID);
++        final Network network = MockNetwork.createMockNetwork(NETWORK_ID, BroadcastDomainType.Lswitch);
+         when(network.getPhysicalNetworkId()).thenReturn(NETWORK_ID);
+ 
+         final NetworkOffering offering = mock(NetworkOffering.class);
+@@ -418,4 +414,24 @@
+ 
+         element.implement(network, offering, dest, context);
+     }
++
++    public final class MockNetwork {
++
++        private MockNetwork() {
++            // Utility class
++        }
++
++        public static com.cloud.network.Network createMockNetwork(
++                long networkId,
++                com.cloud.network.Networks.BroadcastDomainType broadcastDomainType,
++                com.cloud.network.Networks.BroadcastDomainType... additionalBroadcastDomainTypes) {
++            com.cloud.network.Network network = mock(com.cloud.network.Network.class);
++
++            when(network.getId()).thenReturn(networkId);
++            when(network.getBroadcastDomainType())
++                    .thenReturn(broadcastDomainType, additionalBroadcastDomainTypes);
++
++            return network;
++        }
++    }
+ }

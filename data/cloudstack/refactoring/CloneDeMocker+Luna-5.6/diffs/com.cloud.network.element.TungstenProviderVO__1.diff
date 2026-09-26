@@ -1,0 +1,71 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -786,14 +786,13 @@
+     @Test
+     public void processHostAboutToBeRemovedWithSecurityGroupTest() {
+         HostVO hostVO = mock(HostVO.class);
+-        TungstenProviderVO tungstenProvider = mock(TungstenProviderVO.class);
++        TungstenProviderVO tungstenProvider = MockTungstenProvider.createMockTungstenProvider("192.168.100.100");
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+         NetworkVO network = mock(NetworkVO.class);
+ 
+         when(hostVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProvider);
+         when(hostVO.getPublicIpAddress()).thenReturn("192.168.100.100");
+-        when(tungstenProvider.getGateway()).thenReturn("192.168.100.100");
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+         when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(true);
+@@ -806,13 +805,12 @@
+     @Test
+     public void processHostAboutToBeRemovedWithoutSecurityGroupTest() {
+         HostVO hostVO = mock(HostVO.class);
+-        TungstenProviderVO tungstenProvider = mock(TungstenProviderVO.class);
++        TungstenProviderVO tungstenProvider = MockTungstenProvider.createMockTungstenProvider("192.168.100.100");
+         DataCenterVO dataCenterVO = mock(DataCenterVO.class);
+ 
+         when(hostVO.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+         when(tungstenProviderDao.findByZoneId(anyLong())).thenReturn(tungstenProvider);
+         when(hostVO.getPublicIpAddress()).thenReturn("192.168.100.100");
+-        when(tungstenProvider.getGateway()).thenReturn("192.168.100.100");
+         when(dataCenterDao.findById(anyLong())).thenReturn(dataCenterVO);
+         when(hostDao.findById(anyLong())).thenReturn(hostVO);
+         when(dataCenterVO.isSecurityGroupEnabled()).thenReturn(false);
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -1503,7 +1503,7 @@
+         TungstenAnswer addNetworkSubnetAnswer = MockTungstenAnswerFactory.get(true);
+         TungstenAnswer getTungstenNetworkDnsAnswer = MockTungstenAnswerFactory.get(true);
+         NetworkDetailVO networkDetailVO = mock(NetworkDetailVO.class);
+-        TungstenProviderVO tungstenProviderVO = mock(TungstenProviderVO.class);
++        TungstenProviderVO tungstenProviderVO = MockTungstenProvider.createMockTungstenProvider("192.168.100.1");
+         HostVO hostVO = mock(HostVO.class);
+         Answer answer = mock(Answer.class);
+         IPAddressVO ipAddressVO = mock(IPAddressVO.class);
+@@ -1528,7 +1528,7 @@
+         when(getTungstenNetworkDnsAnswer.getDetails()).thenReturn("192.168.1.150");
+         when(createTungstenSharedNetworkAnswer.getApiObjectBase()).thenReturn(apiObjectBase);
+         when(apiObjectBase.getQualifiedName()).thenReturn(List.of("network"));
+-        when(tungstenProviderVO.getGateway()).thenReturn("192.168.100.1");
++
+ 
+         assertTrue(tungstenService.createSharedNetwork(network, vlan));
+     }
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockTungstenProvider.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockTungstenProvider.java
+@@ -0,0 +1,15 @@
++package org.apache.cloudstack.network.tungsten.service;
++
++import com.cloud.network.element.TungstenProviderVO;
++import org.mockito.Mockito;
++
++import static org.mockito.Mockito.when;
++
++public class MockTungstenProvider {
++
++    public static TungstenProviderVO createMockTungstenProvider(String gateway) {
++        TungstenProviderVO tungstenProvider = Mockito.mock(TungstenProviderVO.class);
++        when(tungstenProvider.getGateway()).thenReturn(gateway);
++        return tungstenProvider;
++    }
++}
