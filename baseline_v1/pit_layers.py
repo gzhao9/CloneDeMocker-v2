@@ -212,7 +212,8 @@ def unstable_mutants(first: dict[str, str], second: dict[str, str]) -> dict[str,
             if first.get(k) != second.get(k)}
 
 
-def compare(base: dict[str, str], cand: dict[str, str], unstable: dict | None = None) -> dict:
+def compare(base: dict[str, str], cand: dict[str, str], unstable: dict | None = None,
+            killers: bool = True) -> dict:
     """Candidate vs baseline, mutant by mutant. Mutants that differed between two baseline runs
     (`unstable`) and any change into or out of TIMED_OUT are counted apart: under host load they
     move without any code change (kiota getRetryAfter:150, dubbo nacos TIMED_OUT -> SURVIVED)."""
@@ -239,7 +240,7 @@ def compare(base: dict[str, str], cand: dict[str, str], unstable: dict | None = 
             gained.append(key)
         elif bs != cs and bs in detected:
             changed[key] = f"{bs}->{cs}"
-        elif bs == cs == "KILLED" and bk - ck:
+        elif killers and bs == cs == "KILLED" and bk - ck:
             killers_lost[key] = sorted(bk - ck)
     return {"killedLost": sorted(lost), "killedGained": sorted(gained), "detectedStatusChanged": changed,
             "killersLost": killers_lost, "timeoutFlips": timeout_flips, "unstableChangesSkipped": skipped,
@@ -268,20 +269,89 @@ def skip_failing_tests_in_pom(pom: Path) -> None:
     ns = "http://maven.apache.org/POM/4.0.0"
     ET.register_namespace("", ns)
     tree = ET.parse(pom)
-    for plugin in tree.getroot().iter(f"{{{ns}}}plugin"):
-        artifact = plugin.find(f"{{{ns}}}artifactId")
-        if artifact is None or artifact.text != "pitest-maven":
-            continue
+    project = tree.getroot()
+    found = [pl for pl in project.iter(f"{{{ns}}}plugin")
+             if (pl.find(f"{{{ns}}}artifactId") is not None and pl.find(f"{{{ns}}}artifactId").text == "pitest-maven")]
+    if not found:
+        # ensure_pit_junit5_support adds the plugin only for JUnit 5 projects; CloudStack (JUnit 4) had
+        # none, so skip/skipFailingTests went nowhere and PIT ran in every upstream module again.
+        build = project.find(f"{{{ns}}}build")
+        if build is None:
+            build = ET.SubElement(project, f"{{{ns}}}build")
+        plugins = build.find(f"{{{ns}}}plugins")
+        if plugins is None:
+            plugins = ET.SubElement(build, f"{{{ns}}}plugins")
+        plugin = ET.SubElement(plugins, f"{{{ns}}}plugin")
+        ET.SubElement(plugin, f"{{{ns}}}groupId").text = "org.pitest"
+        ET.SubElement(plugin, f"{{{ns}}}artifactId").text = "pitest-maven"
+        found = [plugin]
+    for plugin in found[:1]:
         config = plugin.find(f"{{{ns}}}configuration")
         if config is None:
             config = ET.SubElement(plugin, f"{{{ns}}}configuration")
-        flag = config.find(f"{{{ns}}}skipFailingTests")
-        if flag is None:
-            flag = ET.SubElement(config, f"{{{ns}}}skipFailingTests")
-        if flag.text != "true":
-            flag.text = "true"
+        changed = False
+        # skip follows a property that is true in the root and false only in the scoped modules
+        # (scoped_pit), so `-pl X -am` builds the upstream modules but runs PIT in X alone. Without it,
+        # CloudStack plugins share com.cloud.* with core/server, PIT ran (and failed) upstream first,
+        # and the scoped plugins never got a report (B-083).
+        for name, value in (("skipFailingTests", "true"), ("skip", "${" + PIT_SKIP_PROPERTY + "}")):
+            flag = config.find(f"{{{ns}}}{name}")
+            if flag is None:
+                flag = ET.SubElement(config, f"{{{ns}}}{name}")
+            if flag.text != value:
+                flag.text, changed = value, True
+        changed |= set_pom_property(tree, ns, "true")
+        if changed:
             tree.write(pom, encoding="utf-8", xml_declaration=True)
         return
+
+
+PIT_SKIP_PROPERTY = "cloneDeMockerPitSkip"
+
+
+def set_pom_property(tree, ns: str, value: str) -> bool:
+    project = tree.getroot()
+    props = project.find(f"{{{ns}}}properties")
+    if props is None:
+        props = ET.SubElement(project, f"{{{ns}}}properties")
+    prop = props.find(f"{{{ns}}}{PIT_SKIP_PROPERTY}")
+    if prop is None:
+        prop = ET.SubElement(props, f"{{{ns}}}{PIT_SKIP_PROPERTY}")
+    if prop.text == value:
+        return False
+    prop.text = value
+    return True
+
+
+class scoped_pit:
+    """While active, the scoped Maven modules set cloneDeMockerPitSkip=false; their POMs are restored after."""
+
+    def __init__(self, ws_dir: Path, project_root: Path, modules: tuple[str, ...]):
+        self.root_dir = Path(str(long_path(ws_dir)))
+        # No module (whole project) means the root itself: PIT runs everywhere, as before.
+        self.poms = [(long_path(ws_dir / m / "pom.xml"), long_path(project_root / m / "pom.xml")) for m in modules or (".",)]
+        self.poms = [(w, o) for w, o in self.poms if w.is_file() and o.is_file()]
+
+    def __enter__(self):
+        ns = "http://maven.apache.org/POM/4.0.0"
+        ET.register_namespace("", ns)
+        for pom, _ in self.poms:
+            tree = ET.parse(pom)
+            if set_pom_property(tree, ns, "false"):
+                tree.write(pom, encoding="utf-8", xml_declaration=True)
+        return self
+
+    def __exit__(self, *exc):
+        ns = "http://maven.apache.org/POM/4.0.0"
+        ET.register_namespace("", ns)
+        for pom, original in self.poms:
+            if Path(str(pom)).parent == self.root_dir:
+                # The root POM holds the workspace's pitest setup: reset the property, keep the rest.
+                tree = ET.parse(pom)
+                if set_pom_property(tree, ns, "true"):
+                    tree.write(pom, encoding="utf-8", xml_declaration=True)
+            else:
+                shutil.copyfile(original, pom)
 
 
 class Workspace:
@@ -332,7 +402,12 @@ def validate(harness: ProjectHarness, ws: Workspace, scope: BuildScope) -> dict:
 
 def _validate(harness: ProjectHarness, ws: Workspace, scope: BuildScope) -> dict:
     started = time.time()
-    evidence = harness.validate(ws.dir, run_pit=True, scope=scope).as_dict()
+    full_matrix = harness.pit_full_matrix
+    if (ws.dir / "pom.xml").is_file():
+        with scoped_pit(ws.dir, ws.root, scope.modules):
+            evidence = harness.validate(ws.dir, run_pit=True, scope=scope).as_dict()
+    else:
+        evidence = harness.validate(ws.dir, run_pit=True, scope=scope).as_dict()
     matrix = mutation_matrix(ws.dir, started, scope.modules) if evidence.get("pitStatus") == "PASSED" else {}
     slimmed = slim(evidence) or {}
     # The harness's own mutant summary reads every fresh report in the workspace, so it can include other
@@ -343,7 +418,7 @@ def _validate(harness: ProjectHarness, ws: Workspace, scope: BuildScope) -> dict
         slimmed["mutationScore"] = statuses.count("KILLED") / len(statuses)
         slimmed["mutationCounts"] = {s: statuses.count(s) for s in sorted(set(statuses))}
     return {"host": HOST, "at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "evidence": slimmed,
-            "matrix": matrix, "seconds": round(time.time() - started, 1)}
+            "matrix": matrix, "fullMatrix": full_matrix, "seconds": round(time.time() - started, 1)}
 
 
 def main() -> None:
@@ -360,6 +435,10 @@ def main() -> None:
     parser.add_argument("--plan-only", action="store_true", help="print the layers and stop; nothing is built")
     parser.add_argument("--no-publish", action="store_true")
     parser.add_argument("--slice", default="0/1", help="K/N: only modules with crc32(scope) %% N == K")
+    parser.add_argument("--kill-first", action="append", default=[], metavar="MODULE",
+                        help="module scope (substring) that runs without fullMutationMatrix: each mutant stops at its "
+                             "first kill, so killersLost is not measured there (A-098: spring-security config never "
+                             "finished a full-matrix baseline in 6 h)")
     args = parser.parse_args()
     k_slice, _, n_slice = args.slice.partition("/")
     k_slice, n_slice = int(k_slice), int(n_slice or 1)
@@ -439,6 +518,10 @@ def main() -> None:
             publish(paths + ([base_path] if base_path.is_file() else []), args.project)
         pending = 0
 
+    def matrix_mode(module: str) -> ProjectHarness:
+        harness.pit_full_matrix = not any(part in module for part in args.kill_first)
+        return harness
+
     def baseline(module: str) -> dict:
         stored = baselines.get(module)
         incomplete = stored is not None and (stored.get("evidence") or {}).get("compileStatus") == "PASSED" and (
@@ -446,7 +529,7 @@ def main() -> None:
         if stored is None or (incomplete and not stored.get("retriedOnRestart")):
             retry = stored is not None
             ws.restore()
-            record = validate(harness, ws, scopes[module])
+            record = validate(matrix_mode(module), ws, scopes[module])
             if retry:
                 record["retriedOnRestart"] = True
             baselines[module] = record
@@ -459,7 +542,7 @@ def main() -> None:
         if record.get("matrix") and "unstable" not in record:
             # A second run of the untouched code marks the mutants that move on their own.
             ws.restore()
-            again = validate(harness, ws, scopes[module])
+            again = validate(matrix_mode(module), ws, scopes[module])
             if again.get("matrix"):
                 record["unstable"] = unstable_mutants(record["matrix"], again["matrix"])
                 record["repeatSeconds"] = again["seconds"]
@@ -478,7 +561,7 @@ def main() -> None:
             for key, run in d["out"]["runs"].items():
                 if key.rsplit("#L", 1)[0] == module and run.get("matrixDiff"):
                     run["comparison"] = compare(base["matrix"], candidate_from_diff(base["matrix"], run["matrixDiff"]),
-                                                base.get("unstable"))
+                                                base.get("unstable"), killers=base.get("fullMatrix", True))
                     touched = True
             if touched:
                 save(d["out_path"], d["out"])
@@ -486,14 +569,15 @@ def main() -> None:
     def run_layer(d: dict, module: str, mcis: list[str]) -> dict:
         ws.apply(layer_contents(mcis, d["diffs"], project_root))
         try:
-            record = validate(harness, ws, scopes[module])
+            record = validate(matrix_mode(module), ws, scopes[module])
         finally:
             ws.restore()
         record["mcis"] = mcis
         matrix = record.pop("matrix")
         base = baseline(module)
         base_matrix = base["matrix"]
-        record["comparison"] = compare(base_matrix, matrix, base.get("unstable")) if matrix else None
+        record["comparison"] = compare(base_matrix, matrix, base.get("unstable"),
+                                       killers=base.get("fullMatrix", True) and record.get("fullMatrix", True)) if matrix else None
         record["matrixDiff"] = matrix_diff(base_matrix, matrix) if matrix else None
         return record
 
