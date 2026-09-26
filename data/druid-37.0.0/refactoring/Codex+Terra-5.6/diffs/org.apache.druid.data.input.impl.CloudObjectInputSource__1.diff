@@ -1,0 +1,75 @@
+--- a/processing/src/test/java/org/apache/druid/data/input/impl/CloudObjectInputSourceTest.java
++++ b/processing/src/test/java/org/apache/druid/data/input/impl/CloudObjectInputSourceTest.java
+@@ -132,11 +132,7 @@
+   @Test
+   public void testWithUrisFilter()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, URIS2, null, null, "**.csv", SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
+-    Mockito.when(inputSource.getSplitWidget()).thenReturn(new MockSplitWidget());
++    final CloudObjectInputSource inputSource = createInputSource(URIS2, null, "**.csv");
+ 
+     Stream<InputSplit<List<CloudObjectLocation>>> splits = inputSource.createSplits(
+         new JsonInputFormat(JSONPathSpec.DEFAULT, null, null, null, null),
+@@ -158,11 +154,7 @@
+   @Test
+   public void testWithUris()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, URIS, null, null, null, SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
+-    Mockito.when(inputSource.getSplitWidget()).thenReturn(new MockSplitWidget());
++    final CloudObjectInputSource inputSource = createInputSource(URIS, null, null);
+ 
+     Stream<InputSplit<List<CloudObjectLocation>>> splits = inputSource.createSplits(
+         new JsonInputFormat(JSONPathSpec.DEFAULT, null, null, null, null),
+@@ -184,11 +176,7 @@
+   @Test
+   public void testWithObjectsFilter()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, null, null, OBJECTS_BEFORE_GLOB, "**.csv", SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
+-    Mockito.when(inputSource.getSplitWidget()).thenReturn(new MockSplitWidget());
++    final CloudObjectInputSource inputSource = createInputSource(null, OBJECTS_BEFORE_GLOB, "**.csv");
+ 
+     Stream<InputSplit<List<CloudObjectLocation>>> splits = inputSource.createSplits(
+         new JsonInputFormat(JSONPathSpec.DEFAULT, null, null, null, null),
+@@ -210,11 +198,7 @@
+   @Test
+   public void testWithObjects()
+   {
+-    CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
+-        .useConstructor(SCHEME, null, null, OBJECTS, null, SystemFields.none())
+-        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
+-    );
+-    Mockito.when(inputSource.getSplitWidget()).thenReturn(new MockSplitWidget());
++    final CloudObjectInputSource inputSource = createInputSource(null, OBJECTS, null);
+ 
+     Stream<InputSplit<List<CloudObjectLocation>>> splits = inputSource.createSplits(
+         new JsonInputFormat(JSONPathSpec.DEFAULT, null, null, null, null),
+@@ -241,6 +225,20 @@
+     PathMatcher m2 = FileSystems.getDefault().getPathMatcher("glob:db/date=2022-08-01/*.parquet");
+     Assert.assertTrue(m2.matches(Paths.get("db/date=2022-08-01/001.parquet")));
+     Assert.assertFalse(m2.matches(Paths.get("db/date=2022-08-01/_junk/0/001.parquet")));
++  }
++
++  private CloudObjectInputSource createInputSource(
++      final List<URI> uris,
++      final List<CloudObjectLocation> objects,
++      final String objectGlob
++  )
++  {
++    final CloudObjectInputSource inputSource = Mockito.mock(CloudObjectInputSource.class, Mockito.withSettings()
++        .useConstructor(SCHEME, uris, null, objects, objectGlob, SystemFields.none())
++        .defaultAnswer(Mockito.CALLS_REAL_METHODS)
++    );
++    Mockito.when(inputSource.getSplitWidget()).thenReturn(new MockSplitWidget());
++    return inputSource;
+   }
+ 
+   private static class MockSplitWidget implements CloudObjectSplitWidget
