@@ -564,6 +564,7 @@ def main() -> None:
     harness.pit_full_matrix = True
     harness.pit_threads = args.threads
     harness.pit_skip_failing_tests = True
+    harness.pit_in_reactor = True
     ws = Workspace(project_root, args.project, harness, suffix)
     scopes = {}
     for module in modules:

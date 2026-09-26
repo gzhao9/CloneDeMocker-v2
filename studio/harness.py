@@ -332,6 +332,9 @@ class ProjectHarness:
     # Gradle only: pitest-maven 1.30.0 has no user property for skipFailingTests, so Maven needs
     # it in the POM (baseline_v1/pit_layers.py writes it into its own workspace).
     pit_skip_failing_tests: bool = False
+    # Maven: run PIT after `test-compile` in the same reactor, so -am siblings resolve from this build's
+    # target/ rather than whatever ~/.m2 holds (missing or stale jars; C-030). Off by default.
+    pit_in_reactor: bool = False
 
     def __init__(self, maven_repo_local: str | Path | None = None) -> None:
         """
@@ -780,7 +783,8 @@ class ProjectHarness:
                 patterns += [f"!{name}" for name in scope.excluded_tests]
                 test_filter = [f"-Dtest={','.join(patterns)}", "-DfailIfNoTests=false",
                                "-Dsurefire.failIfNoSpecifiedTests=false"]
-            pit_command = [*prefix, "org.pitest:pitest-maven:mutationCoverage", "-DoutputFormats=XML"]
+            pit_command = [*prefix, *(["test-compile"] if self.pit_in_reactor else []),
+                           "org.pitest:pitest-maven:mutationCoverage", "-DoutputFormats=XML"]
             if scope is not None and scope.test_classes:
                 pattern = ",".join(sorted(scope.test_classes))
                 # 与 Gradle 初始化脚本同一条规则：被变异的类取目标测试所在的包。不给的话 PIT 回落到
