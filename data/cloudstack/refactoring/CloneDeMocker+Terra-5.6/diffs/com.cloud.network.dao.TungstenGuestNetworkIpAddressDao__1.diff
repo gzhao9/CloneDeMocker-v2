@@ -1,0 +1,52 @@
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenElementTest.java
+@@ -379,7 +379,7 @@
+         when(lbVmMapDao.listByLoadBalancerId(anyLong(), anyBoolean())).thenReturn(loadBalancerVMMapVOList);
+         when(tungstenGuestNetworkIpAddressVO.getGuestIpAddress()).thenReturn(ip);
+         when(ip.addr()).thenReturn("10.10.10.10");
+-        when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
++        MockTungstenGuestNetworkIpAddressDao.mockFindByNetworkIdAndPublicIp(tungstenGuestNetworkIpAddressDao, tungstenGuestNetworkIpAddressVO);
+         when(tungstenFabricUtils.sendTungstenCommand(any(CreateTungstenNetworkLoadbalancerCommand.class), anyLong())).thenReturn(createTungstenNetworkLoadbalancerAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerPoolCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerPoolAnswer);
+         when(tungstenFabricUtils.sendTungstenCommand(any(UpdateTungstenLoadBalancerMemberCommand.class), anyLong())).thenReturn(updateTungstenLoadBalancerMemberAnswer);
+@@ -461,7 +461,7 @@
+         when(ip1.addr()).thenReturn("10.10.10.10");
+         when(tungstenFabricUtils.sendTungstenCommand(any(DeleteTungstenLoadBalancerCommand.class), anyLong())).thenReturn(deleteTungstenLoadBalancerCommand);
+         when(lbDao.listByIpAddress(anyLong())).thenReturn(loadBalancerVOList1);
+-        when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(),anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
++        MockTungstenGuestNetworkIpAddressDao.mockFindByNetworkIdAndPublicIp(tungstenGuestNetworkIpAddressDao, tungstenGuestNetworkIpAddressVO);
+         when(tungstenGuestNetworkIpAddressDao.remove(anyLong())).thenReturn(false);
+ 
+         assertFalse(tungstenElement.applyLBRules(network, loadBalancingRuleList1));
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/TungstenServiceImplTest.java
+@@ -669,7 +669,7 @@
+         when(fwRulesDao.listByIpAndPurposeAndNotRevoked(anyLong(), eq(FirewallRule.Purpose.LoadBalancing))).thenReturn(List.of(firewallRuleVO));
+         when(lbCertMapDao.findByLbRuleId(anyLong())).thenReturn(loadBalancerCertMapVO);
+         when(entityMgr.findById(eq(SslCertVO.class), anyLong())).thenReturn(sslCertVO);
+-        when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
++        MockTungstenGuestNetworkIpAddressDao.mockFindByNetworkIdAndPublicIp(tungstenGuestNetworkIpAddressDao, tungstenGuestNetworkIpAddressVO);
+         when(loadBalancingRule.getSourceIp()).thenReturn(ip);
+         when(accountDao.findById(anyLong())).thenReturn(accountVO);
+         when(ip.addr()).thenReturn("192.168.100.100");
+--- a/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockTungstenGuestNetworkIpAddressDao.java
++++ b/plugins/network-elements/tungsten/src/test/java/org/apache/cloudstack/network/tungsten/service/MockTungstenGuestNetworkIpAddressDao.java
+@@ -0,0 +1,18 @@
++package org.apache.cloudstack.network.tungsten.service;
++
++import static org.mockito.ArgumentMatchers.anyLong;
++import static org.mockito.ArgumentMatchers.anyString;
++import static org.mockito.Mockito.when;
++
++import com.cloud.network.TungstenGuestNetworkIpAddressVO;
++import com.cloud.network.dao.TungstenGuestNetworkIpAddressDao;
++
++public final class MockTungstenGuestNetworkIpAddressDao {
++    private MockTungstenGuestNetworkIpAddressDao() {
++    }
++
++    public static void mockFindByNetworkIdAndPublicIp(TungstenGuestNetworkIpAddressDao tungstenGuestNetworkIpAddressDao,
++            TungstenGuestNetworkIpAddressVO tungstenGuestNetworkIpAddressVO) {
++        when(tungstenGuestNetworkIpAddressDao.findByNetworkIdAndPublicIp(anyLong(), anyString())).thenReturn(tungstenGuestNetworkIpAddressVO);
++    }
++}

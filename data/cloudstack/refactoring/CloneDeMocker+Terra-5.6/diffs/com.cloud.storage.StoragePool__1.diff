@@ -1,0 +1,445 @@
+--- a/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
++++ b/plugins/hypervisors/kvm/src/test/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResourceTest.java
+@@ -260,6 +260,7 @@
+     private KVMPhysicalDisk physicalDisk;
+     @Mock
+     private Map<String, String> details;
++    private final StoragePool poolMock = Mockito.mock(StoragePool.class);
+ 
+     private static final String PHYSICAL_DISK_PATH = "/path/to/disk";
+     private static final int DEV_ID = 1;
+@@ -2256,11 +2257,10 @@
+ 
+     @Test
+     public void testDestroyCommand() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+         final Volume volume = Mockito.mock(Volume.class);
+         final String vmName = "Test";
+ 
+-        final DestroyCommand command = new DestroyCommand(pool, volume, vmName);
++        final DestroyCommand command = new DestroyCommand(poolMock, volume, vmName);
+ 
+         final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+@@ -2283,11 +2283,10 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testDestroyCommandError() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+         final Volume volume = Mockito.mock(Volume.class);
+         final String vmName = "Test";
+ 
+-        final DestroyCommand command = new DestroyCommand(pool, volume, vmName);
++        final DestroyCommand command = new DestroyCommand(poolMock, volume, vmName);
+ 
+         final KVMStoragePoolManager poolManager = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool primary = Mockito.mock(KVMStoragePool.class);
+@@ -2311,7 +2310,6 @@
+ 
+     @Test(expected = NullPointerException.class)
+     public void testPrimaryStorageDownloadCommandNOTemplateDisk() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+ 
+         final List<KVMPhysicalDisk> disks = new ArrayList<KVMPhysicalDisk>();
+ 
+@@ -2320,7 +2318,7 @@
+         final ImageFormat format = ImageFormat.QCOW2;
+         final long accountId = 1l;
+         final int wait = 0;
+-        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, pool, wait);
++        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, poolMock, wait);
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+@@ -2350,7 +2348,6 @@
+ 
+     @Test
+     public void testPrimaryStorageDownloadCommandNOTemplateNODisk() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+ 
+         final List<KVMPhysicalDisk> disks = new ArrayList<KVMPhysicalDisk>();
+ 
+@@ -2359,7 +2356,7 @@
+         final ImageFormat format = ImageFormat.QCOW2;
+         final long accountId = 1l;
+         final int wait = 0;
+-        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, pool, wait);
++        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, poolMock, wait);
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+@@ -2385,7 +2382,6 @@
+ 
+     @Test
+     public void testPrimaryStorageDownloadCommandNOTemplateNOQcow2() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+ 
+         final List<KVMPhysicalDisk> disks = new ArrayList<KVMPhysicalDisk>();
+         final List<KVMPhysicalDisk> spiedDisks = Mockito.spy(disks);
+@@ -2395,7 +2391,7 @@
+         final ImageFormat format = ImageFormat.QCOW2;
+         final long accountId = 1l;
+         final int wait = 0;
+-        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, pool, wait);
++        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, poolMock, wait);
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+@@ -2422,14 +2418,13 @@
+ 
+     @Test(expected = NullPointerException.class)
+     public void testPrimaryStorageDownloadCommandTemplateNoDisk() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+ 
+         final String name = "Test";
+         final String url = "http://template/template.qcow2";
+         final ImageFormat format = ImageFormat.VHD;
+         final long accountId = 1l;
+         final int wait = 0;
+-        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, pool, wait);
++        final PrimaryStorageDownloadCommand command = new PrimaryStorageDownloadCommand(name, url, format, accountId, poolMock, wait);
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool primaryPool = Mockito.mock(KVMStoragePool.class);
+@@ -2495,7 +2490,6 @@
+ 
+     @Test
+     public void testUpgradeSnapshotCommand() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);;
+         final String secondaryStoragePoolURL = "url";
+         final Long dcId = 1l;
+         final Long accountId = 1l;
+@@ -2507,7 +2501,7 @@
+         final String snapshotName = "uuid:/8edb1156-a851-4914-afc6-468ee52ac861/";
+         final String version = "1";
+ 
+-        final UpgradeSnapshotCommand command = new UpgradeSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, templateId, tmpltAccountId, volumePath, snapshotUuid, snapshotName, version);
++        final UpgradeSnapshotCommand command = new UpgradeSnapshotCommand(poolMock, secondaryStoragePoolURL, dcId, accountId, volumeId, templateId, tmpltAccountId, volumePath, snapshotUuid, snapshotName, version);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -2518,10 +2512,9 @@
+ 
+     @Test
+     public void testDeleteStoragePoolCommand() {
+-        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+ 
+-        final DeleteStoragePoolCommand command = new DeleteStoragePoolCommand(storagePool);
++        final DeleteStoragePoolCommand command = new DeleteStoragePoolCommand(poolMock);
+ 
+         final StorageFilerTO pool = command.getPool();
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+@@ -2540,10 +2533,9 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testDeleteStoragePoolCommandException() {
+-        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+ 
+-        final DeleteStoragePoolCommand command = new DeleteStoragePoolCommand(storagePool);
++        final DeleteStoragePoolCommand command = new DeleteStoragePoolCommand(poolMock);
+ 
+         final StorageFilerTO pool = command.getPool();
+         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+@@ -2774,8 +2766,7 @@
+ 
+     @Test
+     public void testCreateStoragePoolCommand() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+-        final CreateStoragePoolCommand command = new CreateStoragePoolCommand(true, pool);
++        final CreateStoragePoolCommand command = new CreateStoragePoolCommand(true, poolMock);
+ 
+         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
+         assertNotNull(wrapper);
+@@ -2786,8 +2777,7 @@
+ 
+     @Test
+     public void testModifyStoragePoolCommand() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+-        final ModifyStoragePoolCommand command = new ModifyStoragePoolCommand(true, pool);
++        final ModifyStoragePoolCommand command = new ModifyStoragePoolCommand(true, poolMock);
+         Map<String, String> details = new HashMap<>();
+         details.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "false");
+         command.setDetails(details);
+@@ -2814,8 +2804,7 @@
+ 
+     @Test
+     public void testModifyStoragePoolCommandFailure() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+-        final ModifyStoragePoolCommand command = new ModifyStoragePoolCommand(true, pool);
++        final ModifyStoragePoolCommand command = new ModifyStoragePoolCommand(true, poolMock);
+         Map<String, String> details = new HashMap<>();
+         details.put(KVMStoragePool.CLVM_SECURE_ZERO_FILL, "false");
+         command.setDetails(details);
+@@ -3297,7 +3286,6 @@
+     public void testCreateVolumeFromSnapshotCommand() {
+         // This tests asserts to False because there will be a NPE due to UUID static method calls.
+ 
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "/opt/storage/";
+         final Long dcId = 1l;
+         final Long accountId = 1l;
+@@ -3306,7 +3294,7 @@
+         final String backedUpSnapshotName = "uuid:/8edb1156-a851-4914-afc6-468ee52ac862/";
+         final int wait = 0;
+ 
+-        final CreateVolumeFromSnapshotCommand command = new CreateVolumeFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, wait);
++        final CreateVolumeFromSnapshotCommand command = new CreateVolumeFromSnapshotCommand(poolMock, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, wait);
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+@@ -3342,7 +3330,6 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testCreateVolumeFromSnapshotCommandCloudException() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "/opt/storage/";
+         final Long dcId = 1l;
+         final Long accountId = 1l;
+@@ -3351,7 +3338,7 @@
+         final String backedUpSnapshotName = "uuid:/8edb1156-a851-4914-afc6-468ee52ac862/";
+         final int wait = 0;
+ 
+-        final CreateVolumeFromSnapshotCommand command = new CreateVolumeFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, wait);
++        final CreateVolumeFromSnapshotCommand command = new CreateVolumeFromSnapshotCommand(poolMock, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, wait);
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+@@ -4027,7 +4014,6 @@
+         //Simple test used to make sure the flow (LibvirtComputingResource => Request => CommandWrapper) is working.
+         //The code is way to big and complex. Will finish the refactor and come back to this to add more cases.
+ 
+-        final StoragePool pool = Mockito.mock(StoragePool.class);;
+         final String secondaryStorageUrl = "nfs:/127.0.0.1/storage/secondary";
+         final long templateId = 1l;
+         final long accountId = 1l;
+@@ -4037,7 +4023,7 @@
+         final String vmName = "Test";
+         final int wait = 0;
+ 
+-        final CreatePrivateTemplateFromVolumeCommand command = new CreatePrivateTemplateFromVolumeCommand(pool, secondaryStorageUrl, templateId, accountId, userSpecifiedName, uniqueName, volumePath, vmName, wait);
++        final CreatePrivateTemplateFromVolumeCommand command = new CreatePrivateTemplateFromVolumeCommand(poolMock, secondaryStorageUrl, templateId, accountId, userSpecifiedName, uniqueName, volumePath, vmName, wait);
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool secondaryStorage = Mockito.mock(KVMStoragePool.class);
+@@ -4064,7 +4050,6 @@
+         //Simple test used to make sure the flow (LibvirtComputingResource => Request => CommandWrapper) is working.
+         //The code is way to big and complex. Will finish the refactor and come back to this to add more cases.
+ 
+-        final StoragePool pool = Mockito.mock(StoragePool.class);;
+         final String volumePath = "/123/vol";
+         final String vmName = "Test";
+ 
+@@ -4072,7 +4057,7 @@
+         final String preSnapshotPath = "/snapshot/path";
+         final String snapshotName = "snap";
+ 
+-        final ManageSnapshotCommand command = new ManageSnapshotCommand(snapshotId, volumePath, pool, preSnapshotPath, snapshotName, vmName);
++        final ManageSnapshotCommand command = new ManageSnapshotCommand(snapshotId, volumePath, poolMock, preSnapshotPath, snapshotName, vmName);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         //final Connect conn = Mockito.mock(Connect.class);
+@@ -4101,14 +4086,13 @@
+ 
+     @Test
+     public void testManageSnapshotCommandLibvirt() {
+-        final StoragePool storagePool = Mockito.mock(StoragePool.class);;
+         final String volumePath = "/123/vol";
+         final String vmName = "Test";
+         final long snapshotId = 1l;
+         final String preSnapshotPath = "/snapshot/path";
+         final String snapshotName = "snap";
+ 
+-        final ManageSnapshotCommand command = new ManageSnapshotCommand(snapshotId, volumePath, storagePool, preSnapshotPath, snapshotName, vmName);
++        final ManageSnapshotCommand command = new ManageSnapshotCommand(snapshotId, volumePath, poolMock, preSnapshotPath, snapshotName, vmName);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         final Connect conn = Mockito.mock(Connect.class);
+@@ -4164,7 +4148,6 @@
+         //Simple test used to make sure the flow (LibvirtComputingResource => Request => CommandWrapper) is working.
+         //The code is way to big and complex. Will finish the refactor and come back to this to add more cases.
+ 
+-        final StoragePool pool = Mockito.mock(StoragePool.class);;
+         final String secondaryStorageUrl = "nfs:/127.0.0.1/storage/secondary";
+         final long accountId = 1l;
+         final String volumePath = "/123/vol";
+@@ -4182,7 +4165,7 @@
+         final boolean isVolumeInactive = false;
+         final String prevSnapshotUuid = "1791efae-f22d-474b-87c6-92547d6c5877";
+ 
+-        final BackupSnapshotCommand command = new BackupSnapshotCommand(secondaryStorageUrl, dcId, accountId, volumeId, snapshotId, secHostId, volumePath, pool, snapshotUuid, snapshotName, prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, wait);
++        final BackupSnapshotCommand command = new BackupSnapshotCommand(secondaryStorageUrl, dcId, accountId, volumeId, snapshotId, secHostId, volumePath, poolMock, snapshotUuid, snapshotName, prevSnapshotUuid, prevBackupUuid, isVolumeInactive, vmName, wait);
+ 
+         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
+         //final Connect conn = Mockito.mock(Connect.class);
+@@ -4211,7 +4194,6 @@
+ 
+     @Test
+     public void testCreatePrivateTemplateFromSnapshotCommand() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
+         final Long dcId = 1l;
+         final Long accountId = 1l;
+@@ -4223,7 +4205,7 @@
+         final String templateName = "templ";
+         final int wait = 0;
+ 
+-        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
++        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(poolMock, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
+ 
+         final String templatePath = "/template/path";
+         final String localPath = "/mnt/local";
+@@ -4285,7 +4267,6 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testCreatePrivateTemplateFromSnapshotCommandConfigurationException() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
+         final Long dcId = 1l;
+         final Long accountId = 1l;
+@@ -4297,7 +4278,7 @@
+         final String templateName = "templ";
+         final int wait = 0;
+ 
+-        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
++        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(poolMock, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
+ 
+         final String templatePath = "/template/path";
+         final String localPath = "/mnt/local";
+@@ -4355,7 +4336,6 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testCreatePrivateTemplateFromSnapshotCommandInternalErrorException() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
+         final Long dcId = 1l;
+         final Long accountId = 1l;
+@@ -4367,7 +4347,7 @@
+         final String templateName = "templ";
+         final int wait = 0;
+ 
+-        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
++        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(poolMock, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
+ 
+         final String templatePath = "/template/path";
+         final String localPath = "/mnt/local";
+@@ -4427,7 +4407,6 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testCreatePrivateTemplateFromSnapshotCommandIOException() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
+         final Long dcId = 1l;
+         final Long accountId = 1l;
+@@ -4439,7 +4418,7 @@
+         final String templateName = "templ";
+         final int wait = 0;
+ 
+-        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
++        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(poolMock, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
+ 
+         final String templatePath = "/template/path";
+         final String localPath = "/mnt/local";
+@@ -4506,7 +4485,6 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testCreatePrivateTemplateFromSnapshotCommandCloudRuntime() {
+-        final StoragePool pool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
+         final Long dcId = 1l;
+         final Long accountId = 1l;
+@@ -4518,7 +4496,7 @@
+         final String templateName = "templ";
+         final int wait = 0;
+ 
+-        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(pool, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
++        final CreatePrivateTemplateFromSnapshotCommand command = new CreatePrivateTemplateFromSnapshotCommand(poolMock, secondaryStoragePoolURL, dcId, accountId, volumeId, backedUpSnapshotUuid, backedUpSnapshotName, origTemplateInstallPath, newTemplateId, templateName, wait);
+ 
+         final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+         final KVMStoragePool secondaryPool = Mockito.mock(KVMStoragePool.class);
+@@ -4553,7 +4531,6 @@
+ 
+     @Test
+     public void testCopyVolumeCommand() {
+-        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
+         final Long volumeId = 1l;
+         final int wait = 0;
+@@ -4561,7 +4538,7 @@
+         final boolean toSecondaryStorage = true;
+         final boolean executeInSequence = false;
+ 
+-        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, storagePool, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
++        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, poolMock, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
+ 
+         final String destVolumeName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+         final String volumeDestPath = "/volumes/" + command.getVolumeId() + File.separator;
+@@ -4599,7 +4576,6 @@
+ 
+     @Test
+     public void testCopyVolumeCommandToSecFalse() {
+-        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
+         final Long volumeId = 1l;
+         final int wait = 0;
+@@ -4607,7 +4583,7 @@
+         final boolean toSecondaryStorage = false;
+         final boolean executeInSequence = false;
+ 
+-        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, storagePool, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
++        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, poolMock, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
+ 
+         final String destVolumeName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+         final String volumeDestPath = "/volumes/" + command.getVolumeId() + File.separator;
+@@ -4641,7 +4617,6 @@
+     @SuppressWarnings("unchecked")
+     @Test
+     public void testCopyVolumeCommandCloudRuntime() {
+-        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
+         final Long volumeId = 1l;
+         final int wait = 0;
+@@ -4649,7 +4624,7 @@
+         final boolean toSecondaryStorage = false;
+         final boolean executeInSequence = false;
+ 
+-        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, storagePool, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
++        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, poolMock, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
+ 
+         final String destVolumeName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+         final String volumeDestPath = "/volumes/" + command.getVolumeId() + File.separator;
+@@ -4682,7 +4657,6 @@
+ 
+     @Test
+     public void testCopyVolumeCommandCloudRuntime2() {
+-        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
+         final Long volumeId = 1l;
+         final int wait = 0;
+@@ -4690,7 +4664,7 @@
+         final boolean toSecondaryStorage = false;
+         final boolean executeInSequence = false;
+ 
+-        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, storagePool, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
++        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, poolMock, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
+ 
+         final StorageFilerTO pool = command.getPool();
+ 
+@@ -4710,7 +4684,6 @@
+ 
+     @Test
+     public void testCopyVolumeCommandPrimaryNotFound() {
+-        final StoragePool storagePool = Mockito.mock(StoragePool.class);
+         final String secondaryStoragePoolURL = "nfs:/127.0.0.1/storage/secondary";
+         final Long volumeId = 1l;
+         final int wait = 0;
+@@ -4718,7 +4691,7 @@
+         final boolean toSecondaryStorage = false;
+         final boolean executeInSequence = false;
+ 
+-        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, storagePool, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
++        final CopyVolumeCommand command = new CopyVolumeCommand(volumeId, volumePath, poolMock, secondaryStoragePoolURL, toSecondaryStorage, wait, executeInSequence );
+ 
+         final String destVolumeName = "ce97bbc1-34fe-4259-9202-74bbce2562ab";
+         final String volumeDestPath = "/volumes/" + command.getVolumeId() + File.separator;

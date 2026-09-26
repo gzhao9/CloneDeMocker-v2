@@ -1,0 +1,63 @@
+--- a/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/LinkAccountToLdapCmdTest.java
++++ b/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/LinkAccountToLdapCmdTest.java
+@@ -83,12 +83,11 @@
+         when(ldapManager.getUser(username, type, ldapDomain, 1L))
+                 .thenReturn(new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", ldapDomain, "ccp", false, null));
+ 
+-        when(accountService.getActiveAccountByName(username, domainId)).thenReturn(null);
+         UserAccountVO userAccount =  new UserAccountVO();
+         userAccount.setAccountId(24);
+-        when(accountService.createUserAccount(eq(username), eq(""), eq("Admin"), eq("Admin"), eq("admin@ccp.citrix.com"), isNull(String.class),
+-                eq(username), eq(Account.Type.DOMAIN_ADMIN), eq(RoleType.DomainAdmin.getId()), eq(domainId), isNull(String.class),
+-                (java.util.Map<String,String>)isNull(), anyString(), anyString(), eq(User.Source.LDAP))).thenReturn(userAccount);
++        accountService = MockAccountServiceForLdapLinking.createMockAccountServiceForLdapLinking(userAccount);
++        setHiddenField(linkAccountToLdapCmd, "_accountService", accountService);
++        when(accountService.getActiveAccountByName(username, domainId)).thenReturn(null);
+ 
+         linkAccountToLdapCmd.execute();
+         LinkAccountToLdapResponse result = (LinkAccountToLdapResponse)linkAccountToLdapCmd.getResponseObject();
+--- a/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/LinkDomainToLdapCmdTest.java
++++ b/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/LinkDomainToLdapCmdTest.java
+@@ -81,12 +81,11 @@
+         when(ldapManager.linkDomainToLdap(linkDomainToLdapCmd)).thenReturn(response);
+         when(ldapManager.getUser(username, type, ldapDomain, 1L)).thenReturn(new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", ldapDomain, "ccp", false, null));
+ 
+-        when(accountService.getActiveAccountByName(username, domainId)).thenReturn(null);
+         UserAccountVO userAccount =  new UserAccountVO();
+         userAccount.setAccountId(24);
+-        when(accountService.createUserAccount(eq(username), eq(""), eq("Admin"), eq("Admin"), eq("admin@ccp.citrix.com"), isNull(String.class),
+-                eq(username), eq(Account.Type.DOMAIN_ADMIN), eq(RoleType.DomainAdmin.getId()), eq(domainId), isNull(String.class),
+-                (java.util.Map<String,String>)isNull(), anyString(), anyString(), eq(User.Source.LDAP))).thenReturn(userAccount);
++        accountService = MockAccountServiceForLdapLinking.createMockAccountServiceForLdapLinking(userAccount);
++        setHiddenField(linkDomainToLdapCmd, "_accountService", accountService);
++        when(accountService.getActiveAccountByName(username, domainId)).thenReturn(null);
+ 
+ 
+         linkDomainToLdapCmd.execute();
+--- a/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/MockAccountServiceForLdapLinking.java
++++ b/plugins/user-authenticators/ldap/src/test/java/org/apache/cloudstack/api/command/MockAccountServiceForLdapLinking.java
+@@ -0,0 +1,24 @@
++package org.apache.cloudstack.api.command;
++
++import org.apache.cloudstack.acl.RoleType;
++import org.mockito.Mockito;
++
++import com.cloud.user.Account;
++import com.cloud.user.AccountService;
++import com.cloud.user.User;
++import com.cloud.user.UserAccountVO;
++
++import static org.mockito.Mockito.anyString;
++import static org.mockito.Mockito.eq;
++import static org.mockito.Mockito.isNull;
++import static org.mockito.Mockito.when;
++
++public class MockAccountServiceForLdapLinking {
++    public static AccountService createMockAccountServiceForLdapLinking(UserAccountVO userAccount) {
++        AccountService accountService = Mockito.mock(AccountService.class);
++        when(accountService.createUserAccount(eq("admin"), eq(""), eq("Admin"), eq("Admin"), eq("admin@ccp.citrix.com"), isNull(String.class),
++                eq("admin"), eq(Account.Type.DOMAIN_ADMIN), eq(RoleType.DomainAdmin.getId()), eq(1L), isNull(String.class),
++                (java.util.Map<String,String>)isNull(), anyString(), anyString(), eq(User.Source.LDAP))).thenReturn(userAccount);
++        return accountService;
++    }
++}
