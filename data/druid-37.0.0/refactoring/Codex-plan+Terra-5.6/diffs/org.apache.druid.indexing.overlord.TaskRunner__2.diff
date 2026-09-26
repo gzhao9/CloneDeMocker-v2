@@ -1,0 +1,50 @@
+--- a/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateLocationActionTest.java
++++ b/indexing-service/src/test/java/org/apache/druid/indexing/common/actions/UpdateLocationActionTest.java
+@@ -28,6 +28,7 @@
+ import org.apache.druid.indexing.overlord.TaskRunner;
+ import org.apache.druid.segment.TestHelper;
+ import org.junit.Assert;
++import org.junit.Before;
+ import org.junit.Test;
+ 
+ import java.net.InetAddress;
+@@ -43,6 +44,14 @@
+ 
+ public class UpdateLocationActionTest
+ {
++  private TaskRunner taskRunner;
++
++  @Before
++  public void setUp()
++  {
++    taskRunner = mock(TaskRunner.class);
++  }
++
+   @Test
+   public void testFlow() throws UnknownHostException
+   {
+@@ -52,10 +61,9 @@
+     UpdateLocationAction action = new UpdateLocationAction(myLocation);
+     Task task = NoopTask.create();
+     TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+-    TaskRunner runner = mock(TaskRunner.class);
+-    when(toolbox.getTaskRunner()).thenReturn(Optional.of(runner));
++    when(toolbox.getTaskRunner()).thenReturn(Optional.of(taskRunner));
+     action.perform(task, toolbox);
+-    verify(runner, times(1)).updateLocation(eq(task), eq(myLocation));
++    verify(taskRunner, times(1)).updateLocation(eq(task), eq(myLocation));
+   }
+ 
+   @Test
+@@ -67,10 +75,9 @@
+     UpdateLocationAction action = new UpdateLocationAction(myLocation);
+     Task task = NoopTask.create();
+     TaskActionToolbox toolbox = mock(TaskActionToolbox.class);
+-    TaskRunner runner = mock(TaskRunner.class);
+     when(toolbox.getTaskRunner()).thenReturn(Optional.absent());
+     action.perform(task, toolbox);
+-    verify(runner, never()).updateStatus(any(), any());
++    verify(taskRunner, never()).updateStatus(any(), any());
+   }
+ 
+   @Test
