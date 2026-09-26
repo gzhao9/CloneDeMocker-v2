@@ -1,0 +1,70 @@
+--- a/sql/src/test/java/org/apache/druid/sql/avatica/ErrorHandlerTest.java
++++ b/sql/src/test/java/org/apache/druid/sql/avatica/ErrorHandlerTest.java
+@@ -34,16 +34,11 @@
+   @Test
+   public void testErrorHandlerSanitizesErrorAsExpected()
+   {
+-    ServerConfig serverConfig = Mockito.mock(ServerConfig.class);
+-    AllowedRegexErrorResponseTransformStrategy emptyAllowedRegexErrorResponseTransformStrategy = new AllowedRegexErrorResponseTransformStrategy(
+-        ImmutableList.of());
++    final ServerConfig serverConfig = makeServerConfigWithEmptyAllowedRegexErrorResponseTransformStrategy();
++    final ErrorHandler errorHandler = new ErrorHandler(serverConfig);
++    final QueryException input = new QueryException("error", "error message", "error class", "host");
+ 
+-    Mockito.when(serverConfig.getErrorResponseTransformStrategy())
+-           .thenReturn(emptyAllowedRegexErrorResponseTransformStrategy);
+-    ErrorHandler errorHandler = new ErrorHandler(serverConfig);
+-    QueryException input = new QueryException("error", "error message", "error class", "host");
+-
+-    RuntimeException output = errorHandler.sanitize(input);
++    final RuntimeException output = errorHandler.sanitize(input);
+     Assert.assertNull(output.getMessage());
+   }
+ 
+@@ -61,13 +56,8 @@
+   @Test
+   public void testErrorHandlerHasAffectingErrorResponseTransformStrategyReturnsTrueWhenNotUsingNoErrorResponseTransformStrategy()
+   {
+-    ServerConfig serverConfig = Mockito.mock(ServerConfig.class);
+-    AllowedRegexErrorResponseTransformStrategy emptyAllowedRegexErrorResponseTransformStrategy = new AllowedRegexErrorResponseTransformStrategy(
+-        ImmutableList.of());
+-
+-    Mockito.when(serverConfig.getErrorResponseTransformStrategy())
+-           .thenReturn(emptyAllowedRegexErrorResponseTransformStrategy);
+-    ErrorHandler errorHandler = new ErrorHandler(serverConfig);
++    final ServerConfig serverConfig = makeServerConfigWithEmptyAllowedRegexErrorResponseTransformStrategy();
++    final ErrorHandler errorHandler = new ErrorHandler(serverConfig);
+     Assert.assertTrue(errorHandler.hasAffectingErrorResponseTransformStrategy());
+   }
+ 
+@@ -82,16 +72,22 @@
+   @Test
+   public void testErrorHandlerHandlesNonSanitizableExceptionCorrectly()
+   {
+-    ServerConfig serverConfig = Mockito.mock(ServerConfig.class);
+-    AllowedRegexErrorResponseTransformStrategy emptyAllowedRegexErrorResponseTransformStrategy = new AllowedRegexErrorResponseTransformStrategy(
+-        ImmutableList.of());
++    final ServerConfig serverConfig = makeServerConfigWithEmptyAllowedRegexErrorResponseTransformStrategy();
++    final ErrorHandler errorHandler = new ErrorHandler(serverConfig);
++
++    final Exception input = new Exception("message");
++    final RuntimeException output = errorHandler.sanitize(input);
++    Assert.assertEquals(null, output.getMessage());
++  }
++
++  private ServerConfig makeServerConfigWithEmptyAllowedRegexErrorResponseTransformStrategy()
++  {
++    final ServerConfig serverConfig = Mockito.mock(ServerConfig.class);
++    final AllowedRegexErrorResponseTransformStrategy emptyAllowedRegexErrorResponseTransformStrategy =
++        new AllowedRegexErrorResponseTransformStrategy(ImmutableList.of());
+ 
+     Mockito.when(serverConfig.getErrorResponseTransformStrategy())
+            .thenReturn(emptyAllowedRegexErrorResponseTransformStrategy);
+-    ErrorHandler errorHandler = new ErrorHandler(serverConfig);
+-
+-    Exception input = new Exception("message");
+-    RuntimeException output = errorHandler.sanitize(input);
+-    Assert.assertEquals(null, output.getMessage());
++    return serverConfig;
+   }
+ }
