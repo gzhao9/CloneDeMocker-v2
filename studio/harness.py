@@ -305,6 +305,11 @@ class BuildScope:
 
     modules: tuple[str, ...] = ()
     test_classes: tuple[str, ...] = ()
+    # PIT only, when test_classes is empty: which classes to mutate and which tests PIT uses
+    # (patterns such as "org.foo.*"). The test phase still runs every test of the modules.
+    # Used by the whole-module layered PIT (baseline_v1/pit_layers.py).
+    pit_classes: tuple[str, ...] = ()
+    pit_tests: tuple[str, ...] = ()
 
     def describe(self) -> str:
         if not self.modules:
@@ -314,6 +319,11 @@ class BuildScope:
 
 class ProjectHarness:
     """运行论文中的编译与测试检验 / Runs the paper's compile and test checks."""
+
+    # Opt-in PIT settings, off by default so per-MCI verdicts are unchanged. fullMutationMatrix
+    # makes PIT run every covering test per mutant and record all killing tests (XML).
+    pit_full_matrix: bool = False
+    pit_threads: int = 0
 
     def __init__(self, maven_repo_local: str | Path | None = None) -> None:
         """
@@ -767,6 +777,14 @@ class ProjectHarness:
                 pit_command.extend([f"-DtargetTests={pattern}", "-DfailWhenNoMutations=false"])
                 if packages:
                     pit_command.append(f"-DtargetClasses={','.join(packages)}")
+            elif scope is not None and scope.pit_classes:
+                pit_command.extend([f"-DtargetClasses={','.join(scope.pit_classes)}",
+                                    f"-DtargetTests={','.join(scope.pit_tests or scope.pit_classes)}",
+                                    "-DfailWhenNoMutations=false"])
+            if self.pit_full_matrix:
+                pit_command.append("-DfullMutationMatrix=true")
+            if self.pit_threads:
+                pit_command.append(f"-Dthreads={self.pit_threads}")
             return (
                 [*prefix, "-DskipTests", "test-compile"],
                 [*prefix, "test", *test_filter],
@@ -857,6 +875,13 @@ class ProjectHarness:
         pit_properties = [f"-PcloneDeMockerPitProjects={','.join(targets) or '*'}"]
         if test_classes:
             pit_properties.append(f"-PcloneDeMockerPitTests={','.join(test_classes)}")
+        elif scope is not None and scope.pit_classes:
+            pit_properties += [f"-PcloneDeMockerPitClasses={','.join(scope.pit_classes)}",
+                               f"-PcloneDeMockerPitTests={','.join(scope.pit_tests or scope.pit_classes)}"]
+        if self.pit_full_matrix:
+            pit_properties.append("-PcloneDeMockerPitFullMatrix=true")
+        if self.pit_threads:
+            pit_properties.append(f"-PcloneDeMockerPitThreads={self.pit_threads}")
         if source_sets - {"test"}:
             pit_properties.append(f"-PcloneDeMockerPitTestSourceSets={','.join(sorted(source_sets))}")
         return (

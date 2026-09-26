@@ -1,26 +1,25 @@
-"""PIT by layers (owner's design, E-008): every SUCCESS diff of a setup, stacked, one PIT run per layer.
+"""PIT by layers (owner's design, E-008 / A-084): every SUCCESS diff of a setup, stacked, whole-module PIT.
 
 Per project and setup, the SUCCESS rows' published diffs are grouped by the row's module scope and
 stacked in detection order with `git apply --3way`. A diff that does not apply on top of the ones
-already stacked moves, whole, to the next layer; nothing is rewritten and no model is called. Each
-(module, layer) is then validated like one multi-MCI run: `RefactoringAgent.run` with every MCI of the
-layer selected, so the scope is the union of their test classes, and baseline and candidate PIT run
-on that same scope. The baseline comes from the verification ledger when the same scope ran before.
+already stacked moves, whole, to the next layer; nothing is rewritten and no model is called.
 
-Layer 1 of every setup runs first, then layer 2, and so on, so each project has layer-1 data early.
-It publishes after every layer (and every --publish-every runs inside one).
+PIT covers the whole module, not the MCIs' test classes: every test of the module runs, PIT mutates
+the module's own production packages and uses its own test packages, with fullMutationMatrix so the
+XML names every killing test. The baseline runs once per module on the original code (shared by
+all setups); each layer then runs once on the same scope with the layer's diffs applied. A layer is
+compared with the baseline mutant by mutant: kills lost or gained, and tests that stopped killing a
+mutant. If a layer with several MCIs fails to compile or its tests fail, the first MCI is kept and
+the rest move to a new layer at the end, so every MCI is still measured.
 
-A candidate that does not compile is almost always two MCIs adding the same helper. The layer's
-first MCI is kept and the others move to a new layer at the end, so every MCI is still measured.
-
-Output, one file per dataset and host (hosts never write the same file):
-    data/<project>/refactoring/<setup>/pit-layers/<host>.json
-    {"plan": {module: [[mci, ...], ...]}, "runs": {"<module>#L<k>": {...}}}
+Output (one file per host; hosts never write the same file):
+    data/<project>/pit-layers/baseline-<host>.json            {scope: evidence + matrix}
+    data/<project>/refactoring/<setup>/pit-layers/<host>.json {"plan": {...}, "runs": {"<scope>#L<k>": {...}}}
 
     python baseline_v1/pit_layers.py --project kiota-java-1.10.0 --root kiota-java-1.10.0=<checkout>
-        [--setups all|a,b] [--max-layer 1] [--noredist only|skip] [--plan-only] [--no-publish]
-Resumable: a (module, layer) already in this host's file is skipped. The plan is stored with the runs
-and reused, so a restart does not reshuffle layers.
+        [--setups all|a,b] [--max-layer 1] [--threads 4] [--noredist only|skip] [--plan-only] [--no-publish]
+Resumable: a baseline or (module, layer) already in this host's files is skipped, and the stored plan
+is reused, so a restart does not reshuffle layers.
 """
 from __future__ import annotations
 
@@ -33,18 +32,20 @@ import subprocess
 import sys
 import tempfile
 import time
+import xml.etree.ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
-from studio import canonical_store  # noqa: E402
+from studio.canonical_store import write_retrying  # noqa: E402
 from studio.detection_service import DetectionService  # noqa: E402
-from studio.harness import mutation_regressed  # noqa: E402
-from studio.refactoring_agent import RefactoringAgent  # noqa: E402
+from studio.harness import BuildScope, ProjectHarness, ensure_pit_junit5_support  # noqa: E402
+from studio.long_paths import long_path  # noqa: E402
+from studio.refactoring_agent import RefactoringAgent, _workspace_root  # noqa: E402
 from baseline_v1 import drive, run_pair  # noqa: E402
-from baseline_v1.pit_from_diff import SETUPS_BY_PROJECT, DiffReplayAgent, publish, slim  # noqa: E402
+from baseline_v1.pit_from_diff import SETUPS_BY_PROJECT, publish, slim  # noqa: E402
 
 HOST = socket.gethostname()
 OUT_DIR = "pit-layers"
@@ -139,35 +140,107 @@ def module_of(row: dict) -> str:
     return str(row.get("scope") or "unknown")
 
 
+def module_dirs(scope: str) -> tuple[str, ...]:
+    """"2 module(s): a, b" -> ("a", "b"); anything else is the whole project -> ()."""
+    _, sep, names = scope.partition("module(s): ")
+    return tuple(n.strip() for n in names.split(",") if n.strip()) if sep else ()
+
+
 def gated(module: str) -> bool:
     return any(name in module for name in drive.NOREDIST_MODULES)
 
 
-def run_layer(service, run_id, project, project_root, model, mcis, patched) -> dict:
+def package_patterns(root: Path, modules: tuple[str, ...], kind: str) -> tuple[str, ...]:
+    """PIT globs ("pkg.*") covering every Java package under <module>/src/<kind>/java, minimal set."""
+    packages = set()
+    for module in modules or (".",):
+        base = root / module / "src" / kind / "java"
+        if base.is_dir():
+            for source in long_path(base).rglob("*.java"):
+                rel = Path(str(source)).parent.relative_to(long_path(base))
+                if rel.parts:
+                    packages.add(".".join(rel.parts))
+    kept: list[str] = []
+    for name in sorted(packages):
+        if not any(name == k or name.startswith(k + ".") for k in kept):
+            kept.append(name)
+    return tuple(f"{k}.*" for k in kept)
+
+
+def mutation_matrix(workspace: Path, since: float) -> dict[str, str]:
+    """{mutant key: "STATUS|test;test"} from every fresh mutations.xml (fullMutationMatrix)."""
+    matrix: dict[str, str] = {}
+    for report in long_path(workspace).rglob("mutations.xml"):
+        if "pit-reports" not in report.parts or report.stat().st_mtime < since:
+            continue
+        try:
+            root = ET.parse(report).getroot()
+        except (OSError, ET.ParseError):
+            continue
+        for m in root.findall("mutation"):
+            key = "|".join(m.findtext(t) or "" for t in ("mutatedClass", "mutatedMethod", "lineNumber", "mutator"))
+            status = (m.attrib.get("status") or m.findtext("status") or "UNKNOWN").upper()
+            killers = sorted(t for t in (m.findtext("killingTests") or m.findtext("killingTest") or "").split("|") if t)
+            matrix[key] = status + "|" + ";".join(killers)
+    return matrix
+
+
+def compare(base: dict[str, str], cand: dict[str, str]) -> dict:
+    def split(value: str):
+        status, _, killers = value.partition("|")
+        return status, set(filter(None, killers.split(";")))
+
+    lost, gained, killers_lost, missing = [], [], {}, 0
+    for key, value in base.items():
+        if key not in cand:
+            missing += 1
+            continue
+        (bs, bk), (cs, ck) = split(value), split(cand[key])
+        if bs == "KILLED" and cs != "KILLED":
+            lost.append(key)
+        elif bs != "KILLED" and cs == "KILLED":
+            gained.append(key)
+        elif bs == cs == "KILLED" and bk - ck:
+            killers_lost[key] = sorted(bk - ck)
+    return {"killedLost": sorted(lost), "killedGained": sorted(gained), "killersLost": killers_lost,
+            "mutantsOnlyInBaseline": missing, "mutantsOnlyInCandidate": len(set(cand) - set(base))}
+
+
+class Workspace:
+    """One copy of the project for all runs; a layer's files are written in and restored afterwards."""
+
+    def __init__(self, project_root: Path, project: str, harness: ProjectHarness):
+        self.root = project_root
+        self.dir = _workspace_root(project_root, f"pitlayers-{project}")
+        if not self.dir.is_dir():
+            RefactoringAgent._copy_project(project_root, self.dir)
+        ensure_pit_junit5_support(self.dir, harness.maven_repo_local)
+        self.written: list[str] = []
+
+    def apply(self, contents: dict[str, str]) -> None:
+        self.restore()
+        for rel, text in contents.items():
+            target = long_path(self.dir / rel)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(text, encoding="utf-8", newline="\n")
+            self.written.append(rel)
+
+    def restore(self) -> None:
+        for rel in self.written:
+            source, target = long_path(self.root / rel), long_path(self.dir / rel)
+            if source.is_file():
+                shutil.copyfile(source, target)
+            else:
+                target.unlink(missing_ok=True)
+        self.written = []
+
+
+def validate(harness: ProjectHarness, ws: Workspace, scope: BuildScope) -> dict:
     started = time.time()
-    record: dict = {"host": HOST, "at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "mcis": mcis}
-    try:
-        DiffReplayAgent.patched = patched
-        agent = DiffReplayAgent(service, provider=RefactoringAgent._openai_provider("default"))
-        result = agent.run(run_id, mcis, model, user_instruction="", run_pit=True, api_profile="default",
-                           use_mock=False, sequence_selection=None, max_retries=0, use_cache=False,
-                           progress_callback=None, workspace_id=f"pitlayers-{project}")
-        harness = result.get("harness") or {}
-        baseline, candidate = harness.get("baseline") or {}, harness.get("candidate") or {}
-        record.update({
-            "classificationWithPit": canonical_store.classify_agent_result(result),
-            "baseline": slim(baseline), "candidate": slim(candidate),
-            "mutationScoreDelta": harness.get("mutationScoreDelta"),
-            "mutationRegressed": harness.get("mutationRegressed"),
-            "killedLost": sorted(k for k, s in (baseline.get("mutants") or {}).items()
-                                 if s == "KILLED" and (candidate.get("mutants") or {}).get(k) != "KILLED"),
-            "identityRegressed": mutation_regressed(baseline, candidate),
-            "verificationReused": result.get("verificationReused") or {},
-        })
-    except Exception as error:  # noqa: BLE001 - record and keep going
-        record["error"] = f"{type(error).__name__}: {str(error)[:300]}"
-    record["seconds"] = round(time.time() - started, 1)
-    return record
+    evidence = harness.validate(ws.dir, run_pit=True, scope=scope).as_dict()
+    matrix = mutation_matrix(ws.dir, started - 1) if evidence.get("pitStatus") == "PASSED" else {}
+    return {"host": HOST, "at": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "evidence": slim(evidence),
+            "matrix": matrix, "seconds": round(time.time() - started, 1)}
 
 
 def main() -> None:
@@ -176,6 +249,8 @@ def main() -> None:
     parser.add_argument("--root", action="append", default=[], help="NAME=PATH of this host's checkout")
     parser.add_argument("--setups", default="all")
     parser.add_argument("--max-layer", type=int, default=0, help="stop after this layer (0 = all)")
+    parser.add_argument("--threads", type=int, default=max(1, (os.cpu_count() or 2) // 2), help="PIT threads")
+    parser.add_argument("--timeout-hours", type=float, default=6.0, help="limit per build command")
     parser.add_argument("--noredist", choices=("only", "skip"), default=None,
                         help="CloudStack: run only / skip the -Dnoredist-gated modules (C / D)")
     parser.add_argument("--publish-every", type=int, default=10, help="also publish after this many runs")
@@ -186,7 +261,6 @@ def main() -> None:
         name, _, path = pair.partition("=")
         drive.PROJECT_ROOTS[name] = path
     run_pair.load_env()
-    os.environ.setdefault("OPENAI_API_KEY", "unused")
     project_root = Path(drive.PROJECT_ROOTS[args.project])
     setups = SETUPS_BY_PROJECT[args.project] if args.setups == "all" else args.setups.split(",")
     order = detection_order(args.project)
@@ -195,8 +269,7 @@ def main() -> None:
     data = {}
     for setup in setups:
         directory = base / setup
-        rows = json.loads((directory / "refactoring-results.json").read_text(encoding="utf-8"))["results"]
-        model = json.loads((directory / "setup.json").read_text(encoding="utf-8")).get("model") or "gpt-5.6-terra"
+        rows = json.loads((directory / "refactoring-results.json").read_text(encoding="utf-8-sig"))["results"]
         out_path = directory / OUT_DIR / f"{HOST}.json"
         out = json.loads(out_path.read_text(encoding="utf-8")) if out_path.is_file() else {"plan": {}, "runs": {}}
         diffs, bymod = {}, defaultdict(list)
@@ -213,29 +286,66 @@ def main() -> None:
         for module, mcis in bymod.items():
             if module not in out["plan"]:
                 out["plan"][module] = plan_layers(mcis, diffs, project_root)
-        data[setup] = {"model": model, "out_path": out_path, "out": out, "diffs": diffs, "modules": list(bymod)}
+        data[setup] = {"out_path": out_path, "out": out, "diffs": diffs, "modules": list(bymod)}
         plan = {m: out["plan"][m] for m in bymod}
         placed = sum(len(layer) for layers in plan.values() for layer in layers)
         first = sum(len(layers[0]) for layers in plan.values() if layers)
         run_pair.log(f"PIT-LAYERS {args.project} [{setup}]: {len(diffs)} diffs, {len(plan)} modules, "
                      f"layer 1 holds {first}, {sum(len(v) for v in plan.values())} (module, layer) runs, "
                      f"deepest {max((len(v) for v in plan.values()), default=0)}, unplaced {len(diffs) - placed}")
+    modules = sorted({m for d in data.values() for m in d["modules"]})
+    run_pair.log(f"PIT-LAYERS {args.project}: {len(modules)} module baselines")
     if args.plan_only:
         return
 
-    service = DetectionService(REPO)
-    run_id = drive.run_id_for(args.project)
+    ProjectHarness.TIMEOUT_SECONDS = int(args.timeout_hours * 3600)
+    harness = ProjectHarness()
+    harness.pit_full_matrix = True
+    harness.pit_threads = args.threads
+    ws = Workspace(project_root, args.project, harness)
+    scopes = {}
+    for module in modules:
+        dirs = module_dirs(module)
+        scopes[module] = BuildScope(modules=dirs, pit_classes=package_patterns(project_root, dirs, "main"),
+                                    pit_tests=package_patterns(project_root, dirs, "test"))
+    base_path = REPO / "data" / args.project / OUT_DIR / f"baseline-{HOST}.json"
+    baselines = json.loads(base_path.read_text(encoding="utf-8")) if base_path.is_file() else {}
     pending = 0
 
-    def save(d) -> None:
-        d["out_path"].parent.mkdir(parents=True, exist_ok=True)
-        d["out_path"].write_text(json.dumps(d["out"], ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
+    def save(path: Path, value) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        text = json.dumps(value, ensure_ascii=False, indent=1)
+        write_retrying(lambda: path.write_text(text, encoding="utf-8", newline="\n"))
 
     def flush() -> None:
         nonlocal pending
         if not args.no_publish:
-            publish([data[s]["out_path"] for s in setups if data[s]["out_path"].is_file()], args.project)
+            paths = [data[s]["out_path"] for s in setups if data[s]["out_path"].is_file()]
+            publish(paths + ([base_path] if base_path.is_file() else []), args.project)
         pending = 0
+
+    def baseline(module: str) -> dict:
+        if module not in baselines:
+            ws.restore()
+            record = validate(harness, ws, scopes[module])
+            baselines[module] = record
+            save(base_path, baselines)
+            e = record["evidence"] or {}
+            run_pair.log(f"  PIT-LAYERS {args.project} baseline {module}: compile {e.get('compileStatus')} "
+                         f"test {e.get('testStatus')} pit {e.get('pitStatus')} score {e.get('mutationScore')} "
+                         f"mutants {len(record['matrix'])} {record['seconds']}s")
+        return baselines[module]
+
+    def run_layer(d: dict, module: str, mcis: list[str]) -> dict:
+        ws.apply(layer_contents(mcis, d["diffs"], project_root))
+        try:
+            record = validate(harness, ws, scopes[module])
+        finally:
+            ws.restore()
+        record["mcis"] = mcis
+        matrix = record.pop("matrix")
+        record["comparison"] = compare(baseline(module)["matrix"], matrix) if matrix else None
+        return record
 
     k = 0
     while True:
@@ -254,23 +364,25 @@ def main() -> None:
                 if key in d["out"]["runs"]:
                     continue
                 mcis = layers[k - 1]
-                patched = layer_contents(mcis, d["diffs"], project_root)
-                record = run_layer(service, run_id, args.project, project_root, d["model"], mcis, patched)
-                cand = record.get("candidate") or {}
-                if (len(mcis) > 1 and cand.get("compileStatus") == "FAILED"
-                        and (record.get("baseline") or {}).get("compileStatus") == "PASSED"):
-                    record["spilled"] = mcis[1:]           # keep the first, measure the rest later
-                    layers[k - 1] = mcis[:1]
+                if (baseline(module)["evidence"] or {}).get("pitStatus") != "PASSED":
+                    d["out"]["runs"][key] = {"host": HOST, "mcis": mcis, "skipped": "baseline PIT did not pass"}
+                    save(d["out_path"], d["out"])
+                    continue
+                record = run_layer(d, module, mcis)
+                e = record["evidence"] or {}
+                if len(mcis) > 1 and (e.get("compileStatus") != "PASSED" or e.get("testStatus") != "PASSED"):
+                    failed_on = [e.get("compileStatus"), e.get("testStatus")]
+                    layers[k - 1] = mcis[:1]               # keep the first, measure the rest in a later layer
                     layers.append(mcis[1:])
-                    record = run_layer(service, run_id, args.project, project_root, d["model"], mcis[:1],
-                                       layer_contents(mcis[:1], d["diffs"], project_root)) | {"spilled": mcis[1:]}
+                    record = run_layer(d, module, mcis[:1]) | {"spilled": mcis[1:], "spilledOn": failed_on}
                 d["out"]["runs"][key] = record
-                save(d)
-                c = record.get("candidate") or {}
+                save(d["out_path"], d["out"])
+                e, c = record["evidence"] or {}, record.get("comparison") or {}
                 run_pair.log(f"  PIT-LAYERS {args.project} [{setup}] {key} ({len(record['mcis'])} MCIs): "
-                             f"{record.get('classificationWithPit') or record.get('error')} pit {c.get('pitStatus')} "
-                             f"delta {record.get('mutationScoreDelta')} lost {len(record.get('killedLost') or [])} "
-                             f"{record['seconds']}s")
+                             f"compile {e.get('compileStatus')} test {e.get('testStatus')} pit {e.get('pitStatus')} "
+                             f"score {e.get('mutationScore')} lost {len(c.get('killedLost') or [])} "
+                             f"gained {len(c.get('killedGained') or [])} killersLost {len(c.get('killersLost') or {})} "
+                             f"{record['seconds']}s" + (f" spilled {len(record['spilled'])}" if record.get("spilled") else ""))
                 pending += 1
                 if pending >= args.publish_every:
                     flush()
